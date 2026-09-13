@@ -1,0 +1,7 @@
+{
+  "title": "Willkommen bei PonyABC Desktop",
+  "intro": "Registrieren Sie Ihren Stift für die Garantie oder verwalten Sie dessen Inhalte über die Bereiche links.",
+  "registerButton": "Ihren Stift registrieren",
+  "registerHint": "Öffnet die Registrierungsseite in Ihrem Webbrowser.",
+  "registerError": "Registrierungsseite konnte nicht geöffnet werden: {{error}}"
+}

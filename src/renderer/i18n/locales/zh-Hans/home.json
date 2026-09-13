@@ -1,0 +1,7 @@
+{
+  "title": "欢迎使用 PonyABC 桌面应用程序",
+  "intro": "为您的点读笔注册保修，或在左侧各栏管理其内容。",
+  "registerButton": "注册您的点读笔",
+  "registerHint": "将在您的网页浏览器中打开注册页面。",
+  "registerError": "无法打开注册页面：{{error}}"
+}

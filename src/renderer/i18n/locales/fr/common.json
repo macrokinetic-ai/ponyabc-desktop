@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Accueil",
+    "myRecordings": "Mes enregistrements",
+    "bookLibrary": "Bibliothèque BOOK",
+    "firmware": "Firmware",
+    "settings": "Paramètres"
+  },
+  "buttons": {
+    "select": "Sélectionner…",
+    "change": "Changer…",
+    "cancel": "Annuler",
+    "retry": "Réessayer",
+    "close": "Fermer"
+  },
+  "penRoot": {
+    "label": "Stockage du stylo",
+    "notSelected": "Aucun stockage de stylo sélectionné pour le moment.",
+    "selectButton": "Sélectionner le stockage du stylo…",
+    "changeButton": "Changer le stockage du stylo…",
+    "checkedPath": "Chemin vérifié : {{path}}",
+    "missingFolders": "Dossier(s) attendu(s) manquant(s) : {{folders}}",
+    "notFound": "Cet emplacement est introuvable. Le stylo est-il toujours connecté ?",
+    "disconnected": "Le stylo semble déconnecté."
+  },
+  "errors": {
+    "generic": "Une erreur s'est produite : {{message}}"
+  }
+}

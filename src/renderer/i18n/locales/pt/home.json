@@ -1,0 +1,7 @@
+{
+  "title": "Bem-vindo ao PonyABC Desktop",
+  "intro": "Registe a sua caneta para a garantia, ou faça a gestão do seu conteúdo a partir das secções à esquerda.",
+  "registerButton": "Registar a sua caneta",
+  "registerHint": "Abre a página de registo no seu navegador web.",
+  "registerError": "Não foi possível abrir a página de registo: {{error}}"
+}

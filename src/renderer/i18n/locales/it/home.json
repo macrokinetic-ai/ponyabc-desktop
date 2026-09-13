@@ -1,0 +1,7 @@
+{
+  "title": "Benvenuto in PonyABC Desktop",
+  "intro": "Registra la tua penna per la garanzia, oppure gestisci i suoi contenuti dalle sezioni a sinistra.",
+  "registerButton": "Registra la tua penna",
+  "registerHint": "Apre la pagina di registrazione nel tuo browser web.",
+  "registerError": "Impossibile aprire la pagina di registrazione: {{error}}"
+}

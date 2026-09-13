@@ -1,0 +1,5 @@
+{
+  "title": "韌體",
+  "windowsNotImplemented": "韌體升級精靈尚未實作。",
+  "macRequiresWindows": "韌體升級需要使用 Windows 版的 PonyABC 桌面應用程式。此功能在 Mac 上無法使用，而 Windows 版的韌體升級精靈本身亦尚未實作。"
+}

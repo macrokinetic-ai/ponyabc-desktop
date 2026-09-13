@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Start",
+    "myRecordings": "Meine Aufnahmen",
+    "bookLibrary": "BOOK-Bibliothek",
+    "firmware": "Firmware",
+    "settings": "Einstellungen"
+  },
+  "buttons": {
+    "select": "Auswählen…",
+    "change": "Ändern…",
+    "cancel": "Abbrechen",
+    "retry": "Erneut versuchen",
+    "close": "Schließen"
+  },
+  "penRoot": {
+    "label": "Stift-Speicher",
+    "notSelected": "Noch kein Stift-Speicher ausgewählt.",
+    "selectButton": "Stift-Speicher auswählen…",
+    "changeButton": "Stift-Speicher ändern…",
+    "checkedPath": "Geprüfter Pfad: {{path}}",
+    "missingFolders": "Fehlende erwartete Ordner: {{folders}}",
+    "notFound": "Dieser Ort wurde nicht gefunden. Ist der Stift noch verbunden?",
+    "disconnected": "Der Stift scheint getrennt zu sein."
+  },
+  "errors": {
+    "generic": "Ein Fehler ist aufgetreten: {{message}}"
+  }
+}

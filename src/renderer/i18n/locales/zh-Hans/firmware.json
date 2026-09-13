@@ -1,0 +1,5 @@
+{
+  "title": "固件",
+  "windowsNotImplemented": "固件升级向导尚未实现。",
+  "macRequiresWindows": "固件升级需要使用 Windows 版的 PonyABC 桌面应用程序。此功能在 Mac 上不可用，而 Windows 版的固件升级向导本身也尚未实现。"
+}

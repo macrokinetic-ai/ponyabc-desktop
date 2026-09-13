@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Home",
+    "myRecordings": "Le mie registrazioni",
+    "bookLibrary": "Libreria BOOK",
+    "firmware": "Firmware",
+    "settings": "Impostazioni"
+  },
+  "buttons": {
+    "select": "Seleziona…",
+    "change": "Cambia…",
+    "cancel": "Annulla",
+    "retry": "Riprova",
+    "close": "Chiudi"
+  },
+  "penRoot": {
+    "label": "Archiviazione della penna",
+    "notSelected": "Nessuna archiviazione della penna selezionata.",
+    "selectButton": "Seleziona archiviazione della penna…",
+    "changeButton": "Cambia archiviazione della penna…",
+    "checkedPath": "Percorso controllato: {{path}}",
+    "missingFolders": "Cartella/e prevista/e mancante/i: {{folders}}",
+    "notFound": "Impossibile trovare questo percorso. La penna è ancora collegata?",
+    "disconnected": "La penna sembra scollegata."
+  },
+  "errors": {
+    "generic": "Si è verificato un errore: {{message}}"
+  }
+}

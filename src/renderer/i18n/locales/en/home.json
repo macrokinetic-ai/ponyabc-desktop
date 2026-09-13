@@ -1,0 +1,7 @@
+{
+  "title": "Welcome to PonyABC Desktop",
+  "intro": "Register your pen for warranty, or manage its content from the sections on the left.",
+  "registerButton": "Register your pen",
+  "registerHint": "Opens the registration page in your web browser.",
+  "registerError": "Couldn't open the registration page: {{error}}"
+}

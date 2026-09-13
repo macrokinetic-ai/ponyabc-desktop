@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC 桌面应用程序",
+  "nav": {
+    "home": "首页",
+    "myRecordings": "我的录音",
+    "bookLibrary": "BOOK 资料库",
+    "firmware": "固件",
+    "settings": "设置"
+  },
+  "buttons": {
+    "select": "选择…",
+    "change": "更改…",
+    "cancel": "取消",
+    "retry": "重试",
+    "close": "关闭"
+  },
+  "penRoot": {
+    "label": "点读笔存储空间",
+    "notSelected": "尚未选择点读笔存储空间。",
+    "selectButton": "选择点读笔存储空间…",
+    "changeButton": "更改点读笔存储空间…",
+    "checkedPath": "已检查路径：{{path}}",
+    "missingFolders": "缺少预期的文件夹：{{folders}}",
+    "notFound": "找不到该位置，点读笔是否仍已连接？",
+    "disconnected": "点读笔似乎已断开连接。"
+  },
+  "errors": {
+    "generic": "发生错误：{{message}}"
+  }
+}

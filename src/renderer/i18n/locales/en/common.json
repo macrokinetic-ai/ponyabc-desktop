@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Home",
+    "myRecordings": "My Recordings",
+    "bookLibrary": "BOOK Library",
+    "firmware": "Firmware",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "select": "Select…",
+    "change": "Change…",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "penRoot": {
+    "label": "Pen storage",
+    "notSelected": "No pen storage selected yet.",
+    "selectButton": "Select pen storage…",
+    "changeButton": "Change pen storage…",
+    "checkedPath": "Checked path: {{path}}",
+    "missingFolders": "Missing expected folder(s): {{folders}}",
+    "notFound": "That location could not be found. Is the pen still connected?",
+    "disconnected": "The pen appears to be disconnected."
+  },
+  "errors": {
+    "generic": "Something went wrong: {{message}}"
+  }
+}

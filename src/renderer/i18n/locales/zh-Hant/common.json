@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC 桌面應用程式",
+  "nav": {
+    "home": "首頁",
+    "myRecordings": "我的錄音",
+    "bookLibrary": "BOOK 資料庫",
+    "firmware": "韌體",
+    "settings": "設定"
+  },
+  "buttons": {
+    "select": "選擇…",
+    "change": "變更…",
+    "cancel": "取消",
+    "retry": "重試",
+    "close": "關閉"
+  },
+  "penRoot": {
+    "label": "點讀筆儲存空間",
+    "notSelected": "尚未選擇點讀筆儲存空間。",
+    "selectButton": "選擇點讀筆儲存空間…",
+    "changeButton": "變更點讀筆儲存空間…",
+    "checkedPath": "已檢查路徑：{{path}}",
+    "missingFolders": "缺少預期的資料夾：{{folders}}",
+    "notFound": "找不到該位置，點讀筆是否仍連接中？",
+    "disconnected": "點讀筆似乎已中斷連接。"
+  },
+  "errors": {
+    "generic": "發生錯誤：{{message}}"
+  }
+}

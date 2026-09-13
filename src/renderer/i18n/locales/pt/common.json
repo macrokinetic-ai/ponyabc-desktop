@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Início",
+    "myRecordings": "Minhas gravações",
+    "bookLibrary": "Biblioteca BOOK",
+    "firmware": "Firmware",
+    "settings": "Definições"
+  },
+  "buttons": {
+    "select": "Selecionar…",
+    "change": "Alterar…",
+    "cancel": "Cancelar",
+    "retry": "Tentar novamente",
+    "close": "Fechar"
+  },
+  "penRoot": {
+    "label": "Armazenamento da caneta",
+    "notSelected": "Ainda não foi selecionado o armazenamento da caneta.",
+    "selectButton": "Selecionar armazenamento da caneta…",
+    "changeButton": "Alterar armazenamento da caneta…",
+    "checkedPath": "Caminho verificado: {{path}}",
+    "missingFolders": "Pasta(s) esperada(s) em falta: {{folders}}",
+    "notFound": "Não foi possível encontrar esse local. A caneta ainda está ligada?",
+    "disconnected": "A caneta parece estar desligada."
+  },
+  "errors": {
+    "generic": "Ocorreu um erro: {{message}}"
+  }
+}

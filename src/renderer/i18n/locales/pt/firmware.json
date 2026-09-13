@@ -1,0 +1,5 @@
+{
+  "title": "Firmware",
+  "windowsNotImplemented": "O assistente de atualização de firmware ainda não está implementado.",
+  "macRequiresWindows": "As atualizações de firmware requerem a aplicação PonyABC Desktop no Windows. Esta funcionalidade não está disponível no Mac, e o próprio assistente de firmware para Windows também ainda não está implementado."
+}

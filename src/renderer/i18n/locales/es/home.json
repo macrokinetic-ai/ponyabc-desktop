@@ -1,0 +1,7 @@
+{
+  "title": "Bienvenido a PonyABC Desktop",
+  "intro": "Registre su lápiz para la garantía, o administre su contenido desde las secciones de la izquierda.",
+  "registerButton": "Registrar su lápiz",
+  "registerHint": "Abre la página de registro en su navegador web.",
+  "registerError": "No se pudo abrir la página de registro: {{error}}"
+}

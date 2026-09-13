@@ -1,0 +1,7 @@
+{
+  "title": "Bienvenue dans PonyABC Desktop",
+  "intro": "Enregistrez votre stylo pour la garantie, ou gérez son contenu depuis les sections à gauche.",
+  "registerButton": "Enregistrer votre stylo",
+  "registerHint": "Ouvre la page d'enregistrement dans votre navigateur web.",
+  "registerError": "Impossible d'ouvrir la page d'enregistrement : {{error}}"
+}

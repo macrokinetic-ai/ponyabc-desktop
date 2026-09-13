@@ -1,0 +1,30 @@
+{
+  "appName": "PonyABC Desktop",
+  "nav": {
+    "home": "Inicio",
+    "myRecordings": "Mis grabaciones",
+    "bookLibrary": "Biblioteca BOOK",
+    "firmware": "Firmware",
+    "settings": "Ajustes"
+  },
+  "buttons": {
+    "select": "Seleccionar…",
+    "change": "Cambiar…",
+    "cancel": "Cancelar",
+    "retry": "Reintentar",
+    "close": "Cerrar"
+  },
+  "penRoot": {
+    "label": "Almacenamiento del lápiz",
+    "notSelected": "Aún no se ha seleccionado el almacenamiento del lápiz.",
+    "selectButton": "Seleccionar almacenamiento del lápiz…",
+    "changeButton": "Cambiar almacenamiento del lápiz…",
+    "checkedPath": "Ruta comprobada: {{path}}",
+    "missingFolders": "Faltan la(s) carpeta(s) esperada(s): {{folders}}",
+    "notFound": "No se encontró esa ubicación. ¿Sigue conectado el lápiz?",
+    "disconnected": "El lápiz parece estar desconectado."
+  },
+  "errors": {
+    "generic": "Se produjo un error: {{message}}"
+  }
+}

@@ -1,0 +1,31 @@
+appId: uk.ponyabc.desktop
+productName: PonyABC Desktop
+directories:
+  buildResources: build
+  output: release
+files:
+  - out/**/*
+  - package.json
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  category: public.app-category.education
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+dmg:
+  sign: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+publish: null
