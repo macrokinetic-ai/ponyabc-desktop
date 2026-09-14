@@ -166,7 +166,18 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Buttons default to an unbreakable intrinsic width in flex layouts — without this, a long
+ * label like "Select a different pen storage…" refuses to shrink/wrap and instead forces
+ * the whole bar wider than its pane, overlapping the middle actions column. */
+.pen-root-bar__actions .button {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
 }
 
 .pen-root-bar__candidates ul {
