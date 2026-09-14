@@ -38,12 +38,26 @@ function classifyError(err: unknown): { reason: WriteFailureReason; message: str
   }
 }
 
+/**
+ * Resolves only once the read stream's underlying file descriptor is actually closed (the
+ * 'close' event), not merely once the last byte has been read ('end') — on Windows, deleting
+ * or renaming a file whose read stream fired 'end' but hasn't yet released its OS-level
+ * handle can fail (a real, reproducible failure caught via the actual Windows CI runner, not
+ * assumed). 'end' still drives when the digest itself is computed; 'close' only gates when
+ * the promise resolves, so a caller that immediately unlinks/renames this path next is safe.
+ */
 export function sha256File(filePath: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('sha256');
     const stream = fs.createReadStream(filePath);
+    let digest: string | null = null;
     stream.on('data', (chunk) => hash.update(chunk));
-    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('end', () => {
+      digest = hash.digest('hex');
+    });
+    stream.on('close', () => {
+      if (digest !== null) resolve(digest);
+    });
     stream.on('error', reject);
   });
 }

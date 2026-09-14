@@ -173,3 +173,27 @@ that deliberately pre-occupied the target directory path with a plain file.
 result," audit *every* synchronous fs call in it (not just the ones that felt risky while
 writing it) — a bare `mkdirSync`/`writeFileSync`/`statSync` mid-function is exactly the kind
 of thing that looks safe until a test (or a real EACCES/ENOTDIR) proves otherwise.
+
+## `fs.createReadStream(...).on('end', ...)` is not proof the file's OS handle is released yet — matters on Windows if you unlink/rename that same path next
+
+`sha256File()` resolved its promise on the stream's `'end'` event. `bookRemove.ts` hashes a
+pen file (`sha256File`) and then, in the very next line, `fs.promises.unlink`s that exact
+path. Passed every local (macOS) test and typecheck, then failed on the very first real
+`windows-latest` CI run with `ENOTEMPTY`/handle-still-open errors during cleanup — `'end'`
+fires once the last byte is read, but the stream's underlying file descriptor is released
+asynchronously afterward via a separate internal close; on Windows (unlike POSIX, which
+allows deleting/renaming a file with open handles) a delete/rename racing that release can
+fail or leave the directory transiently "busy." `safeWriteFile` has the same
+hash-then-rename shape and was quietly exposed to the identical race.
+
+**Fix:** resolve on the stream's `'close'` event instead of `'end'` — `'close'` only fires
+after the fd is actually released, so a caller that immediately deletes/renames the same
+path next is safe. Compute the digest at `'end'` (correctness), gate the promise resolution
+on `'close'` (Windows safety) — two different concerns, two different events, don't collapse
+them into one.
+
+**How to apply:** any Node code that reads a file via a stream and then deletes/renames/
+moves that *same path* immediately afterward needs to wait for the stream's `'close'`, not
+just `'end'`/`'finish'`, before doing so — and this class of bug is only ever caught by a
+real Windows CI run, never by local macOS testing or by reasoning about it. Push early and
+let `build-windows.yml` run rather than assuming a Mac-clean test suite generalizes.
