@@ -179,90 +179,41 @@ describe('safeWriteFile — device changed / disconnected, checked at every chec
   });
 });
 
-describe('safeWriteFile — rename-over-existing failure recovery (never blindly deletes the original)', () => {
-  it('recovers via the move-aside/retry fallback when the direct rename fails once, preserving the original as a backup', async () => {
+describe('safeWriteFile — a failed rename never moves or deletes the original (single attempt, no fallback)', () => {
+  it('on a rename failure with the device still confirmed the same, the original is untouched and the temp file is cleaned up', async () => {
     fs.writeFileSync(path.join(targetDir, '0451.mp3'), 'OLD AUDIO');
     const source = path.join(sourceDir, 'new.mp3');
     fs.writeFileSync(source, 'NEW AUDIO');
 
-    const realRename = fs.promises.rename.bind(fs.promises);
-    let renameCalls = 0;
-    vi.spyOn(fs.promises, 'rename').mockImplementation(async (from, to) => {
-      renameCalls++;
-      // Fail only the FIRST attempt to swap the verified tmp file into the final name.
-      if (renameCalls === 1 && String(to) === path.join(targetDir, '0451.mp3')) {
-        throw Object.assign(new Error('simulated EIO'), { code: 'EIO' });
-      }
-      return realRename(from, to);
-    });
-
-    const result = await safeWriteFile({ sourcePath: source, targetDir, targetFileName: '0451.mp3', backupDir, verifyStillSameTarget: available });
-
-    expect(result.ok).toBe(true);
-    expect(fs.readFileSync(path.join(targetDir, '0451.mp3'), 'utf-8')).toBe('NEW AUDIO');
-    expect(fs.readFileSync(result.backupPath!, 'utf-8')).toBe('OLD AUDIO');
-    // The held-aside copy made during recovery is cleaned up once the swap succeeds.
-    expect(strayFiles(targetDir, ['0451.mp3'])).toEqual([]);
-  });
-
-  it('restores the original and reports failure — never data loss — when BOTH swap attempts fail', async () => {
-    fs.writeFileSync(path.join(targetDir, '0451.mp3'), 'OLD AUDIO');
-    const source = path.join(sourceDir, 'new.mp3');
-    fs.writeFileSync(source, 'NEW AUDIO');
-
-    const realRename = fs.promises.rename.bind(fs.promises);
-    vi.spyOn(fs.promises, 'rename').mockImplementation(async (from, to) => {
-      const toStr = String(to);
-      const fromStr = String(from);
-      // Fail only the two attempts to swap the verified TMP file into the final name
-      // (direct, then after move-aside); let the move-aside and restore renames — which
-      // target different filenames/sources — succeed normally.
-      if (toStr === path.join(targetDir, '0451.mp3') && fromStr.includes('.ponyabc-tmp-')) {
-        throw Object.assign(new Error('simulated EIO'), { code: 'EIO' });
-      }
-      return realRename(from, to);
-    });
+    vi.spyOn(fs.promises, 'rename').mockRejectedValue(Object.assign(new Error('simulated EIO'), { code: 'EIO' }));
 
     const result = await safeWriteFile({ sourcePath: source, targetDir, targetFileName: '0451.mp3', backupDir, verifyStillSameTarget: available });
 
     expect(result.ok).toBe(false);
     expect(result.reason).toBe('io-error');
-    expect(result.originalRestored).toBe(true);
-    // The DIY original must NOT have vanished — this is the exact bug being fixed.
+    expect(result.message).toContain('original file was not modified');
+    // The original at finalPath is exactly as it was — never moved, renamed, or deleted.
     expect(fs.readFileSync(path.join(targetDir, '0451.mp3'), 'utf-8')).toBe('OLD AUDIO');
-    // A proper backup was still made on the computer as an additional safety net.
+    // A proper backup was still made on the computer.
     expect(fs.readFileSync(result.backupPath!, 'utf-8')).toBe('OLD AUDIO');
+    // No move-aside/held file of any kind, and our own temp file was cleaned up since the
+    // device is still confirmed the same one.
+    expect(strayFiles(targetDir, ['0451.mp3'])).toEqual([]);
   });
 
-  it('reports the exact intact location of the original if even the restore-back rename fails', async () => {
+  it('never creates a move-aside ".ponyabc-original-*" file under any circumstance (the removed fallback is gone for good)', async () => {
     fs.writeFileSync(path.join(targetDir, '0451.mp3'), 'OLD AUDIO');
     const source = path.join(sourceDir, 'new.mp3');
     fs.writeFileSync(source, 'NEW AUDIO');
 
-    const realRename = fs.promises.rename.bind(fs.promises);
-    vi.spyOn(fs.promises, 'rename').mockImplementation(async (from, to) => {
-      // Fail every rename that targets the final filename — this covers both swap
-      // attempts (from the tmp file) AND the restore-back attempt (from the held-aside
-      // original), leaving only the move-aside rename (a different target name) to succeed.
-      if (String(to) === path.join(targetDir, '0451.mp3')) {
-        throw Object.assign(new Error('simulated EIO'), { code: 'EIO' });
-      }
-      return realRename(from, to);
-    });
+    vi.spyOn(fs.promises, 'rename').mockRejectedValue(Object.assign(new Error('simulated EIO'), { code: 'EIO' }));
 
-    const result = await safeWriteFile({ sourcePath: source, targetDir, targetFileName: '0451.mp3', backupDir, verifyStillSameTarget: available });
+    await safeWriteFile({ sourcePath: source, targetDir, targetFileName: '0451.mp3', backupDir, verifyStillSameTarget: available });
 
-    expect(result.ok).toBe(false);
-    expect(result.originalPreservedAt).toBeDefined();
-    expect(result.originalRestored).toBe(false);
-    // finalPath is empty, but the original's bytes are fully intact at the reported path.
-    expect(fs.existsSync(path.join(targetDir, '0451.mp3'))).toBe(false);
-    expect(fs.readFileSync(result.originalPreservedAt!, 'utf-8')).toBe('OLD AUDIO');
-    // Never silently lost: the computer-side backup is also still there.
-    expect(fs.readFileSync(result.backupPath!, 'utf-8')).toBe('OLD AUDIO');
+    expect(fs.readdirSync(targetDir).some((f) => f.includes('.ponyabc-original-'))).toBe(false);
   });
 
-  it('does not attempt the move-aside/restore dance at all if the device changed right when the direct rename failed', async () => {
+  it('when the device becomes untrusted at the exact moment the rename fails, does not touch the temp file and does not claim to know the original is intact', async () => {
     fs.writeFileSync(path.join(targetDir, '0451.mp3'), 'OLD AUDIO');
     const source = path.join(sourceDir, 'new.mp3');
     fs.writeFileSync(source, 'NEW AUDIO');
@@ -274,14 +225,33 @@ describe('safeWriteFile — rename-over-existing failure recovery (never blindly
       targetDir,
       targetFileName: '0451.mp3',
       backupDir,
-      verifyStillSameTarget: trueForFirst(3), // same device through staging, but gone by the time the rename fails and we re-check
+      // Same device through backup+staging+the pre-rename check (3 calls), but no longer
+      // trusted by the time we re-check right after the rename itself fails (4th call).
+      verifyStillSameTarget: trueForFirst(3),
     });
 
     expect(result.ok).toBe(false);
     expect(result.reason).toBe('device-changed');
-    // No move-aside file was ever created — never restore/cleanup onto a disk that might
-    // now belong to a different pen.
-    expect(strayFiles(targetDir, ['0451.mp3']).some((f) => f.includes('.ponyabc-original-'))).toBe(false);
-    expect(fs.readFileSync(path.join(targetDir, '0451.mp3'), 'utf-8')).toBe('OLD AUDIO');
+    // Deliberately hedged wording — we must not assert the original is confirmed intact
+    // once the device is no longer trusted, even though nothing in this function touched it.
+    expect(result.message).toMatch(/could not be confirmed/);
+    // The temp file is left exactly where it is — no cleanup attempted on an unconfirmed disk.
+    const strays = strayFiles(targetDir, ['0451.mp3']);
+    expect(strays.length).toBe(1);
+    expect(strays[0]).toContain('.ponyabc-tmp-');
+  });
+
+  it('a new-file add (no original at risk) also reports the failure without any recovery attempt', async () => {
+    const source = path.join(sourceDir, 'new.mp3');
+    fs.writeFileSync(source, 'brand new content');
+
+    vi.spyOn(fs.promises, 'rename').mockRejectedValue(Object.assign(new Error('simulated EIO'), { code: 'EIO' }));
+
+    const result = await safeWriteFile({ sourcePath: source, targetDir, targetFileName: 'new.mp3', backupDir, verifyStillSameTarget: available });
+
+    expect(result.ok).toBe(false);
+    expect(result.backupPath).toBeUndefined();
+    expect(fs.existsSync(path.join(targetDir, 'new.mp3'))).toBe(false);
+    expect(strayFiles(targetDir, [])).toEqual([]); // temp file cleaned up, same-device confirmed
   });
 });

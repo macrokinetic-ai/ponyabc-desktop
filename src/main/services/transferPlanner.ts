@@ -16,13 +16,11 @@ import { isEligibleMp3FileName, resolveContainedFile, resolvePenRoot } from './p
 import { safeWriteFile, type SafeWriteResult } from './transferService';
 import * as session from './session';
 
-/** Turns a failed SafeWriteResult into one human-readable message that includes recovery
- *  state (backup / original-preserved-at / restored) — the batch failure list only carries
- *  plain strings, so this is where that detail has to live rather than being dropped. */
+/** Turns a failed SafeWriteResult into one human-readable message that includes the backup
+ *  location when one was made — the batch failure list only carries plain strings, so this
+ *  is where that detail has to live rather than being dropped. */
 function describeWriteFailure(result: SafeWriteResult): string {
   const parts = [result.message ?? 'Unknown error'];
-  if (result.originalRestored) parts.push('The original file was restored.');
-  if (result.originalPreservedAt) parts.push(`The original is intact at: ${result.originalPreservedAt}`);
   if (result.backupPath) parts.push(`Backup: ${result.backupPath}`);
   return parts.join(' ');
 }

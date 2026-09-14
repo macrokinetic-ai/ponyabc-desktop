@@ -19,12 +19,6 @@ export interface SafeWriteResult {
   message?: string;
   /** Set when a pre-existing file at the target was backed up before being replaced. */
   backupPath?: string;
-  /** Set only in the rare case a multi-step swap failed AFTER the original was moved aside —
-   *  its bytes are intact at this path (not `finalPath`) and were not deleted. */
-  originalPreservedAt?: string;
-  /** True once we've confirmed the original was successfully moved back to its normal name
-   *  despite the replace failing — i.e. the pen was left exactly as it started. */
-  originalRestored?: boolean;
 }
 
 function classifyError(err: unknown): { reason: WriteFailureReason; message: string } {
@@ -58,114 +52,49 @@ async function unlinkQuiet(p: string): Promise<void> {
   await fs.promises.unlink(p).catch(() => {});
 }
 
-type SwapResult =
-  | { ok: true }
-  | { ok: false; reason: WriteFailureReason; message: string; originalPreservedAt?: string; originalRestored?: boolean };
-
-/**
- * Puts the verified `tmpPath` in place at `finalPath`. A plain rename-over-existing is
- * atomic-or-nothing on both POSIX and Windows (libuv's rename uses MoveFileEx with
- * MOVEFILE_REPLACE_EXISTING there) and succeeds in the overwhelming majority of cases — a
- * failure here is NOT generally "this filesystem doesn't support overwrite", so it must
- * never be treated as license to unconditionally delete the original. If it does fail and
- * there IS an original to protect, this falls back to a safe multi-step swap: move the
- * original aside by renaming it (never deleting it), attempt the swap again, and — if that
- * second attempt also fails — rename the original straight back. The original's bytes are
- * never deleted at any point in this function; the worst case leaves it intact under a
- * differently-named file instead of its normal name, with that path reported back.
- */
-async function swapIntoPlace(
-  tmpPath: string,
-  finalPath: string,
-  existedBefore: boolean,
-  verifyStillSameTarget: () => boolean,
-): Promise<SwapResult> {
-  try {
-    await fs.promises.rename(tmpPath, finalPath);
-    return { ok: true };
-  } catch (firstErr) {
-    if (!existedBefore) {
-      const { reason, message } = classifyError(firstErr);
-      return { ok: false, reason, message };
-    }
-    // else: an original exists to protect — fall through to the guarded recovery below.
-  }
-
-  // The direct overwrite failed and there's an original at stake. An EIO here can itself be
-  // the first sign of a disconnect — re-confirm identity before touching anything further;
-  // if it's no longer trusted, stop now and leave the original exactly where it is.
-  if (!verifyStillSameTarget()) {
-    return { ok: false, reason: 'device-changed', message: 'The pen changed while finishing the replace; the original file was left in place.' };
-  }
-
-  const heldPath = `${finalPath}.ponyabc-original-${crypto.randomBytes(4).toString('hex')}`;
-  try {
-    await fs.promises.rename(finalPath, heldPath); // move aside, never delete
-  } catch (moveAsideErr) {
-    const { message } = classifyError(moveAsideErr);
-    return { ok: false, reason: 'io-error', message: `Could not complete the replace, and the original file is unchanged (${message}).` };
-  }
-
-  try {
-    await fs.promises.rename(tmpPath, finalPath);
-    // Succeeded — the held copy is now redundant (a proper backup already exists in
-    // backupDir on the computer); remove this on-pen leftover rather than stray it there.
-    await unlinkQuiet(heldPath);
-    return { ok: true };
-  } catch (secondErr) {
-    const { message: secondMessage } = classifyError(secondErr);
-    try {
-      await fs.promises.rename(heldPath, finalPath); // restore the original
-      return {
-        ok: false,
-        reason: 'io-error',
-        message: `Could not finish replacing the file; the original was restored (${secondMessage}).`,
-        originalRestored: true,
-      };
-    } catch (restoreErr) {
-      // Worst case: the original is not back under its normal name, but it still exists,
-      // completely intact, at heldPath — report that path explicitly. The backup made
-      // earlier on the computer (if any) remains the ultimate safety net either way.
-      const { message: restoreMessage } = classifyError(restoreErr);
-      return {
-        ok: false,
-        reason: 'io-error',
-        message: `Could not finish replacing the file (${secondMessage}), and could not restore the original to its normal name (${restoreMessage}).`,
-        originalPreservedAt: heldPath,
-        originalRestored: false,
-      };
-    }
-  }
-}
-
 /**
  * Safely writes `sourcePath`'s content to `targetDir/targetFileName`, preserving the exact
- * target filename. Order of operations, chosen specifically so a crash, disconnect, or
- * mid-operation device swap at any point leaves a recoverable state and the original is
- * never deleted before its replacement is fully staged and verified:
+ * target filename. Order of operations, chosen specifically so a crash or mid-operation
+ * device swap at any point leaves a recoverable state and the original is never deleted
+ * before its replacement is fully staged and verified:
  *
  *   1. `verifyStillSameTarget()` is checked before backing up, again right after backing up,
- *      again right after staging+verifying the new content, and again inside the final swap
- *      if the fast-path rename fails — never just once up front. The moment it returns
- *      false, nothing further is touched: a backup already made (it lives on the computer,
- *      not the pen) is harmless to keep, but no write/rename/delete happens on what might now
- *      be a *different* physical device mounted at the same path. `verifyStillSameTarget`
- *      must itself be based on more than raw path existence or a bare `stat.dev` snapshot —
- *      see session.ts's generation counter, which is what the callers here use.
+ *      again right after staging+verifying the new content, and again right before the final
+ *      rename — never just once up front. The moment it returns false, nothing further is
+ *      touched: a backup already made (it lives on the computer, not the pen) is harmless to
+ *      keep, but no write/rename/delete happens on what might now be a *different* physical
+ *      device mounted at the same path. `verifyStillSameTarget` must itself be based on more
+ *      than raw path existence or a bare `stat.dev` snapshot — see session.ts's generation
+ *      counter, which is what the callers here use.
  *   2. If a file already exists at the target, copy it (byte for byte, original name) into
  *      `backupDir` first. If that copy fails for any reason, stop — nothing on the target is
  *      touched, and the whole write is reported as failed with reason 'backup-failed'.
  *   3. Copy the source into a temp file *in the same target directory* (so the final swap is
  *      a same-volume rename, not a cross-volume copy).
  *   4. Verify the staged temp file's size and SHA-256 against the source.
- *   5. Only then swap the verified temp file into place — see swapIntoPlace() above for the
- *      failure-safe multi-step fallback if the direct rename doesn't succeed.
+ *   5. Attempt exactly ONE rename of the verified temp file over the final target path. This
+ *      is atomic-or-nothing on both POSIX and Windows and succeeds in the overwhelming
+ *      majority of cases. If it fails, this does NOT retry, move the original aside, or
+ *      attempt any other recovery — the original is left completely untouched at its normal
+ *      path, and the failure is reported as-is.
+ *
+ *      (An earlier version of this function fell back to a multi-step "move the original
+ *      aside, retry the swap, move it back on failure" recovery. That introduced its own
+ *      device-swap gap: nothing re-checked `verifyStillSameTarget()` between the move-aside
+ *      succeeding and the retry, so a device change in that window could write onto a
+ *      *different* device before deleting the moved-aside original from wherever it had
+ *      ended up. A single attempt with no fallback is simpler and cannot have that gap.)
+ *
+ * Temp-file cleanup after a failed rename only happens if `verifyStillSameTarget()` still
+ * confirms the same device — if the identity is no longer trusted, the temp file (which
+ * never matches the .mp3 filter, so it can't appear as a recording) is left in place rather
+ * than touching a disk that might now belong to a different pen.
  *
  * This does not — and cannot — guarantee power-loss atomicity on FAT32/exFAT (the common SD
- * card filesystems): renames there are fast and typically near-atomic in practice, but
+ * card filesystems): a same-volume rename is fast and typically near-atomic in practice, but
  * neither filesystem journals renames the way e.g. ext4 does. What IS guaranteed: the
- * original file's bytes are never deleted before either a verified replacement is safely in
- * place, or the original itself has been moved back / is reported at a known, intact path.
+ * original file's bytes are never deleted, moved, or otherwise touched before a verified
+ * replacement has already been renamed into place successfully.
  */
 export async function safeWriteFile(params: {
   sourcePath: string;
@@ -232,12 +161,27 @@ export async function safeWriteFile(params: {
       return { ok: false, reason: 'device-changed', message: 'The pen changed before the write could be finalized; the original file was not modified.', backupPath };
     }
 
-    const swap = await swapIntoPlace(tmpPath, finalPath, existedBefore, verifyStillSameTarget);
-    if (!swap.ok) {
-      if (swap.reason !== 'device-changed' && verifyStillSameTarget()) await unlinkQuiet(tmpPath);
-      return { ok: false, reason: swap.reason, message: swap.message, backupPath, originalPreservedAt: swap.originalPreservedAt, originalRestored: swap.originalRestored };
+    try {
+      await fs.promises.rename(tmpPath, finalPath);
+      return { ok: true, backupPath };
+    } catch (renameErr) {
+      const { reason, message } = classifyError(renameErr);
+      if (verifyStillSameTarget()) {
+        // We never touched finalPath, and the device is still confirmed the same one — safe
+        // to state the original is exactly as it was, and to clean up our own temp file.
+        await unlinkQuiet(tmpPath);
+        return { ok: false, reason, message: `${message} The original file was not modified.`, backupPath };
+      }
+      // The device is no longer trusted (it may have changed at the exact moment the rename
+      // failed). Do NOT touch tmpPath — it may now sit on a different physical device — and
+      // do NOT claim to know the original's state there; only report what's actually known.
+      return {
+        ok: false,
+        reason: 'device-changed',
+        message: `${message} The pen changed immediately after this failure; the original file's state on it could not be confirmed.`,
+        backupPath,
+      };
     }
-    return { ok: true, backupPath };
   } catch (err) {
     if (verifyStillSameTarget()) await unlinkQuiet(tmpPath);
     const { reason, message } = classifyError(err);
