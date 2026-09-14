@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { StrictMode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { initI18n } from '../../src/renderer/i18n';
@@ -6,6 +7,55 @@ import { PenRootProvider } from '../../src/renderer/state/PenRootContext';
 import { ComputerFolderProvider } from '../../src/renderer/state/ComputerFolderContext';
 import { MyRecordingsScreen } from '../../src/renderer/screens/MyRecordingsScreen';
 import type { PonyAbcApi } from '../../src/shared/types';
+
+// jsdom has no WebAssembly-backed audio decoder — mock mpg123-decoder with a deterministic
+// fake that decodes to exactly 1 second of audio (8000 samples @ 8000 Hz) unless a test flips
+// mpg123Mock.shouldFail to exercise the "couldn't decode" error path.
+const mpg123Mock = vi.hoisted(() => ({ shouldFail: false }));
+vi.mock('mpg123-decoder', () => {
+  class MockMPEGDecoder {
+    ready = Promise.resolve();
+    async reset() {}
+    free() {}
+    decode() {
+      if (mpg123Mock.shouldFail) {
+        return { channelData: [], samplesDecoded: 0, sampleRate: 0, errors: [{ message: 'mock decode failure' }] };
+      }
+      return { channelData: [new Float32Array(8000)], samplesDecoded: 8000, sampleRate: 8000, errors: [] };
+    }
+  }
+  return { MPEGDecoder: MockMPEGDecoder };
+});
+
+// jsdom has no Web Audio API at all — a minimal fake sufficient for useAudioPreview's usage
+// (createBuffer/createBufferSource/destination/currentTime/state/resume/close). start()/stop()
+// are no-ops here (no real timer drives onended), which is fine: these tests assert state
+// transitions (loading/ready/error, playing toggle, switching, close), not real-time playback —
+// that was verified for real via CDP against an actual pen-recorded file.
+class FakeAudioContext {
+  currentTime = 0;
+  state = 'running';
+  destination = {};
+  createBuffer(numberOfChannels: number, length: number, sampleRate: number) {
+    return { numberOfChannels, length, sampleRate, duration: length / sampleRate, copyToChannel: () => {} };
+  }
+  createBufferSource() {
+    return {
+      buffer: null as unknown,
+      onended: null as (() => void) | null,
+      connect: () => {},
+      disconnect: () => {},
+      start: () => {},
+      stop: () => {},
+    };
+  }
+  resume() {
+    return Promise.resolve();
+  }
+  close() {
+    return Promise.resolve();
+  }
+}
 
 function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
@@ -67,12 +117,9 @@ beforeAll(async () => {
 beforeEach(() => {
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
-  // jsdom doesn't implement real media playback — stub just enough for useAudioPreview to work.
-  window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
-  window.HTMLMediaElement.prototype.pause = vi.fn();
-  window.HTMLMediaElement.prototype.load = vi.fn();
-  URL.createObjectURL = vi.fn(() => 'blob:mock-url');
-  URL.revokeObjectURL = vi.fn();
+  mpg123Mock.shouldFail = false;
+  // @ts-expect-error — jsdom has no Web Audio API; see FakeAudioContext above.
+  window.AudioContext = FakeAudioContext;
 });
 
 afterEach(() => {
@@ -86,6 +133,25 @@ async function renderScreen() {
         <MyRecordingsScreen />
       </ComputerFolderProvider>
     </PenRootProvider>,
+  );
+  await screen.findByText('0001.mp3');
+  await screen.findByText('teacher-take.mp3');
+}
+
+// StrictMode double-invokes the *function* form of a state setter in dev, specifically to
+// catch impure updaters — this is how the real app renders (see src/renderer/main.tsx) and is
+// what actually caught the play/pause bug below via real CDP testing; renderScreen() above
+// deliberately skips it so unrelated tests aren't affected by StrictMode's other double-
+// invocation effects (double-firing effects etc).
+async function renderScreenStrict() {
+  render(
+    <StrictMode>
+      <PenRootProvider>
+        <ComputerFolderProvider>
+          <MyRecordingsScreen />
+        </ComputerFolderProvider>
+      </PenRootProvider>
+    </StrictMode>,
   );
   await screen.findByText('0001.mp3');
   await screen.findByText('teacher-take.mp3');
@@ -370,6 +436,30 @@ describe('MyRecordingsScreen — audio preview', () => {
     fireEvent.click(screen.getByLabelText('Close preview'));
     expect(document.querySelector('.audio-preview-bar')).toBeNull();
     expect(previewButton('0001.mp3').textContent).toBe('Preview');
+  });
+
+  it('decodes successfully but the audio itself is unplayable — shows a clear decode error, not a hang', async () => {
+    mpg123Mock.shouldFail = true;
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+
+    await screen.findByText("Couldn't play this file (unsupported or unreadable).");
+  });
+
+  it('play/pause toggling works correctly under StrictMode (regression: a side effect inside a functional setState updater gets double-invoked and silently flips the state back)', async () => {
+    await renderScreenStrict();
+    fireEvent.click(previewButton('0001.mp3'));
+    await waitFor(() => expect(previewButton('0001.mp3').textContent).toBe('Stop preview'));
+    await waitFor(() => expect(document.querySelector('.audio-preview-bar__controls button')).toBeTruthy());
+
+    const playPauseButton = () => document.querySelector('.audio-preview-bar__controls button') as HTMLButtonElement;
+    expect(playPauseButton().textContent).toBe('⏸'); // starts playing
+
+    fireEvent.click(playPauseButton());
+    expect(playPauseButton().textContent).toBe('▶'); // paused — this is the exact case that broke
+
+    fireEvent.click(playPauseButton());
+    expect(playPauseButton().textContent).toBe('⏸'); // resumed
   });
 
   it('stops a pen-source preview when the pen changes (swap/disconnect), releasing it', async () => {

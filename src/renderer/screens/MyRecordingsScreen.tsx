@@ -420,14 +420,7 @@ export function MyRecordingsScreen() {
         </section>
       </div>
 
-      <AudioPreviewBar
-        state={audioPreview.state}
-        audioRef={audioPreview.audioRef}
-        audioEventHandlers={audioPreview.audioEventHandlers}
-        onTogglePlayPause={audioPreview.togglePlayPause}
-        onSeek={audioPreview.seek}
-        onClose={audioPreview.stop}
-      />
+      <AudioPreviewBar state={audioPreview.state} onTogglePlayPause={audioPreview.togglePlayPause} onSeek={audioPreview.seek} onClose={audioPreview.stop} />
 
       {generalError && <p className="error-text">{generalError}</p>}
 

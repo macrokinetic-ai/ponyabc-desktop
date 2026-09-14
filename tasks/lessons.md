@@ -1,5 +1,45 @@
 # Lessons
 
+## A ".mp3" file extension doesn't mean the data is MPEG Layer III — check with real hardware output, not just synthetic test files
+
+The v0.2.6 MP3 preview feature passed every test I ran (typecheck, unit tests, CDP with a
+`lame`-encoded fixture) but failed immediately on the user's real physical pen. Root cause,
+confirmed with the user's own uploaded file via `file`/`afinfo`: the pen records **MPEG-1
+Layer II**, not Layer III — cheap embedded audio hardware commonly does this since Layer II is
+simpler/cheaper to encode, but still ships with a `.mp3` extension for generic compatibility.
+Chromium's native `<audio>` element only decodes Layer III, so it silently (if technically
+correctly) rejected every real recording, while the OS's own player (QuickTime/CoreAudio, more
+permissive) played the same file fine — which is why "it plays on my Mac" and "the app says
+unsupported" were both true at once, not a contradiction.
+
+**How to apply:** a synthetic test fixture I generate myself (`lame`, `afconvert`, etc.)
+proves the *code path* works, not that it's compatible with what real hardware actually
+produces — for any feature reading device-generated files whose format is asserted only by
+convention/extension, get an actual sample from the real device before considering it verified.
+When a user reports "doesn't work" after I tested it myself, ask for the actual file (or a
+`file`/hexdump of it) rather than re-testing with my own fixture again — that's what actually
+diagnosed this in under two tool calls once the file was in hand.
+
+## React 18 StrictMode double-invokes the *function* form of a state setter — never put a side effect inside `setState(prev => ...)`
+
+Confirmed by CDP: a `togglePlayPause` written as `setState(prev => { stopNode(); startNode();
+return {...prev, playing: !prev.playing} })` visibly flip-flopped back to the wrong icon on
+every click. StrictMode (used in `src/renderer/main.tsx`, matching real production rendering)
+intentionally calls a functional updater passed to `useState`'s setter twice, specifically to
+help surface impure updaters — so any side effect inside one runs twice per logical call. Pure
+computations inside an updater (reading refs, no mutation) are fine to double-invoke, since
+they're idempotent; anything that starts/stops/mutates external state must not live there.
+**Fix pattern:** keep a ref mirror of the state (updated by a `setStateAndRef` wrapper used at
+every real setState call site), perform side effects directly in a plain function body reading
+that ref, and call `setState` with a **plain value** (never a function) once the side effect is
+done.
+
+**How to apply:** a unit test rendered without `<StrictMode>` will never catch this class of
+bug — it needs either a StrictMode-wrapped render in the test (see `renderScreenStrict` in
+`MyRecordingsScreen.test.tsx`) or a real CDP run against the actual app (which already wraps
+its tree in StrictMode). Don't trust a green non-StrictMode unit test suite alone for any hook
+with imperative side effects in its setters.
+
 ## A PNG's "transparent" area can actually be opaque white — check the alpha channel, don't assume
 
 The provided `ponyabc_logo1.png` looked like a normal logo on transparent background when

@@ -19,68 +19,59 @@ const ERROR_KEY: Record<string, string> = {
   error: 'preview.errorGeneric',
 };
 
-/** The single shared player for both panes — mounted once by MyRecordingsScreen so there is
- *  always exactly one <audio> element, matching the "one file at a time" requirement. */
+/** The single shared player for both panes — playback itself happens via the Web Audio API
+ *  (see useAudioPreview), not a native <audio> element, since real pen recordings are often
+ *  MPEG Layer II ("*.mp3" in name only) which Chromium's built-in decoder cannot play. */
 export function AudioPreviewBar({
   state,
-  audioRef,
-  audioEventHandlers,
   onTogglePlayPause,
   onSeek,
   onClose,
 }: {
   state: AudioPreviewState | null;
-  audioRef: React.RefObject<HTMLAudioElement>;
-  audioEventHandlers: Record<string, () => void>;
   onTogglePlayPause: () => void;
   onSeek: (time: number) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation('recordings');
 
+  if (!state) return null;
+
   return (
-    <>
-      {/* Always mounted, even with no active preview, so audioRef is stable across plays —
-       *  kept out of layout flow entirely rather than relying on a [hidden] CSS rule. */}
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio ref={audioRef} {...audioEventHandlers} style={{ display: 'none' }} />
-      {state && (
-        <div className="audio-preview-bar">
-          <div className="audio-preview-bar__info">
-            <span className="audio-preview-bar__source">{t(state.source === 'pen' ? 'preview.sourcePen' : 'preview.sourceComputer')}</span>
-            <span className="audio-preview-bar__filename">{state.fileName}</span>
-            {state.source === 'computer' && state.status === 'ready' && <p className="hint">{t('preview.penEncodingHint')}</p>}
-          </div>
+    <div className="audio-preview-bar">
+      <div className="audio-preview-bar__info">
+        <span className="audio-preview-bar__source">{t(state.source === 'pen' ? 'preview.sourcePen' : 'preview.sourceComputer')}</span>
+        <span className="audio-preview-bar__filename">{state.fileName}</span>
+        {state.source === 'computer' && state.status === 'ready' && <p className="hint">{t('preview.penEncodingHint')}</p>}
+      </div>
 
-          {state.status === 'loading' && <p className="hint">{t('preview.loading')}</p>}
-          {state.status === 'error' && <p className="error-text">{t(ERROR_KEY[state.errorStatus ?? 'error'] ?? 'preview.errorGeneric')}</p>}
+      {state.status === 'loading' && <p className="hint">{t('preview.loading')}</p>}
+      {state.status === 'error' && <p className="error-text">{t(ERROR_KEY[state.errorStatus ?? 'error'] ?? 'preview.errorGeneric')}</p>}
 
-          {state.status === 'ready' && (
-            <div className="audio-preview-bar__controls">
-              <button type="button" className="button" onClick={onTogglePlayPause}>
-                {state.playing ? '⏸' : '▶'}
-              </button>
-              <input
-                type="range"
-                className="audio-preview-bar__seek"
-                min={0}
-                max={state.duration || 0}
-                step={0.1}
-                value={Math.min(state.currentTime, state.duration || 0)}
-                onChange={(e) => onSeek(Number(e.target.value))}
-                disabled={!state.duration}
-              />
-              <span className="audio-preview-bar__time">
-                {formatTime(state.currentTime)} / {formatTime(state.duration)}
-              </span>
-            </div>
-          )}
-
-          <button type="button" className="button audio-preview-bar__close" onClick={onClose} aria-label={t('preview.close')}>
-            ✕
+      {state.status === 'ready' && (
+        <div className="audio-preview-bar__controls">
+          <button type="button" className="button" onClick={onTogglePlayPause}>
+            {state.playing ? '⏸' : '▶'}
           </button>
+          <input
+            type="range"
+            className="audio-preview-bar__seek"
+            min={0}
+            max={state.duration || 0}
+            step={0.1}
+            value={Math.min(state.currentTime, state.duration || 0)}
+            onChange={(e) => onSeek(Number(e.target.value))}
+            disabled={!state.duration}
+          />
+          <span className="audio-preview-bar__time">
+            {formatTime(state.currentTime)} / {formatTime(state.duration)}
+          </span>
         </div>
       )}
-    </>
+
+      <button type="button" className="button audio-preview-bar__close" onClick={onClose} aria-label={t('preview.close')}>
+        ✕
+      </button>
+    </div>
   );
 }

@@ -1,51 +1,46 @@
-# v0.2.6 — send-to-pen conflict UX, replace-sticker clarity, MP3 preview, app icon
+# v0.2.7 — fix MP3 preview: real pen recordings are MPEG Layer II, not Layer III
 
-Direct implementation per user's detailed spec (Traditional Chinese), no full replan
-per explicit instruction.
+User tested v0.2.6 with a real physical pen on their MacBook Pro: preview failed
+("format not supported") on real recordings. Root-caused with the actual uploaded
+file, not guessed.
 
-- [x] Audited existing transfer/replace backend — conflict batch UI, exact-filename
-      preservation, backup-before-replace, device-change-stop, selection-clear-on-
-      success were already implemented from the v0.2.x safety work; this round is
-      wording/labeling polish for items 1–2, not a rewrite
-- [x] Reworded `actions.replaceSticker` button + `transferPlan.conflictsHint` +
-      `replaceSticker.confirmText` (Computer:/Pen DIY: direction labels) across 8
-      locales; added `replaceSticker.keepsFilename` soft-background note box
-- [x] New audio preview feature (both panes): `src/main/ipc/audioPreview.ts`
-      (validated read, resolveContainedFile + isEligibleMp3FileName, injectable size
-      cap), `AudioSource`/`AudioPreviewResult` shared types, IPC channel + preload
-      wiring, `useAudioPreview` hook (shared single `<audio>`, one-at-a-time,
-      object-URL lifecycle), `AudioPreviewBar` component, preview buttons in both
-      list panes, 8-locale strings
-- [x] CSP: added `media-src 'self' blob:` (only change — script-src/object-src/
-      sandbox/contextIsolation/nodeIntegration untouched) — required for the Blob
-      object URL the preview player uses; documented why in index.html + report
-- [x] Stops preview on pen swap/disconnect (`stopIfSource('pen')` on penIdentityKey
-      change) and on computer-folder change; stops pen-side preview before any
-      pen-write (send-to-pen confirm, replace-sticker confirm) — one-shot read design
-      means no real Windows file-handle is held during playback anyway
-- [x] CSS: `.recordings-list__row` flex layout (checkbox/name/size/preview button,
-      no overlap at narrow widths), `.audio-preview-bar` + controls, `.note-box`
-      (soft background + border, not color-only) with dark-mode variants
-- [x] Tests: `tests/unit/audioPreview.test.ts` (9, backend validation incl.
-      traversal/AppleDouble/size-cap), `MyRecordingsScreen.test.tsx` +6 (preview
-      play/stop/switch/error/close/pen-change-stops-preview); updated 2 existing
-      tests for new replace-sticker wording. 140 → 155 tests, typecheck clean
-- [x] App icon: cleaned `ponyabc_logo1.png`'s baked-in opaque white card background
-      via flood-fill (source PNG's "transparent" area was actually a rounded-card
-      alpha=255 white shape, not truly transparent) → `build/icon.png` (1024×1024,
-      transparent, logo centered) — electron-builder auto-generates .icns/.ico from
-      this by convention (`directories.buildResources: build`), no config change
-- [x] Commit (1271a90), tag v0.2.6 (does not overwrite v0.2.5), push — main +
-      tag builds both green on real windows-latest (typecheck/test/dist:win)
-- [x] Built mac dmgs from the tagged commit (clean tree); both pass
-      `codesign --verify --deep --strict`; icon.icns confirmed wired via
-      CFBundleIconFile
-- [x] CDP verify with a real lame-encoded MP3 fixture (say + lame, since no
-      ffmpeg/afconvert-mp3 available): pen preview plays with correct duration,
-      switching files stops the previous one, computer-side shows the encoding
-      hint, a corrupted .mp3 shows a clean error (not a hang), close releases
-      the bar, zero overlap at 820px (all rows/actions/bar scrollW===clientW)
-- [x] gh release create v0.2.6 — 3 installers + 3 sha256 sidecars, notes
-      distinguish automated-tested vs Intel-paused-this-round; re-downloaded
-      the published Apple Silicon dmg from the real URL, checksum matches
-- [x] Final Traditional Chinese report
+- [x] Diagnosed via the user's real uploaded `0001.MP3`: `file`/`afinfo` confirmed
+      **MPEG-1 Layer II** (`.mp2` data), not Layer III (true MP3) — Chromium's native
+      `<audio>` element only decodes Layer III, so it correctly (if unhelpfully)
+      rejected every real pen recording. Confirmed this is why it played fine in
+      QuickTime/Finder (CoreAudio decodes Layer II) but not in the app.
+- [x] Replaced the native `<audio>`-element playback engine with a local WASM
+      decode (`mpg123-decoder`, MIT, ~80KB, decodes Layer I/II/III) → raw PCM → Web
+      Audio API (`AudioBufferSourceNode`) playback. Verified decode of the actual
+      real pen file directly in Node before wiring it in.
+- [x] CSP: added `'wasm-unsafe-eval'` to `script-src` — required for
+      `WebAssembly.compile()`, confirmed empirically (it failed with an exact CSP
+      violation error without it, succeeded with it). This is the CSP3-specified
+      narrow token for WASM compilation specifically — does NOT enable `eval()`/
+      `Function()`/arbitrary string-to-code execution the way `'unsafe-eval'` does.
+- [x] Found and fixed a real bug during CDP testing of the new engine: pause/resume
+      visibly flipped back to the wrong icon. Root cause: React 18 StrictMode
+      double-invokes the *function* form of a state setter to catch impure
+      updaters, and `togglePlayPause`/`seek`/`stopIfSource` had side effects (start/
+      stop audio nodes) inside `setState(prev => ...)`. Fixed by moving side effects
+      out into plain function bodies reading a `stateRef` mirror, calling `setState`
+      with a plain value only. Added a StrictMode-wrapped regression test
+      (`renderScreenStrict`) that reproduces and verifies the exact fix — unit tests
+      without StrictMode would never have caught this (confirmed: only the real CDP
+      run against the StrictMode-wrapped production render surfaced it).
+- [x] Re-verified via CDP against the actual real pen file: play/pause/seek/natural-
+      end-of-clip all correct; also re-verified the "corrupt file" decode-error path
+      still shows a clean message via the new engine (mocked decode failure in
+      unit tests, since a genuinely corrupt fixture is hard to construct reliably)
+- [x] Updated tests: mocked `mpg123-decoder` (deterministic fake decoder) + a
+      minimal `FakeAudioContext` (jsdom has neither WASM-audio nor Web Audio APIs
+      pre-wired for this); 157 tests total (+2 vs v0.2.6: decode-failure path,
+      StrictMode play/pause regression), typecheck clean
+- [ ] Bump version 0.2.7, commit, tag (does not overwrite v0.2.6), push
+- [ ] Build mac dmgs from the tagged commit; re-verify ad-hoc signature
+- [ ] Final CDP pass on the packaged build: real pen file playback + 820px layout
+      with the player bar active (still no overlap)
+- [ ] gh release create v0.2.7, 3 installers + sha256, notes explaining the real
+      root cause (Layer II vs Layer III) so the user understands why last round's
+      preview looked broken despite passing all prior testing
+- [ ] Final Traditional Chinese report
