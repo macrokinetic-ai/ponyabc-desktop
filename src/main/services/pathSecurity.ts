@@ -37,6 +37,29 @@ function isUsableDirectory(fullPath: string, dirent: fs.Dirent): boolean {
   return false;
 }
 
+/**
+ * True if `childReal` is `parentReal` itself or lies somewhere under it, via
+ * `path.relative()` rather than string-prefix matching — a plain
+ * `startsWith(parent + sep)` check breaks on a Windows drive root (`fs.realpathSync`
+ * returns `D:\` with a trailing separator already, so `parent + sep` becomes a double
+ * backslash that a real child like `D:\BOOK` never starts with, wrongly rejecting it).
+ * `path.relative` normalizes trailing separators and — confirmed directly in Node, not
+ * assumed — is already case-insensitive for `path.win32` and resolves UNC paths
+ * correctly, so no separate case-folding is needed once both inputs are
+ * `fs.realpathSync`-canonicalized. `pathImpl` is injectable so this stays testable with
+ * `path.win32`/`path.posix` on any host OS.
+ */
+export function isPathContained(
+  parentReal: string,
+  childReal: string,
+  pathImpl: Pick<typeof path, 'relative' | 'isAbsolute' | 'sep'> = path,
+): boolean {
+  const rel = pathImpl.relative(parentReal, childReal);
+  if (rel === '') return true; // same location — trailing-slash / case / UNC-alias differences included
+  if (rel === '..' || rel.startsWith('..' + pathImpl.sep)) return false;
+  return !pathImpl.isAbsolute(rel);
+}
+
 /** Resolves `realPath/name` and confirms the result did not escape (via symlink) outside `realPath`. */
 function resolveContained(realPath: string, name: string): string | null {
   const candidate = path.join(realPath, name);
@@ -46,7 +69,7 @@ function resolveContained(realPath: string, name: string): string | null {
   } catch {
     return null;
   }
-  if (real === realPath || real.startsWith(realPath + path.sep)) return real;
+  if (isPathContained(realPath, real)) return real;
   return null; // symlink escape — reject
 }
 
@@ -122,7 +145,7 @@ export function resolveDestination(chosenPath: string, penRootRealPath: string |
   }
   if (!stat.isDirectory()) return { status: 'not-a-directory', path: chosenPath };
 
-  if (penRootRealPath && (realPath === penRootRealPath || realPath.startsWith(penRootRealPath + path.sep))) {
+  if (penRootRealPath && isPathContained(penRootRealPath, realPath)) {
     return { status: 'on-pen', path: realPath };
   }
 

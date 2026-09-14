@@ -17,7 +17,7 @@
     "checkingUpdates": "Checking for updates…",
     "upToDate": "You're on the latest version.",
     "updateAvailable": "A new version is available: {{version}}",
-    "downloadUpdateButton": "Download update",
+    "downloadUpdateButton": "Go to download page",
     "checkFailed": "Couldn't check for updates (are you online?)."
   }
 }

@@ -109,14 +109,35 @@ export function MyRecordingsScreen() {
   const penReady = penRootResult.status === 'ok';
   const computerReady = computerFolderResult.status === 'ok';
 
+  // Clears leftover plan/summary panels from the OTHER two operations, so starting a new
+  // operation never leaves an unrelated stale result panel visibly stuck on screen (each
+  // handler manages its own reset separately, right where it sets its own new state).
+  function clearOtherOperationPanels(except: 'save' | 'transfer' | 'replace') {
+    if (except !== 'save') setSaveSummary(null);
+    if (except !== 'transfer') {
+      setTransferPlan(null);
+      setDecisions({});
+      setTransferSummary(null);
+    }
+    if (except !== 'replace') {
+      setReplacePlan(null);
+      setReplaceSummary(null);
+    }
+  }
+
   async function handleSaveToComputer() {
     setGeneralError(null);
     setSaveSummary(null);
+    clearOtherOperationPanels('save');
     resetProgress();
     setBusy('toComputer');
     try {
       const result = await window.ponyabc.copyRecordingsToComputer(Array.from(penSelected));
       setSaveSummary(result);
+      // Only drop the checkboxes for files that actually resolved (succeeded or renamed) —
+      // a failed file stays selected so it's ready for an immediate retry.
+      const resolvedNames = new Set([...result.succeeded, ...result.renamed.map((r) => r.original)]);
+      if (resolvedNames.size > 0) setPenSelected((prev) => new Set([...prev].filter((n) => !resolvedNames.has(n))));
       await refreshComputerFiles();
     } catch (err) {
       setGeneralError(tCommon('errors.generic', { message: err instanceof Error ? err.message : String(err) }));
@@ -128,6 +149,7 @@ export function MyRecordingsScreen() {
   async function handlePlanTransferToPen() {
     setGeneralError(null);
     setTransferSummary(null);
+    clearOtherOperationPanels('transfer');
     setBusy('planToPen');
     try {
       const plan = await window.ponyabc.planTransferToPen(Array.from(computerSelected));
@@ -152,6 +174,10 @@ export function MyRecordingsScreen() {
       // the next time a plan is requested (handlePlanTransferToPen), never reused for a
       // second send without the teacher explicitly confirming again.
       setTransferSummary(summary);
+      // Only drop the checkboxes for files that actually resolved (added/replaced/skipped
+      // are all decisions already carried out) — a failed file stays selected for retry.
+      const resolvedNames = new Set([...summary.added, ...summary.replaced.map((r) => r.fileName), ...summary.skipped]);
+      if (resolvedNames.size > 0) setComputerSelected((prev) => new Set([...prev].filter((n) => !resolvedNames.has(n))));
       await refreshPenFiles();
     } catch (err) {
       setGeneralError(tCommon('errors.generic', { message: err instanceof Error ? err.message : String(err) }));
@@ -164,6 +190,7 @@ export function MyRecordingsScreen() {
     if (penSelected.size !== 1 || computerSelected.size !== 1) return;
     setGeneralError(null);
     setReplaceSummary(null);
+    clearOtherOperationPanels('replace');
     setBusy('planReplace');
     try {
       const penFileName = Array.from(penSelected)[0];
@@ -189,6 +216,21 @@ export function MyRecordingsScreen() {
         penGeneration: plan.penGeneration,
       });
       setReplaceSummary(summary);
+      // Only on a confirmed success is this exact pair "resolved" — any other outcome
+      // (stale-plan, backup-failed, device-disconnected, no-space, error) leaves both
+      // files selected so the teacher can retry immediately without re-picking them.
+      if (summary.status === 'completed') {
+        setPenSelected((prev) => {
+          const next = new Set(prev);
+          next.delete(plan.penFileName);
+          return next;
+        });
+        setComputerSelected((prev) => {
+          const next = new Set(prev);
+          next.delete(plan.computerFileName);
+          return next;
+        });
+      }
       await refreshPenFiles();
     } catch (err) {
       setGeneralError(tCommon('errors.generic', { message: err instanceof Error ? err.message : String(err) }));

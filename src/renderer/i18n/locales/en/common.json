@@ -22,6 +22,7 @@
     "changeButton": "Select a different pen storage…",
     "checkedPath": "Checked path: {{path}}",
     "missingFolders": "Missing expected folder(s): {{folders}}",
+    "scanDiagnostic": "Found {{path}}: missing {{folders}}",
     "notFound": "That location could not be found. Is the pen still connected?",
     "disconnected": "The pen appears to be disconnected.",
     "scanning": "Scanning for your pen…",
@@ -29,7 +30,12 @@
     "connectionHint": "Connect your P5 pen to this computer with a USB cable that supports data transfer — these file features can't be used over Bluetooth alone.",
     "multipleFound": "Several possible pen drives were found — choose one:",
     "noneFound": "No pen detected.",
-    "rescanButton": "Rescan"
+    "rescanButton": "Rescan",
+    "diagnosticReason": {
+      "missing-book": "the BOOK folder",
+      "missing-diy": "the DIY folder",
+      "missing-both": "the BOOK and DIY folders"
+    }
   },
   "computerFolder": {
     "label": "Computer folder",

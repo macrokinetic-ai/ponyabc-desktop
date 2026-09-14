@@ -98,7 +98,7 @@ describe('SettingsScreen — check for updates', () => {
     render(<SettingsScreen />);
     await waitFor(() => expect(screen.getByText('A new version is available: v0.3.0')).toBeTruthy());
 
-    fireEvent.click(screen.getByText('Download update'));
+    fireEvent.click(screen.getByText('Go to download page'));
     await waitFor(() => expect(window.ponyabc.openLatestReleasePage).toHaveBeenCalled());
   });
 

@@ -22,6 +22,7 @@
     "changeButton": "Seleziona un'altra archiviazione della penna…",
     "checkedPath": "Percorso controllato: {{path}}",
     "missingFolders": "Cartella/e prevista/e mancante/i: {{folders}}",
+    "scanDiagnostic": "Trovato {{path}}: manca {{folders}}",
     "notFound": "Impossibile trovare questo percorso. La penna è ancora collegata?",
     "disconnected": "La penna sembra scollegata.",
     "scanning": "Ricerca della penna in corso…",
@@ -29,7 +30,12 @@
     "connectionHint": "Collega la tua penna P5 a questo computer con un cavo USB che supporti il trasferimento dati — queste funzioni sui file non possono essere usate solo via Bluetooth.",
     "multipleFound": "Sono state trovate più unità che potrebbero essere la penna — scegline una:",
     "noneFound": "Nessuna penna rilevata.",
-    "rescanButton": "Cerca di nuovo"
+    "rescanButton": "Cerca di nuovo",
+    "diagnosticReason": {
+      "missing-book": "la cartella BOOK",
+      "missing-diy": "la cartella DIY",
+      "missing-both": "le cartelle BOOK e DIY"
+    }
   },
   "computerFolder": {
     "label": "Cartella sul computer",

@@ -22,6 +22,7 @@
     "changeButton": "Sélectionner un autre stockage de stylo…",
     "checkedPath": "Chemin vérifié : {{path}}",
     "missingFolders": "Dossier(s) attendu(s) manquant(s) : {{folders}}",
+    "scanDiagnostic": "{{path}} trouvé : {{folders}} manquant(s)",
     "notFound": "Cet emplacement est introuvable. Le stylo est-il toujours connecté ?",
     "disconnected": "Le stylo semble déconnecté.",
     "scanning": "Recherche de votre stylo…",
@@ -29,7 +30,12 @@
     "connectionHint": "Connectez votre stylo P5 à cet ordinateur avec un câble USB compatible avec le transfert de données — ces fonctions de fichiers ne peuvent pas être utilisées via Bluetooth seul.",
     "multipleFound": "Plusieurs lecteurs pouvant être le stylo ont été trouvés — choisissez-en un :",
     "noneFound": "Aucun stylo détecté.",
-    "rescanButton": "Rechercher à nouveau"
+    "rescanButton": "Rechercher à nouveau",
+    "diagnosticReason": {
+      "missing-book": "le dossier BOOK",
+      "missing-diy": "le dossier DIY",
+      "missing-both": "les dossiers BOOK et DIY"
+    }
   },
   "computerFolder": {
     "label": "Dossier sur l'ordinateur",

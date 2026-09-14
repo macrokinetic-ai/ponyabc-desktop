@@ -22,6 +22,7 @@
     "changeButton": "选择另一个点读笔存储空间…",
     "checkedPath": "已检查路径：{{path}}",
     "missingFolders": "缺少预期的文件夹：{{folders}}",
+    "scanDiagnostic": "找到 {{path}}：缺少{{folders}}",
     "notFound": "找不到该位置，点读笔是否仍已连接？",
     "disconnected": "点读笔似乎已断开连接。",
     "scanning": "正在搜索点读笔…",
@@ -29,7 +30,12 @@
     "connectionHint": "请使用支持数据传输的 USB 线连接电脑与 P5 蓝牙点读笔——这些文件功能不能只靠蓝牙使用。",
     "multipleFound": "找到多个可能的点读笔磁盘，请选择一个：",
     "noneFound": "未检测到点读笔。",
-    "rescanButton": "重新检测"
+    "rescanButton": "重新检测",
+    "diagnosticReason": {
+      "missing-book": "BOOK 文件夹",
+      "missing-diy": "DIY 文件夹",
+      "missing-both": "BOOK 及 DIY 文件夹"
+    }
   },
   "computerFolder": {
     "label": "电脑文件夹",

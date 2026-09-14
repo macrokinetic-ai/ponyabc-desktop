@@ -9,7 +9,9 @@ import type { SettingsStore } from '../services/settingsStore';
 function selectAndTag(resolution: Extract<PenRootResolution, { status: 'ok' }>, store: SettingsStore | null): PenRootOk {
   const { generation } = session.setPenRoot(resolution);
   if (store) store.update({ lastPenRootPath: resolution.realPath });
-  return { status: 'ok', path: resolution.realPath, volumeLabel: path.basename(resolution.realPath), generation };
+  // path.basename('D:\') is '' on a bare Windows drive root — fall back to the full path.
+  const volumeLabel = path.basename(resolution.realPath) || resolution.realPath;
+  return { status: 'ok', path: resolution.realPath, volumeLabel, generation };
 }
 
 function toUnresolvedResult(resolution: Exclude<PenRootResolution, { status: 'ok' }>): PenRootResult {
@@ -26,7 +28,7 @@ function toUnresolvedResult(resolution: Exclude<PenRootResolution, { status: 'ok
  * roots), then reports 'none'.
  */
 export function scanPenRoot(store: SettingsStore): PenRootScanResult {
-  const candidates = scanForPenCandidates();
+  const { candidates, diagnostics } = scanForPenCandidates();
   session.setLastVolumeCandidates(candidates);
 
   if (candidates.length === 1) {
@@ -54,7 +56,7 @@ export function scanPenRoot(store: SettingsStore): PenRootScanResult {
   }
 
   session.setPenRoot(null);
-  return { status: 'none' };
+  return diagnostics.length > 0 ? { status: 'none', diagnostics } : { status: 'none' };
 }
 
 export function chooseCandidatePenRoot(store: SettingsStore, index: number): PenRootResult {

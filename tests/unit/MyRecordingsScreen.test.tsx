@@ -193,4 +193,119 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
   });
+
+  it('clears both checkboxes once the replace completes, but a failed replace leaves them selected for retry', async () => {
+    await renderScreen();
+    const checkbox = (name: string) =>
+      screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes(name))! as HTMLInputElement;
+
+    fireEvent.click(checkbox('0001.mp3'));
+    fireEvent.click(checkbox('teacher-take.mp3'));
+    fireEvent.click(screen.getByText("Replace this sticker's audio"));
+    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
+    fireEvent.click(screen.getByText('Confirm replacement'));
+    await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
+
+    await waitFor(() => expect(checkbox('0001.mp3').checked).toBe(false));
+    expect(checkbox('teacher-take.mp3').checked).toBe(false);
+  });
+
+  it('leaves both files selected when the replace fails', async () => {
+    window.ponyabc.executeReplaceSticker = vi.fn(async () => ({ status: 'backup-failed', message: 'disk full' }));
+    await renderScreen();
+    const checkbox = (name: string) =>
+      screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes(name))! as HTMLInputElement;
+
+    fireEvent.click(checkbox('0001.mp3'));
+    fireEvent.click(checkbox('teacher-take.mp3'));
+    fireEvent.click(screen.getByText("Replace this sticker's audio"));
+    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
+    fireEvent.click(screen.getByText('Confirm replacement'));
+    await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
+
+    expect(checkbox('0001.mp3').checked).toBe(true);
+    expect(checkbox('teacher-take.mp3').checked).toBe(true);
+  });
+});
+
+describe('MyRecordingsScreen — selection clears only for resolved items, and stale panels don\'t linger', () => {
+  it('save to computer: clears the checkbox for a succeeded file but keeps a failed one selected', async () => {
+    window.ponyabc.copyRecordingsToComputer = vi.fn(async () => ({
+      status: 'completed',
+      succeeded: ['0001.mp3'],
+      renamed: [],
+      failed: [{ file: '0002.mp3', message: 'disconnected', reason: 'device-changed' }],
+    }));
+    await renderScreen();
+    const checkbox = (name: string) =>
+      screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes(name))! as HTMLInputElement;
+    fireEvent.click(checkbox('0001.mp3'));
+    fireEvent.click(checkbox('0002.mp3'));
+    fireEvent.click(screen.getByText(/Save to computer/));
+
+    await waitFor(() => expect(window.ponyabc.copyRecordingsToComputer).toHaveBeenCalled());
+    await waitFor(() => expect(checkbox('0001.mp3').checked).toBe(false));
+    expect(checkbox('0002.mp3').checked).toBe(true); // failed — stays selected for retry
+  });
+
+  it('send to pen: clears the checkbox for an added file after a completed send', async () => {
+    window.ponyabc.planTransferToPen = vi.fn(async () => ({
+      status: 'ok',
+      toAdd: [{ fileName: 'teacher-take.mp3', sizeBytes: 500 }],
+      conflicts: [],
+      rejected: [],
+      destinationVolumeLabel: 'PEN',
+      requiredBytes: 500,
+      freeBytes: 100000,
+      hasEnoughSpace: true,
+      penGeneration: 1,
+    }));
+    window.ponyabc.executeTransferToPen = vi.fn(async () => ({
+      status: 'completed',
+      added: ['teacher-take.mp3'],
+      replaced: [],
+      skipped: [],
+      failed: [],
+      backupFolder: '/backups/batch1',
+    }));
+    await renderScreen();
+    const checkbox = (name: string) =>
+      screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes(name))! as HTMLInputElement;
+    fireEvent.click(checkbox('teacher-take.mp3'));
+    fireEvent.click(screen.getByText(/Send to pen/));
+    await screen.findByText(/review before sending/);
+    fireEvent.click(screen.getByText('Confirm and send'));
+
+    await waitFor(() => expect(window.ponyabc.executeTransferToPen).toHaveBeenCalled());
+    await waitFor(() => expect(checkbox('teacher-take.mp3').checked).toBe(false));
+  });
+
+  it('starting a new operation clears an unrelated leftover summary panel from a previous one', async () => {
+    window.ponyabc.copyRecordingsToComputer = vi.fn(async () => ({ status: 'completed', succeeded: ['0001.mp3'], renamed: [], failed: [] }));
+    window.ponyabc.planTransferToPen = vi.fn(async () => ({
+      status: 'ok',
+      toAdd: [{ fileName: 'teacher-take.mp3', sizeBytes: 500 }],
+      conflicts: [],
+      rejected: [],
+      destinationVolumeLabel: 'PEN',
+      requiredBytes: 500,
+      freeBytes: 100000,
+      hasEnoughSpace: true,
+      penGeneration: 1,
+    }));
+    await renderScreen();
+    const checkbox = (name: string) =>
+      screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes(name))! as HTMLInputElement;
+
+    fireEvent.click(checkbox('0001.mp3'));
+    fireEvent.click(screen.getByText(/Save to computer/));
+    await waitFor(() => expect(window.ponyabc.copyRecordingsToComputer).toHaveBeenCalled());
+    await screen.findByText('Copy complete'); // the save-to-computer summary panel is up
+
+    fireEvent.click(checkbox('teacher-take.mp3'));
+    fireEvent.click(screen.getByText(/Send to pen/));
+    await screen.findByText(/review before sending/);
+
+    expect(screen.queryByText('Copy complete')).toBeNull(); // the stale save summary is gone, not stacked alongside the new plan
+  });
 });

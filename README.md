@@ -4,22 +4,44 @@ Companion desktop app for the PonyABC Bluetooth talking pen: pen registration, a
 two-pane manager for DIY recordings (pen SD card ⇄ computer), and (planned) BOOK
 content management and a Windows firmware wizard.
 
-**Status: internal test builds.** Unsigned — macOS Gatekeeper and Windows SmartScreen
-will warn on first launch; that's expected for now. Not an official release channel.
+**Status: internal test builds.** Not signed with a real Apple Developer ID or Windows
+code-signing certificate — macOS Gatekeeper and Windows SmartScreen will warn (or, on
+macOS, refuse outright) on first launch; see **Known install blockers** below before
+assuming a download is corrupted. Not an official release channel.
 
 ## Downloads
 
-Grab the latest build from the [Releases page](../../releases/latest). The app itself
-also checks for updates (Settings → About this App → Check for updates) and links back
-here — it never auto-installs anything, since these builds aren't code-signed yet.
+Grab the latest build from the [Releases page](../../releases/latest), and verify the
+file against the matching `.sha256` before installing (`shasum -a 256 -c
+<file>.sha256`, or `certutil -hashfile <file> SHA256` on Windows). Every installer in a
+given release is built from the exact same tagged commit. The app itself also checks
+for updates (Settings → About this App → Check for updates) — the button opens this
+Releases page in your browser, it does not download or install anything on its own.
 
-- **macOS, Apple Silicon (M1/M2/M3/…):** `PonyABC Desktop-*-arm64.dmg`
-- **macOS, Intel:** `PonyABC Desktop-*.dmg` (no `-arm64` suffix)
-- **Windows x64:** `PonyABC Desktop Setup *.exe` — built automatically by GitHub Actions
-  (see below) and attached to each release, no local Windows machine needed.
+- **macOS, Apple Silicon (M1/M2/M3/…):** `PonyABC-Desktop-v<version>-applesilicon.dmg`
+- **macOS, Intel:** `PonyABC-Desktop-v<version>-appleintel.dmg`
+- **Windows x64:** `PonyABC-Desktop-v<version>-winx64.exe` — built automatically by
+  GitHub Actions (see below) and attached to each tagged release, no local Windows
+  machine needed.
 
-On first launch on macOS, if Gatekeeper blocks the app: right-click the app in
-Applications → Open, or run `xattr -cr "/Applications/PonyABC Desktop.app"`.
+## Known install blockers (unsigned builds)
+
+- **macOS "\<app\> is damaged and can't be opened."** As of this build, the packaged
+  `.app` is given a real ad-hoc signature after packaging (`scripts/afterPack.cjs` —
+  needed because `electron-builder`'s own signing is off, `mac.identity: null`, and
+  without it the shipped app kept a broken, stale signature left over from before
+  electron-builder repacks its resources). That fixes the broken-signature class of
+  "damaged" report, confirmed with `codesign --verify --deep --strict`. It does **not**
+  make the app Gatekeeper-trusted: a fresh download is quarantined by the browser, and
+  `spctl` still rejects an ad-hoc (non-Developer-ID) signature once quarantined —
+  confirmed by reproducing that exact state locally. A real fix needs a paid Apple
+  Developer ID Application certificate plus `notarytool` submission. Until then, if
+  macOS still blocks the app: right-click the app in Applications → Open, or run
+  `xattr -cr "/Applications/PonyABC Desktop.app"`.
+- **Windows "Windows protected your PC" / unknown publisher.** Expected for an
+  unsigned `.exe` — needs a Windows code-signing certificate to remove, and even a
+  freshly-signed low-reputation binary can still trip SmartScreen for a while
+  regardless. Click "More info" → "Run anyway" to proceed.
 
 ## Windows builds via GitHub Actions
 

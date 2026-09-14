@@ -17,7 +17,7 @@
     "checkingUpdates": "Recherche de mises à jour…",
     "upToDate": "Vous avez la dernière version.",
     "updateAvailable": "Une nouvelle version est disponible : {{version}}",
-    "downloadUpdateButton": "Télécharger la mise à jour",
+    "downloadUpdateButton": "Aller à la page de téléchargement",
     "checkFailed": "Impossible de rechercher des mises à jour (êtes-vous en ligne ?)."
   }
 }

@@ -22,6 +22,7 @@
     "changeButton": "Selecionar outro armazenamento da caneta…",
     "checkedPath": "Caminho verificado: {{path}}",
     "missingFolders": "Pasta(s) esperada(s) em falta: {{folders}}",
+    "scanDiagnostic": "Encontrado {{path}}: falta {{folders}}",
     "notFound": "Não foi possível encontrar esse local. A caneta ainda está ligada?",
     "disconnected": "A caneta parece estar desligada.",
     "scanning": "A procurar a sua caneta…",
@@ -29,7 +30,12 @@
     "connectionHint": "Ligue a sua caneta P5 a este computador com um cabo USB que suporte transferência de dados — estas funcionalidades de ficheiros não podem ser usadas apenas por Bluetooth.",
     "multipleFound": "Foram encontradas várias unidades possíveis para a caneta — escolha uma:",
     "noneFound": "Nenhuma caneta detetada.",
-    "rescanButton": "Procurar novamente"
+    "rescanButton": "Procurar novamente",
+    "diagnosticReason": {
+      "missing-book": "a pasta BOOK",
+      "missing-diy": "a pasta DIY",
+      "missing-both": "as pastas BOOK e DIY"
+    }
   },
   "computerFolder": {
     "label": "Pasta no computador",

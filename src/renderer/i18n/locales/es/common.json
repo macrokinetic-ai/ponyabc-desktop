@@ -22,6 +22,7 @@
     "changeButton": "Seleccionar otro almacenamiento del lápiz…",
     "checkedPath": "Ruta comprobada: {{path}}",
     "missingFolders": "Faltan la(s) carpeta(s) esperada(s): {{folders}}",
+    "scanDiagnostic": "Se encontró {{path}}: falta {{folders}}",
     "notFound": "No se encontró esa ubicación. ¿Sigue conectado el lápiz?",
     "disconnected": "El lápiz parece estar desconectado.",
     "scanning": "Buscando su lápiz…",
@@ -29,7 +30,12 @@
     "connectionHint": "Conecte su lápiz P5 a este equipo con un cable USB que admita transferencia de datos — estas funciones de archivos no pueden usarse solo por Bluetooth.",
     "multipleFound": "Se encontraron varias unidades que podrían ser el lápiz — elija una:",
     "noneFound": "No se detectó ningún lápiz.",
-    "rescanButton": "Volver a buscar"
+    "rescanButton": "Volver a buscar",
+    "diagnosticReason": {
+      "missing-book": "la carpeta BOOK",
+      "missing-diy": "la carpeta DIY",
+      "missing-both": "las carpetas BOOK y DIY"
+    }
   },
   "computerFolder": {
     "label": "Carpeta del equipo",

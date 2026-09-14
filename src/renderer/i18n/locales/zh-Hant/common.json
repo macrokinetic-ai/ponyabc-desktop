@@ -22,6 +22,7 @@
     "changeButton": "選擇另一個點讀筆儲存空間…",
     "checkedPath": "已檢查路徑：{{path}}",
     "missingFolders": "缺少預期的資料夾：{{folders}}",
+    "scanDiagnostic": "找到 {{path}}：缺少{{folders}}",
     "notFound": "找不到該位置，點讀筆是否仍連接中？",
     "disconnected": "點讀筆似乎已中斷連接。",
     "scanning": "正在搜尋點讀筆…",
@@ -29,7 +30,12 @@
     "connectionHint": "請使用支援資料傳輸的 USB 線連接電腦與 P5 藍牙點讀筆——這些檔案功能不能只靠藍牙使用。",
     "multipleFound": "找到多個可能嘅點讀筆磁碟，請選擇一個：",
     "noneFound": "未偵測到點讀筆。",
-    "rescanButton": "重新偵測"
+    "rescanButton": "重新偵測",
+    "diagnosticReason": {
+      "missing-book": "BOOK 資料夾",
+      "missing-diy": "DIY 資料夾",
+      "missing-both": "BOOK 及 DIY 資料夾"
+    }
   },
   "computerFolder": {
     "label": "電腦資料夾",

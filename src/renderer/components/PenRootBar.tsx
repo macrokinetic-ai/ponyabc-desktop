@@ -3,7 +3,7 @@ import { usePenRoot } from '../state/PenRootContext';
 
 export function PenRootBar() {
   const { t } = useTranslation('common');
-  const { result, restoring, scanning, candidates, rescan, chooseCandidate, selectPenRoot } = usePenRoot();
+  const { result, restoring, scanning, candidates, diagnostics, rescan, chooseCandidate, selectPenRoot } = usePenRoot();
 
   const busy = restoring || scanning;
 
@@ -41,6 +41,15 @@ export function PenRootBar() {
           <>
             <span className="pen-root-bar__muted">{t('penRoot.noneFound')}</span>
             <p className="hint">{t('penRoot.connectionHint')}</p>
+            {diagnostics && diagnostics.length > 0 && (
+              <ul className="pen-root-bar__diagnostics">
+                {diagnostics.map((d) => (
+                  <li key={d.path} className="hint">
+                    {t('penRoot.scanDiagnostic', { path: d.path, folders: t(`penRoot.diagnosticReason.${d.reason}`) })}
+                  </li>
+                ))}
+              </ul>
+            )}
           </>
         )}
 

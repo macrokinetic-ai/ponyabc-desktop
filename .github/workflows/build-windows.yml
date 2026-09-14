@@ -28,16 +28,20 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: release/*.exe
+          # dist:win's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar —
+          # ship it alongside the installer so a downloaded artifact can be verified too.
+          path: |
+            release/*.exe
+            release/*.sha256
           if-no-files-found: error
 
       # When this run was triggered by pushing a version tag (i.e. a release tag such as
-      # v0.2.4), attach the installer straight to that GitHub Release so it lands next to
-      # the Mac .dmg builds on the same release page — not just as a build artifact that
-      # requires a GitHub login to download.
+      # v0.2.5), attach the installer + its checksum straight to that GitHub Release so
+      # they land next to the Mac .dmg builds on the same release page — not just as a
+      # build artifact that requires a GitHub login to download.
       - name: Attach installer to the matching GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" release/*.exe --repo "${GITHUB_REPOSITORY}" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" release/*.exe release/*.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

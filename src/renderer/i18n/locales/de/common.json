@@ -22,6 +22,7 @@
     "changeButton": "Anderen Stift-Speicher auswählen…",
     "checkedPath": "Geprüfter Pfad: {{path}}",
     "missingFolders": "Fehlende erwartete Ordner: {{folders}}",
+    "scanDiagnostic": "Gefunden: {{path}} — es fehlt {{folders}}",
     "notFound": "Dieser Ort wurde nicht gefunden. Ist der Stift noch verbunden?",
     "disconnected": "Der Stift scheint getrennt zu sein.",
     "scanning": "Suche nach Ihrem Stift…",
@@ -29,7 +30,12 @@
     "connectionHint": "Verbinden Sie Ihren P5-Stift mit einem USB-Kabel, das Datenübertragung unterstützt, mit diesem Computer — diese Dateifunktionen können nicht allein über Bluetooth genutzt werden.",
     "multipleFound": "Mehrere mögliche Stift-Laufwerke gefunden — wählen Sie eines aus:",
     "noneFound": "Kein Stift erkannt.",
-    "rescanButton": "Erneut suchen"
+    "rescanButton": "Erneut suchen",
+    "diagnosticReason": {
+      "missing-book": "der BOOK-Ordner",
+      "missing-diy": "der DIY-Ordner",
+      "missing-both": "die Ordner BOOK und DIY"
+    }
   },
   "computerFolder": {
     "label": "Computer-Ordner",

@@ -17,7 +17,7 @@
     "checkingUpdates": "Controllo aggiornamenti…",
     "upToDate": "Hai la versione più recente.",
     "updateAvailable": "È disponibile una nuova versione: {{version}}",
-    "downloadUpdateButton": "Scarica aggiornamento",
+    "downloadUpdateButton": "Vai alla pagina di download",
     "checkFailed": "Impossibile controllare gli aggiornamenti (sei online?)."
   }
 }

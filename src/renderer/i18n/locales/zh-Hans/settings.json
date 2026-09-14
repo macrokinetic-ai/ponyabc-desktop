@@ -17,7 +17,7 @@
     "checkingUpdates": "正在检查更新…",
     "upToDate": "已是最新版本。",
     "updateAvailable": "有新版本可用：{{version}}",
-    "downloadUpdateButton": "下载更新",
+    "downloadUpdateButton": "前往下载页面",
     "checkFailed": "无法检查更新（请确认网络连接）。"
   }
 }

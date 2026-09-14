@@ -6,12 +6,17 @@ directories:
 files:
   - out/**/*
   - package.json
+# electron-builder's own signing is skipped for mac.identity: null (no paid Apple Developer ID
+# certificate exists yet), which means its "afterSign" hook never runs either — this applies a
+# real ad-hoc signature to the packed .app anyway. No effect on win/linux. See scripts/afterPack.cjs.
+afterPack: scripts/afterPack.cjs
 mac:
+  # No arch list here on purpose — each pack:mac:* npm script picks the arch via the
+  # --arm64 / --x64 CLI flag instead. An explicit arch array on the target itself takes
+  # precedence over those CLI flags (confirmed directly: with both present, electron-builder
+  # built BOTH archs regardless of which flag was passed, colliding on the same artifactName).
   target:
-    - target: dmg
-      arch:
-        - x64
-        - arm64
+    - dmg
   category: public.app-category.education
   identity: null
   hardenedRuntime: false

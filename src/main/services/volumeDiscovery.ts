@@ -49,27 +49,50 @@ function volumesUnder(root: string): string[] {
 export interface VolumeCandidate {
   /** The mounted volume's own directory name, exactly as the OS names it — never a
    *  hardcoded placeholder like "NO NAME"; an unlabeled FAT volume showing that name is the
-   *  OS's own label, surfaced as-is. */
+   *  OS's own label, surfaced as-is. Falls back to the full volume path when the OS gives no
+   *  basename (a bare Windows drive root like "D:\" has none). */
   volumeLabel: string;
   resolved: Extract<ResolvedPenRoot, { status: 'ok' }>;
+}
+
+/** A mounted volume that was checked but did NOT qualify as a pen — kept so "nothing found"
+ *  can be told apart from "found something, but it's missing DIY", which is what actually
+ *  hid the Windows drive-root containment bug from view for so long. */
+export interface VolumeDiagnostic {
+  volumeLabel: string;
+  path: string;
+  reason: 'missing-book' | 'missing-diy' | 'missing-both';
+}
+
+function volumeLabelFor(volumePath: string): string {
+  return path.basename(volumePath) || volumePath;
 }
 
 /**
  * Scans currently-mounted external volumes for an accessible BOOK+DIY structure at their
  * top level. Bounded scan: one directory listing at the root, one BOOK/DIY check per volume
- * — never a recursive walk of the volume or the rest of the computer.
+ * — never a recursive walk of the volume or the rest of the computer. Volumes that exist but
+ * fail the BOOK/DIY check are reported as diagnostics rather than silently dropped.
  */
-export function scanForPenCandidates(): VolumeCandidate[] {
+export function scanForPenCandidates(): { candidates: VolumeCandidate[]; diagnostics: VolumeDiagnostic[] } {
   const candidates: VolumeCandidate[] = [];
+  const diagnostics: VolumeDiagnostic[] = [];
   for (const root of scanRoots()) {
     for (const volumePath of volumesUnder(root)) {
       const resolved = resolvePenRoot(volumePath);
+      const volumeLabel = volumeLabelFor(volumePath);
       if (resolved.status === 'ok') {
-        candidates.push({ volumeLabel: path.basename(volumePath), resolved });
+        candidates.push({ volumeLabel, resolved });
+      } else if (resolved.status === 'invalid') {
+        const reason: VolumeDiagnostic['reason'] =
+          resolved.missing.length === 2 ? 'missing-both' : resolved.missing[0] === 'BOOK' ? 'missing-book' : 'missing-diy';
+        diagnostics.push({ volumeLabel, path: volumePath, reason });
       }
+      // 'not-found' (vanished between listing and checking, e.g. a mid-scan unmount) is not
+      // reported as a diagnostic — there's nothing actionable to tell the user about it.
     }
   }
-  return candidates;
+  return { candidates, diagnostics };
 }
 
 /** Cheap fingerprint of what's currently mounted (names only, no BOOK/DIY check), used to

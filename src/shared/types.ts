@@ -41,10 +41,19 @@ export interface PenVolumeCandidate {
   volumeLabel: string;
 }
 
+/** A mounted volume the scan checked but that did not qualify as a pen — surfaced instead of
+ *  silently dropped, so "nothing plugged in" and "found a drive, but it's missing DIY" don't
+ *  look identical to the user. */
+export interface VolumeDiagnostic {
+  volumeLabel: string;
+  path: string;
+  reason: 'missing-book' | 'missing-diy' | 'missing-both';
+}
+
 export type PenRootScanResult =
   | (PenRootOk & { auto: true }) // exactly one candidate (or a persisted-preference match) — auto-selected
   | { status: 'choose'; candidates: PenVolumeCandidate[] }
-  | { status: 'none' }
+  | { status: 'none'; diagnostics?: VolumeDiagnostic[] }
   | { status: 'error'; message: string };
 
 export interface RecordingFile {

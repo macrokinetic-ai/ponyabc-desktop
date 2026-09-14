@@ -17,7 +17,7 @@
     "checkingUpdates": "A procurar atualizações…",
     "upToDate": "Tem a versão mais recente.",
     "updateAvailable": "Há uma nova versão disponível: {{version}}",
-    "downloadUpdateButton": "Transferir atualização",
+    "downloadUpdateButton": "Ir para a página de transferência",
     "checkFailed": "Não foi possível procurar atualizações (está ligado à internet?)."
   }
 }
