@@ -1,5 +1,19 @@
 # Lessons
 
+## A PNG's "transparent" area can actually be opaque white — check the alpha channel, don't assume
+
+The provided `ponyabc_logo1.png` looked like a normal logo on transparent background when
+viewed in chat, but compositing it onto a real transparent canvas revealed a hard-edged
+rounded-card shape: the corners were genuinely `alpha=0`, but ~70% of the canvas (a large
+rounded-bottom region) was fully **opaque white** (`alpha=255`), baked in from whatever it
+was originally designed for (a card/header background). Used directly as an app-icon source,
+this would have produced a visible mismatched white card shape under the OS's own icon mask.
+Confirmed by extracting and viewing just the alpha channel (`img.getchannel("A")`) rather than
+trusting how the RGB composite looked — always do this before using a supplied logo as an
+icon source. Fixed via a flood-fill from the genuinely-transparent border pixels through
+connected near-white opaque regions (leaves white text/details that are enclosed by non-white
+colors, like the logo's own lettering, untouched since they're not border-connected).
+
 ## Never pass a `${...}`-templated electron-builder value through a CLI `-c.key=value` override — put it in a YAML file instead
 
 `npm run dist:win`'s `electron-builder --win -c.win.artifactName='PonyABC-Desktop-v${version}-winx64.${ext}'`

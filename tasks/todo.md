@@ -35,11 +35,17 @@ per explicit instruction.
       alpha=255 white shape, not truly transparent) → `build/icon.png` (1024×1024,
       transparent, logo centered) — electron-builder auto-generates .icns/.ico from
       this by convention (`directories.buildResources: build`), no config change
-- [ ] Commit, tag v0.2.6 (does not overwrite v0.2.5), push (triggers Windows build)
-- [ ] Build mac dmgs from the tagged commit; verify ad-hoc signature again
-- [ ] CDP verify: preview play/pause/seek/stop on both panes with a real mp3 fixture,
-      layout at 820px (no overlap in dual-pane__actions/list rows), icon appears
-      correctly on the packaged .app
-- [ ] gh release create v0.2.6, 3 installers + sha256, notes distinguishing
-      automated-tested vs needs-your-hardware-test (Intel Mac paused per instruction)
-- [ ] Final Traditional Chinese report
+- [x] Commit (1271a90), tag v0.2.6 (does not overwrite v0.2.5), push — main +
+      tag builds both green on real windows-latest (typecheck/test/dist:win)
+- [x] Built mac dmgs from the tagged commit (clean tree); both pass
+      `codesign --verify --deep --strict`; icon.icns confirmed wired via
+      CFBundleIconFile
+- [x] CDP verify with a real lame-encoded MP3 fixture (say + lame, since no
+      ffmpeg/afconvert-mp3 available): pen preview plays with correct duration,
+      switching files stops the previous one, computer-side shows the encoding
+      hint, a corrupted .mp3 shows a clean error (not a hang), close releases
+      the bar, zero overlap at 820px (all rows/actions/bar scrollW===clientW)
+- [x] gh release create v0.2.6 — 3 installers + 3 sha256 sidecars, notes
+      distinguish automated-tested vs Intel-paused-this-round; re-downloaded
+      the published Apple Silicon dmg from the real URL, checksum matches
+- [x] Final Traditional Chinese report
