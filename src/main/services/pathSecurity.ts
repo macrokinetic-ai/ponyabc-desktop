@@ -195,6 +195,11 @@ export function isEligibleMp3FileName(name: string): boolean {
   return !name.startsWith('._') && /\.mp3$/i.test(name);
 }
 
+/** Same AppleDouble-sidecar exclusion as isEligibleMp3FileName, for the pen's BOOK folder. */
+export function isEligibleAxbFileName(name: string): boolean {
+  return !name.startsWith('._') && /\.axb$/i.test(name);
+}
+
 /**
  * Resolves a user-selected folder as a pen root, tolerating the user having picked the
  * BOOK or DIY folder itself instead of its parent — in that case the parent is checked

@@ -1,4 +1,47 @@
 {
   "title": "Biblioteca BOOK",
-  "notImplemented": "La gestión de contenido BOOK aún no está implementada. Esta pantalla le permitirá explorar y administrar el contenido BOOK en una futura actualización."
+  "refresh": "Actualizar catálogo",
+  "refreshing": "Actualizando…",
+  "lastUpdated": "Última actualización: {{time}}",
+  "neverUpdated": "Catálogo aún no cargado",
+  "catalogUnavailable": "No se pudo conectar con el catálogo BOOK. Mostrando lo último guardado.",
+  "devFixtureBanner": "Datos de catálogo de desarrollo — no reales",
+  "ambiguousNotice": "{{count}} elemento(s) del catálogo comparten nombre de archivo con otro elemento y se muestran solo como referencia — la instalación está deshabilitada hasta resolverlo en el servidor.",
+  "penRequiredForWrite": "Conecta un lápiz para añadir, reemplazar o eliminar contenido BOOK.",
+  "noExportHint": "Los archivos BOOK se guardan solo en una carpeta gestionada por la app. Esto es solo para simplicidad — no cifra ni protege los archivos.",
+  "catalogSectionTitle": "Catálogo",
+  "notInCatalogSection": "No incluido en el catálogo actual",
+  "backupsSection": "Copias de seguridad",
+  "noItems": "Nada que mostrar todavía.",
+  "noBackups": "Sin copias de seguridad todavía.",
+  "insufficientSpace": "No hay suficiente espacio libre para completar esto.",
+  "downloadFailed": "La descarga falló. Comprueba tu conexión e inténtalo de nuevo.",
+  "downloadCancelled": "Descarga cancelada.",
+  "metadataIncompleteNotice": "La información del catálogo de este elemento está incompleta, así que aún no se puede instalar.",
+  "targetChangedSinceBackup": "Este archivo cambió en el lápiz justo antes de poder eliminarse — no se eliminó nada. Inténtalo de nuevo.",
+  "stalePlan": "El lápiz cambió — inténtalo de nuevo.",
+  "backupFailed": "No se pudo hacer copia de seguridad del archivo existente, así que no se cambió nada.",
+  "genericError": "Algo salió mal.",
+  "cancel": "Cancelar",
+  "confirmRemoveBody": "¿Eliminar \"{{fileName}}\" del lápiz? Esto liberará {{freedSpace}}. Antes se guarda una copia de seguridad en este ordenador.",
+  "confirmRemoveAction": "Eliminar",
+  "status": {
+    "notCached": "Aún no descargado",
+    "cachedCurrent": "Descargado, listo para añadir",
+    "cachedStale": "Descargado, pero es otra versión",
+    "onPenCurrent": "En el lápiz, coincide con la versión oficial",
+    "differsFromOfficial": "En el lápiz, difiere de la versión oficial actual",
+    "hashUnknown": "En el lápiz, no se puede verificar contra el catálogo",
+    "notInCatalog": "No incluido en el catálogo actual",
+    "metadataIncomplete": "Información del catálogo incompleta",
+    "ambiguous": "Entrada de catálogo ambigua"
+  },
+  "action": {
+    "add": "Añadir al lápiz",
+    "replace": "Reemplazar con la versión oficial",
+    "reinstall": "Volver a descargar e instalar",
+    "remove": "Eliminar del lápiz",
+    "restore": "Restaurar al lápiz",
+    "cancelDownload": "Cancelar"
+  }
 }

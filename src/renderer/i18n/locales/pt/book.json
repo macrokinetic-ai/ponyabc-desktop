@@ -1,4 +1,47 @@
 {
   "title": "Biblioteca BOOK",
-  "notImplemented": "A gestão de conteúdo BOOK ainda não está implementada. Este ecrã irá permitir explorar e gerir conteúdo BOOK numa atualização futura."
+  "refresh": "Atualizar catálogo",
+  "refreshing": "A atualizar…",
+  "lastUpdated": "Última atualização: {{time}}",
+  "neverUpdated": "Catálogo ainda não carregado",
+  "catalogUnavailable": "Não foi possível contactar o catálogo BOOK. A mostrar o último conteúdo guardado.",
+  "devFixtureBanner": "Dados de catálogo de desenvolvimento — não reais",
+  "ambiguousNotice": "{{count}} item(ns) do catálogo partilham o mesmo nome de ficheiro com outro item e são mostrados apenas como referência — a instalação está desativada até isso ser resolvido no servidor.",
+  "penRequiredForWrite": "Ligue uma caneta para adicionar, substituir ou remover conteúdo BOOK.",
+  "noExportHint": "Os ficheiros BOOK são guardados apenas numa pasta gerida pela aplicação. Isto é apenas para simplicidade — não encripta nem protege os ficheiros.",
+  "catalogSectionTitle": "Catálogo",
+  "notInCatalogSection": "Não listado no catálogo atual",
+  "backupsSection": "Cópias de segurança",
+  "noItems": "Ainda não há nada para mostrar.",
+  "noBackups": "Ainda não há cópias de segurança.",
+  "insufficientSpace": "Espaço livre insuficiente para concluir.",
+  "downloadFailed": "Falha no download. Verifique a ligação e tente novamente.",
+  "downloadCancelled": "Download cancelado.",
+  "metadataIncompleteNotice": "As informações de catálogo deste item estão incompletas, por isso ainda não pode ser instalado.",
+  "targetChangedSinceBackup": "Este ficheiro mudou na caneta mesmo antes de poder ser removido — nada foi apagado. Tente novamente.",
+  "stalePlan": "A caneta mudou — tente novamente.",
+  "backupFailed": "Não foi possível fazer cópia de segurança do ficheiro existente, por isso nada foi alterado.",
+  "genericError": "Algo correu mal.",
+  "cancel": "Cancelar",
+  "confirmRemoveBody": "Remover \"{{fileName}}\" da caneta? Isto vai libertar {{freedSpace}}. É guardada primeiro uma cópia de segurança neste computador.",
+  "confirmRemoveAction": "Remover",
+  "status": {
+    "notCached": "Ainda não descarregado",
+    "cachedCurrent": "Descarregado, pronto a adicionar",
+    "cachedStale": "Descarregado, mas é outra versão",
+    "onPenCurrent": "Na caneta, corresponde à versão oficial",
+    "differsFromOfficial": "Na caneta, difere da versão oficial atual",
+    "hashUnknown": "Na caneta, não é possível verificar com o catálogo",
+    "notInCatalog": "Não listado no catálogo atual",
+    "metadataIncomplete": "Informações de catálogo incompletas",
+    "ambiguous": "Entrada de catálogo ambígua"
+  },
+  "action": {
+    "add": "Adicionar à caneta",
+    "replace": "Substituir pela versão oficial",
+    "reinstall": "Descarregar novamente e reinstalar",
+    "remove": "Remover da caneta",
+    "restore": "Restaurar na caneta",
+    "cancelDownload": "Cancelar"
+  }
 }

@@ -25,6 +25,17 @@ export const IPC = {
 
   audioPreviewRead: 'ponyabc:audio:read',
 
+  bookList: 'ponyabc:book:list',
+  bookCatalogRefresh: 'ponyabc:book:catalog:refresh',
+  bookAdd: 'ponyabc:book:add',
+  bookUpdate: 'ponyabc:book:update',
+  bookReinstall: 'ponyabc:book:reinstall',
+  bookRemove: 'ponyabc:book:remove',
+  bookBackups: 'ponyabc:book:backups',
+  bookRestore: 'ponyabc:book:restore',
+  bookDownloadCancel: 'ponyabc:book:downloadCancel',
+  bookDownloadProgress: 'ponyabc:book:downloadProgress',
+
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',
 

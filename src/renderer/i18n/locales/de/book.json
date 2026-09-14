@@ -1,4 +1,47 @@
 {
   "title": "BOOK-Bibliothek",
-  "notImplemented": "Die BOOK-Inhaltsverwaltung ist noch nicht implementiert. Über diesen Bildschirm können Sie BOOK-Inhalte in einem zukünftigen Update durchsuchen und verwalten."
+  "refresh": "Katalog aktualisieren",
+  "refreshing": "Wird aktualisiert…",
+  "lastUpdated": "Zuletzt aktualisiert: {{time}}",
+  "neverUpdated": "Katalog noch nicht geladen",
+  "catalogUnavailable": "Der BOOK-Katalog konnte nicht erreicht werden. Zuletzt gespeicherter Stand wird angezeigt.",
+  "devFixtureBanner": "Entwickler-Testdaten — keine echten Inhalte",
+  "ambiguousNotice": "{{count}} Katalogeintrag/-einträge teilen sich einen Dateinamen mit einem anderen Eintrag und werden nur zur Information angezeigt — die Installation ist deaktiviert, bis dies serverseitig gelöst ist.",
+  "penRequiredForWrite": "Verbinde einen Stift, um BOOK-Inhalte hinzuzufügen, zu ersetzen oder zu entfernen.",
+  "noExportHint": "BOOK-Dateien werden nur in einem app-verwalteten Ordner gespeichert. Das dient nur der Einfachheit — es verschlüsselt oder schützt die Dateien nicht.",
+  "catalogSectionTitle": "Katalog",
+  "notInCatalogSection": "Nicht im aktuellen Katalog aufgeführt",
+  "backupsSection": "Sicherungen",
+  "noItems": "Noch nichts anzuzeigen.",
+  "noBackups": "Noch keine Sicherungen.",
+  "insufficientSpace": "Nicht genug freier Speicherplatz, um dies abzuschließen.",
+  "downloadFailed": "Download fehlgeschlagen. Verbindung prüfen und erneut versuchen.",
+  "downloadCancelled": "Download abgebrochen.",
+  "metadataIncompleteNotice": "Die Katalogdaten für dieses Element sind unvollständig, daher kann es noch nicht installiert werden.",
+  "targetChangedSinceBackup": "Diese Datei hat sich auf dem Stift kurz vor dem Entfernen geändert — es wurde nichts gelöscht. Bitte erneut versuchen.",
+  "stalePlan": "Der Stift hat sich geändert — bitte erneut versuchen.",
+  "backupFailed": "Die vorhandene Datei konnte nicht gesichert werden, daher wurde nichts geändert.",
+  "genericError": "Etwas ist schiefgelaufen.",
+  "cancel": "Abbrechen",
+  "confirmRemoveBody": "„{{fileName}}“ vom Stift entfernen? Dadurch werden {{freedSpace}} freigegeben. Zuvor wird eine Sicherung auf diesem Computer angelegt.",
+  "confirmRemoveAction": "Entfernen",
+  "status": {
+    "notCached": "Noch nicht heruntergeladen",
+    "cachedCurrent": "Heruntergeladen, bereit zum Hinzufügen",
+    "cachedStale": "Heruntergeladen, aber eine andere Version",
+    "onPenCurrent": "Auf dem Stift, entspricht der offiziellen Version",
+    "differsFromOfficial": "Auf dem Stift, weicht von der aktuellen offiziellen Version ab",
+    "hashUnknown": "Auf dem Stift, kann nicht mit dem Katalog abgeglichen werden",
+    "notInCatalog": "Nicht im aktuellen Katalog aufgeführt",
+    "metadataIncomplete": "Katalogdaten unvollständig",
+    "ambiguous": "Mehrdeutiger Katalogeintrag"
+  },
+  "action": {
+    "add": "Zum Stift hinzufügen",
+    "replace": "Durch offizielle Version ersetzen",
+    "reinstall": "Erneut herunterladen und installieren",
+    "remove": "Vom Stift entfernen",
+    "restore": "Auf Stift wiederherstellen",
+    "cancelDownload": "Abbrechen"
+  }
 }

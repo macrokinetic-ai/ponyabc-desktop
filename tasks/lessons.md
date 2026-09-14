@@ -140,3 +140,36 @@ need to resubmit the whole plan). When a user approves the overall direction but
 specific technical corrections, update the plan file for the record and proceed straight
 to implementation — don't loop back through another ExitPlanMode approval cycle, that's
 exactly the overhead they were asking to skip.
+
+## `useTranslation(ns)` already scopes to that namespace — don't also prefix keys with `ns.`
+
+Wrote the entire first draft of `BookLibraryScreen.tsx` calling `t('book.refresh')`,
+`t('book.status.notCached')`, etc. under `const { t } = useTranslation('book')`. Since the
+namespace is already `'book'`, every one of those should have been `t('refresh')`/
+`t('status.notCached')` — the `'book.'` prefix made every single call miss, silently
+rendering raw i18n keys (`book.refresh`) as the displayed text instead of falling back to
+English or throwing. Only caught because a renderer test asserted on real rendered text
+(`screen.findByText('Book One')`, `/Last updated:/`) rather than only checking for the
+presence of *some* string — an assertion pattern like `expect(container).toBeTruthy()`
+would never have caught this.
+
+**How to apply:** when writing `t()` calls in a component scoped via
+`useTranslation('someNamespace')`, keys are relative to that namespace only — grep the
+component's `t('` calls against the actual locale JSON's top-level keys before considering
+i18n work done, and make sure at least one renderer test asserts on real translated text
+(not just a key's presence in a mock).
+
+## An async function meant to return a typed failure result must guard EVERY fs call, not just the ones already wrapped in try/catch
+
+`bookBackup.ts`'s `backupBeforeRemove()` wrapped `copyFile`/`unlink`/hashing in try/catch to
+return `{ok: false, message}` on failure, but the earlier `fs.mkdirSync(filesDir, {recursive:
+true})` was left bare — a real filesystem error there (parent path occupied by a file, a
+permissions failure) would throw synchronously and reject the whole async function instead
+of returning the typed failure the caller (`bookRemove.ts`) expects, propagating as an
+unhandled rejection rather than a clean `backup-failed` status. Found while writing a test
+that deliberately pre-occupied the target directory path with a plain file.
+
+**How to apply:** when a function's contract is "never throws, always returns a typed
+result," audit *every* synchronous fs call in it (not just the ones that felt risky while
+writing it) — a bare `mkdirSync`/`writeFileSync`/`statSync` mid-function is exactly the kind
+of thing that looks safe until a test (or a real EACCES/ENOTDIR) proves otherwise.

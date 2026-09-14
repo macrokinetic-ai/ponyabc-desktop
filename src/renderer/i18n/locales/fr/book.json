@@ -1,4 +1,47 @@
 {
   "title": "Bibliothèque BOOK",
-  "notImplemented": "La gestion du contenu BOOK n'est pas encore implémentée. Cet écran vous permettra de parcourir et de gérer le contenu BOOK dans une future mise à jour."
+  "refresh": "Actualiser le catalogue",
+  "refreshing": "Actualisation…",
+  "lastUpdated": "Dernière mise à jour : {{time}}",
+  "neverUpdated": "Catalogue pas encore chargé",
+  "catalogUnavailable": "Impossible de joindre le catalogue BOOK. Affichage de la dernière version enregistrée.",
+  "devFixtureBanner": "Données de catalogue de développement — pas réelles",
+  "ambiguousNotice": "{{count}} élément(s) du catalogue partagent un nom de fichier avec un autre élément et sont affichés à titre indicatif uniquement — l'installation est désactivée tant que cela n'est pas résolu côté serveur.",
+  "penRequiredForWrite": "Connectez un stylo pour ajouter, remplacer ou supprimer du contenu BOOK.",
+  "noExportHint": "Les fichiers BOOK sont conservés uniquement dans un dossier géré par l'application. C'est uniquement pour la simplicité — cela ne chiffre ni ne protège les fichiers.",
+  "catalogSectionTitle": "Catalogue",
+  "notInCatalogSection": "Non répertorié dans le catalogue actuel",
+  "backupsSection": "Sauvegardes",
+  "noItems": "Rien à afficher pour l'instant.",
+  "noBackups": "Aucune sauvegarde pour l'instant.",
+  "insufficientSpace": "Espace libre insuffisant pour terminer.",
+  "downloadFailed": "Échec du téléchargement. Vérifiez votre connexion et réessayez.",
+  "downloadCancelled": "Téléchargement annulé.",
+  "metadataIncompleteNotice": "Les informations du catalogue pour cet élément sont incomplètes, il ne peut donc pas encore être installé.",
+  "targetChangedSinceBackup": "Ce fichier a changé sur le stylo juste avant de pouvoir être supprimé — rien n'a été supprimé. Veuillez réessayer.",
+  "stalePlan": "Le stylo a changé — veuillez réessayer.",
+  "backupFailed": "Impossible de sauvegarder le fichier existant, rien n'a donc été modifié.",
+  "genericError": "Une erreur s'est produite.",
+  "cancel": "Annuler",
+  "confirmRemoveBody": "Supprimer « {{fileName}} » du stylo ? Cela libérera {{freedSpace}}. Une sauvegarde est d'abord conservée sur cet ordinateur.",
+  "confirmRemoveAction": "Supprimer",
+  "status": {
+    "notCached": "Pas encore téléchargé",
+    "cachedCurrent": "Téléchargé, prêt à ajouter",
+    "cachedStale": "Téléchargé, mais une version différente",
+    "onPenCurrent": "Sur le stylo, correspond à la version officielle",
+    "differsFromOfficial": "Sur le stylo, diffère de la version officielle actuelle",
+    "hashUnknown": "Sur le stylo, impossible de vérifier par rapport au catalogue",
+    "notInCatalog": "Non répertorié dans le catalogue actuel",
+    "metadataIncomplete": "Informations du catalogue incomplètes",
+    "ambiguous": "Entrée de catalogue ambiguë"
+  },
+  "action": {
+    "add": "Ajouter au stylo",
+    "replace": "Remplacer par la version officielle",
+    "reinstall": "Retélécharger et réinstaller",
+    "remove": "Supprimer du stylo",
+    "restore": "Restaurer sur le stylo",
+    "cancelDownload": "Annuler"
+  }
 }

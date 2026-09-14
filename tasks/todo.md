@@ -1,46 +1,69 @@
-# v0.2.7 — fix MP3 preview: real pen recordings are MPEG Layer II, not Layer III
+# BOOK database milestone
 
-User tested v0.2.6 with a real physical pen on their MacBook Pro: preview failed
-("format not supported") on real recordings. Root-caused with the actual uploaded
-file, not guessed.
+User-approved plan: Option A (public, secret-free BOOK catalog/downloads, no
+DRM). Approved implementing + deploying a minimal `ponyabc-web` change
+(new public routes only, no change to the device/firmware/admin flow).
 
-- [x] Diagnosed via the user's real uploaded `0001.MP3`: `file`/`afinfo` confirmed
-      **MPEG-1 Layer II** (`.mp2` data), not Layer III (true MP3) — Chromium's native
-      `<audio>` element only decodes Layer III, so it correctly (if unhelpfully)
-      rejected every real pen recording. Confirmed this is why it played fine in
-      QuickTime/Finder (CoreAudio decodes Layer II) but not in the app.
-- [x] Replaced the native `<audio>`-element playback engine with a local WASM
-      decode (`mpg123-decoder`, MIT, ~80KB, decodes Layer I/II/III) → raw PCM → Web
-      Audio API (`AudioBufferSourceNode`) playback. Verified decode of the actual
-      real pen file directly in Node before wiring it in.
-- [x] CSP: added `'wasm-unsafe-eval'` to `script-src` — required for
-      `WebAssembly.compile()`, confirmed empirically (it failed with an exact CSP
-      violation error without it, succeeded with it). This is the CSP3-specified
-      narrow token for WASM compilation specifically — does NOT enable `eval()`/
-      `Function()`/arbitrary string-to-code execution the way `'unsafe-eval'` does.
-- [x] Found and fixed a real bug during CDP testing of the new engine: pause/resume
-      visibly flipped back to the wrong icon. Root cause: React 18 StrictMode
-      double-invokes the *function* form of a state setter to catch impure
-      updaters, and `togglePlayPause`/`seek`/`stopIfSource` had side effects (start/
-      stop audio nodes) inside `setState(prev => ...)`. Fixed by moving side effects
-      out into plain function bodies reading a `stateRef` mirror, calling `setState`
-      with a plain value only. Added a StrictMode-wrapped regression test
-      (`renderScreenStrict`) that reproduces and verifies the exact fix — unit tests
-      without StrictMode would never have caught this (confirmed: only the real CDP
-      run against the StrictMode-wrapped production render surfaced it).
-- [x] Re-verified via CDP against the actual real pen file: play/pause/seek/natural-
-      end-of-clip all correct; also re-verified the "corrupt file" decode-error path
-      still shows a clean message via the new engine (mocked decode failure in
-      unit tests, since a genuinely corrupt fixture is hard to construct reliably)
-- [x] Updated tests: mocked `mpg123-decoder` (deterministic fake decoder) + a
-      minimal `FakeAudioContext` (jsdom has neither WASM-audio nor Web Audio APIs
-      pre-wired for this); 157 tests total (+2 vs v0.2.6: decode-failure path,
-      StrictMode play/pause regression), typecheck clean
-- [x] Bump version 0.2.7, commit (b82c777), tag (does not overwrite v0.2.6), push
-- [x] Built mac dmgs from the tagged commit; both pass codesign --verify
-- [x] Final CDP pass on the packaged build with the real pen file: play/pause
-      (time genuinely freezes)/resume/natural-end all correct; 820px layout with
-      the player bar active has zero overlap (screenshot confirmed)
-- [x] gh release create v0.2.7, 3 installers + sha256, notes explain the real root
-      cause (Layer II vs Layer III); re-downloaded published dmg, checksum matches
-- [x] Final Traditional Chinese report
+- [x] `ponyabc-web`: new `GET /api/public/books` + `GET /api/public/books/download?id=`
+      routes — no auth, active-only, id-based download (never a raw storage
+      key), declared `original_filename` + full `friendlyNameI18n` exposed.
+      `/api/pen/*` untouched (its own tests still pass unmodified). 445/445
+      tests pass, typecheck clean, lint clean, production build succeeds.
+      Committed (`ea3e4da`). **Not yet deployed** — blocked by this
+      environment's production-deploy safety gate; needs the user to run
+      `npm run deploy` themselves.
+- [x] Desktop data model (`BookCatalogEntry`/`BookCatalogSnapshot`/
+      `BookCacheEntry`/`BookBackupEntry`/`BookItemStatus`/`BookLibraryItem`)
+      in `src/shared/types.ts`; `src/shared/bookDisplay.ts` for the
+      renderer-side instant-locale-switch display name resolution.
+- [x] `bookStore.ts` (JSON manifest persistence, settingsStore.ts pattern),
+      `bookCatalog/{client,fixtureClient,httpClient}.ts`,
+      `bookCatalogValidate.ts` (duplicate/case-collision detection),
+      `bookStatus.ts` (status derivation, install-eligibility gate),
+      `bookReconcile.ts` (catalog+cache+pen merge, on-demand hashing only
+      for matched files with a non-null catalog hash).
+- [x] `penOperationLock.ts` (shared BOOK/DIY pen-write mutex) retrofitted
+      into `transferPlanner.ts`'s `executeTransferToPen`/`executeReplaceSticker`.
+- [x] `bookDownload.ts` — streaming download, full-hash cache identity,
+      concurrent-request dedup (join in-flight; reinstall pre-empts),
+      declared-size-exceeded abort, space checks, metadata-incomplete gate.
+- [x] `bookInstall.ts` (add/replace-with-official/reinstall),
+      `bookBackup.ts` (durable backup + cache-hash dedup reference,
+      mkdirSync failure now caught cleanly — found via a test), `bookRemove.ts`
+      (backup-before-delete, re-verify-hash-immediately-before-unlink,
+      `target-changed-since-backup`), `bookRestore.ts`.
+- [x] IPC: `bookList`/`bookCatalogRefresh`/`bookAdd`/`bookUpdate`/
+      `bookReinstall`/`bookRemove`/`bookBackups`/`bookRestore`/
+      `bookDownloadCancel`/`bookDownloadProgress`, wired through
+      `ipc/book.ts` → `ipc/index.ts` → `preload/index.ts` → `PonyAbcApi`.
+- [x] Renderer: `BookLibraryContext.tsx`, real `BookLibraryScreen.tsx`
+      (replaces the placeholder), wired into `App.tsx`. Neutral
+      "differs from official version" / "replace with official version"
+      language throughout — no "update available" claim, no anti-copy/DRM
+      claim.
+- [x] i18n: `book.json` extended in all 8 locales.
+- [x] Tests: 251 total (was 234 pre-BOOK), typecheck clean both configs.
+      Fixed a real bug found while writing tests: `bookBackup.ts`'s
+      `mkdirSync` wasn't guarded — a filesystem failure there would have
+      thrown instead of returning a clean `backup-failed` result.
+- [x] Real CDP verification against the actual built app (simulated pen via
+      `PONYABC_TEST_VOLUMES_ROOT`, never a real physical pen):
+      - Live catalog fetch genuinely attempted against
+        `https://register.ponyabc.uk/api/public/books` (currently 404,
+        since it isn't deployed yet) → correctly shows the "catalog could
+        not be reached" banner, not a crash or a fake success.
+      - 820px minimum window width: zero horizontal overflow, no overlap.
+      - Zero console errors/exceptions.
+      - Full real removal flow: a genuine "not-in-catalog" `.axb` file on
+        the simulated pen → Remove → explicit confirm dialog (filename +
+        freed space + backup notice) → Confirm → file actually deleted from
+        the simulated BOOK folder AND a verified backup copy + correct
+        manifest entry (reason: uncatalogued) appears on disk, offered back
+        via "Restore to pen".
+- [ ] **Blocked on the user**: deploy the committed `ponyabc-web` change
+      (`npm run deploy`), then verify the live public endpoint for real.
+- [ ] Once live: re-run CDP verification with the real catalog (real
+      metadata rendering, a real download into the simulated BOOK folder),
+      full suite + typecheck one more time, then `gh release create` the
+      next unused version with Apple Silicon + Windows x64 + Intel
+      installers and SHA-256, and report back with links + short test steps.

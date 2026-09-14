@@ -1,4 +1,47 @@
 {
   "title": "Libreria BOOK",
-  "notImplemented": "La gestione dei contenuti BOOK non è ancora implementata. Questa schermata ti permetterà di sfogliare e gestire i contenuti BOOK in un futuro aggiornamento."
+  "refresh": "Aggiorna catalogo",
+  "refreshing": "Aggiornamento…",
+  "lastUpdated": "Ultimo aggiornamento: {{time}}",
+  "neverUpdated": "Catalogo non ancora caricato",
+  "catalogUnavailable": "Impossibile raggiungere il catalogo BOOK. Viene mostrato l'ultimo salvato.",
+  "devFixtureBanner": "Dati di catalogo di sviluppo — non reali",
+  "ambiguousNotice": "{{count}} elemento/i del catalogo condividono un nome file con un altro elemento e sono mostrati solo a titolo informativo — l'installazione è disabilitata finché non viene risolto sul server.",
+  "penRequiredForWrite": "Collega una penna per aggiungere, sostituire o rimuovere contenuti BOOK.",
+  "noExportHint": "I file BOOK sono conservati solo in una cartella gestita dall'app. Questo serve solo a semplificare l'uso — non cifra né protegge i file.",
+  "catalogSectionTitle": "Catalogo",
+  "notInCatalogSection": "Non presente nel catalogo attuale",
+  "backupsSection": "Backup",
+  "noItems": "Ancora nulla da mostrare.",
+  "noBackups": "Ancora nessun backup.",
+  "insufficientSpace": "Spazio libero insufficiente per completare l'operazione.",
+  "downloadFailed": "Download non riuscito. Controlla la connessione e riprova.",
+  "downloadCancelled": "Download annullato.",
+  "metadataIncompleteNotice": "Le informazioni di catalogo per questo elemento sono incomplete, quindi non può ancora essere installato.",
+  "targetChangedSinceBackup": "Questo file è cambiato sulla penna poco prima della rimozione — non è stato eliminato nulla. Riprova.",
+  "stalePlan": "La penna è cambiata — riprova.",
+  "backupFailed": "Impossibile eseguire il backup del file esistente, quindi non è stato modificato nulla.",
+  "genericError": "Si è verificato un errore.",
+  "cancel": "Annulla",
+  "confirmRemoveBody": "Rimuovere \"{{fileName}}\" dalla penna? Verranno liberati {{freedSpace}}. Prima viene salvato un backup su questo computer.",
+  "confirmRemoveAction": "Rimuovi",
+  "status": {
+    "notCached": "Non ancora scaricato",
+    "cachedCurrent": "Scaricato, pronto per l'aggiunta",
+    "cachedStale": "Scaricato, ma una versione diversa",
+    "onPenCurrent": "Sulla penna, corrisponde alla versione ufficiale",
+    "differsFromOfficial": "Sulla penna, differisce dalla versione ufficiale attuale",
+    "hashUnknown": "Sulla penna, impossibile verificare rispetto al catalogo",
+    "notInCatalog": "Non presente nel catalogo attuale",
+    "metadataIncomplete": "Informazioni di catalogo incomplete",
+    "ambiguous": "Voce di catalogo ambigua"
+  },
+  "action": {
+    "add": "Aggiungi alla penna",
+    "replace": "Sostituisci con la versione ufficiale",
+    "reinstall": "Riscarica e reinstalla",
+    "remove": "Rimuovi dalla penna",
+    "restore": "Ripristina sulla penna",
+    "cancelDownload": "Annulla"
+  }
 }

@@ -227,6 +227,186 @@ export type AudioPreviewResult =
   | { status: 'too-large' }
   | { status: 'error'; message: string };
 
+// ---------------------------------------------------------------------------------------
+// BOOK library — catalog browsing, local cache, and safe pen install/remove/restore.
+// The catalog comes from a secret-free public endpoint (no credential embedded in this
+// app); "sync" only ever refreshes catalog metadata, never auto-mirrors the pen's BOOK
+// folder against it, and un-cataloged pen content is retained by default.
+// ---------------------------------------------------------------------------------------
+
+/** One published BOOK entry from the catalog. */
+export interface BookCatalogEntry {
+  contentId: string;
+  /** The exact filename this must be written to the pen's BOOK folder as. */
+  filename: string;
+  /** 'declared' = the server told us this filename explicitly. 'fallback-storage-key' means
+   *  it didn't (a defensive fallback, not expected in normal operation) — install is refused
+   *  in that case regardless of what the UI shows, see isInstallEligible(). */
+  filenameSource: 'declared' | 'fallback-storage-key';
+  /** null = the catalog can't currently attest a hash for this entry. */
+  sha256: string | null;
+  sizeBytes: number;
+  /** Raw fallback display name, as returned by the API. */
+  friendlyName: string;
+  /** Full { locale: name } map, retained as-is so an offline UI-language switch can
+   *  recompute the displayed name instantly — never pre-picked down to one string. */
+  friendlyNameI18n: Record<string, string> | null;
+  contentLanguages: string[];
+  sortOrder: number;
+  downloadUrl: string;
+}
+
+export interface BookCatalogConflict {
+  filenameLower: string;
+  contentIds: string[];
+}
+
+export interface BookCatalogSnapshot {
+  entries: BookCatalogEntry[];
+  /** Set only on a SUCCESSFUL fetch — never cleared or overwritten by a failed refresh. */
+  fetchedAtMs: number;
+  source: 'live' | 'fixture';
+  conflicts: BookCatalogConflict[];
+}
+
+export interface BookCacheEntry {
+  contentId: string;
+  sha256: string;
+  sizeBytes: number;
+  filename: string;
+  cachedAtMs: number;
+}
+
+export type BookBackupReason = 'uncatalogued' | 'differs-from-official' | 'pre-removal-current-version';
+
+export interface BookBackupEntry {
+  backupId: string;
+  originalFileName: string;
+  sizeBytes: number;
+  sha256: string;
+  reason: BookBackupReason;
+  matchedContentId: string | null;
+  createdAtMs: number;
+  /** When set, this backup's bytes are an existing verified cache file at this content/hash
+   *  rather than a duplicate copy — safe because this app has no cache-eviction feature, so a
+   *  referenced cache file is never cleaned up out from under a backup. */
+  cacheRef: { contentId: string; sha256: string } | null;
+}
+
+export type BookItemStatus =
+  | 'catalog-not-cached'
+  | 'catalog-cached-current'
+  | 'catalog-cached-stale'
+  | 'on-pen-current'
+  /** Same filename, pen's hash != the catalog's current hash. Deliberately neutral — no local
+   *  inference about which one is "newer" is ever made (there is no server-trusted version
+   *  order to reason from). Never "update available," never auto-overwritten. */
+  | 'on-pen-differs-from-official'
+  /** Pen file matched by filename, but the catalog's sha256 is null (or unreadable pen file) —
+   *  genuinely cannot compare. */
+  | 'on-pen-hash-unknown'
+  | 'not-in-catalog'
+  /** filenameSource is 'fallback-storage-key' — display-only, install/update/reinstall
+   *  structurally refused (see isInstallEligible), not just hidden in the UI. */
+  | 'catalog-incomplete-metadata'
+  /** This entry's filename collides (case-insensitively) with another catalog entry's —
+   *  display-only, install disabled, see validateCatalogEntries. */
+  | 'catalog-ambiguous';
+
+export type BookAction = 'add' | 'replace' | 'reinstall' | 'remove' | 'restore';
+
+export interface BookLibraryItem {
+  /** null only for a not-in-catalog pen file. */
+  contentId: string | null;
+  filename: string;
+  /** Both null only when not-in-catalog (no catalog name available). Kept as raw
+   *  name/i18n-map fields — not a pre-picked string — so the renderer can recompute the
+   *  displayed name instantly on a UI language switch via resolveBookDisplayName, with no
+   *  IPC round trip. */
+  friendlyName: string | null;
+  friendlyNameI18n: Record<string, string> | null;
+  status: BookItemStatus;
+  sizeBytes: number;
+  cached: boolean;
+  onPen: boolean;
+  availableActions: BookAction[];
+}
+
+export interface BookLibraryMeta {
+  /** Last successful catalog fetch, or null if the catalog has never been fetched. */
+  fetchedAtMs: number | null;
+  source: 'live' | 'fixture' | 'none';
+  offline: boolean;
+  conflicts: BookCatalogConflict[];
+}
+
+export interface BookListResult {
+  status: 'ok';
+  items: BookLibraryItem[];
+  meta: BookLibraryMeta;
+}
+
+export type BookDownloadPhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled';
+
+export interface BookDownloadProgressEvent {
+  contentId: string;
+  bytesReceived: number;
+  totalBytes: number;
+  phase: BookDownloadPhase;
+}
+
+export type BookActionStatus =
+  | 'completed'
+  | 'no-pen-selected'
+  | 'device-disconnected'
+  | 'invalid'
+  | 'stale-plan'
+  | 'no-space'
+  | 'metadata-incomplete'
+  | 'network-error'
+  | 'cancelled'
+  | 'backup-failed'
+  | 'target-changed-since-backup'
+  | 'error';
+
+export interface BookActionResult {
+  status: BookActionStatus;
+  message?: string;
+  backupPath?: string;
+  missing?: Array<'BOOK' | 'DIY'>;
+}
+
+export type BookRemoveStatus =
+  | 'completed'
+  | 'no-pen-selected'
+  | 'device-disconnected'
+  | 'invalid'
+  | 'stale-plan'
+  | 'backup-failed'
+  | 'target-changed-since-backup'
+  | 'error';
+
+export interface BookRemoveResult {
+  status: BookRemoveStatus;
+  freedBytes?: number;
+  /** The backup id this removal's backup was recorded under, so the UI can offer "restore"
+   *  for it directly. */
+  backupPath?: string;
+  message?: string;
+  missing?: Array<'BOOK' | 'DIY'>;
+}
+
+/** Renderer-facing view of a BookBackupEntry — omits cacheRef/internal path details, which
+ *  are main-process-only plumbing. */
+export interface BookBackupSummary {
+  backupId: string;
+  originalFileName: string;
+  sizeBytes: number;
+  reason: BookBackupReason;
+  matchedContentId: string | null;
+  createdAtMs: number;
+}
+
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
   platform: string;
@@ -268,6 +448,18 @@ export interface PonyAbcApi {
 
   // Local-only preview playback — never modifies anything, never leaves the machine.
   readAudioPreview: (params: { source: AudioSource; fileName: string }) => Promise<AudioPreviewResult>;
+
+  // BOOK library — catalog browsing, local cache, and safe pen install/remove/restore.
+  bookList: () => Promise<BookListResult>;
+  bookCatalogRefresh: () => Promise<BookListResult>;
+  bookAdd: (params: { contentId: string; penGeneration: number }) => Promise<BookActionResult>;
+  bookUpdate: (params: { contentId: string; penGeneration: number }) => Promise<BookActionResult>;
+  bookReinstall: (params: { contentId: string; penGeneration: number }) => Promise<BookActionResult>;
+  bookRemove: (params: { fileName: string; penGeneration: number }) => Promise<BookRemoveResult>;
+  bookBackups: () => Promise<BookBackupSummary[]>;
+  bookRestore: (params: { backupId: string; penGeneration: number }) => Promise<BookActionResult>;
+  bookDownloadCancel: (contentId: string) => Promise<{ ok: boolean }>;
+  onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
 
   getSettings: () => Promise<Settings>;
   setSettings: (partial: Partial<Pick<Settings, 'locale'>>) => Promise<Settings>;

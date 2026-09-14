@@ -338,6 +338,27 @@ body {
   font-size: 12px;
 }
 
+.book-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.recordings-list__row > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.book-progress {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 4px;
+}
+
 /* Soft-background explanatory note — never relies on color alone (also has a border + icon-
  * free plain text), per the "clarify what this button does" requirement. */
 .note-box {

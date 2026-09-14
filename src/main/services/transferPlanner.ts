@@ -14,6 +14,7 @@ import type {
 } from '@shared/types';
 import { isEligibleMp3FileName, resolveContainedFile, resolvePenRoot } from './pathSecurity';
 import { safeWriteFile, type SafeWriteResult } from './transferService';
+import { acquirePenLock } from './penOperationLock';
 import * as session from './session';
 
 /** Turns a failed SafeWriteResult into one human-readable message that includes the backup
@@ -209,6 +210,11 @@ export async function executeTransferToPen(params: {
 
   const fileCount = fileNames.length;
   let aborted = false;
+  // Shared with BOOK installs/removals — only this pen-writing portion of the batch holds
+  // the lock, so a concurrent BOOK operation waits here rather than interleaving writes on
+  // the same physical device.
+  const releasePenLock = await acquirePenLock();
+  try {
   for (let i = 0; i < fileCount; i++) {
     if (!verifyStillSameTarget()) {
       // Stop the rest of the batch immediately — do not attempt, clean up, or otherwise
@@ -280,6 +286,9 @@ export async function executeTransferToPen(params: {
   }
 
   return { status: aborted ? 'stale-plan' : 'completed', added, replaced, skipped, failed, backupFolder: backupDir };
+  } finally {
+    releasePenLock();
+  }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -389,30 +398,37 @@ export async function executeReplaceSticker(params: {
   // once here, so a pen swap mid-write is caught wherever it happens.
   const verifyStillSameTarget = () => session.getGeneration() === penGeneration && fs.existsSync(diyDirReal);
 
-  onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'copying' });
-  const result = await safeWriteFile({
-    sourcePath: computerFileResolution.realPath,
-    targetDir: diyDirReal,
-    targetFileName: penFileName, // preserve the STICKER's filename, not the computer source's own name
-    backupDir,
-    verifyStillSameTarget,
-  });
+  // Shared with BOOK installs/removals — a concurrent BOOK operation waits for this lock
+  // rather than interleaving writes on the same physical device.
+  const releasePenLock = await acquirePenLock();
+  try {
+    onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'copying' });
+    const result = await safeWriteFile({
+      sourcePath: computerFileResolution.realPath,
+      targetDir: diyDirReal,
+      targetFileName: penFileName, // preserve the STICKER's filename, not the computer source's own name
+      backupDir,
+      verifyStillSameTarget,
+    });
 
-  if (!result.ok) {
-    const message = describeWriteFailure(result);
-    onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'failed', error: message });
-    const status =
-      result.reason === 'backup-failed'
-        ? 'backup-failed'
-        : result.reason === 'disconnected' || result.reason === 'device-changed'
-          ? 'device-disconnected'
-          : 'error';
-    // backupPath / recovery state is always surfaced, on every failure path — not just for
-    // the specific reasons that happen to set it — so the teacher always sees where the
-    // original ended up.
-    return { status, message, backupPath: result.backupPath };
+    if (!result.ok) {
+      const message = describeWriteFailure(result);
+      onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'failed', error: message });
+      const status =
+        result.reason === 'backup-failed'
+          ? 'backup-failed'
+          : result.reason === 'disconnected' || result.reason === 'device-changed'
+            ? 'device-disconnected'
+            : 'error';
+      // backupPath / recovery state is always surfaced, on every failure path — not just for
+      // the specific reasons that happen to set it — so the teacher always sees where the
+      // original ended up.
+      return { status, message, backupPath: result.backupPath };
+    }
+
+    onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'replaced' });
+    return { status: 'completed', backupPath: result.backupPath };
+  } finally {
+    releasePenLock();
   }
-
-  onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'replaced' });
-  return { status: 'completed', backupPath: result.backupPath };
 }

@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  isEligibleAxbFileName,
   isEligibleMp3FileName,
   resolveDestination,
   resolveDiySourceFile,
@@ -196,5 +197,21 @@ describe('isEligibleMp3FileName', () => {
     expect(isEligibleMp3FileName('.DS_Store')).toBe(false);
     expect(isEligibleMp3FileName('readme.txt')).toBe(false);
     expect(isEligibleMp3FileName('0451.wav')).toBe(false);
+  });
+});
+
+describe('isEligibleAxbFileName', () => {
+  it('accepts plain .axb names, any case', () => {
+    expect(isEligibleAxbFileName('0451.axb')).toBe(true);
+    expect(isEligibleAxbFileName('0451.AXB')).toBe(true);
+  });
+
+  it('rejects macOS AppleDouble sidecar files even though they end in .axb', () => {
+    expect(isEligibleAxbFileName('._0451.axb')).toBe(false);
+  });
+
+  it('rejects non-axb files', () => {
+    expect(isEligibleAxbFileName('.DS_Store')).toBe(false);
+    expect(isEligibleAxbFileName('0451.mp3')).toBe(false);
   });
 });

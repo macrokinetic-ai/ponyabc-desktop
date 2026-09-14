@@ -8,6 +8,7 @@ import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
+import { bookAdd, bookBackups, bookCatalogRefresh, bookDownloadCancel, bookList, bookReinstall, bookRemove, bookRestore, bookUpdate } from './book';
 import { getSettings, setSettings } from './settings';
 import { getAppInfo } from './appInfo';
 import { checkForUpdates, openLatestReleasePage } from './updates';
@@ -60,6 +61,16 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.replaceStickerExecute, (_event, params) => executeReplaceSticker(getWindow(), params));
 
   ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));
+
+  ipcMain.handle(IPC.bookList, () => bookList());
+  ipcMain.handle(IPC.bookCatalogRefresh, () => bookCatalogRefresh());
+  ipcMain.handle(IPC.bookAdd, (_event, params) => bookAdd(getWindow(), params));
+  ipcMain.handle(IPC.bookUpdate, (_event, params) => bookUpdate(getWindow(), params));
+  ipcMain.handle(IPC.bookReinstall, (_event, params) => bookReinstall(getWindow(), params));
+  ipcMain.handle(IPC.bookRemove, (_event, params) => bookRemove(params));
+  ipcMain.handle(IPC.bookBackups, () => bookBackups());
+  ipcMain.handle(IPC.bookRestore, (_event, params) => bookRestore(params));
+  ipcMain.handle(IPC.bookDownloadCancel, (_event, contentId: string) => bookDownloadCancel(contentId));
 
   ipcMain.handle(IPC.settingsGet, () => getSettings(store));
   ipcMain.handle(IPC.settingsSet, (_event, partial: unknown) => setSettings(store, partial));
