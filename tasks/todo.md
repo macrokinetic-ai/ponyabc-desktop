@@ -1,74 +1,59 @@
-# BOOK database milestone
+# BOOK database milestone — v0.3.0
 
 User-approved plan: Option A (public, secret-free BOOK catalog/downloads, no
-DRM). Approved implementing + deploying a minimal `ponyabc-web` change
-(new public routes only, no change to the device/firmware/admin flow).
+DRM), then a dual-pane redesign correction, then a real download-corruption
+bug found and fixed against the live API.
 
 - [x] `ponyabc-web`: new `GET /api/public/books` + `GET /api/public/books/download?id=`
       routes — no auth, active-only, id-based download (never a raw storage
       key), declared `original_filename` + full `friendlyNameI18n` exposed.
-      `/api/pen/*` untouched (its own tests still pass unmodified). 445/445
-      tests pass, typecheck clean, lint clean, production build succeeds.
-      Committed (`ea3e4da`). **Not yet deployed** — blocked by this
-      environment's production-deploy safety gate; needs the user to run
-      `npm run deploy` themselves.
-- [x] Desktop data model (`BookCatalogEntry`/`BookCatalogSnapshot`/
-      `BookCacheEntry`/`BookBackupEntry`/`BookItemStatus`/`BookLibraryItem`)
-      in `src/shared/types.ts`; `src/shared/bookDisplay.ts` for the
-      renderer-side instant-locale-switch display name resolution.
-- [x] `bookStore.ts` (JSON manifest persistence, settingsStore.ts pattern),
-      `bookCatalog/{client,fixtureClient,httpClient}.ts`,
-      `bookCatalogValidate.ts` (duplicate/case-collision detection),
-      `bookStatus.ts` (status derivation, install-eligibility gate),
-      `bookReconcile.ts` (catalog+cache+pen merge, on-demand hashing only
-      for matched files with a non-null catalog hash).
-- [x] `penOperationLock.ts` (shared BOOK/DIY pen-write mutex) retrofitted
-      into `transferPlanner.ts`'s `executeTransferToPen`/`executeReplaceSticker`.
-- [x] `bookDownload.ts` — streaming download, full-hash cache identity,
-      concurrent-request dedup (join in-flight; reinstall pre-empts),
-      declared-size-exceeded abort, space checks, metadata-incomplete gate.
-- [x] `bookInstall.ts` (add/replace-with-official/reinstall),
-      `bookBackup.ts` (durable backup + cache-hash dedup reference,
-      mkdirSync failure now caught cleanly — found via a test), `bookRemove.ts`
-      (backup-before-delete, re-verify-hash-immediately-before-unlink,
-      `target-changed-since-backup`), `bookRestore.ts`.
-- [x] IPC: `bookList`/`bookCatalogRefresh`/`bookAdd`/`bookUpdate`/
-      `bookReinstall`/`bookRemove`/`bookBackups`/`bookRestore`/
-      `bookDownloadCancel`/`bookDownloadProgress`, wired through
-      `ipc/book.ts` → `ipc/index.ts` → `preload/index.ts` → `PonyAbcApi`.
-- [x] Renderer: `BookLibraryContext.tsx`, real `BookLibraryScreen.tsx`
-      (replaces the placeholder), wired into `App.tsx`. Neutral
-      "differs from official version" / "replace with official version"
-      language throughout — no "update available" claim, no anti-copy/DRM
-      claim.
-- [x] i18n: `book.json` extended in all 8 locales.
-- [x] Tests: 242 total (was 234 pre-BOOK), typecheck clean both configs.
-      Fixed a real bug found while writing tests: `bookBackup.ts`'s
-      `mkdirSync` wasn't guarded — a filesystem failure there would have
-      thrown instead of returning a clean `backup-failed` result.
-- [x] Pushed to `main`; real `windows-latest` CI run caught a genuine
-      Windows-only bug on the first push (`sha256File` resolved on the read
-      stream's `'end'` instead of `'close'`, racing the unlink right after
-      hashing in `bookRemove.ts` — `ENOTEMPTY`/handle-still-open). Fixed,
-      re-pushed, second Windows CI run fully green (typecheck/test/dist:win).
-- [x] Real CDP verification against the actual built app (simulated pen via
-      `PONYABC_TEST_VOLUMES_ROOT`, never a real physical pen):
-      - Live catalog fetch genuinely attempted against
-        `https://register.ponyabc.uk/api/public/books` (currently 404,
-        since it isn't deployed yet) → correctly shows the "catalog could
-        not be reached" banner, not a crash or a fake success.
-      - 820px minimum window width: zero horizontal overflow, no overlap.
-      - Zero console errors/exceptions.
-      - Full real removal flow: a genuine "not-in-catalog" `.axb` file on
-        the simulated pen → Remove → explicit confirm dialog (filename +
-        freed space + backup notice) → Confirm → file actually deleted from
-        the simulated BOOK folder AND a verified backup copy + correct
-        manifest entry (reason: uncatalogued) appears on disk, offered back
-        via "Restore to pen".
-- [ ] **Blocked on the user**: deploy the committed `ponyabc-web` change
-      (`npm run deploy`), then verify the live public endpoint for real.
-- [ ] Once live: re-run CDP verification with the real catalog (real
-      metadata rendering, a real download into the simulated BOOK folder),
-      full suite + typecheck one more time, then `gh release create` the
-      next unused version with Apple Silicon + Windows x64 + Intel
-      installers and SHA-256, and report back with links + short test steps.
+      `/api/pen/*` untouched. Implemented, tested, committed, **and deployed
+      by the user** (Cloudflare Version ID e1efcaa5-9213-42d7-a524-f9e9a7e9a537).
+      Verified live: real catalog (37 books), correct sizes/hashes/filenames/
+      i18n names, a real download's on-disk hash matches exactly, unknown/
+      malformed/missing ids all correctly rejected (400/404, indistinguishable).
+- [x] Desktop pipeline: catalog client, JSON-manifest local persistence,
+      streaming download+cache, safe pen install/replace/reinstall/remove,
+      shared BOOK/DIY pen-write lock, full-hash cache identity, concurrent-
+      download dedup.
+- [x] **Critical fix**: a real download inside Electron's main process was
+      silently corrupted by the `Readable.fromWeb()` + `stream/promises.pipeline`
+      conversion (exact byte count, wrong SHA-256 — confirmed by the identical
+      code being byte-correct in plain Node). The existing checksum check
+      caught this every time and refused to write anything — never bypassed.
+      Fixed by reading the WHATWG stream directly via its own reader. Found
+      and fixed two related races while rewriting (cancellation must race the
+      abort signal explicitly; temp-file cleanup must wait for the write
+      stream to actually close before unlinking). Re-verified end-to-end
+      against the real live catalog — on-disk hash now matches exactly.
+- [x] **Dual-pane redesign** (per explicit correction, replacing the original
+      single-list UI): left pane = pen's actual BOOK folder (matched or
+      "Unknown"), right pane = App's BOOK database (catalog + cache), mirrors
+      My Recordings' pattern. Unknown content is strictly read-only —
+      enforced in the main process (`ipc/book.ts`'s `bookRemove` refuses
+      anything not resolved to a matched, removable pen item), not just an
+      omitted button. Retired the old "Unknown gets a backup, can be
+      removed/restored" design; existing backups of that kind are kept on
+      disk but `bookRestore` now refuses to restore one (blocks the one path
+      that could have bypassed the new rule). Removed in-app developer notes
+      about the cache directory / lack of encryption — kept in code comments
+      only.
+- [x] Tests: 249 total, typecheck clean both configs. New `bookIpc.test.ts`
+      exercises the actual `ipc/book.ts` wrapper (mocking only `electron`) to
+      prove the Unknown-content refusal is enforced there, not just inferred.
+- [x] Real Windows CI green (typecheck/test/dist:win) on every push, including
+      after the download-corruption fix and the dual-pane redesign.
+- [x] Real CDP verification against the actual built app + the real live
+      catalog + a simulated pen (never a real physical pen):
+      catalog browses real metadata; a real ~6MB download completes and its
+      on-disk hash matches the server-declared SHA-256 exactly; a genuinely
+      differing matched book shows "On pen, differs from this version" (never
+      "update available"); a genuinely unmatched file shows "Unknown" with no
+      checkbox in the DOM; full real remove → backup → verify round trip
+      against a genuine not-in-catalog fixture file (pre-redesign) and the
+      new dual-pane Remove confirm flow (post-redesign); 820px layout has
+      zero horizontal overflow; zero console errors throughout.
+- [x] Version bumped to 0.3.0, tagged, mac DMGs built + codesign-verified,
+      Windows exe downloaded from Actions + checksum-verified, GitHub release
+      published with all three installers + SHA-256 + notes distinguishing
+      hardware-tested (Apple Silicon, Windows x64) from build-only (Intel).

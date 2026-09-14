@@ -1,5 +1,68 @@
 # Lessons
 
+## Electron's main-process `fetch`/stream interop can silently corrupt bytes — verify a real download's hash against a real server, not just a synthetic response
+
+`bookDownload.ts` originally used `Readable.fromWeb(response.body)` +
+`node:stream/promises.pipeline()` to stream a download to disk. Every unit
+test passed (mocked `fetch` returning a small `ReadableStream`), and a
+standalone Node script (`tsx`, plain Node, not Electron) hitting the exact
+same real production URL produced the exact correct SHA-256. Only inside the
+running Electron app's main process did the identical code, against the
+identical URL, produce the exact right byte **count** but a **different**
+hash — confirmed via temporary `console.error` tracing at each stage
+(pipeline-done / stat / sha256File), which showed the size check passing and
+only the hash comparison failing. The existing checksum verification did its
+job and refused to write the corrupted file to the pen every time — it was
+never bypassed, silently accepted, or the check itself at fault.
+
+**Fix:** stop going through the Node-stream conversion layer — read the
+WHATWG `ReadableStream` directly via `response.body.getReader()` and pump
+chunks manually into the write stream, with explicit backpressure handling
+(`write()`'s return value + the `'drain'` event) and an explicit
+`writeStream.end()` callback instead of relying on `pipeline()` to know when
+both sides are truly done.
+
+**How to apply:** a synthetic fetch mock (even a byte-accurate one) proves
+the code path works, not that the specific runtime's stream implementation
+is faithful — for any feature streaming real bytes through Electron's main
+process, verify a real download's content hash against a real server
+response before considering it verified, the same way real hardware output
+was needed to catch the MPEG Layer II bug below. Isolating the same function
+in plain Node (outside Electron) to compare its output byte-for-byte against
+Electron's own run is what actually pinpointed this as an Electron-specific
+interop bug rather than a logic bug in the download code itself.
+
+## Two related races found while rewriting the same download loop — audit cancellation and cleanup against the actual event semantics, not the ones that feel intuitive
+
+While replacing the streaming approach above, two more bugs surfaced only
+via real failing tests (not reasoning about the code):
+1. **`reader.cancel()` resolves a pending `read()` as `{done: true}`** (a
+   normal-completion signal per the streams spec), not a rejection. A
+   cancel-on-abort listener that calls `reader.cancel()` can therefore win a
+   `Promise.race()` against an abort-rejection listener with the *wrong*
+   outcome — a cancelled download was silently treated as "finished
+   successfully" with a truncated read, producing a false `hash-mismatch`
+   instead of `cancelled`. Fix: race explicitly against the abort signal
+   itself (a separate promise that rejects on `'abort'`), and only call
+   `reader.cancel()` afterward, as pure cleanup — never as part of what
+   decides the race.
+2. **`fs.createWriteStream(...).destroy()` doesn't guarantee the file's
+   pending `open()` has completed** — if a stream is destroyed before it
+   ever wrote anything (e.g. the very first chunk already failed
+   validation), an `unlink()` issued immediately after can race ahead of
+   that still-pending open and miss the file it creates a moment later,
+   leaving an orphaned empty temp file. Fix: wait for the stream's `'close'`
+   event (which only fires once the fd is actually released) before
+   unlinking.
+
+**How to apply:** when cleaning up a stream/reader on an error or
+cancellation path, don't assume a "cancel" or "destroy" call synchronously
+undoes everything it started — check what event actually signals true
+completion (a rejection vs. a normal resolution; a `'close'` event vs. the
+method call itself) and gate cleanup on that, not on the call that merely
+*requests* it. A real failing test (not code review) is what caught both of
+these.
+
 ## A ".mp3" file extension doesn't mean the data is MPEG Layer III — check with real hardware output, not just synthetic test files
 
 The v0.2.6 MP3 preview feature passed every test I ran (typecheck, unit tests, CDP with a
