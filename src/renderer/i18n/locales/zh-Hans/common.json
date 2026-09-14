@@ -12,17 +12,30 @@
     "change": "更改…",
     "cancel": "取消",
     "retry": "重试",
-    "close": "关闭"
+    "close": "关闭",
+    "refresh": "刷新"
   },
   "penRoot": {
     "label": "点读笔存储空间",
     "notSelected": "尚未选择点读笔存储空间。",
-    "selectButton": "选择点读笔存储空间…",
-    "changeButton": "更改点读笔存储空间…",
+    "selectButton": "手动选择点读笔存储空间…",
+    "changeButton": "选择另一个点读笔存储空间…",
     "checkedPath": "已检查路径：{{path}}",
     "missingFolders": "缺少预期的文件夹：{{folders}}",
     "notFound": "找不到该位置，点读笔是否仍已连接？",
-    "disconnected": "点读笔似乎已断开连接。"
+    "disconnected": "点读笔似乎已断开连接。",
+    "scanning": "正在搜索点读笔…",
+    "accessible": "已可访问点读笔 SD 卡。",
+    "connectionHint": "请使用支持数据传输的 USB 线连接电脑与 P5 蓝牙点读笔——这些文件功能不能只靠蓝牙使用。",
+    "multipleFound": "找到多个可能的点读笔磁盘，请选择一个：",
+    "noneFound": "未检测到点读笔。",
+    "rescanButton": "重新检测"
+  },
+  "computerFolder": {
+    "label": "电脑文件夹",
+    "notSelected": "尚未选择文件夹。",
+    "selectButton": "选择文件夹…",
+    "changeButton": "更改文件夹…"
   },
   "errors": {
     "generic": "发生错误：{{message}}"

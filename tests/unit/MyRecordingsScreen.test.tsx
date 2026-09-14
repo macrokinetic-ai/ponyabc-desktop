@@ -3,15 +3,17 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { initI18n } from '../../src/renderer/i18n';
 import { PenRootProvider } from '../../src/renderer/state/PenRootContext';
+import { ComputerFolderProvider } from '../../src/renderer/state/ComputerFolderContext';
 import { MyRecordingsScreen } from '../../src/renderer/screens/MyRecordingsScreen';
 import type { PonyAbcApi } from '../../src/shared/types';
 
-function mockPonyAbc(): PonyAbcApi {
+function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
     platform: 'darwin',
     openRegistrationPage: vi.fn(async () => ({ ok: true })),
-    selectPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN' })),
-    restorePenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN' })),
+    scanForPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1, auto: true })),
+    chooseCandidatePenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
+    selectPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
     listDiyRecordings: vi.fn(async () => ({
       status: 'ok',
       diyFolderName: 'DIY',
@@ -20,11 +22,40 @@ function mockPonyAbc(): PonyAbcApi {
         { name: '0002.mp3', sizeBytes: 2000, mtimeMs: 0 },
       ],
     })),
-    chooseSaveDestination: vi.fn(async () => ({ status: 'ok', path: '/Users/test/Desktop' })),
-    copyRecordings: vi.fn(async () => ({ status: 'completed', succeeded: [], renamed: [], failed: [] })),
-    getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null })),
-    setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null })),
-    onCopyProgress: vi.fn(() => () => {}),
+    onPenVolumesChanged: vi.fn(() => () => {}),
+    selectComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
+    restoreComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
+    listComputerFolder: vi.fn(async () => ({
+      status: 'ok',
+      folderPath: '/Users/teacher/Desktop',
+      files: [{ name: 'teacher-take.mp3', sizeBytes: 500, mtimeMs: 0 }],
+    })),
+    copyRecordingsToComputer: vi.fn(async () => ({ status: 'completed', succeeded: [], renamed: [], failed: [] })),
+    planTransferToPen: vi.fn(async () => ({
+      status: 'ok',
+      toAdd: [],
+      conflicts: [],
+      rejected: [],
+      destinationVolumeLabel: 'PEN',
+      requiredBytes: 0,
+      freeBytes: 1000,
+      hasEnoughSpace: true,
+      penGeneration: 1,
+    })),
+    executeTransferToPen: vi.fn(async () => ({ status: 'completed', added: [], replaced: [], skipped: [], failed: [] })),
+    planReplaceSticker: vi.fn(async () => ({
+      status: 'ok',
+      penFileName: '0001.mp3',
+      penFileSizeBytes: 1000,
+      computerFileName: 'teacher-take.mp3',
+      computerFileSizeBytes: 500,
+      penGeneration: 1,
+    })),
+    executeReplaceSticker: vi.fn(async () => ({ status: 'completed', backupPath: '/backups/0001.mp3' })),
+    onTransferProgress: vi.fn(() => () => {}),
+    getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
+    setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
+    ...overrides,
   };
 }
 
@@ -44,109 +75,122 @@ afterEach(() => {
 async function renderScreen() {
   render(
     <PenRootProvider>
-      <MyRecordingsScreen />
+      <ComputerFolderProvider>
+        <MyRecordingsScreen />
+      </ComputerFolderProvider>
     </PenRootProvider>,
   );
   await screen.findByText('0001.mp3');
+  await screen.findByText('teacher-take.mp3');
 }
 
-function selectFirstFile() {
-  const checkboxes = screen.getAllByRole('checkbox');
-  fireEvent.click(checkboxes[1]); // index 0 is "select all"
-}
-
-function clickSave() {
-  fireEvent.click(screen.getByText(/Save selected to computer/));
-}
-
-describe('MyRecordingsScreen — save flow does not get stuck on failure', () => {
-  it('recovers (re-enables Save) when chooseSaveDestination rejects', async () => {
-    window.ponyabc.chooseSaveDestination = vi.fn(async () => {
-      throw new Error('IPC channel disconnected');
-    });
+describe('MyRecordingsScreen — dual pane basics', () => {
+  it('renders both panes and lists files independently', async () => {
     await renderScreen();
-    selectFirstFile();
-    clickSave();
-
-    await waitFor(() => expect(screen.getByText(/Something went wrong/)).toBeTruthy());
-    const saveButton = screen.getByText(/Save selected to computer/) as HTMLButtonElement;
-    expect(saveButton.disabled).toBe(false);
+    expect(screen.getByText('0001.mp3')).toBeTruthy();
+    expect(screen.getByText('0002.mp3')).toBeTruthy();
+    expect(screen.getByText('teacher-take.mp3')).toBeTruthy();
   });
 
-  it('recovers (re-enables Save) when copyRecordings rejects', async () => {
-    window.ponyabc.copyRecordings = vi.fn(async () => {
-      throw new Error('main process crashed');
-    });
-    await renderScreen();
-    selectFirstFile();
-    clickSave();
-
-    await waitFor(() => expect(screen.getByText(/Something went wrong/)).toBeTruthy());
-    const saveButton = screen.getByText(/Save selected to computer/) as HTMLButtonElement;
-    expect(saveButton.disabled).toBe(false);
+  it('right pane still works when no pen is connected, but pen-dependent actions are disabled', async () => {
+    window.ponyabc.scanForPenRoot = vi.fn(async () => ({ status: 'none' }));
+    render(
+      <PenRootProvider>
+        <ComputerFolderProvider>
+          <MyRecordingsScreen />
+        </ComputerFolderProvider>
+      </PenRootProvider>,
+    );
+    await screen.findByText('teacher-take.mp3'); // computer pane still populated
+    const saveButton = screen.getByText(/Save to computer/) as HTMLButtonElement;
+    const sendButton = screen.getByText(/Send to pen/) as HTMLButtonElement;
+    expect(saveButton.disabled).toBe(true);
+    expect(sendButton.disabled).toBe(true);
   });
 });
 
-describe('MyRecordingsScreen — CopySummary.status is surfaced honestly', () => {
-  it('shows the real reason for status "error" instead of a false success', async () => {
-    window.ponyabc.copyRecordings = vi.fn(async () => ({
-      status: 'error',
-      succeeded: [],
-      renamed: [],
-      failed: [],
-      message: 'Expected folder(s) missing on the pen: DIY',
-    }));
+describe('MyRecordingsScreen — save to computer does not get stuck on failure', () => {
+  it('re-enables after copyRecordingsToComputer rejects', async () => {
+    window.ponyabc.copyRecordingsToComputer = vi.fn(async () => {
+      throw new Error('IPC crashed');
+    });
     await renderScreen();
-    selectFirstFile();
-    clickSave();
+    fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('0001.mp3'))!);
+    fireEvent.click(screen.getByText(/Save to computer/));
 
-    await waitFor(() => expect(screen.getByText(/Expected folder\(s\) missing on the pen: DIY/)).toBeTruthy());
-    expect(screen.queryByText(/0 files saved/)).toBeNull();
-  });
-
-  it('shows the on-pen explanation for status "invalid-destination"', async () => {
-    window.ponyabc.copyRecordings = vi.fn(async () => ({
-      status: 'invalid-destination',
-      succeeded: [],
-      renamed: [],
-      failed: [],
-    }));
-    await renderScreen();
-    selectFirstFile();
-    clickSave();
-
-    await waitFor(() => expect(screen.getByText(/can't save recordings back onto the pen/i)).toBeTruthy());
-  });
-
-  it('shows the no-destination explanation for status "no-destination-selected"', async () => {
-    window.ponyabc.copyRecordings = vi.fn(async () => ({
-      status: 'no-destination-selected',
-      succeeded: [],
-      renamed: [],
-      failed: [],
-    }));
-    await renderScreen();
-    selectFirstFile();
-    clickSave();
-
-    await waitFor(() => expect(screen.getByText(/Choose a destination folder first/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Something went wrong/)).toBeTruthy());
+    const saveButton = screen.getByText(/Save to computer/) as HTMLButtonElement;
+    expect(saveButton.disabled).toBe(false); // selection still present, not stuck busy
   });
 });
 
-describe('MyRecordingsScreen — success accounting', () => {
-  it('counts renamed files as part of the success total, and keeps the rename detail', async () => {
-    window.ponyabc.copyRecordings = vi.fn(async () => ({
+describe('MyRecordingsScreen — send-to-pen conflict plan', () => {
+  it('requires an explicit decision for every conflict before confirming', async () => {
+    window.ponyabc.planTransferToPen = vi.fn(async () => ({
+      status: 'ok',
+      toAdd: [],
+      conflicts: [{ fileName: 'teacher-take.mp3', sourceSizeBytes: 500, existingSizeBytes: 400 }],
+      rejected: [],
+      destinationVolumeLabel: 'PEN',
+      requiredBytes: 500,
+      freeBytes: 100000,
+      hasEnoughSpace: true,
+      penGeneration: 1,
+    }));
+    await renderScreen();
+    fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
+    fireEvent.click(screen.getByText(/Send to pen/));
+
+    await screen.findByText(/review before sending/);
+    const confirmButton = screen.getByText('Confirm and send') as HTMLButtonElement;
+    expect(confirmButton.disabled).toBe(true); // no decision made yet — must not be sendable
+
+    const replaceRadio = screen.getAllByLabelText('Replace')[0];
+    fireEvent.click(replaceRadio);
+    expect((screen.getByText('Confirm and send') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('sends the request and shows the summary once confirmed', async () => {
+    window.ponyabc.planTransferToPen = vi.fn(async () => ({
+      status: 'ok',
+      toAdd: [{ fileName: 'teacher-take.mp3', sizeBytes: 500 }],
+      conflicts: [],
+      rejected: [],
+      destinationVolumeLabel: 'PEN',
+      requiredBytes: 500,
+      freeBytes: 100000,
+      hasEnoughSpace: true,
+      penGeneration: 1,
+    }));
+    window.ponyabc.executeTransferToPen = vi.fn(async () => ({
       status: 'completed',
-      succeeded: ['0001.mp3'],
-      renamed: [{ original: '0002.mp3', savedAs: '0002 (1).mp3' }],
+      added: ['teacher-take.mp3'],
+      replaced: [],
+      skipped: [],
       failed: [],
-      destinationPath: '/Users/test/Desktop',
+      backupFolder: '/backups/batch1',
     }));
     await renderScreen();
-    selectFirstFile();
-    clickSave();
+    fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
+    fireEvent.click(screen.getByText(/Send to pen/));
+    await screen.findByText(/review before sending/);
+    fireEvent.click(screen.getByText('Confirm and send'));
 
-    await waitFor(() => expect(screen.getByText(/2 files saved/)).toBeTruthy());
-    expect(screen.getByText(/0002\.mp3 → 0002 \(1\)\.mp3/)).toBeTruthy();
+    await waitFor(() => expect(window.ponyabc.executeTransferToPen).toHaveBeenCalled());
+    await screen.findByText('Send complete');
+  });
+});
+
+describe('MyRecordingsScreen — replace sticker', () => {
+  it('shows the exact confirmation text with the pen filename as the write target', async () => {
+    await renderScreen();
+    fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('0001.mp3'))!);
+    fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
+
+    const replaceButton = screen.getByText("Replace this sticker's audio") as HTMLButtonElement;
+    expect(replaceButton.disabled).toBe(false);
+    fireEvent.click(replaceButton);
+
+    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
   });
 });

@@ -135,21 +135,59 @@ export type SourceFileResolution =
   | { status: 'not-found' };
 
 /**
- * Resolves a single DIY file the renderer asked to copy, by name only. Rejects anything
- * that isn't a plain filename (no path separators / traversal), and rejects a file whose
- * resolved real location (after following symlinks) is not directly inside `diyDirReal`.
+ * Resolves a single file the renderer asked to touch, by name only, against an already-
+ * security-resolved directory. Rejects anything that isn't a plain filename (no path
+ * separators / traversal), and rejects a file whose resolved real location (after
+ * following symlinks) is not directly inside `dirReal`. Used for both the pen's DIY
+ * folder and the authorized computer folder — the boundary being enforced is "stays
+ * inside this specific directory", not anything pen-specific.
  */
-export function resolveDiySourceFile(diyDirReal: string, fileName: string): SourceFileResolution {
+export function resolveContainedFile(dirReal: string, fileName: string): SourceFileResolution {
   if (!fileName || fileName !== path.basename(fileName) || fileName === '.' || fileName === '..') {
     return { status: 'rejected' };
   }
-  const candidate = path.join(diyDirReal, fileName);
+  const candidate = path.join(dirReal, fileName);
   let real: string;
   try {
     real = fs.realpathSync(candidate);
   } catch {
     return { status: 'not-found' };
   }
-  if (path.dirname(real) !== diyDirReal) return { status: 'rejected' };
+  if (path.dirname(real) !== dirReal) return { status: 'rejected' };
   return { status: 'ok', realPath: real };
+}
+
+/** @deprecated kept as an alias for readability at DIY-specific call sites and existing tests. */
+export const resolveDiySourceFile = resolveContainedFile;
+
+/**
+ * True for a name that is eligible to be treated as a DIY recording anywhere in this app:
+ * a plain ".mp3" file (any case) that is not a macOS AppleDouble sidecar file. macOS writes
+ * a "._name.mp3" companion for every "name.mp3" it copies onto a non-HFS/APFS volume (which
+ * every SD card is) — these are metadata, not audio, and must never be listed, copied, sent,
+ * or offered as a replacement source. This is checked both when listing a folder and again
+ * at every transfer entry point, independently of the listing.
+ */
+export function isEligibleMp3FileName(name: string): boolean {
+  return !name.startsWith('._') && /\.mp3$/i.test(name);
+}
+
+/**
+ * Resolves a user-selected folder as a pen root, tolerating the user having picked the
+ * BOOK or DIY folder itself instead of its parent — in that case the parent is checked
+ * as the actual root.
+ */
+export function resolvePenRootFromSelection(selectedPath: string): PenRootResolution {
+  const direct = resolvePenRoot(selectedPath);
+  if (direct.status === 'ok') return direct;
+
+  const base = path.basename(selectedPath).toLowerCase();
+  if (base === 'book' || base === 'diy') {
+    const parent = path.dirname(selectedPath);
+    if (parent !== selectedPath) {
+      const parentResult = resolvePenRoot(parent);
+      if (parentResult.status === 'ok') return parentResult;
+    }
+  }
+  return direct;
 }

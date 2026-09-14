@@ -42,6 +42,14 @@ describe('createSettingsStore', () => {
     fs.mkdirSync(userDataDir, { recursive: true });
     fs.writeFileSync(path.join(userDataDir, 'settings.json'), '{not json');
     const store = createSettingsStore(userDataDir, () => 'it');
-    expect(store.get()).toEqual({ version: 1, locale: 'it', lastPenRootPath: null });
+    expect(store.get()).toEqual({ version: 1, locale: 'it', lastPenRootPath: null, lastComputerFolderPath: null });
+  });
+
+  it('persists lastComputerFolderPath across store instances', () => {
+    const first = createSettingsStore(userDataDir, () => 'en');
+    first.update({ lastComputerFolderPath: '/Users/teacher/Desktop/Recordings' });
+
+    const second = createSettingsStore(userDataDir, () => 'en');
+    expect(second.get().lastComputerFolderPath).toBe('/Users/teacher/Desktop/Recordings');
   });
 });

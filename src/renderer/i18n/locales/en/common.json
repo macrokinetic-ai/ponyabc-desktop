@@ -12,17 +12,30 @@
     "change": "Change…",
     "cancel": "Cancel",
     "retry": "Retry",
-    "close": "Close"
+    "close": "Close",
+    "refresh": "Refresh"
   },
   "penRoot": {
     "label": "Pen storage",
     "notSelected": "No pen storage selected yet.",
-    "selectButton": "Select pen storage…",
-    "changeButton": "Change pen storage…",
+    "selectButton": "Select pen storage manually…",
+    "changeButton": "Select a different pen storage…",
     "checkedPath": "Checked path: {{path}}",
     "missingFolders": "Missing expected folder(s): {{folders}}",
     "notFound": "That location could not be found. Is the pen still connected?",
-    "disconnected": "The pen appears to be disconnected."
+    "disconnected": "The pen appears to be disconnected.",
+    "scanning": "Scanning for your pen…",
+    "accessible": "The pen's SD card is accessible.",
+    "connectionHint": "Connect your P5 pen to this computer with a USB cable that supports data transfer — these file features can't be used over Bluetooth alone.",
+    "multipleFound": "Several possible pen drives were found — choose one:",
+    "noneFound": "No pen detected.",
+    "rescanButton": "Rescan"
+  },
+  "computerFolder": {
+    "label": "Computer folder",
+    "notSelected": "No folder selected yet.",
+    "selectButton": "Choose folder…",
+    "changeButton": "Change folder…"
   },
   "errors": {
     "generic": "Something went wrong: {{message}}"

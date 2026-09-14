@@ -12,17 +12,30 @@
     "change": "Ändern…",
     "cancel": "Abbrechen",
     "retry": "Erneut versuchen",
-    "close": "Schließen"
+    "close": "Schließen",
+    "refresh": "Aktualisieren"
   },
   "penRoot": {
     "label": "Stift-Speicher",
     "notSelected": "Noch kein Stift-Speicher ausgewählt.",
-    "selectButton": "Stift-Speicher auswählen…",
-    "changeButton": "Stift-Speicher ändern…",
+    "selectButton": "Stift-Speicher manuell auswählen…",
+    "changeButton": "Anderen Stift-Speicher auswählen…",
     "checkedPath": "Geprüfter Pfad: {{path}}",
     "missingFolders": "Fehlende erwartete Ordner: {{folders}}",
     "notFound": "Dieser Ort wurde nicht gefunden. Ist der Stift noch verbunden?",
-    "disconnected": "Der Stift scheint getrennt zu sein."
+    "disconnected": "Der Stift scheint getrennt zu sein.",
+    "scanning": "Suche nach Ihrem Stift…",
+    "accessible": "Die SD-Karte des Stifts ist zugänglich.",
+    "connectionHint": "Verbinden Sie Ihren P5-Stift mit einem USB-Kabel, das Datenübertragung unterstützt, mit diesem Computer — diese Dateifunktionen können nicht allein über Bluetooth genutzt werden.",
+    "multipleFound": "Mehrere mögliche Stift-Laufwerke gefunden — wählen Sie eines aus:",
+    "noneFound": "Kein Stift erkannt.",
+    "rescanButton": "Erneut suchen"
+  },
+  "computerFolder": {
+    "label": "Computer-Ordner",
+    "notSelected": "Noch kein Ordner ausgewählt.",
+    "selectButton": "Ordner auswählen…",
+    "changeButton": "Ordner ändern…"
   },
   "errors": {
     "generic": "Ein Fehler ist aufgetreten: {{message}}"

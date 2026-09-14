@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE, isSupportedLocale, type SupportedLocale } from '@shared
 import type { Settings } from '@shared/types';
 
 function defaultSettings(seedLocale: SupportedLocale): Settings {
-  return { version: 1, locale: seedLocale, lastPenRootPath: null };
+  return { version: 1, locale: seedLocale, lastPenRootPath: null, lastComputerFolderPath: null };
 }
 
 /**
@@ -29,6 +29,7 @@ export function createSettingsStore(
         version: 1,
         locale: isSupportedLocale(parsed.locale) ? parsed.locale : DEFAULT_LOCALE,
         lastPenRootPath: typeof parsed.lastPenRootPath === 'string' ? parsed.lastPenRootPath : null,
+        lastComputerFolderPath: typeof parsed.lastComputerFolderPath === 'string' ? parsed.lastComputerFolderPath : null,
       };
     } catch {
       cache = defaultSettings(detectSystemLocale());
@@ -48,12 +49,13 @@ export function createSettingsStore(
     return load();
   }
 
-  function update(partial: Partial<Pick<Settings, 'locale' | 'lastPenRootPath'>>): Settings {
+  function update(partial: Partial<Pick<Settings, 'locale' | 'lastPenRootPath' | 'lastComputerFolderPath'>>): Settings {
     const current = load();
     const next: Settings = {
       ...current,
       ...(partial.locale !== undefined && isSupportedLocale(partial.locale) ? { locale: partial.locale } : {}),
       ...(partial.lastPenRootPath !== undefined ? { lastPenRootPath: partial.lastPenRootPath } : {}),
+      ...(partial.lastComputerFolderPath !== undefined ? { lastComputerFolderPath: partial.lastComputerFolderPath } : {}),
     };
     cache = next;
     persist(next);

@@ -12,17 +12,30 @@
     "change": "變更…",
     "cancel": "取消",
     "retry": "重試",
-    "close": "關閉"
+    "close": "關閉",
+    "refresh": "重新整理"
   },
   "penRoot": {
     "label": "點讀筆儲存空間",
     "notSelected": "尚未選擇點讀筆儲存空間。",
-    "selectButton": "選擇點讀筆儲存空間…",
-    "changeButton": "變更點讀筆儲存空間…",
+    "selectButton": "手動選擇點讀筆儲存空間…",
+    "changeButton": "選擇另一個點讀筆儲存空間…",
     "checkedPath": "已檢查路徑：{{path}}",
     "missingFolders": "缺少預期的資料夾：{{folders}}",
     "notFound": "找不到該位置，點讀筆是否仍連接中？",
-    "disconnected": "點讀筆似乎已中斷連接。"
+    "disconnected": "點讀筆似乎已中斷連接。",
+    "scanning": "正在搜尋點讀筆…",
+    "accessible": "已可存取點讀筆 SD 卡。",
+    "connectionHint": "請使用支援資料傳輸的 USB 線連接電腦與 P5 藍牙點讀筆——這些檔案功能不能只靠藍牙使用。",
+    "multipleFound": "找到多個可能嘅點讀筆磁碟，請選擇一個：",
+    "noneFound": "未偵測到點讀筆。",
+    "rescanButton": "重新偵測"
+  },
+  "computerFolder": {
+    "label": "電腦資料夾",
+    "notSelected": "尚未選擇資料夾。",
+    "selectButton": "選擇資料夾…",
+    "changeButton": "變更資料夾…"
   },
   "errors": {
     "generic": "發生錯誤：{{message}}"

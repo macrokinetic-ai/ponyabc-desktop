@@ -1,30 +1,58 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type {
-  ChooseDestinationResult,
+  ComputerFolderListResult,
+  ComputerFolderResult,
+  ConflictDecision,
   CopyProgressEvent,
   CopySummary,
   PenRootResult,
+  PenRootScanResult,
   PonyAbcApi,
   RecordingsListResult,
+  ReplaceStickerPlanResult,
+  ReplaceStickerSummary,
   Settings,
+  TransferToPenPlanResult,
+  TransferToPenSummary,
 } from '@shared/types';
+
+function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
+  const wrapped = (_event: unknown, payload: T) => listener(payload);
+  ipcRenderer.on(channel, wrapped);
+  return () => ipcRenderer.removeListener(channel, wrapped);
+}
 
 const api: PonyAbcApi = {
   platform: process.platform,
+
   openRegistrationPage: () => ipcRenderer.invoke(IPC.registrationOpen),
+
+  scanForPenRoot: () => ipcRenderer.invoke(IPC.penRootScan) as Promise<PenRootScanResult>,
+  chooseCandidatePenRoot: (index: number) => ipcRenderer.invoke(IPC.penRootChooseCandidate, index) as Promise<PenRootResult>,
   selectPenRoot: () => ipcRenderer.invoke(IPC.penRootSelect) as Promise<PenRootResult>,
-  restorePenRoot: () => ipcRenderer.invoke(IPC.penRootRestore) as Promise<PenRootResult>,
   listDiyRecordings: () => ipcRenderer.invoke(IPC.recordingsList) as Promise<RecordingsListResult>,
-  chooseSaveDestination: () => ipcRenderer.invoke(IPC.recordingsChooseDestination) as Promise<ChooseDestinationResult>,
-  copyRecordings: (fileNames: string[]) => ipcRenderer.invoke(IPC.recordingsCopy, fileNames) as Promise<CopySummary>,
+  onPenVolumesChanged: (listener: () => void) => subscribe(IPC.penRootVolumesChanged, () => listener()),
+
+  selectComputerFolder: () => ipcRenderer.invoke(IPC.computerFolderSelect) as Promise<ComputerFolderResult>,
+  restoreComputerFolder: () => ipcRenderer.invoke(IPC.computerFolderRestore) as Promise<ComputerFolderResult>,
+  listComputerFolder: () => ipcRenderer.invoke(IPC.computerFolderList) as Promise<ComputerFolderListResult>,
+
+  copyRecordingsToComputer: (fileNames: string[]) => ipcRenderer.invoke(IPC.copyToComputer, fileNames) as Promise<CopySummary>,
+
+  planTransferToPen: (fileNames: string[]) => ipcRenderer.invoke(IPC.transferToPenPlan, fileNames) as Promise<TransferToPenPlanResult>,
+  executeTransferToPen: (params: { fileNames: string[]; decisions: Record<string, ConflictDecision>; penGeneration: number }) =>
+    ipcRenderer.invoke(IPC.transferToPenExecute, params) as Promise<TransferToPenSummary>,
+
+  planReplaceSticker: (params: { penFileName: string; computerFileName: string }) =>
+    ipcRenderer.invoke(IPC.replaceStickerPlan, params) as Promise<ReplaceStickerPlanResult>,
+  executeReplaceSticker: (params: { penFileName: string; computerFileName: string; penGeneration: number }) =>
+    ipcRenderer.invoke(IPC.replaceStickerExecute, params) as Promise<ReplaceStickerSummary>,
+
+  onTransferProgress: (listener: (event: CopyProgressEvent) => void) => subscribe(IPC.transferProgress, listener),
+
   getSettings: () => ipcRenderer.invoke(IPC.settingsGet) as Promise<Settings>,
   setSettings: (partial) => ipcRenderer.invoke(IPC.settingsSet, partial) as Promise<Settings>,
-  onCopyProgress: (listener: (event: CopyProgressEvent) => void) => {
-    const wrapped = (_event: unknown, payload: CopyProgressEvent) => listener(payload);
-    ipcRenderer.on(IPC.recordingsCopyProgress, wrapped);
-    return () => ipcRenderer.removeListener(IPC.recordingsCopyProgress, wrapped);
-  },
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

@@ -2,12 +2,27 @@
 // Renderer never invokes these strings directly; it only calls window.ponyabc.* methods.
 export const IPC = {
   registrationOpen: 'ponyabc:registration:open',
+
+  penRootScan: 'ponyabc:penRoot:scan',
+  penRootChooseCandidate: 'ponyabc:penRoot:chooseCandidate',
   penRootSelect: 'ponyabc:penRoot:select',
-  penRootRestore: 'ponyabc:penRoot:restore',
+  penRootVolumesChanged: 'ponyabc:penRoot:volumes-changed',
   recordingsList: 'ponyabc:recordings:list',
-  recordingsChooseDestination: 'ponyabc:recordings:chooseDestination',
-  recordingsCopy: 'ponyabc:recordings:copy',
-  recordingsCopyProgress: 'ponyabc:recordings:copy-progress',
+
+  computerFolderSelect: 'ponyabc:computerFolder:select',
+  computerFolderRestore: 'ponyabc:computerFolder:restore',
+  computerFolderList: 'ponyabc:computerFolder:list',
+
+  copyToComputer: 'ponyabc:transfer:toComputer',
+
+  transferToPenPlan: 'ponyabc:transfer:toPen:plan',
+  transferToPenExecute: 'ponyabc:transfer:toPen:execute',
+
+  replaceStickerPlan: 'ponyabc:transfer:replaceSticker:plan',
+  replaceStickerExecute: 'ponyabc:transfer:replaceSticker:execute',
+
+  transferProgress: 'ponyabc:transfer:progress',
+
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',
 } as const;

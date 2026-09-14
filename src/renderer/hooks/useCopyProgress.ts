@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CopyProgressEvent } from '@shared/types';
 
-export function useCopyProgress() {
+export function useTransferProgress() {
   const [progress, setProgress] = useState<CopyProgressEvent | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    unsubscribeRef.current = window.ponyabc.onCopyProgress(setProgress);
+    unsubscribeRef.current = window.ponyabc.onTransferProgress(setProgress);
     return () => unsubscribeRef.current?.();
   }, []);
 

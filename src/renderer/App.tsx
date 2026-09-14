@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavSidebar, type Section } from './components/NavSidebar';
 import { PenRootProvider } from './state/PenRootContext';
+import { ComputerFolderProvider } from './state/ComputerFolderContext';
 import { HomeScreen } from './screens/HomeScreen';
 import { MyRecordingsScreen } from './screens/MyRecordingsScreen';
 import { BookLibraryScreen } from './screens/BookLibraryScreen';
@@ -12,16 +13,18 @@ export default function App() {
 
   return (
     <PenRootProvider>
-      <div className="app-shell">
-        <NavSidebar active={section} onSelect={setSection} />
-        <main className="app-content">
-          {section === 'home' && <HomeScreen />}
-          {section === 'recordings' && <MyRecordingsScreen />}
-          {section === 'book' && <BookLibraryScreen />}
-          {section === 'firmware' && <FirmwareScreen />}
-          {section === 'settings' && <SettingsScreen />}
-        </main>
-      </div>
+      <ComputerFolderProvider>
+        <div className="app-shell">
+          <NavSidebar active={section} onSelect={setSection} />
+          <main className="app-content">
+            {section === 'home' && <HomeScreen />}
+            {section === 'recordings' && <MyRecordingsScreen />}
+            {section === 'book' && <BookLibraryScreen />}
+            {section === 'firmware' && <FirmwareScreen />}
+            {section === 'settings' && <SettingsScreen />}
+          </main>
+        </div>
+      </ComputerFolderProvider>
     </PenRootProvider>
   );
 }

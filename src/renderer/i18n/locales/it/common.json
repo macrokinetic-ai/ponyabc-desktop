@@ -12,17 +12,30 @@
     "change": "Cambia…",
     "cancel": "Annulla",
     "retry": "Riprova",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "refresh": "Aggiorna"
   },
   "penRoot": {
     "label": "Archiviazione della penna",
     "notSelected": "Nessuna archiviazione della penna selezionata.",
-    "selectButton": "Seleziona archiviazione della penna…",
-    "changeButton": "Cambia archiviazione della penna…",
+    "selectButton": "Seleziona manualmente l'archiviazione della penna…",
+    "changeButton": "Seleziona un'altra archiviazione della penna…",
     "checkedPath": "Percorso controllato: {{path}}",
     "missingFolders": "Cartella/e prevista/e mancante/i: {{folders}}",
     "notFound": "Impossibile trovare questo percorso. La penna è ancora collegata?",
-    "disconnected": "La penna sembra scollegata."
+    "disconnected": "La penna sembra scollegata.",
+    "scanning": "Ricerca della penna in corso…",
+    "accessible": "La scheda SD della penna è accessibile.",
+    "connectionHint": "Collega la tua penna P5 a questo computer con un cavo USB che supporti il trasferimento dati — queste funzioni sui file non possono essere usate solo via Bluetooth.",
+    "multipleFound": "Sono state trovate più unità che potrebbero essere la penna — scegline una:",
+    "noneFound": "Nessuna penna rilevata.",
+    "rescanButton": "Cerca di nuovo"
+  },
+  "computerFolder": {
+    "label": "Cartella sul computer",
+    "notSelected": "Nessuna cartella selezionata.",
+    "selectButton": "Scegli cartella…",
+    "changeButton": "Cambia cartella…"
   },
   "errors": {
     "generic": "Si è verificato un errore: {{message}}"
