@@ -16,6 +16,7 @@ import type {
   Settings,
   TransferToPenPlanResult,
   TransferToPenSummary,
+  UpdateCheckResult,
 } from '@shared/types';
 
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -56,6 +57,8 @@ const api: PonyAbcApi = {
   setSettings: (partial) => ipcRenderer.invoke(IPC.settingsSet, partial) as Promise<Settings>,
 
   getAppInfo: () => ipcRenderer.invoke(IPC.appInfoGet) as Promise<AppInfo>,
+  checkForUpdates: () => ipcRenderer.invoke(IPC.appCheckForUpdates) as Promise<UpdateCheckResult>,
+  openLatestReleasePage: () => ipcRenderer.invoke(IPC.appOpenLatestReleasePage),
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

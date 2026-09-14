@@ -9,6 +9,7 @@ import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from 
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { getSettings, setSettings } from './settings';
 import { getAppInfo } from './appInfo';
+import { checkForUpdates, openLatestReleasePage } from './updates';
 
 let handlersRegistered = false;
 
@@ -61,6 +62,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.settingsSet, (_event, partial: unknown) => setSettings(store, partial));
 
   ipcMain.handle(IPC.appInfoGet, () => getAppInfo());
+  ipcMain.handle(IPC.appCheckForUpdates, () => checkForUpdates());
+  ipcMain.handle(IPC.appOpenLatestReleasePage, () => openLatestReleasePage());
 
   startVolumeWatcher(getWindow);
 }

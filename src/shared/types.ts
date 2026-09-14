@@ -3,6 +3,11 @@ import type { AppInfo } from './appVariant';
 
 export type { AppInfo };
 
+export type UpdateCheckResult =
+  | { status: 'up-to-date'; currentVersion: string }
+  | { status: 'update-available'; currentVersion: string; latestVersion: string }
+  | { status: 'error'; message: string };
+
 export interface Settings {
   version: 1;
   locale: SupportedLocale;
@@ -235,4 +240,6 @@ export interface PonyAbcApi {
   setSettings: (partial: Partial<Pick<Settings, 'locale'>>) => Promise<Settings>;
 
   getAppInfo: () => Promise<AppInfo>;
+  checkForUpdates: () => Promise<UpdateCheckResult>;
+  openLatestReleasePage: () => Promise<{ ok: true } | { ok: false; error: string }>;
 }

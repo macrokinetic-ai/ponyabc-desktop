@@ -26,6 +26,8 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     getAppInfo: vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'arm64' })),
+    checkForUpdates: vi.fn(async () => ({ status: 'up-to-date', currentVersion: '0.2.2' })),
+    openLatestReleasePage: vi.fn(async () => ({ ok: true })),
     ...overrides,
   };
 }
@@ -81,5 +83,38 @@ describe('SettingsScreen — About this App', () => {
     expect(copiedText).toContain('Mac · Apple Silicon');
     expect(copiedText).toContain('mac-arm64');
     await waitFor(() => expect(screen.getByText('Copied!')).toBeTruthy());
+  });
+});
+
+describe('SettingsScreen — check for updates', () => {
+  it('checks automatically on load and shows "up to date" when there is no newer release', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(window.ponyabc.checkForUpdates).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("You're on the latest version.")).toBeTruthy());
+  });
+
+  it('shows the new version and a working download button when an update is available', async () => {
+    window.ponyabc.checkForUpdates = vi.fn(async () => ({ status: 'update-available', currentVersion: '0.2.2', latestVersion: 'v0.3.0' }));
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText('A new version is available: v0.3.0')).toBeTruthy());
+
+    fireEvent.click(screen.getByText('Download update'));
+    await waitFor(() => expect(window.ponyabc.openLatestReleasePage).toHaveBeenCalled());
+  });
+
+  it('shows a quiet failure message instead of crashing when the check fails (e.g. offline)', async () => {
+    window.ponyabc.checkForUpdates = vi.fn(async () => ({ status: 'error', message: 'network error' }));
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText(/Couldn't check for updates/)).toBeTruthy());
+  });
+
+  it('re-checks on demand via the "Check for updates" button', async () => {
+    const checkForUpdates = vi.fn(async () => ({ status: 'up-to-date' as const, currentVersion: '0.2.2' }));
+    window.ponyabc.checkForUpdates = checkForUpdates;
+    render(<SettingsScreen />);
+    await waitFor(() => expect(checkForUpdates).toHaveBeenCalledTimes(1)); // the automatic on-load check
+
+    fireEvent.click(screen.getByText('Check for updates'));
+    await waitFor(() => expect(checkForUpdates).toHaveBeenCalledTimes(2));
   });
 });

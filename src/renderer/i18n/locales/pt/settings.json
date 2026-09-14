@@ -12,6 +12,12 @@
     "variantWinX64": "Windows · x64",
     "variantUnknown": "Compilação não reconhecida",
     "copyButton": "Copiar informações da versão",
-    "copiedConfirmation": "Copiado!"
+    "copiedConfirmation": "Copiado!",
+    "checkUpdatesButton": "Procurar atualizações",
+    "checkingUpdates": "A procurar atualizações…",
+    "upToDate": "Tem a versão mais recente.",
+    "updateAvailable": "Há uma nova versão disponível: {{version}}",
+    "downloadUpdateButton": "Transferir atualização",
+    "checkFailed": "Não foi possível procurar atualizações (está ligado à internet?)."
   }
 }

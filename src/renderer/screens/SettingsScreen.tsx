@@ -2,17 +2,24 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LOCALE_NATIVE_NAMES, SUPPORTED_LOCALES, isSupportedLocale, type SupportedLocale } from '@shared/locales';
 import { identifyAppVariant } from '@shared/appVariant';
-import type { AppInfo } from '@shared/types';
+import type { AppInfo, UpdateCheckResult } from '@shared/types';
 
 export function SettingsScreen() {
   const { t, i18n } = useTranslation('settings');
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [copied, setCopied] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     window.ponyabc.getAppInfo().then((info) => {
       if (!cancelled) setAppInfo(info);
+    });
+    // A quiet background check once on load — a failure here (e.g. offline) just leaves the
+    // status blank rather than showing an alarming error the user didn't ask for.
+    window.ponyabc.checkForUpdates().then((result) => {
+      if (!cancelled) setUpdateResult(result);
     });
     return () => {
       cancelled = true;
@@ -22,6 +29,15 @@ export function SettingsScreen() {
   async function handleChange(locale: SupportedLocale) {
     await i18n.changeLanguage(locale);
     await window.ponyabc.setSettings({ locale });
+  }
+
+  async function handleCheckForUpdates() {
+    setCheckingUpdate(true);
+    try {
+      setUpdateResult(await window.ponyabc.checkForUpdates());
+    } finally {
+      setCheckingUpdate(false);
+    }
   }
 
   const current = isSupportedLocale(i18n.language) ? i18n.language : 'en';
@@ -78,6 +94,27 @@ export function SettingsScreen() {
           <button type="button" className="button" onClick={() => void handleCopy()}>
             {copied ? t('about.copiedConfirmation') : t('about.copyButton')}
           </button>
+
+          <div className="update-check">
+            {checkingUpdate && <p className="hint">{t('about.checkingUpdates')}</p>}
+            {!checkingUpdate && updateResult?.status === 'up-to-date' && <p className="hint">{t('about.upToDate')}</p>}
+            {!checkingUpdate && updateResult?.status === 'update-available' && (
+              <>
+                <p>{t('about.updateAvailable', { version: updateResult.latestVersion })}</p>
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => void window.ponyabc.openLatestReleasePage()}
+                >
+                  {t('about.downloadUpdateButton')}
+                </button>
+              </>
+            )}
+            {!checkingUpdate && updateResult?.status === 'error' && <p className="hint">{t('about.checkFailed')}</p>}
+            <button type="button" className="button" disabled={checkingUpdate} onClick={() => void handleCheckForUpdates()}>
+              {t('about.checkUpdatesButton')}
+            </button>
+          </div>
         </>
       )}
     </div>
