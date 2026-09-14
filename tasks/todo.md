@@ -14,10 +14,10 @@ Mirrors `/Users/aiagent/.claude/plans/cryptic-coalescing-cookie.md`.
 - [x] 10. Forensics on existing v0.2.4 arm64 DMG (hdiutil verify OK; codesign --verify FAILED — broken stale signature; spctl quarantine-simulated rejected with same broken-signature error; checksum cross-checked against pre-session local build artifact, matches)
 - [x] local pack:mac:arm64 / pack:mac:x64 dry run — caught and fixed an electron-builder arch-flag bug (explicit yml arch array overrides CLI --arm64/--x64, built both archs and collided) — see lessons.md
 - [x] ad-hoc sign verified real: codesign --verify passes on new build; quarantine-simulated spctl still rejects (expected — no Developer ID) but with a clean policy rejection, not the v0.2.4 broken-signature error
-- [ ] 11. Bump version 0.2.5 (done in package.json), commit, tag, push (triggers Windows build)
-- [ ] 12. Build final mac dmgs from tagged commit (clean tree)
-- [ ] 13. CDP verify: layout at 820px/1100px, Settings About/update wording
-- [ ] 14. gh release create v0.2.5, upload 3 installers + sha256, honest notes
+- [x] 11. Bump version 0.2.5, commit, tag, push — required two follow-up fixes after real CI failures: (a) electron-builder CLI -c.key=value templates broke on the Windows runner's cmd.exe (quoting), moved to electron-builder.mac-arm64.yml/mac-x64.yml via `extends`; (b) pen-root-bar action buttons still overflowed at 820px (flex-shrink:0 + no button min-width/wrap) — both fixed, tag re-pointed to final commit 3e234b5
+- [x] 12. Build final mac dmgs from tagged commit (clean tree) — both ad-hoc signed, codesign --verify passes
+- [x] 13. CDP verify: layout at 820px (overflow fixed, screenshot confirmed)/1100px, Settings shows v0.2.5/mac-arm64/"You're on the latest version" (correct — nothing published yet at time of check)
+- [x] 14. gh release create v0.2.5, 3 installers + 3 sha256 sidecars uploaded, honest notes (Gatekeeper blocker explicitly marked unresolved); re-downloaded the published Apple Silicon dmg from the real GitHub URL and confirmed its checksum matches
 - [x] 15. Update README
 - [x] 16. tasks/lessons.md
-- [ ] 17. Final Traditional Chinese report
+- [x] 17. Final Traditional Chinese report
