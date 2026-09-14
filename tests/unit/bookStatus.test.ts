@@ -31,6 +31,17 @@ describe('resolveDisplayName', () => {
   it('falls back to the filename as a last resort', () => {
     expect(resolveDisplayName(entry({ friendlyNameI18n: null, friendlyName: '' }), 'fr')).toBe('0451.axb');
   });
+
+  it('zh-Hant/zh-Hans fall back to the catalog\'s generic "zh" entry before English — the real BOOK catalog never splits Chinese by script', () => {
+    const zhOnly = entry({ friendlyNameI18n: { zh: '中文名稱', en: 'English Name' } });
+    expect(resolveDisplayName(zhOnly, 'zh-Hant')).toBe('中文名稱');
+    expect(resolveDisplayName(zhOnly, 'zh-Hans')).toBe('中文名稱');
+  });
+
+  it('a non-Chinese locale never falls back to "zh" — only to English', () => {
+    const zhOnly = entry({ friendlyNameI18n: { zh: '中文名稱', en: 'English Name' } });
+    expect(resolveDisplayName(zhOnly, 'fr')).toBe('English Name');
+  });
 });
 
 describe('isInstallEligible', () => {
