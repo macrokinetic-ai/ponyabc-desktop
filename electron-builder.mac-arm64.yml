@@ -1,0 +1,7 @@
+# Loaded via `electron-builder --mac --arm64 -c electron-builder.mac-arm64.yml`
+# (see package.json's pack:mac:arm64 script). Only adds the arm64-specific artifactName —
+# everything else comes from the base config. See the comment in electron-builder.yml's
+# mac: block for why this lives in a YAML file instead of a CLI -c.mac.artifactName=... flag.
+extends: ./electron-builder.yml
+mac:
+  artifactName: PonyABC-Desktop-v${version}-applesilicon.${ext}

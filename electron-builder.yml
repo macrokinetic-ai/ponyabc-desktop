@@ -15,6 +15,16 @@ mac:
   # --arm64 / --x64 CLI flag instead. An explicit arch array on the target itself takes
   # precedence over those CLI flags (confirmed directly: with both present, electron-builder
   # built BOTH archs regardless of which flag was passed, colliding on the same artifactName).
+  # The per-arch artifactName itself lives in electron-builder.mac-arm64.yml /
+  # electron-builder.mac-x64.yml (each `extends` this file) — NOT passed via a CLI -c.mac.
+  # artifactName=... override, because that string has to survive both the shell npm's
+  # cross-platform script runner uses (cmd.exe on Windows, sh/bash on mac/Linux) AND
+  # electron-builder's own ${version}/${ext} template syntax, and cmd.exe does not strip
+  # single quotes the way bash does — confirmed directly: a single-quoted override produced
+  # a real file literally named 'PonyABC-Desktop-v0.2.5-winx64.exe' (quote characters
+  # included) when built on the actual windows-latest GitHub Actions runner. A plain YAML
+  # value has no shell in the way at all, so this is not just a workaround, it's the
+  # actually-correct place for this to live.
   target:
     - dmg
   category: public.app-category.education
@@ -28,6 +38,7 @@ win:
     - target: nsis
       arch:
         - x64
+  artifactName: PonyABC-Desktop-v${version}-winx64.${ext}
   signAndEditExecutable: false
 nsis:
   oneClick: false

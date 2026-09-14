@@ -1,5 +1,26 @@
 # Lessons
 
+## Never pass a `${...}`-templated electron-builder value through a CLI `-c.key=value` override — put it in a YAML file instead
+
+`npm run dist:win`'s `electron-builder --win -c.win.artifactName='PonyABC-Desktop-v${version}-winx64.${ext}'`
+looked fine locally (bash) but broke on the real windows-latest GitHub Actions runner: the
+`run:` step uses PowerShell, but npm's own script runner spawns the actual script via
+`cmd.exe` regardless — and cmd.exe does not strip single quotes as a quoting mechanism at
+all, so the literal `'...'` characters end up baked into the artifactName string, producing
+a real file named `'PonyABC-Desktop-v0.2.5-winx64.exe'` (quote marks included) that
+`actions/upload-artifact`'s `release/*.exe` glob then couldn't find (job failed with "No
+files were found"). Double-quoting would have "fixed" cmd.exe but broken bash instead
+(bash expands `$version` inside double quotes). There is no quoting style that is safe on
+both shells for a string containing a literal `$`.
+
+**How to apply:** any electron-builder config value that itself contains `${...}` template
+syntax must live in a YAML config file (loaded via `-c <path>`, with `extends: ./electron-builder.yml`
+for shared base config — confirmed this merges correctly), never in a CLI `-c.key=value`
+override. A YAML string value has no shell in the way at all. Caught this by actually
+watching the real Windows Actions run fail (`gh run view --log-failed`), not by reasoning
+about it on Mac — the failure mode is invisible unless you run it on the actual target
+shell.
+
 ## Path-containment checks must use `path.relative()`, not `startsWith(parent + sep)`
 
 A naive `real === parent || real.startsWith(parent + path.sep)` containment check breaks

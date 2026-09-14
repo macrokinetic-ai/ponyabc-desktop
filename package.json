@@ -11,9 +11,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "dist:mac": "npm run build && npm run pack:mac:arm64 && npm run pack:mac:x64",
-    "pack:mac:arm64": "electron-builder --mac --arm64 -c.mac.identity=null -c.mac.artifactName='PonyABC-Desktop-v${version}-applesilicon.${ext}' && node scripts/checksum.mjs",
-    "pack:mac:x64": "electron-builder --mac --x64 -c.mac.identity=null -c.mac.artifactName='PonyABC-Desktop-v${version}-appleintel.${ext}' && node scripts/checksum.mjs",
-    "dist:win": "npm run build && electron-builder --win -c.win.artifactName='PonyABC-Desktop-v${version}-winx64.${ext}' && node scripts/checksum.mjs"
+    "pack:mac:arm64": "electron-builder --mac --arm64 -c electron-builder.mac-arm64.yml && node scripts/checksum.mjs",
+    "pack:mac:x64": "electron-builder --mac --x64 -c electron-builder.mac-x64.yml && node scripts/checksum.mjs",
+    "dist:win": "npm run build && electron-builder --win && node scripts/checksum.mjs"
   },
   "dependencies": {
     "i18next": "^24.2.0",
