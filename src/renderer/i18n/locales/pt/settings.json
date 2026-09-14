@@ -1,5 +1,17 @@
 {
   "title": "Definições",
   "languageLabel": "Idioma",
-  "languageHint": "Algumas traduções são geradas por IA e aguardam revisão por falantes nativos."
+  "languageHint": "Algumas traduções são geradas por IA e aguardam revisão por falantes nativos.",
+  "about": {
+    "title": "Sobre esta aplicação",
+    "versionLabel": "Versão",
+    "typeLabel": "Tipo de versão",
+    "identifierLabel": "Identificador",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Compilação não reconhecida",
+    "copyButton": "Copiar informações da versão",
+    "copiedConfirmation": "Copiado!"
+  }
 }

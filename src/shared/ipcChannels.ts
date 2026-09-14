@@ -25,4 +25,6 @@ export const IPC = {
 
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',
+
+  appInfoGet: 'ponyabc:app:info',
 } as const;

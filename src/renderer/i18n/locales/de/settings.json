@@ -1,5 +1,17 @@
 {
   "title": "Einstellungen",
   "languageLabel": "Sprache",
-  "languageHint": "Einige Übersetzungen wurden KI-generiert und sind noch nicht von Muttersprachlern geprüft."
+  "languageHint": "Einige Übersetzungen wurden KI-generiert und sind noch nicht von Muttersprachlern geprüft.",
+  "about": {
+    "title": "Über diese App",
+    "versionLabel": "Version",
+    "typeLabel": "Versionstyp",
+    "identifierLabel": "Kennung",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Nicht erkannter Build",
+    "copyButton": "Versionsinfo kopieren",
+    "copiedConfirmation": "Kopiert!"
+  }
 }

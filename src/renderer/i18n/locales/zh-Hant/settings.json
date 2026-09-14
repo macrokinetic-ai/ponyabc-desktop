@@ -1,5 +1,17 @@
 {
   "title": "設定",
   "languageLabel": "語言",
-  "languageHint": "部分翻譯由 AI 產生，尚待母語人士審閱。"
+  "languageHint": "部分翻譯由 AI 產生，尚待母語人士審閱。",
+  "about": {
+    "title": "關於此 App",
+    "versionLabel": "版本",
+    "typeLabel": "版本類型",
+    "identifierLabel": "識別碼",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "無法識別的版本",
+    "copyButton": "複製版本資訊",
+    "copiedConfirmation": "已複製！"
+  }
 }

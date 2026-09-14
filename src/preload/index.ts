@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type {
+  AppInfo,
   ComputerFolderListResult,
   ComputerFolderResult,
   ConflictDecision,
@@ -53,6 +54,8 @@ const api: PonyAbcApi = {
 
   getSettings: () => ipcRenderer.invoke(IPC.settingsGet) as Promise<Settings>,
   setSettings: (partial) => ipcRenderer.invoke(IPC.settingsSet, partial) as Promise<Settings>,
+
+  getAppInfo: () => ipcRenderer.invoke(IPC.appInfoGet) as Promise<AppInfo>,
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

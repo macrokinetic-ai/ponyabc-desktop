@@ -8,6 +8,7 @@ import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { getSettings, setSettings } from './settings';
+import { getAppInfo } from './appInfo';
 
 let handlersRegistered = false;
 
@@ -58,6 +59,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
 
   ipcMain.handle(IPC.settingsGet, () => getSettings(store));
   ipcMain.handle(IPC.settingsSet, (_event, partial: unknown) => setSettings(store, partial));
+
+  ipcMain.handle(IPC.appInfoGet, () => getAppInfo());
 
   startVolumeWatcher(getWindow);
 }

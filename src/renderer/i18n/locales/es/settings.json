@@ -1,5 +1,17 @@
 {
   "title": "Ajustes",
   "languageLabel": "Idioma",
-  "languageHint": "Algunas traducciones son generadas por IA y están pendientes de revisión por hablantes nativos."
+  "languageHint": "Algunas traducciones son generadas por IA y están pendientes de revisión por hablantes nativos.",
+  "about": {
+    "title": "Acerca de esta app",
+    "versionLabel": "Versión",
+    "typeLabel": "Tipo de versión",
+    "identifierLabel": "Identificador",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Compilación no reconocida",
+    "copyButton": "Copiar información de versión",
+    "copiedConfirmation": "¡Copiado!"
+  }
 }

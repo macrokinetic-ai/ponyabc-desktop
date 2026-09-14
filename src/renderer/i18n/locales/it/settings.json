@@ -1,5 +1,17 @@
 {
   "title": "Impostazioni",
   "languageLabel": "Lingua",
-  "languageHint": "Alcune traduzioni sono generate dall'IA e in attesa di revisione da parte di madrelingua."
+  "languageHint": "Alcune traduzioni sono generate dall'IA e in attesa di revisione da parte di madrelingua.",
+  "about": {
+    "title": "Informazioni su questa app",
+    "versionLabel": "Versione",
+    "typeLabel": "Tipo di versione",
+    "identifierLabel": "Identificatore",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Build non riconosciuta",
+    "copyButton": "Copia informazioni versione",
+    "copiedConfirmation": "Copiato!"
+  }
 }

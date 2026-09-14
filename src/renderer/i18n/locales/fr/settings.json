@@ -1,5 +1,17 @@
 {
   "title": "Paramètres",
   "languageLabel": "Langue",
-  "languageHint": "Certaines traductions sont générées par IA et en attente de relecture par un locuteur natif."
+  "languageHint": "Certaines traductions sont générées par IA et en attente de relecture par un locuteur natif.",
+  "about": {
+    "title": "À propos de cette application",
+    "versionLabel": "Version",
+    "typeLabel": "Type de version",
+    "identifierLabel": "Identifiant",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Version non reconnue",
+    "copyButton": "Copier les infos de version",
+    "copiedConfirmation": "Copié !"
+  }
 }

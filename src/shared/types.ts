@@ -1,4 +1,7 @@
 import type { SupportedLocale } from './locales';
+import type { AppInfo } from './appVariant';
+
+export type { AppInfo };
 
 export interface Settings {
   version: 1;
@@ -230,4 +233,6 @@ export interface PonyAbcApi {
 
   getSettings: () => Promise<Settings>;
   setSettings: (partial: Partial<Pick<Settings, 'locale'>>) => Promise<Settings>;
+
+  getAppInfo: () => Promise<AppInfo>;
 }

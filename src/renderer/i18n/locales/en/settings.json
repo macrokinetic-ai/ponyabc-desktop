@@ -1,5 +1,17 @@
 {
   "title": "Settings",
   "languageLabel": "Language",
-  "languageHint": "Some translations are AI-generated and pending native-speaker review."
+  "languageHint": "Some translations are AI-generated and pending native-speaker review.",
+  "about": {
+    "title": "About this App",
+    "versionLabel": "Version",
+    "typeLabel": "Version type",
+    "identifierLabel": "Identifier",
+    "variantMacArm64": "Mac · Apple Silicon",
+    "variantMacX64": "Mac · Intel",
+    "variantWinX64": "Windows · x64",
+    "variantUnknown": "Unrecognized build",
+    "copyButton": "Copy version info",
+    "copiedConfirmation": "Copied!"
+  }
 }
