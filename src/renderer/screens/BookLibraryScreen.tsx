@@ -7,8 +7,10 @@ import type {
   BookRemoveResult,
 } from '@shared/types';
 import { resolveBookDisplayName } from '@shared/bookDisplay';
+import { isRecentlyUpdated } from '@shared/bookNewBadge';
 import { isSupportedLocale, DEFAULT_LOCALE } from '@shared/locales';
 import { PenRootBar } from '../components/PenRootBar';
+import { BookCatalogBar } from '../components/BookCatalogBar';
 import { usePenRoot } from '../state/PenRootContext';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
@@ -20,6 +22,14 @@ function formatBytes(n: number): string {
 function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n: Record<string, string> | null; filename: string }, locale: string): string {
   const resolvedLocale = isSupportedLocale(locale) ? locale : DEFAULT_LOCALE;
   return resolveBookDisplayName({ friendlyName: source.friendlyName ?? '', friendlyNameI18n: source.friendlyNameI18n, filename: source.filename }, resolvedLocale);
+}
+
+/** Recomputed against the real current clock on every render (never the local download/cache
+ *  time) — this is what makes the badge disappear on its own once 14 real days pass, even
+ *  entirely from an offline-cached server timestamp. */
+function NewBadge({ updatedAtMs, label }: { updatedAtMs: number | null; label: string }) {
+  if (!isRecentlyUpdated(updatedAtMs, Date.now())) return null;
+  return <span className="new-badge">{label}</span>;
 }
 
 function resultMessage(t: (key: string, opts?: Record<string, unknown>) => string, result: BookActionResult | BookRemoveResult): string | null {
@@ -172,21 +182,27 @@ export function BookLibraryScreen() {
     'matched-current': 'status.matchedCurrent',
     'matched-differs': 'status.matchedDiffers',
     'matched-hash-unknown': 'status.matchedHashUnknown',
+    'matched-verifying': 'status.matchedVerifying',
+    'awaiting-catalog': 'status.awaitingCatalog',
     unknown: 'status.unknown',
   };
   const catalogStatusKey: Record<BookCatalogItem['status'], string> = {
     'not-on-pen': 'status.notOnPen',
     'on-pen-current': 'status.onPenCurrent',
     'on-pen-differs': 'status.onPenDiffers',
+    'on-pen-verifying': 'status.onPenVerifying',
     'metadata-incomplete': 'status.metadataIncomplete',
     ambiguous: 'status.ambiguous',
   };
+
+  const now = Date.now();
+  const anyNew =
+    penItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now)) || lib.catalogItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now));
 
   return (
     <div className="screen">
       <h1>{t('title')}</h1>
 
-      {lib.meta.offline && <div className="note-box">{t('catalogUnavailable')}</div>}
       {lib.meta.source === 'fixture' && <div className="note-box">{t('devFixtureBanner')}</div>}
       {lib.meta.conflicts.length > 0 && <div className="note-box">{t('ambiguousNotice', { count: lib.meta.conflicts.length })}</div>}
       {message && <p className="error-text">{message}</p>}
@@ -221,7 +237,7 @@ export function BookLibraryScreen() {
               <ul className="recordings-list">
                 {penItems.map((item) => (
                   <li key={item.fileName} className="recordings-list__row">
-                    {item.status === 'unknown' ? (
+                    {!item.removable ? (
                       <span className="recordings-list__label">
                         <span className="recordings-list__name">
                           {item.fileName} — {t(penStatusKey[item.status])}
@@ -231,11 +247,12 @@ export function BookLibraryScreen() {
                       <label className="recordings-list__label">
                         <input type="checkbox" checked={penSelected.has(item.fileName)} onChange={() => togglePen(item.fileName)} />
                         <span className="recordings-list__name">{displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}</span>
+                        <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
                         <span className="hint">({item.fileName})</span>
                       </label>
                     )}
                     <span className="recordings-list__size">{formatBytes(item.sizeBytes)}</span>
-                    {item.status !== 'unknown' && item.status !== 'matched-current' && <span className="hint">{t(penStatusKey[item.status])}</span>}
+                    {item.removable && item.status !== 'matched-current' && <span className="hint">{t(penStatusKey[item.status])}</span>}
                   </li>
                 ))}
               </ul>
@@ -259,14 +276,7 @@ export function BookLibraryScreen() {
 
         <section className="pane">
           <div className="pane__header">
-            <div className="pane__toolbar">
-              <button type="button" className="button" onClick={() => void lib.refreshCatalog()} disabled={lib.refreshing}>
-                {lib.refreshing ? t('refreshing') : t('refresh')}
-              </button>
-              <span className="hint">
-                {lib.meta.fetchedAtMs ? t('lastUpdated', { time: new Date(lib.meta.fetchedAtMs).toLocaleString() }) : t('neverUpdated')}
-              </span>
-            </div>
+            <BookCatalogBar />
             {actionableCatalogItems.length > 0 && (
               <div className="pane__toolbar">
                 <label>
@@ -298,10 +308,12 @@ export function BookLibraryScreen() {
                           <label className="recordings-list__label">
                             <input type="checkbox" checked={catalogSelected.has(item.contentId)} onChange={() => toggleCatalog(item.contentId)} />
                             <span className="recordings-list__name">{displayNameFor(item, i18n.language)}</span>
+                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
                           </label>
                         ) : (
                           <span className="recordings-list__label">
                             <span className="recordings-list__name">{displayNameFor(item, i18n.language)}</span>
+                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
                           </span>
                         )}
                         <div className="hint">
@@ -310,7 +322,9 @@ export function BookLibraryScreen() {
                         {progress && <progress className="book-progress" value={progress.bytesReceived} max={Math.max(progress.totalBytes, 1)} />}
                       </div>
                       <div className="recordings-list__preview">
-                        {(item.cached || item.status === 'on-pen-current' || item.status === 'on-pen-differs') && item.status !== 'ambiguous' && item.status !== 'metadata-incomplete' && (
+                        {(item.cached || item.status === 'on-pen-current' || item.status === 'on-pen-differs' || item.status === 'on-pen-verifying') &&
+                          item.status !== 'ambiguous' &&
+                          item.status !== 'metadata-incomplete' && (
                           <button type="button" className="button" disabled={busy || !penConnected} onClick={() => void handleReinstall(item.contentId)}>
                             {t('action.reinstall')}
                           </button>
@@ -329,6 +343,7 @@ export function BookLibraryScreen() {
           </div>
         </section>
       </div>
+      {anyNew && <p className="hint">{t('newBadgeLegend')}</p>}
 
       {pendingRemove && (
         <div className="plan-panel">

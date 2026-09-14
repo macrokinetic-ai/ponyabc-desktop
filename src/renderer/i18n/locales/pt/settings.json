@@ -19,5 +19,14 @@
     "updateAvailable": "Há uma nova versão disponível: {{version}}",
     "downloadUpdateButton": "Ir para a página de transferência",
     "checkFailed": "Não foi possível procurar atualizações (está ligado à internet?)."
+  },
+  "diagnostics": {
+    "title": "Diagnóstico",
+    "hint": "Para resolver problemas de ligação ou de correspondência de conteúdo.",
+    "passcodeLabel": "Código de suporte",
+    "summaryLine": "Versão {{version}} · {{platform}}/{{arch}} · {{count}} evento(s) registado(s)",
+    "exportButton": "Exportar diagnóstico…",
+    "exportSaved": "Guardado em {{path}}",
+    "exportFailed": "Não foi possível guardar o ficheiro."
   }
 }

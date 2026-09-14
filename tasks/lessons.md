@@ -260,3 +260,52 @@ moves that *same path* immediately afterward needs to wait for the stream's `'cl
 just `'end'`/`'finish'`, before doing so — and this class of bug is only ever caught by a
 real Windows CI run, never by local macOS testing or by reasoning about it. Push early and
 let `build-windows.yml` run rather than assuming a Mac-clean test suite generalizes.
+
+## A single boolean "offline" flag conflated two very different situations — "never succeeded" and "just failed, but old data still exists" — and hid the real reason from the user
+
+`BookLibraryMeta.offline` was `snapshot === null`, i.e. true only when NO catalog fetch had
+*ever* succeeded. A *later* refresh failure, with an older successful snapshot still on disk,
+left `offline` false and showed nothing — the user's real screenshot showed the app displaying
+"could not be reached / showing what was last saved" simultaneously with "Catalog not yet
+loaded" and every pen file as "Unknown," which looked like a stuck/contradictory state but was
+actually this exact gap: a genuine first-run catalog-fetch failure with no real bug underneath
+it, just no visibility into *why*.
+
+**Fix:** added `BookLibraryMeta.lastCheck` — the outcome of the *most recent* fetch attempt
+(state/httpStatus/itemCount/message/durationMs), tracked independently of whether an older
+snapshot still exists. A `BookCatalogBar` component (mirroring `PenRootBar`/`ComputerFolderBar`
+for left/right layout parity) renders a dot + text from this: checking / connected-with-count /
+connected-but-empty (distinct from a failure) / server-error-with-status / network-unreachable,
+plus "using the last saved catalog" only when a real prior snapshot exists. Also added a
+persistent (capped, redacted) diagnostics log (`diagnostics.ts`) recording every catalog-fetch
+attempt's URL/status/duration/outcome, gated behind a hidden (not real access control) passcode
+in Settings, exportable via a native save dialog — so a real-world "why didn't it connect"
+question is answerable from the log, not just re-guessed.
+
+**How to apply:** when a status flag can be set once and never revisited, ask whether a *later*
+failure needs its own visibility — collapsing "never happened" and "happened before, failing
+now" into one boolean silently hides the more common, more actionable case. Any user-facing
+connectivity/sync status needs a distinct "last attempt" outcome, not just a "do we have
+anything at all" flag.
+
+## Don't hash a file's content just to list it — filename-matching and content-verification are different costs, and the first must never wait on the second
+
+The original `buildBookLibrary()` computed a SHA-256 of every matched pen file (to decide
+current-vs-differs) *before* returning either pane's list. Real catalog books range up to
+~1GB; hashing one inline meant the whole BOOK screen could sit blank while a single large file
+was read start-to-finish, and it's a real user complaint waiting to happen even though every
+existing test used small fixture files that hashed instantly.
+
+**Fix:** split into a fast, hash-free filename-matching pass (`buildBookLibrary`, returns
+`'matched-verifying'`/`'on-pen-verifying'` for anything that still needs a hash comparison,
+plus a `pending` list of what needs verifying) and a separate `verifyPendingHash()` the caller
+runs afterward, pushing the resolved current/differs outcome to the renderer via a dedicated
+IPC event (`bookVerifyUpdate`) that patches just that one item in both panes — no full re-list
+round trip, and the two panes never each hash the same file independently (one `pending` entry
+drives both).
+
+**How to apply:** when a "list this" operation and a "verify this one item's content" operation
+share a code path, check whether the verify step's cost scales with data the list step doesn't
+actually need yet (file size here) — if so, the list must return an honest "not yet known"
+status rather than block on it, even if every test fixture is small enough that inlining it
+never fails a test.

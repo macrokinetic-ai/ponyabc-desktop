@@ -18,6 +18,16 @@ export interface PenBookFile {
   sizeBytes: number;
 }
 
+/** A matched pen file whose content hash still needs verifying before its status can move
+ *  past "verifying" — deliberately NOT computed inside buildBookLibrary, so listing the pane
+ *  is never blocked on hashing a large (100s of MB) AXB; callers verify these afterward
+ *  (see verifyPendingHash) and push the resolved status once it's known. */
+export interface PendingVerification {
+  fileName: string;
+  contentId: string;
+  expectedSha256: string;
+}
+
 /** Lists eligible .axb files directly in the pen's BOOK folder (excludes AppleDouble
  *  sidecars). Returns [] rather than throwing when the folder can't be read. */
 export function listPenBookFiles(bookDirReal: string): PenBookFile[] {
@@ -44,23 +54,32 @@ export function listPenBookFiles(bookDirReal: string): PenBookFile[] {
 
 /**
  * Merges catalog + local cache + pen state into the two panes the renderer shows side by
- * side. Hashing a pen file is only ever done once per file, and only for a file that
- * actually matches a single, unambiguous catalog filename AND whose catalog hash is
- * non-null — never eagerly for every file on every refresh. An unmatched (or ambiguously
- * matched) pen file is always "unknown" and always non-removable — structurally, this
- * function never produces a removable=true result for one.
+ * side. Deliberately synchronous/fast — it never reads or hashes a pen file's content, only
+ * filenames and sizes already known from listPenBookFiles, so a large (100s of MB) AXB on the
+ * pen can never delay the catalog/filename-match display from appearing. Any matched file
+ * whose current-vs-differs status actually requires a hash comparison is returned as
+ * "verifying" (pending) instead — the caller is expected to resolve each pending entry via
+ * verifyPendingHash afterward and push the final status once known.
+ *
+ * A pen file that doesn't match anything is "awaiting-catalog" (not "unknown") for as long as
+ * NO catalog has ever been successfully fetched (snapshot === null) — there's nothing yet to
+ * judge it against, so it must never be presented as if it had already been checked and found
+ * unrecognized. Only once a real catalog snapshot exists (even one with zero entries) does a
+ * non-matching file become "unknown". Either way it's always non-removable — structurally,
+ * this function never produces a removable=true result for an unmatched file.
  */
-export async function buildBookLibrary(params: {
+export function buildBookLibrary(params: {
   snapshot: BookCatalogSnapshot | null;
   cacheEntries: BookCacheEntry[];
   penFiles: PenBookFile[] | null;
   bookDirReal: string | null;
-}): Promise<{ penItems: BookPenItem[] | null; catalogItems: BookCatalogItem[] }> {
+}): { penItems: BookPenItem[] | null; catalogItems: BookCatalogItem[]; pending: PendingVerification[] } {
   const { snapshot, cacheEntries, penFiles, bookDirReal } = params;
   const entries = snapshot?.entries ?? [];
   const conflicts = snapshot?.conflicts ?? [];
   const ambiguousIds = new Set(conflicts.flatMap((c) => c.contentIds));
   const cacheByContentId = new Map(cacheEntries.map((c) => [c.contentId, c]));
+  const pending: PendingVerification[] = [];
 
   // Filename (lowercased) -> the single unambiguous catalog entry it matches, if any.
   const entryByFilenameLower = new Map<string, BookCatalogEntry>();
@@ -73,32 +92,25 @@ export async function buildBookLibrary(params: {
   const penByFilenameLower = new Map<string, PenBookFile>();
   for (const f of penFiles ?? []) penByFilenameLower.set(f.fileName.toLowerCase(), f);
 
-  // Compute each matched pen file's hash exactly once, reused by both the catalog-item pass
-  // and the pen-item pass below.
-  const penHashByFilenameLower = new Map<string, string | null>();
-  for (const [key, f] of penByFilenameLower) {
-    const entry = entryByFilenameLower.get(key);
-    if (!entry || entry.sha256 === null || !bookDirReal) continue;
-    try {
-      penHashByFilenameLower.set(key, await sha256File(path.join(bookDirReal, f.fileName)));
-    } catch {
-      penHashByFilenameLower.set(key, null);
-    }
-  }
+  // Callers always pass bookDirReal alongside penFiles as a pair (see currentPenBookFiles in
+  // ipc/book.ts) — penFiles is only ever non-null when there's a real directory to read from.
+  const canReadPenFiles = penFiles !== null && bookDirReal !== null;
 
   const catalogItems: BookCatalogItem[] = entries.map((entry) => {
     const isAmbiguous = ambiguousIds.has(entry.contentId);
     const eligible = isInstallEligible(entry);
     const key = entry.filename.toLowerCase();
     const hasPenFile = !isAmbiguous && penByFilenameLower.has(key) && entryByFilenameLower.get(key) === entry;
-    const penHash = hasPenFile ? (penHashByFilenameLower.get(key) ?? null) : null;
-    const cached = cacheByContentId.get(entry.contentId) ?? null;
+    const willVerify = hasPenFile && eligible && canReadPenFiles;
 
     let status: BookCatalogItemStatus;
     if (isAmbiguous) status = 'ambiguous';
     else if (!eligible) status = 'metadata-incomplete';
-    else if (hasPenFile) status = penHash !== null && penHash === entry.sha256 ? 'on-pen-current' : 'on-pen-differs';
+    else if (hasPenFile) status = 'on-pen-verifying';
     else status = 'not-on-pen';
+
+    const cached = cacheByContentId.get(entry.contentId) ?? null;
+    if (willVerify) pending.push({ fileName: penByFilenameLower.get(key)!.fileName, contentId: entry.contentId, expectedSha256: entry.sha256 as string });
 
     return {
       contentId: entry.contentId,
@@ -108,7 +120,8 @@ export async function buildBookLibrary(params: {
       sizeBytes: entry.sizeBytes,
       status,
       cached: cached !== null,
-      actionable: eligible && !isAmbiguous && (status === 'not-on-pen' || status === 'on-pen-differs'),
+      actionable: eligible && !isAmbiguous && status === 'not-on-pen',
+      updatedAtMs: entry.updatedAtMs,
     };
   });
 
@@ -124,13 +137,13 @@ export async function buildBookLibrary(params: {
           contentId: null,
           friendlyName: null,
           friendlyNameI18n: null,
-          status: 'unknown' as const,
+          status: snapshot === null ? 'awaiting-catalog' : 'unknown',
           removable: false,
+          updatedAtMs: null,
         };
       }
-      const penHash = penHashByFilenameLower.get(key) ?? null;
-      const matchStatus: BookPenMatchStatus =
-        entry.sha256 === null || penHash === null ? 'matched-hash-unknown' : penHash === entry.sha256 ? 'matched-current' : 'matched-differs';
+      const eligible = isInstallEligible(entry);
+      const matchStatus: BookPenMatchStatus = eligible && canReadPenFiles ? 'matched-verifying' : 'matched-hash-unknown';
       return {
         fileName: f.fileName,
         sizeBytes: f.sizeBytes,
@@ -139,9 +152,23 @@ export async function buildBookLibrary(params: {
         friendlyNameI18n: entry.friendlyNameI18n,
         status: matchStatus,
         removable: true,
+        updatedAtMs: entry.updatedAtMs,
       };
     });
   }
 
-  return { penItems, catalogItems };
+  return { penItems, catalogItems, pending };
+}
+
+/** Resolves one pending verification: reads and hashes the pen file (only now — never during
+ *  the fast listing above) and compares it to the catalog's declared hash. Returns null on a
+ *  read/hash failure (file vanished, permission error, etc.) so the caller can fall back to a
+ *  safe "can't verify" status rather than a false current/differs claim. */
+export async function verifyPendingHash(bookDirReal: string, pending: PendingVerification): Promise<'current' | 'differs' | null> {
+  try {
+    const actual = await sha256File(path.join(bookDirReal, pending.fileName));
+    return actual === pending.expectedSha256 ? 'current' : 'differs';
+  } catch {
+    return null;
+  }
 }

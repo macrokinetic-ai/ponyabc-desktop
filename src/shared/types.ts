@@ -253,6 +253,11 @@ export interface BookCatalogEntry {
   friendlyNameI18n: Record<string, string> | null;
   contentLanguages: string[];
   sortOrder: number;
+  /** The server's own last-save time for this row (insert or any update, including a
+   *  metadata-only edit) — epoch ms, or null if the server didn't declare one (never
+   *  guessed). Used only to compute the 14-day "NEW" badge; never implies new AXB bytes,
+   *  and is never the local download/cache time. */
+  updatedAtMs: number | null;
   downloadUrl: string;
 }
 
@@ -301,7 +306,19 @@ export interface BookBackupEntry {
 // relationship to whatever's currently on the pen.
 // ---------------------------------------------------------------------------------------
 
-export type BookPenMatchStatus = 'matched-current' | 'matched-differs' | 'matched-hash-unknown' | 'unknown';
+export type BookPenMatchStatus =
+  | 'matched-current'
+  | 'matched-differs'
+  | 'matched-hash-unknown'
+  /** Matched by filename, content verification not finished yet — never blocks the initial
+   *  listing on hashing a (possibly very large) file; resolves to matched-current/-differs
+   *  shortly after via a bookVerifyUpdate push. */
+  | 'matched-verifying'
+  /** No catalog has ever been successfully fetched, so this file has genuinely never been
+   *  checked against anything — distinct from 'unknown', which means a real catalog exists
+   *  and this file specifically isn't in it. Always non-removable, exactly like 'unknown'. */
+  | 'awaiting-catalog'
+  | 'unknown';
 
 export interface BookPenItem {
   fileName: string;
@@ -315,9 +332,19 @@ export interface BookPenItem {
    *  re-verifies and refuses regardless of what this says; this is never the only gate.
    *  Always false when status === 'unknown'. */
   removable: boolean;
+  /** The matched catalog entry's updatedAtMs, or null when unmatched/no catalog entry. */
+  updatedAtMs: number | null;
 }
 
-export type BookCatalogItemStatus = 'not-on-pen' | 'on-pen-current' | 'on-pen-differs' | 'metadata-incomplete' | 'ambiguous';
+export type BookCatalogItemStatus =
+  | 'not-on-pen'
+  | 'on-pen-current'
+  | 'on-pen-differs'
+  /** Matched by filename, content verification not finished yet — see BookPenMatchStatus's
+   *  'matched-verifying'. Never actionable (no "Add"/"Replace" prompt) until resolved. */
+  | 'on-pen-verifying'
+  | 'metadata-incomplete'
+  | 'ambiguous';
 
 export interface BookCatalogItem {
   contentId: string;
@@ -331,14 +358,38 @@ export interface BookCatalogItem {
    *  and not ambiguous. Gates both "Add to pen" and "Re-download" in the UI; bookInstall.ts
    *  enforces the same eligibility rule independently via isInstallEligible(). */
   actionable: boolean;
+  updatedAtMs: number | null;
+}
+
+/** Outcome of the most recent catalog fetch attempt this run, independent of whether that
+ *  attempt's data got applied — this is what lets the UI show a comprehensible reason
+ *  instead of a single stuck "offline" flag, and stops a stale, once-successful state from
+ *  reading as "connected" forever after a later attempt actually failed. */
+export interface BookCatalogCheck {
+  state: 'ok' | 'error';
+  atMs: number;
+  /** Present when a response actually came back with a non-2xx/malformed body; absent for a
+   *  network-level failure (DNS/timeout/refused) — a different failure to explain to the user. */
+  httpStatus: number | null;
+  /** Number of books returned on a successful fetch — 0 is a valid, distinct outcome from a
+   *  failure and must never be shown the same way. */
+  itemCount: number | null;
+  message: string | null;
+  durationMs: number;
 }
 
 export interface BookLibraryMeta {
   /** Last successful catalog fetch, or null if the catalog has never been fetched. */
   fetchedAtMs: number | null;
   source: 'live' | 'fixture' | 'none';
+  /** true only when NO catalog fetch has ever succeeded (nothing to fall back to at all) —
+   *  a later failed refresh while a prior snapshot still exists does NOT set this; that case
+   *  is instead reported through lastCheck, with the older snapshot kept and clearly marked
+   *  offline-cached in the UI. */
   offline: boolean;
   conflicts: BookCatalogConflict[];
+  /** null only before the very first attempt this run (e.g. this exact call is that attempt). */
+  lastCheck: BookCatalogCheck | null;
 }
 
 export interface BookListResult {
@@ -348,6 +399,17 @@ export interface BookListResult {
   penItems: BookPenItem[] | null;
   catalogItems: BookCatalogItem[];
   meta: BookLibraryMeta;
+}
+
+/** Pushed once a pending 'matched-verifying'/'on-pen-verifying' item's content hash finishes
+ *  computing, so the two panes can resolve it without a full re-list round trip. `result` is
+ *  null when the file could no longer be read (vanished, permission error, etc.) in the brief
+ *  window between listing and hashing — the renderer leaves the item in its "verifying" state
+ *  rather than guessing a current/differs outcome; the next explicit refresh tries again. */
+export interface BookVerifyUpdateEvent {
+  fileName: string;
+  contentId: string;
+  result: { penStatus: 'matched-current' | 'matched-differs'; catalogStatus: 'on-pen-current' | 'on-pen-differs' } | null;
 }
 
 export type BookDownloadPhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled';
@@ -418,6 +480,31 @@ export interface BookBackupSummary {
   createdAtMs: number;
 }
 
+// ---------------------------------------------------------------------------------------
+// Diagnostics — a small, capped, redacted event log for support/debugging. Deliberately
+// narrow: never carries auth headers/tokens, full local filesystem paths, personal data, or
+// any audio/AXB bytes. Reached via a hidden (not real access-control) passcode entry point
+// in Settings; export goes through a native save dialog the user drives, never auto-uploaded.
+// ---------------------------------------------------------------------------------------
+
+export type DiagnosticEntryKind = 'app-start' | 'catalog-fetch' | 'pen-reconcile' | 'book-download';
+
+export interface DiagnosticEntry {
+  atMs: number;
+  kind: DiagnosticEntryKind;
+  /** Pre-redacted by the writer at insert time — never a raw spread of an arbitrary object. */
+  detail: Record<string, string | number | boolean | null>;
+}
+
+export interface DiagnosticsSummary {
+  appVersion: string;
+  platform: string;
+  arch: string;
+  entries: DiagnosticEntry[];
+}
+
+export type DiagnosticsExportResult = { status: 'ok'; path: string } | { status: 'cancelled' } | { status: 'error'; message: string };
+
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
   platform: string;
@@ -471,6 +558,11 @@ export interface PonyAbcApi {
   bookRestore: (params: { backupId: string; penGeneration: number }) => Promise<BookActionResult>;
   bookDownloadCancel: (contentId: string) => Promise<{ ok: boolean }>;
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
+  onBookVerifyUpdate: (listener: (event: BookVerifyUpdateEvent) => void) => () => void;
+
+  // Diagnostics — see the block comment above these types.
+  getDiagnosticsSummary: () => Promise<DiagnosticsSummary>;
+  exportDiagnostics: () => Promise<DiagnosticsExportResult>;
 
   getSettings: () => Promise<Settings>;
   setSettings: (partial: Partial<Pick<Settings, 'locale'>>) => Promise<Settings>;

@@ -19,5 +19,14 @@
     "updateAvailable": "A new version is available: {{version}}",
     "downloadUpdateButton": "Go to download page",
     "checkFailed": "Couldn't check for updates (are you online?)."
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "hint": "For troubleshooting connection or content-matching problems.",
+    "passcodeLabel": "Support code",
+    "summaryLine": "Version {{version}} · {{platform}}/{{arch}} · {{count}} logged event(s)",
+    "exportButton": "Export diagnostics…",
+    "exportSaved": "Saved to {{path}}",
+    "exportFailed": "Couldn't save the file."
   }
 }

@@ -28,6 +28,7 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     friendlyNameI18n: null,
     contentLanguages: [],
     sortOrder: 0,
+    updatedAtMs: null,
     downloadUrl: 'https://x.test/download?id=b1',
     ...overrides,
   };
@@ -113,15 +114,36 @@ describe('downloadToCache', () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
-  it('hash-mismatch when the downloaded bytes do not match the declared sha256 — no cache file left behind', async () => {
+  it('hash-mismatch when the downloaded bytes do not match the declared sha256 — no cache file left behind, and reports the actual size/hash', async () => {
     const cacheDir = mkTempDir();
+    const actualBytes = Buffer.from('hello world');
     const outcome = await downloadToCache({
       entry: entry({ sha256: 'f'.repeat(64) }),
       cacheDir,
-      fetchFn: immediateFetch(Buffer.from('hello world')),
+      fetchFn: immediateFetch(actualBytes),
       getFreeBytesFn: freeBytesFn,
     });
-    expect(outcome).toEqual({ status: 'hash-mismatch' });
+    expect(outcome).toEqual({
+      status: 'hash-mismatch',
+      actualSizeBytes: actualBytes.length,
+      actualSha256: crypto.createHash('sha256').update(actualBytes).digest('hex'),
+    });
+    expect(fs.readdirSync(cacheDir)).toEqual([]);
+  });
+
+  it('hash-mismatch reports a null actual hash when the size itself already differs (never hashed)', async () => {
+    const cacheDir = mkTempDir();
+    const actualBytes = Buffer.from('hello world');
+    const outcome = await downloadToCache({
+      entry: entry({ sizeBytes: actualBytes.length + 1, sha256: 'f'.repeat(64) }),
+      cacheDir,
+      fetchFn: immediateFetch(actualBytes),
+      getFreeBytesFn: freeBytesFn,
+    });
+    // The stream never receives the extra declared byte, so it ends naturally rather than
+    // tripping the mid-stream "exceeded declared size" guard — the mismatch is only caught
+    // at the final size check.
+    expect(outcome).toEqual({ status: 'hash-mismatch', actualSizeBytes: actualBytes.length, actualSha256: null });
     expect(fs.readdirSync(cacheDir)).toEqual([]);
   });
 

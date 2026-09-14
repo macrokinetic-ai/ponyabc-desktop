@@ -19,5 +19,14 @@
     "updateAvailable": "Une nouvelle version est disponible : {{version}}",
     "downloadUpdateButton": "Aller à la page de téléchargement",
     "checkFailed": "Impossible de rechercher des mises à jour (êtes-vous en ligne ?)."
+  },
+  "diagnostics": {
+    "title": "Diagnostic",
+    "hint": "Pour résoudre les problèmes de connexion ou de correspondance de contenu.",
+    "passcodeLabel": "Code d'assistance",
+    "summaryLine": "Version {{version}} · {{platform}}/{{arch}} · {{count}} événement(s) enregistré(s)",
+    "exportButton": "Exporter le diagnostic…",
+    "exportSaved": "Enregistré dans {{path}}",
+    "exportFailed": "Impossible d'enregistrer le fichier."
   }
 }

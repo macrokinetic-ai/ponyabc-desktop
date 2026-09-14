@@ -19,5 +19,14 @@
     "updateAvailable": "有新版本可用：{{version}}",
     "downloadUpdateButton": "前往下載新版",
     "checkFailed": "無法檢查更新（請確認網絡連接）。"
+  },
+  "diagnostics": {
+    "title": "診斷",
+    "hint": "用於排查連線或內容配對問題。",
+    "passcodeLabel": "支援代碼",
+    "summaryLine": "版本 {{version}} · {{platform}}/{{arch}} · 已記錄 {{count}} 項事件",
+    "exportButton": "匯出診斷紀錄…",
+    "exportSaved": "已儲存至 {{path}}",
+    "exportFailed": "無法儲存檔案。"
   }
 }

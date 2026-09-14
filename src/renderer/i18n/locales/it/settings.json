@@ -19,5 +19,14 @@
     "updateAvailable": "È disponibile una nuova versione: {{version}}",
     "downloadUpdateButton": "Vai alla pagina di download",
     "checkFailed": "Impossibile controllare gli aggiornamenti (sei online?)."
+  },
+  "diagnostics": {
+    "title": "Diagnostica",
+    "hint": "Per risolvere problemi di connessione o di corrispondenza dei contenuti.",
+    "passcodeLabel": "Codice di assistenza",
+    "summaryLine": "Versione {{version}} · {{platform}}/{{arch}} · {{count}} evento/i registrato/i",
+    "exportButton": "Esporta diagnostica…",
+    "exportSaved": "Salvato in {{path}}",
+    "exportFailed": "Impossibile salvare il file."
   }
 }

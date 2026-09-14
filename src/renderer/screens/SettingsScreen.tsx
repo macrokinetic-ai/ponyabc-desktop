@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LOCALE_NATIVE_NAMES, SUPPORTED_LOCALES, isSupportedLocale, type SupportedLocale } from '@shared/locales';
 import { identifyAppVariant } from '@shared/appVariant';
-import type { AppInfo, UpdateCheckResult } from '@shared/types';
+import type { AppInfo, DiagnosticsSummary, UpdateCheckResult } from '@shared/types';
+
+/** "00000000" is a hidden entry point, not real access control — it only avoids an ordinary
+ *  user stumbling into a support-facing panel by accident. See diagnostics.ts (main process)
+ *  for what's actually redacted from the exported log. */
+const DIAGNOSTICS_PASSCODE = '00000000';
 
 export function SettingsScreen() {
   const { t, i18n } = useTranslation('settings');
@@ -10,6 +15,10 @@ export function SettingsScreen() {
   const [copied, setCopied] = useState(false);
   const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [diagCode, setDiagCode] = useState('');
+  const [diagSummary, setDiagSummary] = useState<DiagnosticsSummary | null>(null);
+  const [diagMessage, setDiagMessage] = useState<string | null>(null);
+  const diagUnlocked = diagCode === DIAGNOSTICS_PASSCODE;
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +47,24 @@ export function SettingsScreen() {
     } finally {
       setCheckingUpdate(false);
     }
+  }
+
+  useEffect(() => {
+    if (!diagUnlocked) return;
+    let cancelled = false;
+    window.ponyabc.getDiagnosticsSummary().then((summary) => {
+      if (!cancelled) setDiagSummary(summary);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [diagUnlocked]);
+
+  async function handleExportDiagnostics() {
+    const result = await window.ponyabc.exportDiagnostics();
+    if (result.status === 'ok') setDiagMessage(t('diagnostics.exportSaved', { path: result.path }));
+    else if (result.status === 'error') setDiagMessage(t('diagnostics.exportFailed'));
+    else setDiagMessage(null);
   }
 
   const current = isSupportedLocale(i18n.language) ? i18n.language : 'en';
@@ -116,6 +143,33 @@ export function SettingsScreen() {
             </button>
           </div>
         </>
+      )}
+
+      <h2>{t('diagnostics.title')}</h2>
+      <p className="hint">{t('diagnostics.hint')}</p>
+      <label className="field">
+        <span>{t('diagnostics.passcodeLabel')}</span>
+        <input
+          type="text"
+          value={diagCode}
+          maxLength={8}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(e) => setDiagCode(e.target.value)}
+        />
+      </label>
+      {diagUnlocked && (
+        <div className="diagnostics-panel">
+          {diagSummary && (
+            <p className="hint">
+              {t('diagnostics.summaryLine', { version: diagSummary.appVersion, platform: diagSummary.platform, arch: diagSummary.arch, count: diagSummary.entries.length })}
+            </p>
+          )}
+          <button type="button" className="button" onClick={() => void handleExportDiagnostics()}>
+            {t('diagnostics.exportButton')}
+          </button>
+          {diagMessage && <p className="hint">{diagMessage}</p>}
+        </div>
       )}
     </div>
   );

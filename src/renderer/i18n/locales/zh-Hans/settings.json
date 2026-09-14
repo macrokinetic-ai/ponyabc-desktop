@@ -19,5 +19,14 @@
     "updateAvailable": "有新版本可用：{{version}}",
     "downloadUpdateButton": "前往下载页面",
     "checkFailed": "无法检查更新（请确认网络连接）。"
+  },
+  "diagnostics": {
+    "title": "诊断",
+    "hint": "用于排查连接或内容匹配问题。",
+    "passcodeLabel": "支持代码",
+    "summaryLine": "版本 {{version}} · {{platform}}/{{arch}} · 已记录 {{count}} 项事件",
+    "exportButton": "导出诊断记录…",
+    "exportSaved": "已保存至 {{path}}",
+    "exportFailed": "无法保存文件。"
   }
 }

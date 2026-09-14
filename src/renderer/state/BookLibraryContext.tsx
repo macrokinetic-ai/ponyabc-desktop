@@ -29,7 +29,7 @@ interface BookLibraryState {
   cancelDownload: (contentId: string) => Promise<void>;
 }
 
-const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [] };
+const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: null };
 
 const BookLibraryContext = createContext<BookLibraryState | null>(null);
 
@@ -88,6 +88,24 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
     void refreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [penResultStatus, penResultPath]);
+
+  // Patches just the one resolved item in place — no full re-list round trip needed once a
+  // pending 'matched-verifying'/'on-pen-verifying' item's hash finishes computing. A null
+  // result (the file couldn't be read in the brief window since listing) is a no-op: the item
+  // stays "verifying" until the next explicit refresh tries again, rather than guessing.
+  useEffect(() => {
+    return window.ponyabc.onBookVerifyUpdate((event) => {
+      if (event.result === null) return;
+      setPenItems((prev) => (prev ? prev.map((i) => (i.fileName === event.fileName ? { ...i, status: event.result!.penStatus } : i)) : prev));
+      setCatalogItems((prev) =>
+        prev.map((i) =>
+          i.contentId === event.contentId
+            ? { ...i, status: event.result!.catalogStatus, actionable: event.result!.catalogStatus === 'on-pen-differs' }
+            : i,
+        ),
+      );
+    });
+  }, []);
 
   useEffect(() => {
     return window.ponyabc.onBookDownloadProgress((event) => {

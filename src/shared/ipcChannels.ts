@@ -35,6 +35,10 @@ export const IPC = {
   bookRestore: 'ponyabc:book:restore',
   bookDownloadCancel: 'ponyabc:book:downloadCancel',
   bookDownloadProgress: 'ponyabc:book:downloadProgress',
+  bookVerifyUpdate: 'ponyabc:book:verifyUpdate',
+
+  diagnosticsSummary: 'ponyabc:diagnostics:summary',
+  diagnosticsExport: 'ponyabc:diagnostics:export',
 
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',

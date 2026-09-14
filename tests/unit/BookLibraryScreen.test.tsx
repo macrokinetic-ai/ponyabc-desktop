@@ -18,6 +18,7 @@ function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem 
     status: 'not-on-pen',
     cached: false,
     actionable: true,
+    updatedAtMs: null,
     ...overrides,
   };
 }
@@ -31,21 +32,25 @@ function penItem(overrides: Partial<BookPenItem> = {}): BookPenItem {
     friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
     status: 'matched-current',
     removable: true,
+    updatedAtMs: null,
     ...overrides,
   };
 }
+
+const okLastCheck = { state: 'ok' as const, atMs: 1_700_000_000_000, httpStatus: 200, itemCount: 1, message: null, durationMs: 5 };
 
 function listResult(overrides: Partial<BookListResult> = {}): BookListResult {
   return {
     status: 'ok',
     penItems: [],
     catalogItems: [catalogItem()],
-    meta: { fetchedAtMs: 1_700_000_000_000, source: 'live', offline: false, conflicts: [] },
+    meta: { fetchedAtMs: 1_700_000_000_000, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck },
     ...overrides,
   };
 }
 
 let progressListener: ((event: unknown) => void) | null = null;
+let verifyListener: ((event: unknown) => void) | null = null;
 
 function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
@@ -81,6 +86,12 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         progressListener = null;
       };
     }),
+    onBookVerifyUpdate: vi.fn((listener) => {
+      verifyListener = listener as (event: unknown) => void;
+      return () => {
+        verifyListener = null;
+      };
+    }),
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     getAppInfo: vi.fn(async () => ({ version: '0.0.0', variant: 'mac-arm64' })),
@@ -96,6 +107,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   progressListener = null;
+  verifyListener = null;
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
 });
@@ -132,12 +144,23 @@ describe('BookLibraryScreen — dual pane', () => {
     expect(document.querySelectorAll('.pane')).toHaveLength(2);
   });
 
-  it('shows the offline/unavailable banner when the catalog has never been fetched', async () => {
-    const list = listResult({ penItems: null, catalogItems: [], meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [] } });
+  it('shows a "couldn\'t reach the server" status when the catalog has never been fetched', async () => {
+    const list = listResult({
+      penItems: null,
+      catalogItems: [],
+      meta: {
+        fetchedAtMs: null,
+        source: 'none',
+        offline: true,
+        conflicts: [],
+        lastCheck: { state: 'error', atMs: 1, httpStatus: null, itemCount: null, message: 'network down', durationMs: 1 },
+      },
+    });
     window.ponyabc.bookList = vi.fn(async () => list);
     window.ponyabc.bookCatalogRefresh = vi.fn(async () => list);
     renderWithPen(false);
-    await screen.findByText(/could not be reached/i);
+    await screen.findByText(/couldn't reach the server/i);
+    await screen.findByText(/no catalog has been successfully loaded yet/i);
   });
 
   it('renders the last-updated time when a catalog has been fetched', async () => {
@@ -146,7 +169,7 @@ describe('BookLibraryScreen — dual pane', () => {
   });
 
   it('shows the dev-fixture banner only when the catalog source is "fixture"', async () => {
-    await renderScreen(listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [] } }));
+    await renderScreen(listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [], lastCheck: okLastCheck } }));
     await screen.findByText(/Development catalog data/);
   });
 
@@ -157,7 +180,9 @@ describe('BookLibraryScreen — dual pane', () => {
 
   it('renders an ambiguous-conflict notice when the catalog reports one', async () => {
     await renderScreen(
-      listResult({ meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [{ filenameLower: 'a.axb', contentIds: ['b1', 'b2'] }] } }),
+      listResult({
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [{ filenameLower: 'a.axb', contentIds: ['b1', 'b2'] }], lastCheck: okLastCheck },
+      }),
     );
     await screen.findByText(/share a filename/);
   });
@@ -169,6 +194,14 @@ describe('BookLibraryScreen — left pane (pen)', () => {
     await screen.findByText(/mystery\.axb — Unknown/);
     // No checkbox is rendered for it at all (read-only, not merely disabled) — scoped to the
     // list itself, since the pane's own "select all" toolbar checkbox is unrelated.
+    expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+  });
+
+  it('an unmatched pen file shows "Waiting for catalog match" (not "Unknown") while no catalog has ever loaded, and stays read-only', async () => {
+    await renderScreen(
+      listResult({ penItems: [penItem({ fileName: 'mystery.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'awaiting-catalog', removable: false })] }),
+    );
+    await screen.findByText(/mystery\.axb — Waiting for catalog match/);
     expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
   });
 
@@ -247,5 +280,16 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
     expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
     expect((window.ponyabc.bookCatalogRefresh as ReturnType<typeof vi.fn>).mock.calls.length).toBe(refreshCallsBefore);
+  });
+
+  it('a "verifying" catalog item resolves in place once a bookVerifyUpdate event arrives, no re-list call', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-verifying', actionable: false })] }));
+    await screen.findByText(/Verifying content/);
+    const listCallsBefore = (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
+
+    verifyListener?.({ fileName: '0451.axb', contentId: 'b1', result: { penStatus: 'matched-differs', catalogStatus: 'on-pen-differs' } });
+
+    await screen.findByText(/On pen, differs from this version/);
+    expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
   });
 });

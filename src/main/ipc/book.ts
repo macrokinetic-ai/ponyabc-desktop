@@ -6,15 +6,18 @@ import type {
   BookBackupEntry,
   BookBackupSummary,
   BookCacheEntry,
+  BookCatalogCheck,
   BookCatalogEntry,
   BookCatalogSnapshot,
   BookListResult,
   BookRemoveResult,
+  BookVerifyUpdateEvent,
+  DiagnosticEntry,
 } from '@shared/types';
 import { resolvePenRoot } from '../services/pathSecurity';
 import * as session from '../services/session';
 import { createJsonStore } from '../services/bookStore';
-import { buildBookLibrary, listPenBookFiles } from '../services/bookReconcile';
+import { buildBookLibrary, listPenBookFiles, verifyPendingHash, type PendingVerification } from '../services/bookReconcile';
 import { validateCatalogEntries } from '../services/bookCatalogValidate';
 import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient';
 import { addToPen, reinstall, replaceWithOfficial } from '../services/bookInstall';
@@ -22,6 +25,7 @@ import { removeFromPen } from '../services/bookRemove';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { makeBackupDir } from '../services/transferPlanner';
+import { appendDiagnostic } from '../services/diagnostics';
 
 // Hardcoded — the renderer has no way to influence which host this reads from. Secret-free
 // public endpoint (Option A): no Authorization header, nothing embedded to protect.
@@ -36,12 +40,20 @@ function dirs() {
     backupDir: path.join(userData, 'backups', 'book'),
     backupManifestFile: path.join(userData, 'backups', 'book', 'manifest.json'),
     scratchBackupRootDir: path.join(userData, 'backups', 'book-scratch'),
+    diagnosticsFile: path.join(userData, 'diagnostics.json'),
   };
 }
 
 const catalogStore = () => createJsonStore<BookCatalogSnapshot | null>(dirs().catalogFile, () => null);
 const cacheManifestStore = () => createJsonStore<BookCacheEntry[]>(dirs().cacheManifestFile, () => []);
 const backupManifestStore = () => createJsonStore<BookBackupEntry[]>(dirs().backupManifestFile, () => []);
+export const diagnosticsStore = () => createJsonStore<DiagnosticEntry[]>(dirs().diagnosticsFile, () => []);
+
+/** The outcome of the most recent catalog fetch attempt this run — kept in memory only (a
+ *  fresh attempt always happens again on the next launch via the renderer's mount effect, so
+ *  there is no need to persist this across restarts, and doing so would risk showing a
+ *  stale "ok" from a previous session before that fresh attempt has actually run). */
+let lastCatalogCheck: BookCatalogCheck | null = null;
 
 function findCacheEntryByHash(sha256: string): { contentId: string; sha256: string } | null {
   const c = cacheManifestStore()
@@ -69,38 +81,133 @@ function currentPenBookFiles(): { files: ReturnType<typeof listPenBookFiles> | n
   return { files: listPenBookFiles(fresh.bookDirReal), bookDirReal: fresh.bookDirReal };
 }
 
-async function currentList(): Promise<BookListResult> {
+/** Fast: never hashes a pen file's content, so listing is never blocked on a large AXB —
+ *  matched files whose current/differs status still needs a hash come back 'verifying', and
+ *  the caller (bookList/bookCatalogRefresh, which have a window to push to) kicks off
+ *  verifyPendingList for whatever's pending. */
+function computeCurrentList(): { result: BookListResult; pending: PendingVerification[]; bookDirReal: string | null } {
   const snapshot = catalogStore().get();
   const cacheEntries = cacheManifestStore().get();
   const { files, bookDirReal } = currentPenBookFiles();
-  const { penItems, catalogItems } = await buildBookLibrary({ snapshot, cacheEntries, penFiles: files, bookDirReal });
+  const { penItems, catalogItems, pending } = buildBookLibrary({ snapshot, cacheEntries, penFiles: files, bookDirReal });
   return {
-    status: 'ok',
-    penItems,
-    catalogItems,
-    meta: {
-      fetchedAtMs: snapshot?.fetchedAtMs ?? null,
-      source: snapshot?.source ?? 'none',
-      offline: snapshot === null,
-      conflicts: snapshot?.conflicts ?? [],
+    result: {
+      status: 'ok',
+      penItems,
+      catalogItems,
+      meta: {
+        fetchedAtMs: snapshot?.fetchedAtMs ?? null,
+        source: snapshot?.source ?? 'none',
+        offline: snapshot === null,
+        conflicts: snapshot?.conflicts ?? [],
+        lastCheck: lastCatalogCheck,
+      },
     },
+    pending,
+    bookDirReal,
   };
 }
 
-export function bookList(): Promise<BookListResult> {
-  return currentList();
+async function currentList(): Promise<BookListResult> {
+  return computeCurrentList().result;
+}
+
+/** Guards against hashing the same pen file twice concurrently (e.g. the renderer's mount
+ *  effect calls bookList() then bookCatalogRefresh() moments later, each producing the same
+ *  pending file) — a second request for a fileName already being verified is simply skipped,
+ *  never a duplicate read/hash of a potentially very large AXB. */
+const verifyInFlight = new Set<string>();
+
+async function verifyPendingList(window: BrowserWindow, bookDirReal: string, pending: PendingVerification[], capturedGeneration: number): Promise<void> {
+  for (const item of pending) {
+    if (verifyInFlight.has(item.fileName)) continue;
+    verifyInFlight.add(item.fileName);
+    try {
+      if (session.getGeneration() !== capturedGeneration) return; // pen changed/disconnected — stale, abort silently
+      const outcome = await verifyPendingHash(bookDirReal, item);
+      if (session.getGeneration() !== capturedGeneration) return;
+      const event: BookVerifyUpdateEvent =
+        outcome === null
+          ? { fileName: item.fileName, contentId: item.contentId, result: null }
+          : {
+              fileName: item.fileName,
+              contentId: item.contentId,
+              result: {
+                penStatus: outcome === 'current' ? 'matched-current' : 'matched-differs',
+                catalogStatus: outcome === 'current' ? 'on-pen-current' : 'on-pen-differs',
+              },
+            };
+      try {
+        window.webContents.send(IPC.bookVerifyUpdate, event);
+      } catch {
+        return; // window already gone — nothing left to notify
+      }
+    } finally {
+      verifyInFlight.delete(item.fileName);
+    }
+  }
+}
+
+export function bookList(window: BrowserWindow): Promise<BookListResult> {
+  const { result, pending, bookDirReal } = computeCurrentList();
+  if (bookDirReal && pending.length > 0) void verifyPendingList(window, bookDirReal, pending, session.getGeneration());
+  return Promise.resolve(result);
 }
 
 /** A failed refresh intentionally leaves the previous snapshot completely untouched — never
- *  clears it, never treated as "the server deleted everything." */
-export async function bookCatalogRefresh(): Promise<BookListResult> {
+ *  clears it, never treated as "the server deleted everything." The attempt's own outcome
+ *  (success/failure, HTTP status, item count, duration) is tracked separately in
+ *  lastCatalogCheck so the UI can always show what actually just happened, distinct from
+ *  whether older cached data still exists to fall back on. */
+export async function bookCatalogRefresh(window: BrowserWindow): Promise<BookListResult> {
   const client = createHttpBookCatalogClient({ baseUrl: BOOK_API_BASE_URL });
+  const requestUrl = `${BOOK_API_BASE_URL}/api/public/books`;
+  const startedAtMs = Date.now();
   const outcome = await client.fetchCatalog();
+  const durationMs = Date.now() - startedAtMs;
+
   if (outcome.status === 'ok') {
     const { entries, conflicts } = validateCatalogEntries(outcome.entries);
     catalogStore().set({ entries, fetchedAtMs: Date.now(), source: client.kind, conflicts });
+    lastCatalogCheck = { state: 'ok', atMs: Date.now(), httpStatus: 200, itemCount: entries.length, message: null, durationMs };
+    appendDiagnostic(diagnosticsStore(), 'catalog-fetch', {
+      url: requestUrl,
+      httpStatus: 200,
+      durationMs,
+      outcome: 'ok',
+      itemCount: entries.length,
+      conflictCount: conflicts.length,
+    });
+  } else {
+    lastCatalogCheck = {
+      state: 'error',
+      atMs: Date.now(),
+      httpStatus: outcome.httpStatus ?? null,
+      itemCount: null,
+      message: outcome.message,
+      durationMs,
+    };
+    appendDiagnostic(diagnosticsStore(), 'catalog-fetch', {
+      url: requestUrl,
+      httpStatus: outcome.httpStatus ?? 'unreachable',
+      durationMs,
+      outcome: 'error',
+      message: outcome.message,
+    });
   }
-  return currentList();
+
+  const { result, pending, bookDirReal } = computeCurrentList();
+  if (result.penItems !== null) {
+    appendDiagnostic(diagnosticsStore(), 'pen-reconcile', {
+      axbTotal: result.penItems.length,
+      matched: result.penItems.filter((i) => i.status !== 'unknown' && i.status !== 'awaiting-catalog').length,
+      unknown: result.penItems.filter((i) => i.status === 'unknown').length,
+      awaitingCatalog: result.penItems.filter((i) => i.status === 'awaiting-catalog').length,
+      ambiguousCatalogConflicts: result.meta.conflicts.length,
+    });
+  }
+  if (bookDirReal && pending.length > 0) void verifyPendingList(window, bookDirReal, pending, session.getGeneration());
+  return result;
 }
 
 function findEntry(contentId: string): BookCatalogEntry | null {
@@ -126,7 +233,16 @@ async function runInstallAction(
 ): Promise<BookActionResult> {
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
-  return action(entry, params.penGeneration, installDeps(window));
+  const result = await action(entry, params.penGeneration, installDeps(window));
+  appendDiagnostic(diagnosticsStore(), 'book-download', {
+    contentId: entry.contentId,
+    filename: entry.filename,
+    expectedSizeBytes: entry.sizeBytes,
+    expectedSha256: entry.sha256 ?? 'null',
+    outcome: result.status,
+    message: result.message ?? 'null',
+  });
+  return result;
 }
 
 export const bookAdd = (window: BrowserWindow, params: { contentId: string; penGeneration: number }) => runInstallAction(addToPen, window, params);
@@ -144,7 +260,10 @@ export const bookReinstall = (window: BrowserWindow, params: { contentId: string
 export async function bookRemove(params: { fileName: string; penGeneration: number }): Promise<BookRemoveResult> {
   const list = await currentList();
   const item = list.penItems?.find((i) => i.fileName === params.fileName) ?? null;
-  if (!item || !item.removable || item.status === 'unknown') {
+  // removable is false for every non-matched status ('unknown', 'awaiting-catalog') — this is
+  // the actual enforcement, not a specific status string, so a future new non-matched status
+  // is refused the same way without needing this check updated again.
+  if (!item || !item.removable) {
     return { status: 'unknown-content', message: 'This file is not recognized as a catalog BOOK and cannot be removed here.' };
   }
   const reason = item.status === 'matched-current' ? ('pre-removal-current-version' as const) : ('differs-from-official' as const);

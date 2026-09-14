@@ -10,7 +10,16 @@ interface RawPublicBook {
   sizeBytes: unknown;
   sha256: unknown;
   sortOrder: unknown;
+  updatedAt: unknown;
   downloadUrl: unknown;
+}
+
+/** Parses the server's declared updatedAt into an epoch ms, or null if missing/invalid —
+ *  never guessed, since a missing/invalid timestamp must never trigger a "new" badge. */
+function parseUpdatedAtMs(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
 }
 
 function toEntry(b: RawPublicBook): BookCatalogEntry {
@@ -27,6 +36,7 @@ function toEntry(b: RawPublicBook): BookCatalogEntry {
       b.friendlyNameI18n && typeof b.friendlyNameI18n === 'object' ? (b.friendlyNameI18n as Record<string, string>) : null,
     contentLanguages: Array.isArray(b.contentLanguages) ? (b.contentLanguages as string[]) : [],
     sortOrder: typeof b.sortOrder === 'number' ? b.sortOrder : Number(b.sortOrder) || 0,
+    updatedAtMs: parseUpdatedAtMs(b.updatedAt),
     downloadUrl: String(b.downloadUrl),
   };
 }
@@ -46,11 +56,11 @@ export function createHttpBookCatalogClient(opts: { baseUrl: string; fetchFn?: t
           signal: AbortSignal.timeout(10000),
         });
         if (!response.ok) {
-          return { status: 'error', message: `Server returned ${response.status}.` };
+          return { status: 'error', message: `Server returned ${response.status}.`, httpStatus: response.status };
         }
         const data = (await response.json()) as { books?: unknown };
         if (!Array.isArray(data.books)) {
-          return { status: 'error', message: 'Malformed catalog response.' };
+          return { status: 'error', message: 'Malformed catalog response.', httpStatus: response.status };
         }
         return { status: 'ok', entries: (data.books as RawPublicBook[]).map(toEntry) };
       } catch (err) {

@@ -15,6 +15,7 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
     contentLanguages: ['en'],
     sortOrder: 0,
+    updatedAtMs: null,
     downloadUrl: 'https://register.ponyabc.uk/api/public/books/download?id=b1',
     ...overrides,
   };
@@ -56,6 +57,7 @@ describe('createHttpBookCatalogClient', () => {
           sizeBytes: 1000,
           sha256: 'a'.repeat(64),
           sortOrder: 0,
+          updatedAt: '2026-09-01T00:00:00.000Z',
           downloadUrl: `${baseUrl}/api/public/books/download?id=b1`,
         },
       ],
@@ -63,7 +65,22 @@ describe('createHttpBookCatalogClient', () => {
     const fetchFn = vi.fn(async () => new Response(JSON.stringify(raw), { status: 200 }));
     const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
     const outcome = await client.fetchCatalog();
-    expect(outcome).toEqual({ status: 'ok', entries: [entry()] });
+    expect(outcome).toEqual({ status: 'ok', entries: [entry({ updatedAtMs: Date.parse('2026-09-01T00:00:00.000Z') })] });
+  });
+
+  it('leaves updatedAtMs null when the field is missing or not a valid date string, never guesses', async () => {
+    const raw = {
+      books: [
+        { id: 'b1', originalFileName: 'a.axb', friendlyName: 'a', friendlyNameI18n: null, contentLanguages: [], sizeBytes: 1, sha256: null, sortOrder: 0, downloadUrl: 'x' },
+        { id: 'b2', originalFileName: 'b.axb', friendlyName: 'b', friendlyNameI18n: null, contentLanguages: [], sizeBytes: 1, sha256: null, sortOrder: 0, updatedAt: 'not-a-date', downloadUrl: 'y' },
+      ],
+    };
+    const fetchFn = vi.fn(async () => new Response(JSON.stringify(raw), { status: 200 }));
+    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const outcome = await client.fetchCatalog();
+    expect(outcome.status).toBe('ok');
+    if (outcome.status !== 'ok') return;
+    expect(outcome.entries.map((e) => e.updatedAtMs)).toEqual([null, null]);
   });
 
   it('marks an entry with no declared filename as filenameSource "fallback-storage-key"', async () => {
@@ -80,7 +97,7 @@ describe('createHttpBookCatalogClient', () => {
   it('returns a typed error on a non-2xx response, without throwing', async () => {
     const fetchFn = vi.fn(async () => new Response('', { status: 503 }));
     const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
-    await expect(client.fetchCatalog()).resolves.toEqual({ status: 'error', message: 'Server returned 503.' });
+    await expect(client.fetchCatalog()).resolves.toEqual({ status: 'error', message: 'Server returned 503.', httpStatus: 503 });
   });
 
   it('returns a typed error on malformed JSON / a missing "books" array', async () => {

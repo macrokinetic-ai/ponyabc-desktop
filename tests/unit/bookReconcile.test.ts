@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { BookCacheEntry, BookCatalogEntry } from '../../src/shared/types';
-import { buildBookLibrary, listPenBookFiles } from '../../src/main/services/bookReconcile';
+import { buildBookLibrary, listPenBookFiles, verifyPendingHash } from '../../src/main/services/bookReconcile';
 
 const tempDirs: string[] = [];
 function mkTempDir(): string {
@@ -26,6 +26,7 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     friendlyNameI18n: null,
     contentLanguages: ['en'],
     sortOrder: 0,
+    updatedAtMs: null,
     downloadUrl: 'https://x/download?id=b1',
     ...overrides,
   };
@@ -69,32 +70,40 @@ describe('buildBookLibrary — catalogItems (right pane)', () => {
         status: 'not-on-pen',
         cached: false,
         actionable: true,
+        updatedAtMs: null,
       },
     ]);
   });
 
-  it('on-pen-current / on-pen-differs, both actionable=true only for differs', async () => {
+  it('a matched, eligible entry is "on-pen-verifying" (not actionable) until its pending hash resolves to current/differs', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
     const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
 
-    const current = await buildBookLibrary({
+    const current = buildBookLibrary({
       snapshot: { entries: [entry({ sha256: hash })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(current.catalogItems[0].status).toBe('on-pen-current');
-    expect(current.catalogItems[0].actionable).toBe(false); // already matches — nothing to do
+    expect(current.catalogItems[0].status).toBe('on-pen-verifying');
+    expect(current.catalogItems[0].actionable).toBe(false); // never actionable while unresolved
+    expect(current.pending).toEqual([{ fileName: '0451.axb', contentId: 'b1', expectedSha256: hash }]);
+    await expect(verifyPendingHash(dir, current.pending[0])).resolves.toBe('current');
 
-    const differs = await buildBookLibrary({
+    const differs = buildBookLibrary({
       snapshot: { entries: [entry({ sha256: 'f'.repeat(64) })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(differs.catalogItems[0].status).toBe('on-pen-differs');
-    expect(differs.catalogItems[0].actionable).toBe(true);
+    expect(differs.catalogItems[0].status).toBe('on-pen-verifying');
+    await expect(verifyPendingHash(dir, differs.pending[0])).resolves.toBe('differs');
+  });
+
+  it('verifyPendingHash returns null (never a guessed outcome) when the file can no longer be read', async () => {
+    const dir = mkTempDir();
+    await expect(verifyPendingHash(dir, { fileName: 'gone.axb', contentId: 'b1', expectedSha256: 'a'.repeat(64) })).resolves.toBeNull();
   });
 
   it('metadata-incomplete is never actionable, even with a matching pen file', async () => {
@@ -133,6 +142,31 @@ describe('buildBookLibrary — catalogItems (right pane)', () => {
     expect(catalogItems[0].cached).toBe(true);
     expect(catalogItems[0].status).toBe('not-on-pen');
   });
+
+  it('passes the catalog entry updatedAtMs through to both the catalog item and a matched pen item', async () => {
+    const dir = mkTempDir();
+    fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
+    const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
+    const updatedAtMs = Date.parse('2026-09-01T00:00:00.000Z');
+    const { penItems, catalogItems } = await buildBookLibrary({
+      snapshot: { entries: [entry({ sha256: hash, updatedAtMs })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(catalogItems[0].updatedAtMs).toBe(updatedAtMs);
+    expect(penItems?.[0].updatedAtMs).toBe(updatedAtMs);
+  });
+
+  it('an unmatched pen file always has a null updatedAtMs, even when the catalog has entries', async () => {
+    const { penItems } = await buildBookLibrary({
+      snapshot: { entries: [entry({ updatedAtMs: Date.now() })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: 'mystery.axb', sizeBytes: 9 }],
+      bookDirReal: null,
+    });
+    expect(penItems?.[0].updatedAtMs).toBeNull();
+  });
 });
 
 describe('buildBookLibrary — penItems (left pane)', () => {
@@ -149,11 +183,11 @@ describe('buildBookLibrary — penItems (left pane)', () => {
       bookDirReal: null,
     });
     expect(penItems).toEqual([
-      { fileName: 'mystery.axb', sizeBytes: 9, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false },
+      { fileName: 'mystery.axb', sizeBytes: 9, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false, updatedAtMs: null },
     ]);
   });
 
-  it('a catalog error (null snapshot) never invents matches — every pen file is "unknown"', async () => {
+  it('a catalog that has never been successfully fetched (null snapshot) shows unmatched pen files as "awaiting-catalog", not "unknown" — nothing has actually been checked against anything yet', async () => {
     const { penItems } = await buildBookLibrary({
       snapshot: null,
       cacheEntries: [],
@@ -161,11 +195,11 @@ describe('buildBookLibrary — penItems (left pane)', () => {
       bookDirReal: null,
     });
     expect(penItems).toEqual([
-      { fileName: '0451.axb', sizeBytes: 5, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false },
+      { fileName: '0451.axb', sizeBytes: 5, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'awaiting-catalog', removable: false, updatedAtMs: null },
     ]);
   });
 
-  it('a matched pen file is removable and carries the catalog identity/name', async () => {
+  it('a matched pen file is removable and carries the catalog identity/name — "verifying" until its hash resolves', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
     const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
@@ -176,11 +210,11 @@ describe('buildBookLibrary — penItems (left pane)', () => {
       bookDirReal: dir,
     });
     expect(penItems).toEqual([
-      { fileName: '0451.axb', sizeBytes: 5, contentId: 'b1', friendlyName: 'Book One', friendlyNameI18n: null, status: 'matched-current', removable: true },
+      { fileName: '0451.axb', sizeBytes: 5, contentId: 'b1', friendlyName: 'Book One', friendlyNameI18n: null, status: 'matched-verifying', removable: true, updatedAtMs: null },
     ]);
   });
 
-  it('matched-differs / matched-hash-unknown are still removable (the confirm+backup gate is enforced at removal time, not by hiding the checkbox)', async () => {
+  it('matched-verifying / matched-hash-unknown are both removable (the confirm+backup gate is enforced at removal time, not by hiding the checkbox)', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
 
@@ -190,7 +224,7 @@ describe('buildBookLibrary — penItems (left pane)', () => {
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(differs.penItems?.[0].status).toBe('matched-differs');
+    expect(differs.penItems?.[0].status).toBe('matched-verifying');
     expect(differs.penItems?.[0].removable).toBe(true);
 
     const hashUnknown = await buildBookLibrary({
@@ -218,19 +252,20 @@ describe('buildBookLibrary — penItems (left pane)', () => {
     expect(penItems?.[0].removable).toBe(false);
   });
 
-  it('hashes a matched pen file exactly once, reused by both panes', async () => {
+  it('never hashes inside buildBookLibrary itself, and reports exactly one pending verification for a file both panes reference', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
     const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
-    // No direct spy available on the pure function boundary here; this asserts consistency
-    // between the two panes as an indirect proof the same computed hash is used for both.
-    const { penItems, catalogItems } = await buildBookLibrary({
+    const { penItems, catalogItems, pending } = buildBookLibrary({
       snapshot: { entries: [entry({ sha256: hash })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(penItems?.[0].status).toBe('matched-current');
-    expect(catalogItems[0].status).toBe('on-pen-current');
+    // Both panes reflect "not yet known" immediately — the caller resolves the single pending
+    // entry (never one hash per pane) and pushes the outcome to both places at once.
+    expect(penItems?.[0].status).toBe('matched-verifying');
+    expect(catalogItems[0].status).toBe('on-pen-verifying');
+    expect(pending).toEqual([{ fileName: '0451.axb', contentId: 'b1', expectedSha256: hash }]);
   });
 });

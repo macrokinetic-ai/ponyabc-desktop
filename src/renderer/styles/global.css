@@ -359,6 +359,47 @@ body {
   margin-top: 4px;
 }
 
+/* Connection status dot — never the only signal (always paired with a text label), just a
+ * quick at-a-glance cue alongside it. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.status-dot--grey {
+  background: #9aa0a6;
+}
+.status-dot--green {
+  background: #1a7f37;
+}
+.status-dot--red {
+  background: var(--error);
+}
+
+.diagnostics-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.new-badge {
+  display: inline-block;
+  color: #fff;
+  background: var(--error);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 /* Soft-background explanatory note — never relies on color alone (also has a border + icon-
  * free plain text), per the "clarify what this button does" requirement. */
 .note-box {

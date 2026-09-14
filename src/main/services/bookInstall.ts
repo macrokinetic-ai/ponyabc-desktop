@@ -48,8 +48,17 @@ async function resolveCacheFile(
   if (outcome.status === 'cancelled') return { ok: false, result: { status: 'cancelled' } };
   if (outcome.status === 'metadata-incomplete') return { ok: false, result: { status: 'metadata-incomplete' } };
   if (outcome.status === 'network-error') return { ok: false, result: { status: 'network-error', message: outcome.message } };
-  // hash-mismatch
-  return { ok: false, result: { status: 'error', message: 'Downloaded content did not verify against the declared checksum.' } };
+  // hash-mismatch — name the exact book and the expected-vs-actual numbers, never a bare
+  // generic message, so a real failure is diagnosable from the error text alone.
+  return {
+    ok: false,
+    result: {
+      status: 'error',
+      message:
+        `Downloaded content did not verify against the declared checksum for "${entry.filename}" ` +
+        `(expected ${entry.sizeBytes} bytes / ${entry.sha256 ?? 'unknown'}, got ${outcome.actualSizeBytes} bytes / ${outcome.actualSha256 ?? 'unknown'}).`,
+    },
+  };
 }
 
 async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, penGeneration: number, deps: BookInstallDeps): Promise<BookActionResult> {

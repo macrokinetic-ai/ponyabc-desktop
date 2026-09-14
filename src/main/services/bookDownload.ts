@@ -9,7 +9,10 @@ export type DownloadOutcome =
   | { status: 'ok'; cacheEntry: BookCacheEntry }
   | { status: 'no-space' }
   | { status: 'cancelled' }
-  | { status: 'hash-mismatch' }
+  /** actualSha256 is null when the size itself already didn't match (no point hashing).
+   *  Carried through so a caller can report exactly which book failed and by how much,
+   *  never just a generic "verification failed." */
+  | { status: 'hash-mismatch'; actualSizeBytes: number; actualSha256: string | null }
   | { status: 'metadata-incomplete' }
   | { status: 'network-error'; message: string };
 
@@ -143,13 +146,13 @@ async function runDownload(params: {
   if (stagedStat.size !== entry.sizeBytes) {
     await unlinkQuiet(tmpPath);
     onProgress?.({ contentId: entry.contentId, bytesReceived, totalBytes: entry.sizeBytes, phase: 'failed' });
-    return { status: 'hash-mismatch' };
+    return { status: 'hash-mismatch', actualSizeBytes: stagedStat.size, actualSha256: null };
   }
   const stagedHash = await sha256File(tmpPath);
   if (entry.sha256 !== null && stagedHash !== entry.sha256) {
     await unlinkQuiet(tmpPath);
     onProgress?.({ contentId: entry.contentId, bytesReceived, totalBytes: entry.sizeBytes, phase: 'failed' });
-    return { status: 'hash-mismatch' };
+    return { status: 'hash-mismatch', actualSizeBytes: stagedStat.size, actualSha256: stagedHash };
   }
 
   const finalPath = cacheFilePath(cacheDir, entry.contentId, stagedHash);
