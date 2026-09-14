@@ -206,6 +206,27 @@ export interface ReplaceStickerSummary {
   message?: string;
 }
 
+// ---------------------------------------------------------------------------------------
+// Local-only audio preview (both panes). The main process reads a fully-validated file (same
+// resolveContainedFile/isEligibleMp3FileName boundary as every other file operation, re-
+// resolved fresh — never trusts the renderer's fileName beyond a plain basename lookup
+// against the currently-authorized DIY/computer folder) and returns the raw bytes as base64;
+// the renderer turns that into a Blob/object URL for a native <audio> element. Nothing is
+// streamed to or from a network location, and no path the renderer supplies is ever used
+// directly — only a name looked up inside an already-authorized directory.
+export type AudioSource = 'pen' | 'computer';
+
+export type AudioPreviewResult =
+  | { status: 'ok'; base64: string; mimeType: string; sizeBytes: number }
+  | { status: 'no-pen-selected' }
+  | { status: 'no-computer-folder-selected' }
+  | { status: 'device-disconnected' }
+  | { status: 'invalid'; missing: Array<'BOOK' | 'DIY'> }
+  | { status: 'not-found' }
+  | { status: 'rejected' }
+  | { status: 'too-large' }
+  | { status: 'error'; message: string };
+
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
   platform: string;
@@ -244,6 +265,9 @@ export interface PonyAbcApi {
   }) => Promise<ReplaceStickerSummary>;
 
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => () => void;
+
+  // Local-only preview playback — never modifies anything, never leaves the machine.
+  readAudioPreview: (params: { source: AudioSource; fileName: string }) => Promise<AudioPreviewResult>;
 
   getSettings: () => Promise<Settings>;
   setSettings: (partial: Partial<Pick<Settings, 'locale'>>) => Promise<Settings>;

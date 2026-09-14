@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type {
   AppInfo,
+  AudioPreviewResult,
+  AudioSource,
   ComputerFolderListResult,
   ComputerFolderResult,
   ConflictDecision,
@@ -52,6 +54,8 @@ const api: PonyAbcApi = {
     ipcRenderer.invoke(IPC.replaceStickerExecute, params) as Promise<ReplaceStickerSummary>,
 
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => subscribe(IPC.transferProgress, listener),
+
+  readAudioPreview: (params: { source: AudioSource; fileName: string }) => ipcRenderer.invoke(IPC.audioPreviewRead, params) as Promise<AudioPreviewResult>,
 
   getSettings: () => ipcRenderer.invoke(IPC.settingsGet) as Promise<Settings>,
   setSettings: (partial) => ipcRenderer.invoke(IPC.settingsSet, partial) as Promise<Settings>,

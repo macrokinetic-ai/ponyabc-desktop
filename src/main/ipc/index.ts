@@ -7,6 +7,7 @@ import { chooseCandidatePenRoot, scanPenRoot, selectPenRoot } from './penRoot';
 import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
+import { readAudioPreview } from './audioPreview';
 import { getSettings, setSettings } from './settings';
 import { getAppInfo } from './appInfo';
 import { checkForUpdates, openLatestReleasePage } from './updates';
@@ -57,6 +58,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
 
   ipcMain.handle(IPC.replaceStickerPlan, (_event, params) => planReplaceSticker(params));
   ipcMain.handle(IPC.replaceStickerExecute, (_event, params) => executeReplaceSticker(getWindow(), params));
+
+  ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));
 
   ipcMain.handle(IPC.settingsGet, () => getSettings(store));
   ipcMain.handle(IPC.settingsSet, (_event, partial: unknown) => setSettings(store, partial));

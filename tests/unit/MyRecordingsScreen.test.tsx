@@ -53,6 +53,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     })),
     executeReplaceSticker: vi.fn(async () => ({ status: 'completed', backupPath: '/backups/0001.mp3' })),
     onTransferProgress: vi.fn(() => () => {}),
+    readAudioPreview: vi.fn(async () => ({ status: 'ok', base64: btoa('fake-audio-bytes'), mimeType: 'audio/mpeg', sizeBytes: 17 })),
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     ...overrides,
@@ -66,6 +67,12 @@ beforeAll(async () => {
 beforeEach(() => {
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
+  // jsdom doesn't implement real media playback — stub just enough for useAudioPreview to work.
+  window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+  window.HTMLMediaElement.prototype.pause = vi.fn();
+  window.HTMLMediaElement.prototype.load = vi.fn();
+  URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+  URL.revokeObjectURL = vi.fn();
 });
 
 afterEach(() => {
@@ -187,11 +194,11 @@ describe('MyRecordingsScreen — replace sticker', () => {
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('0001.mp3'))!);
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
 
-    const replaceButton = screen.getByText("Replace this sticker's audio") as HTMLButtonElement;
+    const replaceButton = screen.getByText("Replace this sticker using selected audio…") as HTMLButtonElement;
     expect(replaceButton.disabled).toBe(false);
     fireEvent.click(replaceButton);
 
-    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
+    await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
   });
 
   it('clears both checkboxes once the replace completes, but a failed replace leaves them selected for retry', async () => {
@@ -201,8 +208,8 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker's audio"));
-    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
+    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
 
@@ -218,8 +225,8 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker's audio"));
-    await screen.findByText('teacher-take.mp3 → Pen DIY/0001.mp3, replacing the original audio');
+    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
 
@@ -307,5 +314,78 @@ describe('MyRecordingsScreen — selection clears only for resolved items, and s
     await screen.findByText(/review before sending/);
 
     expect(screen.queryByText('Copy complete')).toBeNull(); // the stale save summary is gone, not stacked alongside the new plan
+  });
+});
+
+describe('MyRecordingsScreen — audio preview', () => {
+  function previewButton(name: string): HTMLButtonElement {
+    return screen
+      .getAllByRole('button')
+      .find((el) => (el as HTMLButtonElement).closest('li')?.textContent?.includes(name) && /preview/i.test(el.textContent ?? '')) as HTMLButtonElement;
+  }
+
+  it('previews a pen file: calls readAudioPreview with the pen source and shows the shared player bar', async () => {
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+
+    await waitFor(() => expect(window.ponyabc.readAudioPreview).toHaveBeenCalledWith({ source: 'pen', fileName: '0001.mp3' }));
+    await waitFor(() => expect(document.querySelector('.audio-preview-bar__filename')?.textContent).toBe('0001.mp3'));
+    expect(document.querySelector('.audio-preview-bar__source')?.textContent).toBe('Pen');
+    await waitFor(() => expect(previewButton('0001.mp3').textContent).toBe('Stop preview'));
+  });
+
+  it('previews a computer file with the computer source label and an encoding-guarantee hint', async () => {
+    await renderScreen();
+    fireEvent.click(previewButton('teacher-take.mp3'));
+
+    await waitFor(() => expect(window.ponyabc.readAudioPreview).toHaveBeenCalledWith({ source: 'computer', fileName: 'teacher-take.mp3' }));
+    await waitFor(() => expect(document.querySelector('.audio-preview-bar__source')?.textContent).toBe('Computer'));
+    expect(screen.getByText(/doesn't guarantee the pen can play the same file/)).toBeTruthy();
+  });
+
+  it('shows a clear error instead of hanging when the file cannot be read', async () => {
+    window.ponyabc.readAudioPreview = vi.fn(async () => ({ status: 'not-found' }));
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+
+    await screen.findByText('This file is no longer available.');
+  });
+
+  it('playing a second file stops the first — only one plays at a time', async () => {
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+    await waitFor(() => expect(previewButton('0001.mp3').textContent).toBe('Stop preview'));
+
+    fireEvent.click(previewButton('0002.mp3'));
+    await waitFor(() => expect(previewButton('0002.mp3').textContent).toBe('Stop preview'));
+    expect(previewButton('0001.mp3').textContent).toBe('Preview');
+    expect(window.ponyabc.readAudioPreview).toHaveBeenCalledTimes(2);
+  });
+
+  it('the close button stops playback and hides the player bar', async () => {
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+    await waitFor(() => expect(previewButton('0001.mp3').textContent).toBe('Stop preview'));
+
+    fireEvent.click(screen.getByLabelText('Close preview'));
+    expect(document.querySelector('.audio-preview-bar')).toBeNull();
+    expect(previewButton('0001.mp3').textContent).toBe('Preview');
+  });
+
+  it('stops a pen-source preview when the pen changes (swap/disconnect), releasing it', async () => {
+    let volumesChangedListener: (() => void) | null = null;
+    window.ponyabc.onPenVolumesChanged = vi.fn((listener: () => void) => {
+      volumesChangedListener = listener;
+      return () => {};
+    });
+    await renderScreen();
+    fireEvent.click(previewButton('0001.mp3'));
+    await waitFor(() => expect(previewButton('0001.mp3').textContent).toBe('Stop preview'));
+
+    window.ponyabc.scanForPenRoot = vi.fn(async () => ({ status: 'ok', path: '/Volumes/OTHERPEN', volumeLabel: 'OTHERPEN', generation: 2, auto: true }));
+    window.ponyabc.listDiyRecordings = vi.fn(async () => ({ status: 'ok', diyFolderName: 'DIY', files: [] }));
+    volumesChangedListener?.();
+
+    await waitFor(() => expect(document.querySelector('.audio-preview-bar')).toBeNull());
   });
 });

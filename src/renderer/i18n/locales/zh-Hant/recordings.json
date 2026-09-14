@@ -32,7 +32,7 @@
   "actions": {
     "saveToComputer": "儲存至電腦 →",
     "sendToPen": "← 傳送至點讀筆",
-    "replaceSticker": "取代選取貼紙的音訊"
+    "replaceSticker": "用所選音訊替換此貼紙…"
   },
   "transferPlan": {
     "title": "傳送至點讀筆 — 傳送前請覆核",
@@ -42,7 +42,7 @@
     "toAddTitle": "{{count}} 個新增檔案",
     "toAddHint": "呢啲檔名目前喺點讀筆上唔存在。本程式無法核實新檔名一定對應有效貼紙，如有疑問請對照貼紙再傳送。",
     "conflictsTitle": "{{count}} 個檔案喺點讀筆上已存在",
-    "conflictsHint": "請逐個選擇取代或略過——未經您選擇不會覆寫任何檔案。",
+    "conflictsHint": "點讀筆已有同名檔案——請為每一個選擇「取代」（原有音訊會先備份到電腦）或「略過」。確認前不會寫入任何檔案。",
     "replace": "取代",
     "skip": "略過",
     "rejectedTitle": "{{count}} 個檔案已被排除",
@@ -59,12 +59,27 @@
   },
   "replaceSticker": {
     "title": "取代選取貼紙的音訊",
-    "confirmText": "{{computerFileName}} → 點讀筆 DIY/{{penFileName}}，取代原音訊",
+    "confirmText": "電腦：{{computerFileName}} → 點讀筆 DIY：{{penFileName}}（將取代筆內音訊）",
     "sizes": "新音訊：{{computerSize}} — 目前：{{penSize}}",
     "noRename": "電腦原檔本身不會被改名或修改。",
     "confirmButton": "確認取代",
     "success": "已成功取代。",
     "failed": "無法完成取代。",
-    "sourceGone": "所選其中一個檔案已無法使用。"
+    "sourceGone": "所選其中一個檔案已無法使用。",
+    "keepsFilename": "保留筆內檔名，只替換音訊內容。"
+  },
+  "preview": {
+    "button": "試聽",
+    "buttonPlaying": "停止試聽",
+    "sourcePen": "點讀筆",
+    "sourceComputer": "電腦",
+    "loading": "載入試聽中…",
+    "close": "關閉試聽",
+    "errorNotFound": "此檔案已不存在。",
+    "errorRejected": "此檔案無法試聽。",
+    "errorDeviceDisconnected": "點讀筆已中斷連接。",
+    "errorTooLarge": "此檔案過大，無法試聽。",
+    "errorGeneric": "無法播放此檔案（格式不支援或無法讀取）。",
+    "penEncodingHint": "此處播放正常，不代表傳送到點讀筆後一定支援同一編碼。"
   }
 }

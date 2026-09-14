@@ -1,23 +1,45 @@
-# v0.2.5 — fix cross-platform testing blockers
+# v0.2.6 — send-to-pen conflict UX, replace-sticker clarity, MP3 preview, app icon
 
-Mirrors `/Users/aiagent/.claude/plans/cryptic-coalescing-cookie.md`.
+Direct implementation per user's detailed spec (Traditional Chinese), no full replan
+per explicit instruction.
 
-- [x] 1. Fix `isPathContained` in `pathSecurity.ts` (path.relative-based, rel==='' → true); replace 2 call sites
-- [x] 2. `tests/unit/pathContainment.test.ts` (win32/posix, case, trailing-slash, drive-root, sibling, cross-drive, UNC)
-- [x] 3. Scan diagnostics: volumeDiscovery.ts, penRoot.ts, shared/types.ts, PenRootContext.tsx, PenRootBar.tsx, locales
-- [x] 4. CSS layout fix: global.css flex-wrap on .pen-root-bar / .pen-root-bar__actions / .pane__toolbar, min-width:0, overflow-wrap
-- [x] 5. MyRecordingsScreen.tsx: clear resolved selections after success; clear other ops' stale panels on new op start
-- [x] 6. Packaging: electron-builder.yml (per-arch target, no baked-in arch array) + package.json pack:mac:arm64/x64 scripts, scripts/checksum.mjs, scripts/afterPack.cjs (ad-hoc sign, afterPack not afterSign)
-- [x] 7. build-windows.yml: new exe name + sha256 upload
-- [x] 8. Reword about.downloadUpdateButton in 8 locales + SettingsScreen.test.tsx
-- [x] 9. npm run typecheck && npm test all green (140 tests)
-- [x] 10. Forensics on existing v0.2.4 arm64 DMG (hdiutil verify OK; codesign --verify FAILED — broken stale signature; spctl quarantine-simulated rejected with same broken-signature error; checksum cross-checked against pre-session local build artifact, matches)
-- [x] local pack:mac:arm64 / pack:mac:x64 dry run — caught and fixed an electron-builder arch-flag bug (explicit yml arch array overrides CLI --arm64/--x64, built both archs and collided) — see lessons.md
-- [x] ad-hoc sign verified real: codesign --verify passes on new build; quarantine-simulated spctl still rejects (expected — no Developer ID) but with a clean policy rejection, not the v0.2.4 broken-signature error
-- [x] 11. Bump version 0.2.5, commit, tag, push — required two follow-up fixes after real CI failures: (a) electron-builder CLI -c.key=value templates broke on the Windows runner's cmd.exe (quoting), moved to electron-builder.mac-arm64.yml/mac-x64.yml via `extends`; (b) pen-root-bar action buttons still overflowed at 820px (flex-shrink:0 + no button min-width/wrap) — both fixed, tag re-pointed to final commit 3e234b5
-- [x] 12. Build final mac dmgs from tagged commit (clean tree) — both ad-hoc signed, codesign --verify passes
-- [x] 13. CDP verify: layout at 820px (overflow fixed, screenshot confirmed)/1100px, Settings shows v0.2.5/mac-arm64/"You're on the latest version" (correct — nothing published yet at time of check)
-- [x] 14. gh release create v0.2.5, 3 installers + 3 sha256 sidecars uploaded, honest notes (Gatekeeper blocker explicitly marked unresolved); re-downloaded the published Apple Silicon dmg from the real GitHub URL and confirmed its checksum matches
-- [x] 15. Update README
-- [x] 16. tasks/lessons.md
-- [x] 17. Final Traditional Chinese report
+- [x] Audited existing transfer/replace backend — conflict batch UI, exact-filename
+      preservation, backup-before-replace, device-change-stop, selection-clear-on-
+      success were already implemented from the v0.2.x safety work; this round is
+      wording/labeling polish for items 1–2, not a rewrite
+- [x] Reworded `actions.replaceSticker` button + `transferPlan.conflictsHint` +
+      `replaceSticker.confirmText` (Computer:/Pen DIY: direction labels) across 8
+      locales; added `replaceSticker.keepsFilename` soft-background note box
+- [x] New audio preview feature (both panes): `src/main/ipc/audioPreview.ts`
+      (validated read, resolveContainedFile + isEligibleMp3FileName, injectable size
+      cap), `AudioSource`/`AudioPreviewResult` shared types, IPC channel + preload
+      wiring, `useAudioPreview` hook (shared single `<audio>`, one-at-a-time,
+      object-URL lifecycle), `AudioPreviewBar` component, preview buttons in both
+      list panes, 8-locale strings
+- [x] CSP: added `media-src 'self' blob:` (only change — script-src/object-src/
+      sandbox/contextIsolation/nodeIntegration untouched) — required for the Blob
+      object URL the preview player uses; documented why in index.html + report
+- [x] Stops preview on pen swap/disconnect (`stopIfSource('pen')` on penIdentityKey
+      change) and on computer-folder change; stops pen-side preview before any
+      pen-write (send-to-pen confirm, replace-sticker confirm) — one-shot read design
+      means no real Windows file-handle is held during playback anyway
+- [x] CSS: `.recordings-list__row` flex layout (checkbox/name/size/preview button,
+      no overlap at narrow widths), `.audio-preview-bar` + controls, `.note-box`
+      (soft background + border, not color-only) with dark-mode variants
+- [x] Tests: `tests/unit/audioPreview.test.ts` (9, backend validation incl.
+      traversal/AppleDouble/size-cap), `MyRecordingsScreen.test.tsx` +6 (preview
+      play/stop/switch/error/close/pen-change-stops-preview); updated 2 existing
+      tests for new replace-sticker wording. 140 → 155 tests, typecheck clean
+- [x] App icon: cleaned `ponyabc_logo1.png`'s baked-in opaque white card background
+      via flood-fill (source PNG's "transparent" area was actually a rounded-card
+      alpha=255 white shape, not truly transparent) → `build/icon.png` (1024×1024,
+      transparent, logo centered) — electron-builder auto-generates .icns/.ico from
+      this by convention (`directories.buildResources: build`), no config change
+- [ ] Commit, tag v0.2.6 (does not overwrite v0.2.5), push (triggers Windows build)
+- [ ] Build mac dmgs from the tagged commit; verify ad-hoc signature again
+- [ ] CDP verify: preview play/pause/seek/stop on both panes with a real mp3 fixture,
+      layout at 820px (no overlap in dual-pane__actions/list rows), icon appears
+      correctly on the packaged .app
+- [ ] gh release create v0.2.6, 3 installers + sha256, notes distinguishing
+      automated-tested vs needs-your-hardware-test (Intel Mac paused per instruction)
+- [ ] Final Traditional Chinese report

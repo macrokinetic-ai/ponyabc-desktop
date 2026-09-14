@@ -23,6 +23,8 @@ export const IPC = {
 
   transferProgress: 'ponyabc:transfer:progress',
 
+  audioPreviewRead: 'ponyabc:audio:read',
+
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',
 

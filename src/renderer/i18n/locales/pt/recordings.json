@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Guardar no computador →",
     "sendToPen": "← Enviar para a caneta",
-    "replaceSticker": "Substituir o áudio deste autocolante"
+    "replaceSticker": "Substituir este autocolante com o áudio selecionado…"
   },
   "transferPlan": {
     "title": "Enviar para a caneta — reveja antes de enviar",
@@ -45,7 +45,7 @@
     "toAddTitle": "{{count}} novo(s) ficheiro(s) a adicionar",
     "toAddHint": "Estes nomes de ficheiro não existem atualmente na caneta. Esta aplicação não consegue confirmar que um nome novo corresponde de facto a um autocolante válido — verifique se tiver dúvidas.",
     "conflictsTitle": "{{count}} ficheiro(s) já existem na caneta",
-    "conflictsHint": "Escolha substituir ou ignorar para cada um — nada é substituído sem a sua escolha.",
+    "conflictsHint": "Estes já existem na caneta — escolha “Substituir” (o original é primeiro guardado no seu computador) ou “Ignorar” para cada um. Nada é escrito até confirmar.",
     "replace": "Substituir",
     "skip": "Ignorar",
     "rejectedTitle": "{{count}} ficheiro(s) excluído(s)",
@@ -62,12 +62,27 @@
   },
   "replaceSticker": {
     "title": "Substituir o áudio deste autocolante",
-    "confirmText": "{{computerFileName}} → Caneta DIY/{{penFileName}}, substituindo o áudio original",
+    "confirmText": "Computador: {{computerFileName}} → Caneta DIY: {{penFileName}} (substitui o áudio na caneta)",
     "sizes": "Novo áudio: {{computerSize}} — atual: {{penSize}}",
     "noRename": "O ficheiro original no computador não é renomeado nem modificado.",
     "confirmButton": "Confirmar substituição",
     "success": "Substituído com sucesso.",
     "failed": "Não foi possível concluir a substituição.",
-    "sourceGone": "Um dos ficheiros selecionados já não está disponível."
+    "sourceGone": "Um dos ficheiros selecionados já não está disponível.",
+    "keepsFilename": "Mantém o nome do ficheiro na caneta — só o conteúdo de áudio é substituído."
+  },
+  "preview": {
+    "button": "Pré-ouvir",
+    "buttonPlaying": "Parar pré-audição",
+    "sourcePen": "Caneta",
+    "sourceComputer": "Computador",
+    "loading": "A carregar pré-audição…",
+    "close": "Fechar pré-audição",
+    "errorNotFound": "Este ficheiro já não está disponível.",
+    "errorRejected": "Este ficheiro não pode ser pré-ouvido.",
+    "errorDeviceDisconnected": "A caneta foi desligada.",
+    "errorTooLarge": "Este ficheiro é demasiado grande para pré-ouvir.",
+    "errorGeneric": "Não foi possível reproduzir este ficheiro (não suportado ou ilegível).",
+    "penEncodingHint": "Tocar bem aqui não garante que a caneta consiga reproduzir o mesmo ficheiro depois de enviado."
   }
 }

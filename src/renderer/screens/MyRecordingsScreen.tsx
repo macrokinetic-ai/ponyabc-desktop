@@ -16,9 +16,11 @@ import { PenRootBar } from '../components/PenRootBar';
 import { ComputerFolderBar } from '../components/ComputerFolderBar';
 import { TransferPlanPanel } from '../components/TransferPlanPanel';
 import { ReplaceStickerPanel } from '../components/ReplaceStickerPanel';
+import { AudioPreviewBar } from '../components/AudioPreviewBar';
 import { usePenRoot } from '../state/PenRootContext';
 import { useComputerFolder } from '../state/ComputerFolderContext';
 import { useTransferProgress } from '../hooks/useCopyProgress';
+import { useAudioPreview } from '../hooks/useAudioPreview';
 import { REASON_KEY } from '../reasonKeys';
 
 type Busy = null | 'toComputer' | 'planToPen' | 'executeToPen' | 'planReplace' | 'executeReplace';
@@ -45,6 +47,8 @@ export function MyRecordingsScreen() {
 
   const [replacePlan, setReplacePlan] = useState<ReplaceStickerPlanResult | null>(null);
   const [replaceSummary, setReplaceSummary] = useState<ReplaceStickerSummary | null>(null);
+
+  const audioPreview = useAudioPreview();
 
   const refreshPenFiles = useCallback(async () => {
     const res = await window.ponyabc.listDiyRecordings();
@@ -81,7 +85,17 @@ export function MyRecordingsScreen() {
     setTransferSummary(null);
     setReplacePlan(null);
     setReplaceSummary(null);
+    audioPreview.stopIfSource('pen');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [penIdentityKey]);
+
+  // A computer-folder switch invalidates any preview reading from the old folder — its files
+  // may no longer even be the same files at those names.
+  const computerIdentityKey = computerFolderResult.status === 'ok' ? computerFolderResult.path : computerFolderResult.status;
+  useEffect(() => {
+    audioPreview.stopIfSource('computer');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computerIdentityKey]);
 
   const penFileList: RecordingFile[] = penFiles?.status === 'ok' ? penFiles.files : [];
   const computerFileList: ComputerFile[] = computerFiles?.status === 'ok' ? computerFiles.files : [];
@@ -165,6 +179,9 @@ export function MyRecordingsScreen() {
   async function handleConfirmTransferToPen() {
     if (!transferPlan || transferPlan.status !== 'ok') return;
     const plan = transferPlan;
+    // Stop and release any pen-side preview before writing — the file being previewed may be
+    // exactly the one about to be replaced.
+    audioPreview.stopIfSource('pen');
     setBusy('executeToPen');
     resetProgress();
     try {
@@ -207,6 +224,9 @@ export function MyRecordingsScreen() {
   async function handleConfirmReplaceSticker() {
     if (!replacePlan || replacePlan.status !== 'ok') return;
     const plan = replacePlan;
+    // Stop and release any pen-side preview before writing — it's very likely the exact file
+    // about to be replaced.
+    audioPreview.stopIfSource('pen');
     setBusy('executeReplace');
     resetProgress();
     try {
@@ -296,12 +316,25 @@ export function MyRecordingsScreen() {
             {penReady && penFiles?.status === 'ok' && penFileList.length > 0 && (
               <ul className="recordings-list">
                 {penFileList.map((file) => (
-                  <li key={file.name}>
-                    <label>
+                  <li key={file.name} className="recordings-list__row">
+                    <label className="recordings-list__label">
                       <input type="checkbox" checked={penSelected.has(file.name)} onChange={() => togglePenFile(file.name)} />
-                      {file.name}
-                      <span className="recordings-list__size">{Math.round(file.sizeBytes / 1024)} KB</span>
+                      <span className="recordings-list__name">{file.name}</span>
                     </label>
+                    <span className="recordings-list__size">{Math.round(file.sizeBytes / 1024)} KB</span>
+                    <button
+                      type="button"
+                      className="button recordings-list__preview"
+                      onClick={() =>
+                        audioPreview.state?.source === 'pen' && audioPreview.state.fileName === file.name
+                          ? audioPreview.stop()
+                          : void audioPreview.play('pen', file.name)
+                      }
+                    >
+                      {audioPreview.state?.source === 'pen' && audioPreview.state.fileName === file.name
+                        ? t('preview.buttonPlaying')
+                        : t('preview.button')}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -329,6 +362,7 @@ export function MyRecordingsScreen() {
           <button type="button" className="button" disabled={!canReplaceSticker} onClick={() => void handlePlanReplaceSticker()}>
             {t('actions.replaceSticker')}
           </button>
+          <p className="note-box">{t('replaceSticker.keepsFilename')}</p>
         </div>
 
         <section className="pane">
@@ -359,12 +393,25 @@ export function MyRecordingsScreen() {
             {computerReady && computerFiles?.status === 'ok' && computerFileList.length > 0 && (
               <ul className="recordings-list">
                 {computerFileList.map((file) => (
-                  <li key={file.name}>
-                    <label>
+                  <li key={file.name} className="recordings-list__row">
+                    <label className="recordings-list__label">
                       <input type="checkbox" checked={computerSelected.has(file.name)} onChange={() => toggleComputerFile(file.name)} />
-                      {file.name}
-                      <span className="recordings-list__size">{Math.round(file.sizeBytes / 1024)} KB</span>
+                      <span className="recordings-list__name">{file.name}</span>
                     </label>
+                    <span className="recordings-list__size">{Math.round(file.sizeBytes / 1024)} KB</span>
+                    <button
+                      type="button"
+                      className="button recordings-list__preview"
+                      onClick={() =>
+                        audioPreview.state?.source === 'computer' && audioPreview.state.fileName === file.name
+                          ? audioPreview.stop()
+                          : void audioPreview.play('computer', file.name)
+                      }
+                    >
+                      {audioPreview.state?.source === 'computer' && audioPreview.state.fileName === file.name
+                        ? t('preview.buttonPlaying')
+                        : t('preview.button')}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -372,6 +419,15 @@ export function MyRecordingsScreen() {
           </div>
         </section>
       </div>
+
+      <AudioPreviewBar
+        state={audioPreview.state}
+        audioRef={audioPreview.audioRef}
+        audioEventHandlers={audioPreview.audioEventHandlers}
+        onTogglePlayPause={audioPreview.togglePlayPause}
+        onSeek={audioPreview.seek}
+        onClose={audioPreview.stop}
+      />
 
       {generalError && <p className="error-text">{generalError}</p>}
 

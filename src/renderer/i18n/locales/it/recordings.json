@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Salva sul computer →",
     "sendToPen": "← Invia alla penna",
-    "replaceSticker": "Sostituisci l'audio di questo adesivo"
+    "replaceSticker": "Sostituisci questo adesivo con l'audio selezionato…"
   },
   "transferPlan": {
     "title": "Invia alla penna — verifica prima di inviare",
@@ -45,7 +45,7 @@
     "toAddTitle": "{{count}} nuovo/i file da aggiungere",
     "toAddHint": "Questi nomi di file non esistono attualmente sulla penna. Questa app non può confermare che un nuovo nome corrisponda davvero a un adesivo valido — verifica in caso di dubbio.",
     "conflictsTitle": "{{count}} file esistono già sulla penna",
-    "conflictsHint": "Scegli sostituisci o salta per ciascuno — nulla viene sovrascritto senza la tua scelta.",
+    "conflictsHint": "Questi file esistono già sulla penna — scegli “Sostituisci” (l'originale viene prima salvato sul computer) o “Salta” per ciascuno. Non viene scritto nulla prima della conferma.",
     "replace": "Sostituisci",
     "skip": "Salta",
     "rejectedTitle": "{{count}} file esclusi",
@@ -62,12 +62,27 @@
   },
   "replaceSticker": {
     "title": "Sostituisci l'audio di questo adesivo",
-    "confirmText": "{{computerFileName}} → Penna DIY/{{penFileName}}, sostituendo l'audio originale",
+    "confirmText": "Computer: {{computerFileName}} → Penna DIY: {{penFileName}} (sostituisce l'audio sulla penna)",
     "sizes": "Nuovo audio: {{computerSize}} — attuale: {{penSize}}",
     "noRename": "Il file originale sul computer non viene rinominato né modificato.",
     "confirmButton": "Conferma sostituzione",
     "success": "Sostituito con successo.",
     "failed": "Impossibile completare la sostituzione.",
-    "sourceGone": "Uno dei file selezionati non è più disponibile."
+    "sourceGone": "Uno dei file selezionati non è più disponibile.",
+    "keepsFilename": "Mantiene il nome file sulla penna — viene sostituito solo il contenuto audio."
+  },
+  "preview": {
+    "button": "Ascolta",
+    "buttonPlaying": "Interrompi ascolto",
+    "sourcePen": "Penna",
+    "sourceComputer": "Computer",
+    "loading": "Caricamento anteprima…",
+    "close": "Chiudi anteprima",
+    "errorNotFound": "Questo file non è più disponibile.",
+    "errorRejected": "Questo file non può essere ascoltato.",
+    "errorDeviceDisconnected": "La penna è stata scollegata.",
+    "errorTooLarge": "Questo file è troppo grande per l'ascolto.",
+    "errorGeneric": "Impossibile riprodurre questo file (non supportato o illeggibile).",
+    "penEncodingHint": "Una riproduzione corretta qui non garantisce che la penna possa riprodurre lo stesso file una volta inviato."
   }
 }

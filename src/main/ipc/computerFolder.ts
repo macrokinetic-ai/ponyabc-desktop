@@ -5,7 +5,7 @@ import { isEligibleMp3FileName, resolveContainedFile } from '../services/pathSec
 import * as session from '../services/session';
 import type { SettingsStore } from '../services/settingsStore';
 
-function resolveFolder(chosenPath: string): { status: 'ok'; realPath: string } | { status: 'not-found' | 'not-a-directory'; path: string } {
+export function resolveFolder(chosenPath: string): { status: 'ok'; realPath: string } | { status: 'not-found' | 'not-a-directory'; path: string } {
   let realPath: string;
   try {
     realPath = fs.realpathSync(chosenPath);

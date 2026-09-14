@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Guardar en el equipo →",
     "sendToPen": "← Enviar al lápiz",
-    "replaceSticker": "Reemplazar el audio de esta pegatina"
+    "replaceSticker": "Reemplazar este adhesivo con el audio seleccionado…"
   },
   "transferPlan": {
     "title": "Enviar al lápiz — revise antes de enviar",
@@ -45,7 +45,7 @@
     "toAddTitle": "{{count}} archivo(s) nuevo(s) a añadir",
     "toAddHint": "Estos nombres de archivo no existen actualmente en el lápiz. Esta aplicación no puede confirmar que un nombre nuevo corresponda realmente a una pegatina — compruébelo si tiene dudas.",
     "conflictsTitle": "{{count}} archivo(s) ya existen en el lápiz",
-    "conflictsHint": "Elija reemplazar u omitir para cada uno — nada se sobrescribe sin su elección.",
+    "conflictsHint": "Ya existen en el lápiz — elija «Reemplazar» (el original se respalda primero en su ordenador) u «Omitir» para cada uno. No se escribe nada hasta que confirme.",
     "replace": "Reemplazar",
     "skip": "Omitir",
     "rejectedTitle": "{{count}} archivo(s) excluido(s)",
@@ -62,12 +62,27 @@
   },
   "replaceSticker": {
     "title": "Reemplazar el audio de esta pegatina",
-    "confirmText": "{{computerFileName}} → Lápiz DIY/{{penFileName}}, reemplazando el audio original",
+    "confirmText": "Ordenador: {{computerFileName}} → Lápiz DIY: {{penFileName}} (esto reemplaza el audio en el lápiz)",
     "sizes": "Audio nuevo: {{computerSize}} — actual: {{penSize}}",
     "noRename": "El archivo original del equipo no se renombra ni se modifica.",
     "confirmButton": "Confirmar reemplazo",
     "success": "Reemplazado correctamente.",
     "failed": "No se pudo completar el reemplazo.",
-    "sourceGone": "Uno de los archivos seleccionados ya no está disponible."
+    "sourceGone": "Uno de los archivos seleccionados ya no está disponible.",
+    "keepsFilename": "Mantiene el nombre de archivo del lápiz — solo se reemplaza el contenido de audio."
+  },
+  "preview": {
+    "button": "Escuchar",
+    "buttonPlaying": "Detener escucha",
+    "sourcePen": "Lápiz",
+    "sourceComputer": "Ordenador",
+    "loading": "Cargando vista previa…",
+    "close": "Cerrar vista previa",
+    "errorNotFound": "Este archivo ya no está disponible.",
+    "errorRejected": "Este archivo no se puede reproducir.",
+    "errorDeviceDisconnected": "El lápiz se ha desconectado.",
+    "errorTooLarge": "Este archivo es demasiado grande para escuchar.",
+    "errorGeneric": "No se pudo reproducir este archivo (no compatible o ilegible).",
+    "penEncodingHint": "Que suene bien aquí no garantiza que el lápiz pueda reproducir el mismo archivo una vez enviado."
   }
 }

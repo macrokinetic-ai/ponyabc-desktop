@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Auf dem Computer speichern →",
     "sendToPen": "← An den Stift senden",
-    "replaceSticker": "Audio dieses Aufklebers ersetzen"
+    "replaceSticker": "Diesen Aufkleber mit ausgewähltem Audio ersetzen…"
   },
   "transferPlan": {
     "title": "An den Stift senden — vor dem Senden prüfen",
@@ -45,7 +45,7 @@
     "toAddTitle": "{{count}} neue Datei(en) hinzuzufügen",
     "toAddHint": "Diese Dateinamen existieren derzeit nicht auf dem Stift. Diese App kann nicht bestätigen, dass ein neuer Dateiname tatsächlich einem echten Aufkleber entspricht — prüfen Sie dies im Zweifel selbst.",
     "conflictsTitle": "{{count}} Datei(en) existieren bereits auf dem Stift",
-    "conflictsHint": "Wählen Sie für jede Datei Ersetzen oder Überspringen — ohne Ihre Wahl wird nichts überschrieben.",
+    "conflictsHint": "Diese existieren bereits auf dem Stift — wählen Sie für jede Datei „Ersetzen“ (das Original wird zuerst auf Ihrem Computer gesichert) oder „Überspringen“. Es wird erst nach Ihrer Bestätigung geschrieben.",
     "replace": "Ersetzen",
     "skip": "Überspringen",
     "rejectedTitle": "{{count}} Datei(en) ausgeschlossen",
@@ -62,12 +62,27 @@
   },
   "replaceSticker": {
     "title": "Audio dieses Aufklebers ersetzen",
-    "confirmText": "{{computerFileName}} → Stift DIY/{{penFileName}}, ersetzt das ursprüngliche Audio",
+    "confirmText": "Computer: {{computerFileName}} → Stift DIY: {{penFileName}} (ersetzt das Audio auf dem Stift)",
     "sizes": "Neues Audio: {{computerSize}} — aktuell: {{penSize}}",
     "noRename": "Die ursprüngliche Datei auf dem Computer wird weder umbenannt noch verändert.",
     "confirmButton": "Ersetzen bestätigen",
     "success": "Erfolgreich ersetzt.",
     "failed": "Der Ersatz konnte nicht abgeschlossen werden.",
-    "sourceGone": "Eine der ausgewählten Dateien ist nicht mehr verfügbar."
+    "sourceGone": "Eine der ausgewählten Dateien ist nicht mehr verfügbar.",
+    "keepsFilename": "Behält den Dateinamen auf dem Stift bei — nur der Audioinhalt wird ersetzt."
+  },
+  "preview": {
+    "button": "Vorhören",
+    "buttonPlaying": "Vorhören stoppen",
+    "sourcePen": "Stift",
+    "sourceComputer": "Computer",
+    "loading": "Vorhören wird geladen…",
+    "close": "Vorhören schließen",
+    "errorNotFound": "Diese Datei ist nicht mehr verfügbar.",
+    "errorRejected": "Diese Datei kann nicht vorgehört werden.",
+    "errorDeviceDisconnected": "Der Stift wurde getrennt.",
+    "errorTooLarge": "Diese Datei ist zu groß zum Vorhören.",
+    "errorGeneric": "Datei konnte nicht abgespielt werden (nicht unterstützt oder nicht lesbar).",
+    "penEncodingHint": "Dass es hier funktioniert, garantiert nicht, dass der Stift dieselbe Datei nach dem Senden abspielen kann."
   }
 }

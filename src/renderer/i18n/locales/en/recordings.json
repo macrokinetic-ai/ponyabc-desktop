@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Save to computer →",
     "sendToPen": "← Send to pen",
-    "replaceSticker": "Replace this sticker's audio"
+    "replaceSticker": "Replace this sticker using selected audio…"
   },
   "transferPlan": {
     "title": "Send to pen — review before sending",
@@ -45,7 +45,7 @@
     "toAddTitle": "{{count}} new file(s) to add",
     "toAddHint": "These filenames don't currently exist on the pen. This app can't confirm a new filename actually corresponds to a real sticker — check it against the sticker if you're unsure.",
     "conflictsTitle": "{{count}} file(s) already exist on the pen",
-    "conflictsHint": "Choose replace or skip for each — nothing is overwritten without your choice.",
+    "conflictsHint": "These already exist on the pen — for each one, choose Replace (the original is backed up to your computer first) or Skip. Nothing is written until you confirm.",
     "replace": "Replace",
     "skip": "Skip",
     "rejectedTitle": "{{count}} file(s) excluded",
@@ -62,12 +62,27 @@
   },
   "replaceSticker": {
     "title": "Replace this sticker's audio",
-    "confirmText": "{{computerFileName}} → Pen DIY/{{penFileName}}, replacing the original audio",
+    "confirmText": "Computer: {{computerFileName}} → Pen DIY: {{penFileName}} (this replaces the audio on the pen)",
     "sizes": "New audio: {{computerSize}} — current: {{penSize}}",
     "noRename": "The computer file itself is not renamed or modified.",
     "confirmButton": "Confirm replacement",
     "success": "Replaced successfully.",
     "failed": "The replacement could not be completed.",
-    "sourceGone": "One of the selected files is no longer available."
+    "sourceGone": "One of the selected files is no longer available.",
+    "keepsFilename": "Keeps the pen's filename — only the audio content is replaced."
+  },
+  "preview": {
+    "button": "Preview",
+    "buttonPlaying": "Stop preview",
+    "sourcePen": "Pen",
+    "sourceComputer": "Computer",
+    "loading": "Loading preview…",
+    "close": "Close preview",
+    "errorNotFound": "This file is no longer available.",
+    "errorRejected": "This file can't be previewed.",
+    "errorDeviceDisconnected": "The pen was disconnected.",
+    "errorTooLarge": "This file is too large to preview.",
+    "errorGeneric": "Couldn't play this file (unsupported or unreadable).",
+    "penEncodingHint": "Playing fine here doesn't guarantee the pen can play the same file once sent."
   }
 }
