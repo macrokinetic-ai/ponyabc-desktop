@@ -17,6 +17,7 @@ const REASON_KEY: Record<CopyFailureReason, string> = {
 
 export function MyRecordingsScreen() {
   const { t } = useTranslation('recordings');
+  const { t: tCommon } = useTranslation('common');
   const { result: penRootResult } = usePenRoot();
   const [listResult, setListResult] = useState<RecordingsListResult | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -61,28 +62,63 @@ export function MyRecordingsScreen() {
   async function handleSave() {
     setDestinationError(null);
     setSummary(null);
-    const dest = await window.ponyabc.chooseSaveDestination();
-    if (dest.status === 'cancelled') return;
-    if (dest.status === 'invalid-destination') {
-      setDestinationError(t('destinationOnPen'));
-      return;
-    }
-    if (dest.status !== 'ok') {
-      setDestinationError(dest.status === 'no-pen-selected' ? t('noPenSelected') : 'error' in dest ? dest.message : 'Error');
-      return;
-    }
 
-    resetProgress();
-    setCopying(true);
-    const result = await window.ponyabc.copyRecordings(Array.from(selected));
-    setCopying(false);
-    setSummary(result);
+    try {
+      const dest = await window.ponyabc.chooseSaveDestination();
+      if (dest.status === 'cancelled') return;
+      if (dest.status === 'invalid-destination') {
+        setDestinationError(t('destinationOnPen'));
+        return;
+      }
+      if (dest.status === 'no-pen-selected') {
+        setDestinationError(t('noPenSelected'));
+        return;
+      }
+      if (dest.status === 'error') {
+        setDestinationError(tCommon('errors.generic', { message: dest.message }));
+        return;
+      }
+      // dest.status === 'ok' from here.
+
+      resetProgress();
+      setCopying(true);
+      const result = await window.ponyabc.copyRecordings(Array.from(selected));
+      setSummary(result);
+    } catch (err) {
+      // IPC/preload failure, or any other unexpected throw — surface it instead of leaving
+      // the UI stuck showing "copying…" forever.
+      const message = err instanceof Error ? err.message : String(err);
+      setDestinationError(tCommon('errors.generic', { message }));
+    } finally {
+      setCopying(false);
+    }
   }
 
   const failedWithLabels = useMemo(
     () => (summary?.failed ?? []).map((f) => ({ ...f, reasonLabel: t(REASON_KEY[f.reason]) })),
     [summary, t],
   );
+
+  // Files that ended up safely saved on the computer, whether under their original name
+  // or an auto-renamed one — both count toward "succeeded".
+  const totalSaved = (summary?.succeeded.length ?? 0) + (summary?.renamed.length ?? 0);
+
+  function summaryStatusMessage(s: CopySummary): string | null {
+    switch (s.status) {
+      case 'no-pen-selected':
+        return t('noPenSelected');
+      case 'no-destination-selected':
+        return t('noDestinationSelected');
+      case 'invalid-destination':
+        return t('destinationOnPen');
+      case 'device-disconnected':
+        return t('deviceDisconnected');
+      case 'error':
+        return tCommon('errors.generic', { message: s.message ?? '' });
+      case 'completed':
+        return null;
+    }
+  }
 
   return (
     <div className="screen">
@@ -132,33 +168,43 @@ export function MyRecordingsScreen() {
 
       {destinationError && <p className="error-text">{destinationError}</p>}
 
-      {copying && progress && (
-        <p className="hint">{t('copying', { current: progress.fileIndex + 1, total: progress.fileCount, fileName: progress.fileName })}</p>
+      {copying && (
+        <p className="hint">
+          {progress
+            ? t('copying', { current: progress.fileIndex + 1, total: progress.fileCount, fileName: progress.fileName })
+            : '…'}
+        </p>
       )}
 
       {summary && (
         <div className="copy-summary">
           <h2>{t('summaryTitle')}</h2>
-          {summary.status === 'device-disconnected' && <p className="error-text">{t('deviceDisconnected')}</p>}
-          <p>{t('summarySucceeded', { count: summary.succeeded.length })}</p>
-          {summary.renamed.length > 0 && (
+
+          {summaryStatusMessage(summary) && <p className="error-text">{summaryStatusMessage(summary)}</p>}
+
+          {(summary.status === 'completed' || summary.status === 'device-disconnected') && (
             <>
-              <p>{t('summaryRenamed', { count: summary.renamed.length })}</p>
-              <ul>
-                {summary.renamed.map((r) => (
-                  <li key={r.original}>{t('renamedDetail', { original: r.original, savedAs: r.savedAs })}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {failedWithLabels.length > 0 && (
-            <>
-              <p>{t('summaryFailed', { count: failedWithLabels.length })}</p>
-              <ul>
-                {failedWithLabels.map((f) => (
-                  <li key={f.file}>{t('failedDetail', { file: f.file, message: f.reasonLabel })}</li>
-                ))}
-              </ul>
+              <p>{t('summarySucceeded', { count: totalSaved })}</p>
+              {summary.renamed.length > 0 && (
+                <>
+                  <p>{t('summaryRenamed', { count: summary.renamed.length })}</p>
+                  <ul>
+                    {summary.renamed.map((r) => (
+                      <li key={r.original}>{t('renamedDetail', { original: r.original, savedAs: r.savedAs })}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {failedWithLabels.length > 0 && (
+                <>
+                  <p>{t('summaryFailed', { count: failedWithLabels.length })}</p>
+                  <ul>
+                    {failedWithLabels.map((f) => (
+                      <li key={f.file}>{t('failedDetail', { file: f.file, message: f.reasonLabel })}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </>
           )}
         </div>
