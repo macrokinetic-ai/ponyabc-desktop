@@ -42,10 +42,15 @@ DRM). Approved implementing + deploying a minimal `ponyabc-web` change
       language throughout — no "update available" claim, no anti-copy/DRM
       claim.
 - [x] i18n: `book.json` extended in all 8 locales.
-- [x] Tests: 251 total (was 234 pre-BOOK), typecheck clean both configs.
+- [x] Tests: 242 total (was 234 pre-BOOK), typecheck clean both configs.
       Fixed a real bug found while writing tests: `bookBackup.ts`'s
       `mkdirSync` wasn't guarded — a filesystem failure there would have
       thrown instead of returning a clean `backup-failed` result.
+- [x] Pushed to `main`; real `windows-latest` CI run caught a genuine
+      Windows-only bug on the first push (`sha256File` resolved on the read
+      stream's `'end'` instead of `'close'`, racing the unlink right after
+      hashing in `bookRemove.ts` — `ENOTEMPTY`/handle-still-open). Fixed,
+      re-pushed, second Windows CI run fully green (typecheck/test/dist:win).
 - [x] Real CDP verification against the actual built app (simulated pen via
       `PONYABC_TEST_VOLUMES_ROOT`, never a real physical pen):
       - Live catalog fetch genuinely attempted against
