@@ -293,43 +293,44 @@ export interface BookBackupEntry {
   cacheRef: { contentId: string; sha256: string } | null;
 }
 
-export type BookItemStatus =
-  | 'catalog-not-cached'
-  | 'catalog-cached-current'
-  | 'catalog-cached-stale'
-  | 'on-pen-current'
-  /** Same filename, pen's hash != the catalog's current hash. Deliberately neutral — no local
-   *  inference about which one is "newer" is ever made (there is no server-trusted version
-   *  order to reason from). Never "update available," never auto-overwritten. */
-  | 'on-pen-differs-from-official'
-  /** Pen file matched by filename, but the catalog's sha256 is null (or unreadable pen file) —
-   *  genuinely cannot compare. */
-  | 'on-pen-hash-unknown'
-  | 'not-in-catalog'
-  /** filenameSource is 'fallback-storage-key' — display-only, install/update/reinstall
-   *  structurally refused (see isInstallEligible), not just hidden in the UI. */
-  | 'catalog-incomplete-metadata'
-  /** This entry's filename collides (case-insensitively) with another catalog entry's —
-   *  display-only, install disabled, see validateCatalogEntries. */
-  | 'catalog-ambiguous';
+// ---------------------------------------------------------------------------------------
+// Dual-pane BOOK view (mirrors My Recordings' pen/computer split): the LEFT pane lists the
+// pen's actual BOOK folder contents (matched-to-catalog or "Unknown" — read-only, never
+// selectable/removable, enforced by the main process itself, not just the UI); the RIGHT
+// pane lists the App's BOOK database (server catalog + local cache), each entry showing its
+// relationship to whatever's currently on the pen.
+// ---------------------------------------------------------------------------------------
 
-export type BookAction = 'add' | 'replace' | 'reinstall' | 'remove' | 'restore';
+export type BookPenMatchStatus = 'matched-current' | 'matched-differs' | 'matched-hash-unknown' | 'unknown';
 
-export interface BookLibraryItem {
-  /** null only for a not-in-catalog pen file. */
+export interface BookPenItem {
+  fileName: string;
+  sizeBytes: number;
+  /** null only when status === 'unknown'. */
   contentId: string | null;
-  filename: string;
-  /** Both null only when not-in-catalog (no catalog name available). Kept as raw
-   *  name/i18n-map fields — not a pre-picked string — so the renderer can recompute the
-   *  displayed name instantly on a UI language switch via resolveBookDisplayName, with no
-   *  IPC round trip. */
   friendlyName: string | null;
   friendlyNameI18n: Record<string, string> | null;
-  status: BookItemStatus;
+  status: BookPenMatchStatus;
+  /** Main-process-computed hint for the renderer — but removeFromPen() independently
+   *  re-verifies and refuses regardless of what this says; this is never the only gate.
+   *  Always false when status === 'unknown'. */
+  removable: boolean;
+}
+
+export type BookCatalogItemStatus = 'not-on-pen' | 'on-pen-current' | 'on-pen-differs' | 'metadata-incomplete' | 'ambiguous';
+
+export interface BookCatalogItem {
+  contentId: string;
+  filename: string;
+  friendlyName: string;
+  friendlyNameI18n: Record<string, string> | null;
   sizeBytes: number;
+  status: BookCatalogItemStatus;
   cached: boolean;
-  onPen: boolean;
-  availableActions: BookAction[];
+  /** true only for 'not-on-pen' and 'on-pen-differs' — declared filename + trustworthy hash,
+   *  and not ambiguous. Gates both "Add to pen" and "Re-download" in the UI; bookInstall.ts
+   *  enforces the same eligibility rule independently via isInstallEligible(). */
+  actionable: boolean;
 }
 
 export interface BookLibraryMeta {
@@ -342,7 +343,10 @@ export interface BookLibraryMeta {
 
 export interface BookListResult {
   status: 'ok';
-  items: BookLibraryItem[];
+  /** null when no pen is connected — the right pane (catalog) still works fully offline of
+   *  a pen; only left-pane rendering and any write/remove action require one. */
+  penItems: BookPenItem[] | null;
+  catalogItems: BookCatalogItem[];
   meta: BookLibraryMeta;
 }
 
@@ -367,6 +371,10 @@ export type BookActionStatus =
   | 'cancelled'
   | 'backup-failed'
   | 'target-changed-since-backup'
+  /** restoreFromBackup only: refuses a backup whose reason is 'uncatalogued' — the old
+   *  Unknown-content backup/restore path is retired; restore only ever works for a matched
+   *  BOOK's own backup (made before removing/replacing it). */
+  | 'restore-not-allowed'
   | 'error';
 
 export interface BookActionResult {
@@ -384,6 +392,9 @@ export type BookRemoveStatus =
   | 'stale-plan'
   | 'backup-failed'
   | 'target-changed-since-backup'
+  /** The target resolves to an "Unknown" (not-in-catalog) pen file — removal is categorically
+   *  refused, enforced here in the main process regardless of what the renderer requested. */
+  | 'unknown-content'
   | 'error';
 
 export interface BookRemoveResult {

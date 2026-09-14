@@ -6,27 +6,40 @@ import i18n from '../../src/renderer/i18n';
 import { PenRootProvider } from '../../src/renderer/state/PenRootContext';
 import { BookLibraryProvider } from '../../src/renderer/state/BookLibraryContext';
 import { BookLibraryScreen } from '../../src/renderer/screens/BookLibraryScreen';
-import type { BookLibraryItem, BookListResult, PonyAbcApi } from '../../src/shared/types';
+import type { BookCatalogItem, BookListResult, BookPenItem, PonyAbcApi } from '../../src/shared/types';
 
-function item(overrides: Partial<BookLibraryItem> = {}): BookLibraryItem {
+function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem {
   return {
     contentId: 'b1',
     filename: '0451.axb',
     friendlyName: 'Book One',
     friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
-    status: 'catalog-not-cached',
     sizeBytes: 1000,
+    status: 'not-on-pen',
     cached: false,
-    onPen: false,
-    availableActions: ['add'],
+    actionable: true,
     ...overrides,
   };
 }
 
-function listResult(overrides: Partial<BookListResult> = {}, itemsOverride?: BookLibraryItem[]): BookListResult {
+function penItem(overrides: Partial<BookPenItem> = {}): BookPenItem {
+  return {
+    fileName: '0451.axb',
+    sizeBytes: 1000,
+    contentId: 'b1',
+    friendlyName: 'Book One',
+    friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
+    status: 'matched-current',
+    removable: true,
+    ...overrides,
+  };
+}
+
+function listResult(overrides: Partial<BookListResult> = {}): BookListResult {
   return {
     status: 'ok',
-    items: itemsOverride ?? [item()],
+    penItems: [],
+    catalogItems: [catalogItem()],
     meta: { fetchedAtMs: 1_700_000_000_000, source: 'live', offline: false, conflicts: [] },
     ...overrides,
   };
@@ -92,7 +105,10 @@ afterEach(() => {
   void i18n.changeLanguage('en');
 });
 
-async function renderScreen() {
+function renderWithPen(penConnected: boolean) {
+  if (penConnected) {
+    window.ponyabc.scanForPenRoot = vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1, auto: true }));
+  }
   render(
     <PenRootProvider>
       <BookLibraryProvider>
@@ -100,20 +116,27 @@ async function renderScreen() {
       </BookLibraryProvider>
     </PenRootProvider>,
   );
-  await screen.findByText('Book One');
 }
 
-describe('BookLibraryScreen', () => {
+async function renderScreen(list: BookListResult = listResult({ penItems: [penItem()] })) {
+  window.ponyabc.bookList = vi.fn(async () => list);
+  window.ponyabc.bookCatalogRefresh = vi.fn(async () => list);
+  renderWithPen(true);
+  // "Book One" can legitimately appear in both panes at once — wait for at least one.
+  await screen.findAllByText('Book One');
+}
+
+describe('BookLibraryScreen — dual pane', () => {
+  it('renders two panes (pen on the left, catalog on the right)', async () => {
+    await renderScreen();
+    expect(document.querySelectorAll('.pane')).toHaveLength(2);
+  });
+
   it('shows the offline/unavailable banner when the catalog has never been fetched', async () => {
-    window.ponyabc.bookList = vi.fn(async () => listResult({ meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [] } }, []));
-    window.ponyabc.bookCatalogRefresh = vi.fn(async () => listResult({ meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [] } }, []));
-    render(
-      <PenRootProvider>
-        <BookLibraryProvider>
-          <BookLibraryScreen />
-        </BookLibraryProvider>
-      </PenRootProvider>,
-    );
+    const list = listResult({ penItems: null, catalogItems: [], meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [] } });
+    window.ponyabc.bookList = vi.fn(async () => list);
+    window.ponyabc.bookCatalogRefresh = vi.fn(async () => list);
+    renderWithPen(false);
     await screen.findByText(/could not be reached/i);
   });
 
@@ -123,15 +146,7 @@ describe('BookLibraryScreen', () => {
   });
 
   it('shows the dev-fixture banner only when the catalog source is "fixture"', async () => {
-    window.ponyabc.bookList = vi.fn(async () => listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [] } }));
-    window.ponyabc.bookCatalogRefresh = vi.fn(async () => listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [] } }));
-    render(
-      <PenRootProvider>
-        <BookLibraryProvider>
-          <BookLibraryScreen />
-        </BookLibraryProvider>
-      </PenRootProvider>,
-    );
+    await renderScreen(listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [] } }));
     await screen.findByText(/Development catalog data/);
   });
 
@@ -141,32 +156,74 @@ describe('BookLibraryScreen', () => {
   });
 
   it('renders an ambiguous-conflict notice when the catalog reports one', async () => {
-    window.ponyabc.bookList = vi.fn(async () =>
+    await renderScreen(
       listResult({ meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [{ filenameLower: 'a.axb', contentIds: ['b1', 'b2'] }] } }),
-    );
-    window.ponyabc.bookCatalogRefresh = window.ponyabc.bookList;
-    render(
-      <PenRootProvider>
-        <BookLibraryProvider>
-          <BookLibraryScreen />
-        </BookLibraryProvider>
-      </PenRootProvider>,
     );
     await screen.findByText(/share a filename/);
   });
+});
 
-  it('a metadata-incomplete item shows no install action', async () => {
-    window.ponyabc.bookList = vi.fn(async () => listResult({}, [item({ status: 'catalog-incomplete-metadata', availableActions: [] })]));
-    window.ponyabc.bookCatalogRefresh = window.ponyabc.bookList;
+describe('BookLibraryScreen — left pane (pen)', () => {
+  it('an Unknown pen file has no checkbox and shows the filename + Unknown label', async () => {
+    await renderScreen(listResult({ penItems: [penItem({ fileName: 'mystery.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false })] }));
+    await screen.findByText(/mystery\.axb — Unknown/);
+    // No checkbox is rendered for it at all (read-only, not merely disabled) — scoped to the
+    // list itself, since the pane's own "select all" toolbar checkbox is unrelated.
+    expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+  });
+
+  it('a matched pen file is selectable and shows its catalog display name', async () => {
     await renderScreen();
-    expect(screen.queryByRole('button', { name: 'Add to pen' })).toBeNull();
+    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
+    expect(checkbox).not.toBeNull();
+    fireEvent.click(checkbox as Element);
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('selecting a matched pen file and clicking Remove shows an explicit confirm panel with filename and size', async () => {
+    await renderScreen();
+    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove from pen' }));
+    const confirmPanel = await screen.findByText('Remove from pen?');
+    expect(confirmPanel.closest('.plan-panel')?.textContent).toContain('0451.axb'); // filename is visible somewhere in the confirmation
+    expect(confirmPanel.closest('.plan-panel')?.textContent).toContain('1 KB'); // formatBytes(1000) === "1 KB"
+  });
+});
+
+describe('BookLibraryScreen — right pane (catalog)', () => {
+  it('metadata-incomplete and ambiguous catalog items have no checkbox (not actionable)', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'metadata-incomplete', actionable: false })] }));
+    expect(document.querySelectorAll('.pane')[1].querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+  });
+
+  it('selecting a not-on-pen item and clicking Add to pen executes immediately (no confirm needed)', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'not-on-pen' })] }));
+    const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalledWith({ contentId: 'b1', penGeneration: 1 }));
+  });
+
+  it('selecting an on-pen-differs item and clicking Add to pen shows a confirm panel requiring Replace/Skip before executing', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-differs' })] }));
+    const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    await screen.findByText('Some selected items differ from the pen');
+    expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
+
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    expect((confirmButton as HTMLButtonElement).disabled).toBe(true); // no decision made yet
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Replace' }));
+    fireEvent.click(confirmButton);
+    await waitFor(() => expect(window.ponyabc.bookUpdate).toHaveBeenCalledWith({ contentId: 'b1', penGeneration: 1 }));
   });
 
   it('no progress bar renders until a real download-progress event arrives — never a fake/animated one', async () => {
     await renderScreen();
     expect(document.querySelector('progress')).toBeNull();
-
-    fireEvent(window, new Event('noop')); // no-op, just to ensure act() isn't needed for the next state update
     progressListener?.({ contentId: 'b1', bytesReceived: 512, totalBytes: 1000, phase: 'downloading' });
     await waitFor(() => expect(document.querySelector('progress')).not.toBeNull());
     expect(document.querySelector('progress')?.getAttribute('value')).toBe('512');
@@ -186,7 +243,7 @@ describe('BookLibraryScreen', () => {
     const refreshCallsBefore = (window.ponyabc.bookCatalogRefresh as ReturnType<typeof vi.fn>).mock.calls.length;
 
     await i18n.changeLanguage('zh-Hant');
-    await screen.findByText('第一本書');
+    await screen.findAllByText('第一本書');
 
     expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
     expect((window.ponyabc.bookCatalogRefresh as ReturnType<typeof vi.fn>).mock.calls.length).toBe(refreshCallsBefore);

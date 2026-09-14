@@ -73,10 +73,11 @@ async function currentList(): Promise<BookListResult> {
   const snapshot = catalogStore().get();
   const cacheEntries = cacheManifestStore().get();
   const { files, bookDirReal } = currentPenBookFiles();
-  const items = await buildBookLibrary({ snapshot, cacheEntries, penFiles: files, bookDirReal });
+  const { penItems, catalogItems } = await buildBookLibrary({ snapshot, cacheEntries, penFiles: files, bookDirReal });
   return {
     status: 'ok',
-    items,
+    penItems,
+    catalogItems,
     meta: {
       fetchedAtMs: snapshot?.fetchedAtMs ?? null,
       source: snapshot?.source ?? 'none',
@@ -134,21 +135,25 @@ export const bookUpdate = (window: BrowserWindow, params: { contentId: string; p
 export const bookReinstall = (window: BrowserWindow, params: { contentId: string; penGeneration: number }) =>
   runInstallAction(reinstall, window, params);
 
+/**
+ * Removal is categorically refused for anything the pen-reconciliation pass didn't resolve
+ * to a matched, removable BOOK — this is the actual enforcement point for "Unknown content
+ * is read-only," not merely which button the renderer happens to show. A stale or forged
+ * fileName that no longer matches a removable pen item is refused the same way.
+ */
 export async function bookRemove(params: { fileName: string; penGeneration: number }): Promise<BookRemoveResult> {
   const list = await currentList();
-  const item = list.items.find((i) => i.filename === params.fileName && i.onPen);
-  const reason =
-    !item || item.status === 'not-in-catalog'
-      ? ('uncatalogued' as const)
-      : item.status === 'on-pen-current'
-        ? ('pre-removal-current-version' as const)
-        : ('differs-from-official' as const);
+  const item = list.penItems?.find((i) => i.fileName === params.fileName) ?? null;
+  if (!item || !item.removable || item.status === 'unknown') {
+    return { status: 'unknown-content', message: 'This file is not recognized as a catalog BOOK and cannot be removed here.' };
+  }
+  const reason = item.status === 'matched-current' ? ('pre-removal-current-version' as const) : ('differs-from-official' as const);
 
   return removeFromPen({
     fileName: params.fileName,
     penGeneration: params.penGeneration,
     reason,
-    matchedContentId: item?.contentId ?? null,
+    matchedContentId: item.contentId,
     backupDeps: backupDeps(),
   });
 }
@@ -167,7 +172,19 @@ export function bookBackups(): BookBackupSummary[] {
     .sort((a, b) => b.createdAtMs - a.createdAtMs);
 }
 
+/**
+ * Restore is refused for a backup whose reason is 'uncatalogued' — the retired Unknown-
+ * content backup/restore path. Existing backup files/manifest entries of that kind are left
+ * on disk untouched (never deleted by this change); this only blocks the restore ACTION
+ * itself, enforced here rather than merely by omitting a "Restore" button.
+ */
 export async function bookRestore(params: { backupId: string; penGeneration: number }): Promise<BookActionResult> {
+  const backupEntry = backupManifestStore()
+    .get()
+    .find((e) => e.backupId === params.backupId);
+  if (backupEntry && backupEntry.reason === 'uncatalogued') {
+    return { status: 'restore-not-allowed', message: 'Restoring unrecognized content back onto the pen is no longer supported.' };
+  }
   const { scratchBackupRootDir } = dirs();
   return restoreFromBackup({
     backupId: params.backupId,

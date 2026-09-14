@@ -1,28 +1,31 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   BookActionResult,
-  BookBackupSummary,
+  BookCatalogItem,
   BookDownloadProgressEvent,
-  BookLibraryItem,
   BookLibraryMeta,
+  BookPenItem,
   BookRemoveResult,
 } from '@shared/types';
 import { usePenRoot } from './PenRootContext';
 
 interface BookLibraryState {
-  items: BookLibraryItem[];
+  /** null while no pen is connected — the catalog (right pane) still works fully. */
+  penItems: BookPenItem[] | null;
+  catalogItems: BookCatalogItem[];
   meta: BookLibraryMeta;
-  backups: BookBackupSummary[];
   loading: boolean;
   refreshing: boolean;
   /** Real byte-based progress for an in-flight download, keyed by contentId. */
   downloadProgress: Record<string, BookDownloadProgressEvent>;
   refreshCatalog: () => Promise<void>;
+  /** Re-lists both panes from already-known local state — no network call. Useful as a
+   *  manual "re-check the pen" action independent of a full catalog refresh. */
+  refreshPen: () => Promise<void>;
   add: (contentId: string) => Promise<BookActionResult>;
   replaceWithOfficial: (contentId: string) => Promise<BookActionResult>;
   reinstall: (contentId: string) => Promise<BookActionResult>;
   remove: (fileName: string) => Promise<BookRemoveResult>;
-  restore: (backupId: string) => Promise<BookActionResult>;
   cancelDownload: (contentId: string) => Promise<void>;
 }
 
@@ -32,24 +35,24 @@ const BookLibraryContext = createContext<BookLibraryState | null>(null);
 
 export function BookLibraryProvider({ children }: { children: ReactNode }) {
   const penRoot = usePenRoot();
-  const [items, setItems] = useState<BookLibraryItem[]>([]);
+  const [penItems, setPenItems] = useState<BookPenItem[] | null>(null);
+  const [catalogItems, setCatalogItems] = useState<BookCatalogItem[]>([]);
   const [meta, setMeta] = useState<BookLibraryMeta>(emptyMeta);
-  const [backups, setBackups] = useState<BookBackupSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<Record<string, BookDownloadProgressEvent>>({});
   const penGenerationRef = useRef(-1);
   penGenerationRef.current = penRoot.result.status === 'ok' ? penRoot.result.generation : -1;
 
-  const applyList = useCallback((result: { items: BookLibraryItem[]; meta: BookLibraryMeta }) => {
-    setItems(result.items);
+  const applyList = useCallback((result: { penItems: BookPenItem[] | null; catalogItems: BookCatalogItem[]; meta: BookLibraryMeta }) => {
+    setPenItems(result.penItems);
+    setCatalogItems(result.catalogItems);
     setMeta(result.meta);
   }, []);
 
   const refreshList = useCallback(async () => {
-    const [result, backupList] = await Promise.all([window.ponyabc.bookList(), window.ponyabc.bookBackups()]);
+    const result = await window.ponyabc.bookList();
     applyList(result);
-    setBackups(backupList);
   }, [applyList]);
 
   const refreshCatalog = useCallback(async () => {
@@ -135,22 +138,27 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
     [refreshList],
   );
 
-  const restore = useCallback(
-    async (backupId: string) => {
-      const result = await window.ponyabc.bookRestore({ backupId, penGeneration: penGenerationRef.current });
-      await refreshList();
-      return result;
-    },
-    [refreshList],
-  );
-
   const cancelDownload = useCallback(async (contentId: string) => {
     await window.ponyabc.bookDownloadCancel(contentId);
   }, []);
 
   return (
     <BookLibraryContext.Provider
-      value={{ items, meta, backups, loading, refreshing, downloadProgress, refreshCatalog, add, replaceWithOfficial, reinstall, remove, restore, cancelDownload }}
+      value={{
+        penItems,
+        catalogItems,
+        meta,
+        loading,
+        refreshing,
+        downloadProgress,
+        refreshCatalog,
+        refreshPen: refreshList,
+        add,
+        replaceWithOfficial,
+        reinstall,
+        remove,
+        cancelDownload,
+      }}
     >
       {children}
     </BookLibraryContext.Provider>

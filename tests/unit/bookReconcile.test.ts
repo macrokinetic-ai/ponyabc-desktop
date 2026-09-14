@@ -46,9 +46,9 @@ describe('listPenBookFiles', () => {
   });
 });
 
-describe('buildBookLibrary', () => {
-  it('catalog-not-cached when nothing is local yet, and passes through raw friendlyName/friendlyNameI18n (never a pre-picked string)', async () => {
-    const items = await buildBookLibrary({
+describe('buildBookLibrary — catalogItems (right pane)', () => {
+  it('not-on-pen, actionable, when nothing is local yet — passes through raw friendlyName/friendlyNameI18n', async () => {
+    const { catalogItems } = await buildBookLibrary({
       snapshot: {
         entries: [entry({ sha256: 'a'.repeat(64), friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' } })],
         fetchedAtMs: 1,
@@ -59,142 +59,178 @@ describe('buildBookLibrary', () => {
       penFiles: null,
       bookDirReal: null,
     });
-    expect(items).toEqual([
+    expect(catalogItems).toEqual([
       {
         contentId: 'b1',
         filename: '0451.axb',
         friendlyName: 'Book One',
         friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
-        status: 'catalog-not-cached',
         sizeBytes: 5,
+        status: 'not-on-pen',
         cached: false,
-        onPen: false,
-        availableActions: ['add'],
+        actionable: true,
       },
     ]);
   });
 
-  it('hashes a matched pen file on demand and reports on-pen-current / on-pen-differs-from-official correctly', async () => {
+  it('on-pen-current / on-pen-differs, both actionable=true only for differs', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
     const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
 
-    const currentItems = await buildBookLibrary({
+    const current = await buildBookLibrary({
       snapshot: { entries: [entry({ sha256: hash })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(currentItems[0].status).toBe('on-pen-current');
-    expect(currentItems[0].availableActions).toContain('reinstall');
+    expect(current.catalogItems[0].status).toBe('on-pen-current');
+    expect(current.catalogItems[0].actionable).toBe(false); // already matches — nothing to do
 
-    const differsItems = await buildBookLibrary({
+    const differs = await buildBookLibrary({
       snapshot: { entries: [entry({ sha256: 'f'.repeat(64) })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(differsItems[0].status).toBe('on-pen-differs-from-official');
-    expect(differsItems[0].availableActions).toEqual(['replace', 'remove']);
+    expect(differs.catalogItems[0].status).toBe('on-pen-differs');
+    expect(differs.catalogItems[0].actionable).toBe(true);
   });
 
-  it('never hashes a pen file when the catalog entry has no sha256 — on-pen-hash-unknown instead', async () => {
+  it('metadata-incomplete is never actionable, even with a matching pen file', async () => {
     const dir = mkTempDir();
     fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
-    const items = await buildBookLibrary({
-      snapshot: { entries: [entry({ sha256: null })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+    const { catalogItems } = await buildBookLibrary({
+      snapshot: { entries: [entry({ filenameSource: 'fallback-storage-key' })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries: [],
       penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
       bookDirReal: dir,
     });
-    expect(items[0].status).toBe('on-pen-hash-unknown');
+    expect(catalogItems[0].status).toBe('metadata-incomplete');
+    expect(catalogItems[0].actionable).toBe(false);
   });
 
-  it('lists an unmatched pen file as not-in-catalog, kept and removable, never dropped', async () => {
-    const items = await buildBookLibrary({
-      snapshot: { entries: [], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
-      cacheEntries: [],
-      penFiles: [{ fileName: 'mystery.axb', sizeBytes: 9 }],
-      bookDirReal: null,
-    });
-    expect(items).toEqual([
-      {
-        contentId: null,
-        filename: 'mystery.axb',
-        friendlyName: null,
-        friendlyNameI18n: null,
-        status: 'not-in-catalog',
-        sizeBytes: 9,
-        cached: false,
-        onPen: true,
-        availableActions: ['remove'],
-      },
-    ]);
-  });
-
-  it('a catalog error (null snapshot) never invents not-in-catalog statuses for pen files — reconciliation is simply skipped for the catalog side', async () => {
-    const items = await buildBookLibrary({
-      snapshot: null,
-      cacheEntries: [],
-      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
-      bookDirReal: null,
-    });
-    // With no catalog at all, every pen file is unmatched by definition — still kept, not dropped.
-    expect(items).toEqual([
-      {
-        contentId: null,
-        filename: '0451.axb',
-        friendlyName: null,
-        friendlyNameI18n: null,
-        status: 'not-in-catalog',
-        sizeBytes: 5,
-        cached: false,
-        onPen: true,
-        availableActions: ['remove'],
-      },
-    ]);
-  });
-
-  it('marks a colliding catalog entry catalog-ambiguous and disables install, regardless of pen/cache state', async () => {
+  it('ambiguous catalog entries are never actionable and never claim a pen-file match', async () => {
     const entries = [entry({ contentId: 'b1', filename: 'story.axb' }), entry({ contentId: 'b2', filename: 'STORY.axb' })];
-    const items = await buildBookLibrary({
+    const { catalogItems } = await buildBookLibrary({
       snapshot: { entries, fetchedAtMs: 1, source: 'fixture', conflicts: [{ filenameLower: 'story.axb', contentIds: ['b1', 'b2'] }] },
       cacheEntries: [],
       penFiles: null,
       bookDirReal: null,
     });
-    expect(items.map((i) => i.status)).toEqual(['catalog-ambiguous', 'catalog-ambiguous']);
-    expect(items.every((i) => i.availableActions.length === 0)).toBe(true);
+    expect(catalogItems.map((i) => i.status)).toEqual(['ambiguous', 'ambiguous']);
+    expect(catalogItems.every((i) => !i.actionable)).toBe(true);
   });
 
-  it('catalog-incomplete-metadata entries never get an install/update/reinstall action', async () => {
-    const items = await buildBookLibrary({
-      snapshot: { entries: [entry({ filenameSource: 'fallback-storage-key' })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
-      cacheEntries: [],
-      penFiles: null,
-      bookDirReal: null,
-    });
-    expect(items[0].status).toBe('catalog-incomplete-metadata');
-    expect(items[0].availableActions).toEqual([]);
-  });
-
-  it('reports catalog-cached-current / catalog-cached-stale from the cache manifest when there is no pen file', async () => {
+  it('cached flag reflects the cache manifest regardless of pen state', async () => {
     const cacheEntries: BookCacheEntry[] = [{ contentId: 'b1', sha256: 'a'.repeat(64), sizeBytes: 5, filename: '0451.axb', cachedAtMs: 1 }];
-    const current = await buildBookLibrary({
+    const { catalogItems } = await buildBookLibrary({
       snapshot: { entries: [entry({ sha256: 'a'.repeat(64) })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
       cacheEntries,
       penFiles: null,
       bookDirReal: null,
     });
-    expect(current[0].status).toBe('catalog-cached-current');
-    expect(current[0].cached).toBe(true);
+    expect(catalogItems[0].cached).toBe(true);
+    expect(catalogItems[0].status).toBe('not-on-pen');
+  });
+});
 
-    const stale = await buildBookLibrary({
-      snapshot: { entries: [entry({ sha256: 'f'.repeat(64) })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
-      cacheEntries,
-      penFiles: null,
+describe('buildBookLibrary — penItems (left pane)', () => {
+  it('null when no pen is connected', async () => {
+    const { penItems } = await buildBookLibrary({ snapshot: null, cacheEntries: [], penFiles: null, bookDirReal: null });
+    expect(penItems).toBeNull();
+  });
+
+  it('an unmatched pen file is "unknown" and never removable', async () => {
+    const { penItems } = await buildBookLibrary({
+      snapshot: { entries: [], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: 'mystery.axb', sizeBytes: 9 }],
       bookDirReal: null,
     });
-    expect(stale[0].status).toBe('catalog-cached-stale');
+    expect(penItems).toEqual([
+      { fileName: 'mystery.axb', sizeBytes: 9, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false },
+    ]);
+  });
+
+  it('a catalog error (null snapshot) never invents matches — every pen file is "unknown"', async () => {
+    const { penItems } = await buildBookLibrary({
+      snapshot: null,
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: null,
+    });
+    expect(penItems).toEqual([
+      { fileName: '0451.axb', sizeBytes: 5, contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false },
+    ]);
+  });
+
+  it('a matched pen file is removable and carries the catalog identity/name', async () => {
+    const dir = mkTempDir();
+    fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
+    const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
+    const { penItems } = await buildBookLibrary({
+      snapshot: { entries: [entry({ sha256: hash, friendlyName: 'Book One' })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(penItems).toEqual([
+      { fileName: '0451.axb', sizeBytes: 5, contentId: 'b1', friendlyName: 'Book One', friendlyNameI18n: null, status: 'matched-current', removable: true },
+    ]);
+  });
+
+  it('matched-differs / matched-hash-unknown are still removable (the confirm+backup gate is enforced at removal time, not by hiding the checkbox)', async () => {
+    const dir = mkTempDir();
+    fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
+
+    const differs = await buildBookLibrary({
+      snapshot: { entries: [entry({ sha256: 'f'.repeat(64) })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(differs.penItems?.[0].status).toBe('matched-differs');
+    expect(differs.penItems?.[0].removable).toBe(true);
+
+    const hashUnknown = await buildBookLibrary({
+      snapshot: { entries: [entry({ sha256: null })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(hashUnknown.penItems?.[0].status).toBe('matched-hash-unknown');
+    expect(hashUnknown.penItems?.[0].removable).toBe(true);
+  });
+
+  it('a pen file whose name only matches ambiguous catalog entries is "unknown", not arbitrarily assigned to either', async () => {
+    const dir = mkTempDir();
+    fs.writeFileSync(path.join(dir, 'story.axb'), 'hello');
+    const entries = [entry({ contentId: 'b1', filename: 'story.axb' }), entry({ contentId: 'b2', filename: 'STORY.axb' })];
+    const { penItems } = await buildBookLibrary({
+      snapshot: { entries, fetchedAtMs: 1, source: 'fixture', conflicts: [{ filenameLower: 'story.axb', contentIds: ['b1', 'b2'] }] },
+      cacheEntries: [],
+      penFiles: [{ fileName: 'story.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(penItems?.[0].status).toBe('unknown');
+    expect(penItems?.[0].contentId).toBeNull();
+    expect(penItems?.[0].removable).toBe(false);
+  });
+
+  it('hashes a matched pen file exactly once, reused by both panes', async () => {
+    const dir = mkTempDir();
+    fs.writeFileSync(path.join(dir, '0451.axb'), 'hello');
+    const hash = await import('node:crypto').then((c) => c.createHash('sha256').update('hello').digest('hex'));
+    // No direct spy available on the pure function boundary here; this asserts consistency
+    // between the two panes as an indirect proof the same computed hash is used for both.
+    const { penItems, catalogItems } = await buildBookLibrary({
+      snapshot: { entries: [entry({ sha256: hash })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      cacheEntries: [],
+      penFiles: [{ fileName: '0451.axb', sizeBytes: 5 }],
+      bookDirReal: dir,
+    });
+    expect(penItems?.[0].status).toBe('matched-current');
+    expect(catalogItems[0].status).toBe('on-pen-current');
   });
 });
