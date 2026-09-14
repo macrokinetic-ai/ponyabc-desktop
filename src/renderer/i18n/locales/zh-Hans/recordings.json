@@ -24,6 +24,7 @@
   "reasonNoSpace": "目标磁盘空间不足",
   "reasonIoError": "读写错误（设备可能已断开连接）",
   "reasonDisconnected": "点读笔已断开连接",
+  "reasonDeviceChanged": "此操作期间点读笔已改变",
   "reasonSecurityRejected": "文件名因安全原因被拒绝",
   "reasonHashMismatch": "写入后验证失败，未替换原文件",
   "reasonBackupFailed": "无法备份现有文件，因此未进行替换",

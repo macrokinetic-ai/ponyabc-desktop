@@ -27,6 +27,7 @@
   "reasonNoSpace": "Espace insuffisant sur le disque de destination",
   "reasonIoError": "Erreur de lecture/écriture (l'appareil est peut-être déconnecté)",
   "reasonDisconnected": "Stylo déconnecté",
+  "reasonDeviceChanged": "Le stylo a changé pendant cette opération",
   "reasonSecurityRejected": "Nom de fichier rejeté pour des raisons de sécurité",
   "reasonHashMismatch": "La vérification a échoué après l'écriture — rien n'a été remplacé",
   "reasonBackupFailed": "Impossible de sauvegarder le fichier existant, donc rien n'a été remplacé",

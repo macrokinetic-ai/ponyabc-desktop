@@ -27,6 +27,7 @@
   "reasonNoSpace": "Nicht genügend freier Speicherplatz auf dem Zieldatenträger",
   "reasonIoError": "Lese-/Schreibfehler (Gerät möglicherweise getrennt)",
   "reasonDisconnected": "Stift getrennt",
+  "reasonDeviceChanged": "Der Stift hat sich während dieses Vorgangs geändert",
   "reasonSecurityRejected": "Dateiname aus Sicherheitsgründen abgelehnt",
   "reasonHashMismatch": "Überprüfung nach dem Schreiben fehlgeschlagen — nichts wurde ersetzt",
   "reasonBackupFailed": "Vorhandene Datei konnte nicht gesichert werden, daher wurde nichts ersetzt",

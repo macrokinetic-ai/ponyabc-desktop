@@ -27,6 +27,7 @@
   "reasonNoSpace": "Spazio libero insufficiente sul disco di destinazione",
   "reasonIoError": "Errore di lettura/scrittura (il dispositivo potrebbe essere scollegato)",
   "reasonDisconnected": "Penna scollegata",
+  "reasonDeviceChanged": "La penna è cambiata durante questa operazione",
   "reasonSecurityRejected": "Nome file rifiutato per motivi di sicurezza",
   "reasonHashMismatch": "Verifica fallita dopo la scrittura — nulla è stato sostituito",
   "reasonBackupFailed": "Impossibile eseguire il backup del file esistente, quindi nulla è stato sostituito",

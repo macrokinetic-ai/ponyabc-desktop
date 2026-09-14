@@ -27,6 +27,7 @@
   "reasonNoSpace": "No hay suficiente espacio libre en el disco de destino",
   "reasonIoError": "Error de lectura/escritura (el dispositivo puede estar desconectado)",
   "reasonDisconnected": "Lápiz desconectado",
+  "reasonDeviceChanged": "El lápiz cambió durante esta operación",
   "reasonSecurityRejected": "Nombre de archivo rechazado por motivos de seguridad",
   "reasonHashMismatch": "La verificación falló tras escribir — no se reemplazó nada",
   "reasonBackupFailed": "No se pudo respaldar el archivo existente, así que no se reemplazó",

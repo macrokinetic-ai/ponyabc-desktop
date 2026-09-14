@@ -13,8 +13,19 @@ import type {
   TransferToPenSummary,
 } from '@shared/types';
 import { isEligibleMp3FileName, resolveContainedFile, resolvePenRoot } from './pathSecurity';
-import { safeWriteFile } from './transferService';
+import { safeWriteFile, type SafeWriteResult } from './transferService';
 import * as session from './session';
+
+/** Turns a failed SafeWriteResult into one human-readable message that includes recovery
+ *  state (backup / original-preserved-at / restored) — the batch failure list only carries
+ *  plain strings, so this is where that detail has to live rather than being dropped. */
+function describeWriteFailure(result: SafeWriteResult): string {
+  const parts = [result.message ?? 'Unknown error'];
+  if (result.originalRestored) parts.push('The original file was restored.');
+  if (result.originalPreservedAt) parts.push(`The original is intact at: ${result.originalPreservedAt}`);
+  if (result.backupPath) parts.push(`Backup: ${result.backupPath}`);
+  return parts.join(' ');
+}
 
 /**
  * The plan/execute logic for operations B and C, deliberately free of any Electron import
@@ -189,8 +200,29 @@ export async function executeTransferToPen(params: {
   const skipped: string[] = [];
   const failed: TransferToPenSummary['failed'] = [];
 
+  // Bind this whole batch to the pen connection confirmed above. `verifyStillSameTarget` is
+  // re-checked before every single file — not just once at the top — so a disconnect or a
+  // different pen mounted at the same path mid-batch is caught immediately, not after
+  // damage is done. Deliberately generation-based (session.ts), not a bare path/stat.dev
+  // check, since a device swap can leave both of those looking unchanged.
+  const capturedGeneration = session.getGeneration();
+  const diyDirReal = fresh.diyDirReal;
+  const verifyStillSameTarget = () => session.getGeneration() === capturedGeneration && fs.existsSync(diyDirReal);
+
   const fileCount = fileNames.length;
+  let aborted = false;
   for (let i = 0; i < fileCount; i++) {
+    if (!verifyStillSameTarget()) {
+      // Stop the rest of the batch immediately — do not attempt, clean up, or otherwise
+      // touch anything for the remaining files. They may now belong to a different pen.
+      aborted = true;
+      for (let j = i; j < fileCount; j++) {
+        failed.push({ file: fileNames[j], message: 'The pen changed or was disconnected during this batch; this file was not sent.', reason: 'device-changed' });
+        onProgress?.({ fileIndex: j, fileCount, fileName: fileNames[j], fileStatus: 'failed', error: 'device-changed' });
+      }
+      break;
+    }
+
     const fileName = fileNames[i];
     const decision = decisions[fileName];
 
@@ -207,7 +239,7 @@ export async function executeTransferToPen(params: {
 
     // A file that already exists at the target MUST have an explicit 'replace' decision —
     // never silently overwritten just because it fell through with no decision recorded.
-    const targetExistsNow = fs.existsSync(path.join(fresh.diyDirReal, fileName));
+    const targetExistsNow = fs.existsSync(path.join(diyDirReal, fileName));
     if (targetExistsNow && decision !== 'replace') {
       skipped.push(fileName);
       onProgress?.({ fileIndex: i, fileCount, fileName, fileStatus: 'skipped' });
@@ -228,10 +260,10 @@ export async function executeTransferToPen(params: {
     onProgress?.({ fileIndex: i, fileCount, fileName, fileStatus: 'copying' });
     const result = await safeWriteFile({
       sourcePath: sourceResolution.realPath,
-      targetDir: fresh.diyDirReal,
+      targetDir: diyDirReal,
       targetFileName: fileName,
       backupDir,
-      isTargetVolumeAvailable: () => fs.existsSync(fresh.diyDirReal),
+      verifyStillSameTarget,
     });
 
     if (result.ok) {
@@ -243,12 +275,13 @@ export async function executeTransferToPen(params: {
         onProgress?.({ fileIndex: i, fileCount, fileName, fileStatus: 'added' });
       }
     } else {
-      failed.push({ file: fileName, message: result.message ?? 'Unknown error', reason: result.reason ?? 'other' });
-      onProgress?.({ fileIndex: i, fileCount, fileName, fileStatus: 'failed', error: result.message });
+      const message = describeWriteFailure(result);
+      failed.push({ file: fileName, message, reason: result.reason ?? 'other' });
+      onProgress?.({ fileIndex: i, fileCount, fileName, fileStatus: 'failed', error: message });
     }
   }
 
-  return { status: 'completed', added, replaced, skipped, failed, backupFolder: backupDir };
+  return { status: aborted ? 'stale-plan' : 'completed', added, replaced, skipped, failed, backupFolder: backupDir };
 }
 
 // ---------------------------------------------------------------------------------------
@@ -352,20 +385,34 @@ export async function executeReplaceSticker(params: {
   }
 
   const backupDir = makeBackupDir(backupRootDir);
+  const diyDirReal = fresh.diyDirReal;
+  // Same generation-based identity guard as operation B — checked repeatedly inside
+  // safeWriteFile itself (before backup, before staging, before the final swap), not just
+  // once here, so a pen swap mid-write is caught wherever it happens.
+  const verifyStillSameTarget = () => session.getGeneration() === penGeneration && fs.existsSync(diyDirReal);
+
   onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'copying' });
   const result = await safeWriteFile({
     sourcePath: computerFileResolution.realPath,
-    targetDir: fresh.diyDirReal,
+    targetDir: diyDirReal,
     targetFileName: penFileName, // preserve the STICKER's filename, not the computer source's own name
     backupDir,
-    isTargetVolumeAvailable: () => fs.existsSync(fresh.diyDirReal),
+    verifyStillSameTarget,
   });
 
   if (!result.ok) {
-    onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'failed', error: result.message });
-    if (result.reason === 'backup-failed') return { status: 'backup-failed', message: result.message };
-    if (result.reason === 'disconnected') return { status: 'device-disconnected', message: result.message };
-    return { status: 'error', message: result.message };
+    const message = describeWriteFailure(result);
+    onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'failed', error: message });
+    const status =
+      result.reason === 'backup-failed'
+        ? 'backup-failed'
+        : result.reason === 'disconnected' || result.reason === 'device-changed'
+          ? 'device-disconnected'
+          : 'error';
+    // backupPath / recovery state is always surfaced, on every failure path — not just for
+    // the specific reasons that happen to set it — so the teacher always sees where the
+    // original ended up.
+    return { status, message, backupPath: result.backupPath };
   }
 
   onProgress?.({ fileIndex: 0, fileCount: 1, fileName: penFileName, fileStatus: 'replaced' });

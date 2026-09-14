@@ -6,6 +6,7 @@ export const REASON_KEY: Record<CopyFailureReason, string> = {
   'no-space': 'reasonNoSpace',
   'io-error': 'reasonIoError',
   disconnected: 'reasonDisconnected',
+  'device-changed': 'reasonDeviceChanged',
   'security-rejected': 'reasonSecurityRejected',
   'hash-mismatch': 'reasonHashMismatch',
   'backup-failed': 'reasonBackupFailed',

@@ -78,6 +78,7 @@ export type CopyFailureReason =
   | 'no-space'
   | 'io-error'
   | 'disconnected'
+  | 'device-changed'
   | 'security-rejected'
   | 'hash-mismatch'
   | 'backup-failed'

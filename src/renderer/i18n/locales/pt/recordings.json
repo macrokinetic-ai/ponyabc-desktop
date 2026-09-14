@@ -27,6 +27,7 @@
   "reasonNoSpace": "Espaço livre insuficiente no disco de destino",
   "reasonIoError": "Erro de leitura/escrita (o dispositivo pode estar desligado)",
   "reasonDisconnected": "Caneta desligada",
+  "reasonDeviceChanged": "A caneta mudou durante esta operação",
   "reasonSecurityRejected": "Nome de ficheiro rejeitado por motivos de segurança",
   "reasonHashMismatch": "A verificação falhou após a escrita — nada foi substituído",
   "reasonBackupFailed": "Não foi possível fazer cópia de segurança do ficheiro existente, por isso nada foi substituído",

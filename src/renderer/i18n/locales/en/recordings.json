@@ -27,6 +27,7 @@
   "reasonNoSpace": "Not enough free space on the destination disk",
   "reasonIoError": "Read/write error (device may be disconnected)",
   "reasonDisconnected": "Pen disconnected",
+  "reasonDeviceChanged": "The pen changed during this operation",
   "reasonSecurityRejected": "File name rejected for security reasons",
   "reasonHashMismatch": "Verification failed after writing — nothing was replaced",
   "reasonBackupFailed": "Could not back up the existing file, so nothing was replaced",

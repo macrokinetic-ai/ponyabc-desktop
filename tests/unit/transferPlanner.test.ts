@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolvePenRoot } from '../../src/main/services/pathSecurity';
 import * as session from '../../src/main/services/session';
 import {
@@ -48,6 +48,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -205,6 +206,102 @@ describe('executeTransferToPen', () => {
     expect(summary.status).toBe('no-space');
     expect(fs.existsSync(diyPath('a.mp3'))).toBe(false);
   });
+
+  it('regression: a pen swap mid-batch (detected the moment "copying" fires for the first file) stops the write and never reports it replaced', async () => {
+    // Exact reported repro: build a replace plan for a same-name file, then — at the instant
+    // the first file's 'copying' progress fires — simulate the pen being unplugged and a
+    // different one plugged back in (an explicit setPenRoot(null) followed by a new
+    // setPenRoot). Previously this was not re-checked once execution started, so the write
+    // went ahead and was reported as 'replaced' anyway.
+    fs.writeFileSync(diyPath('0451.mp3'), 'ORIGINAL ON PEN');
+    fs.writeFileSync(computerPath('0451.mp3'), 'NEW FROM COMPUTER');
+    const capturedGeneration = session.getGeneration();
+
+    const otherPen = mkTempDir('ponyabc-swap-pen-');
+    fs.mkdirSync(path.join(otherPen, 'BOOK'));
+    fs.mkdirSync(path.join(otherPen, 'DIY'));
+
+    const events: string[] = [];
+    const summary = await executeTransferToPen({
+      fileNames: ['0451.mp3'],
+      decisions: { '0451.mp3': 'replace' },
+      penGeneration: capturedGeneration,
+      backupRootDir,
+      onProgress: (e) => {
+        events.push(`${e.fileName}:${e.fileStatus}`);
+        if (e.fileStatus === 'copying') {
+          session.setPenRoot(null); // unplug
+          selectPen(otherPen); // a different pen plugged in
+        }
+      },
+    });
+
+    expect(summary.replaced).toEqual([]); // must NOT report a replace that didn't actually (safely) happen
+    expect(summary.added).toEqual([]);
+    expect(summary.failed.length).toBe(1);
+    expect(summary.failed[0].reason).toBe('device-changed');
+    // The ORIGINAL pen's file must be exactly what it started as — untouched.
+    expect(fs.readFileSync(diyPath('0451.mp3'), 'utf-8')).toBe('ORIGINAL ON PEN');
+    // Nothing was written onto the newly-swapped-in pen either.
+    expect(fs.existsSync(path.join(otherPen, 'DIY', '0451.mp3'))).toBe(false);
+  });
+
+  it('regression: a different pen remounted at the SAME path mid-batch is still detected (generation, not path/stat.dev, is authoritative)', async () => {
+    // Same mount path throughout — only the session's own generation counter (bumped via the
+    // explicit disconnect/reconnect calls) signals the change. A check based on "does this
+    // path still exist" alone would wrongly treat this as an uninterrupted connection.
+    fs.writeFileSync(diyPath('0451.mp3'), 'ORIGINAL ON PEN');
+    fs.writeFileSync(computerPath('0451.mp3'), 'NEW FROM COMPUTER');
+    const capturedGeneration = session.getGeneration();
+    const samePath = penRoot;
+
+    const summary = await executeTransferToPen({
+      fileNames: ['0451.mp3'],
+      decisions: { '0451.mp3': 'replace' },
+      penGeneration: capturedGeneration,
+      backupRootDir,
+      onProgress: (e) => {
+        if (e.fileStatus === 'copying') {
+          session.setPenRoot(null); // simulate the physical disconnect that a remount implies
+          selectPen(samePath); // a different card happens to remount at the identical path
+        }
+      },
+    });
+
+    expect(summary.replaced).toEqual([]);
+    expect(summary.failed[0]?.reason).toBe('device-changed');
+    expect(fs.readFileSync(diyPath('0451.mp3'), 'utf-8')).toBe('ORIGINAL ON PEN');
+  });
+
+  it('regression: once a mid-batch change is detected, the rest of the batch is aborted without being attempted', async () => {
+    fs.writeFileSync(computerPath('a.mp3'), 'A');
+    fs.writeFileSync(computerPath('b.mp3'), 'B');
+    fs.writeFileSync(computerPath('c.mp3'), 'C');
+    const capturedGeneration = session.getGeneration();
+
+    const otherPen = mkTempDir('ponyabc-swap-pen-2-');
+    fs.mkdirSync(path.join(otherPen, 'BOOK'));
+    fs.mkdirSync(path.join(otherPen, 'DIY'));
+
+    const summary = await executeTransferToPen({
+      fileNames: ['a.mp3', 'b.mp3', 'c.mp3'],
+      decisions: {},
+      penGeneration: capturedGeneration,
+      backupRootDir,
+      onProgress: (e) => {
+        if (e.fileName === 'a.mp3' && e.fileStatus === 'added') {
+          session.setPenRoot(null);
+          selectPen(otherPen);
+        }
+      },
+    });
+
+    expect(summary.added).toEqual(['a.mp3']); // first file completed before the swap
+    expect(summary.failed.map((f) => f.file)).toEqual(['b.mp3', 'c.mp3']); // rest aborted, never attempted
+    expect(summary.failed.every((f) => f.reason === 'device-changed')).toBe(true);
+    expect(fs.existsSync(path.join(otherPen, 'DIY', 'b.mp3'))).toBe(false);
+    expect(fs.existsSync(path.join(otherPen, 'DIY', 'c.mp3'))).toBe(false);
+  });
 });
 
 describe('planReplaceSticker / executeReplaceSticker', () => {
@@ -280,5 +377,68 @@ describe('planReplaceSticker / executeReplaceSticker', () => {
     });
     expect(summary.status).toBe('no-space');
     expect(fs.readFileSync(diyPath('0451.mp3'), 'utf-8')).toBe('ORIGINAL');
+  });
+
+  it('regression: a pen swap during the write (right when "copying" fires) stops the replace instead of completing it', async () => {
+    fs.writeFileSync(diyPath('0451.mp3'), 'ORIGINAL STICKER AUDIO');
+    fs.writeFileSync(computerPath('take.mp3'), 'NEW TEACHER AUDIO');
+    const plan = await planReplaceSticker({ penFileName: '0451.mp3', computerFileName: 'take.mp3' });
+    expect(plan.status).toBe('ok');
+    if (plan.status !== 'ok') return;
+
+    const otherPen = mkTempDir('ponyabc-replace-swap-pen-');
+    fs.mkdirSync(path.join(otherPen, 'BOOK'));
+    fs.mkdirSync(path.join(otherPen, 'DIY'));
+
+    const summary = await executeReplaceSticker({
+      penFileName: plan.penFileName,
+      computerFileName: plan.computerFileName,
+      penGeneration: plan.penGeneration,
+      backupRootDir,
+      onProgress: (e) => {
+        if (e.fileStatus === 'copying') {
+          session.setPenRoot(null);
+          selectPen(otherPen);
+        }
+      },
+    });
+
+    expect(summary.status).not.toBe('completed');
+    expect(fs.readFileSync(diyPath('0451.mp3'), 'utf-8')).toBe('ORIGINAL STICKER AUDIO');
+    expect(fs.existsSync(path.join(otherPen, 'DIY', '0451.mp3'))).toBe(false);
+  });
+
+  it('regression: a failure summary always carries backupPath when a backup was made — not lost on the failure path', async () => {
+    // The reported bug: executeReplaceSticker's early-return branches on failure omitted
+    // backupPath entirely, even when safeWriteFile had already made one. Force a failure
+    // AFTER the backup step by making the staging copy (source -> tmp) fail, while letting
+    // the backup copy (final -> backupDir) succeed normally.
+    fs.writeFileSync(diyPath('0451.mp3'), 'ORIGINAL STICKER AUDIO');
+    fs.writeFileSync(computerPath('take.mp3'), 'NEW TEACHER AUDIO');
+    const plan = await planReplaceSticker({ penFileName: '0451.mp3', computerFileName: 'take.mp3' });
+    expect(plan.status).toBe('ok');
+    if (plan.status !== 'ok') return;
+
+    const realCopyFile = fs.promises.copyFile.bind(fs.promises);
+    vi.spyOn(fs.promises, 'copyFile').mockImplementation(async (src, dest, ...rest) => {
+      if (String(src).includes('take.mp3') && String(dest).includes('.ponyabc-tmp-')) {
+        throw Object.assign(new Error('simulated staging failure'), { code: 'EIO' });
+      }
+      // @ts-expect-error - forwarding the flags arg through to the real implementation
+      return realCopyFile(src, dest, ...rest);
+    });
+
+    const summary = await executeReplaceSticker({
+      penFileName: plan.penFileName,
+      computerFileName: plan.computerFileName,
+      penGeneration: plan.penGeneration,
+      backupRootDir,
+    });
+
+    expect(summary.status).not.toBe('completed');
+    expect(summary.backupPath).toBeDefined();
+    expect(fs.readFileSync(summary.backupPath!, 'utf-8')).toBe('ORIGINAL STICKER AUDIO');
+    // The pen's original file is untouched — only a backup was made, the replace itself failed.
+    expect(fs.readFileSync(diyPath('0451.mp3'), 'utf-8')).toBe('ORIGINAL STICKER AUDIO');
   });
 });

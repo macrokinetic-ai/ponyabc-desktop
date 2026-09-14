@@ -24,6 +24,7 @@
   "reasonNoSpace": "目的磁碟空間不足",
   "reasonIoError": "讀寫錯誤（裝置可能已中斷連接）",
   "reasonDisconnected": "點讀筆已中斷連接",
+  "reasonDeviceChanged": "此操作期間點讀筆已改變",
   "reasonSecurityRejected": "檔案名稱因安全理由被拒絕",
   "reasonHashMismatch": "寫入後驗證失敗，未有取代原檔",
   "reasonBackupFailed": "無法備份原有檔案，因此未有取代",
