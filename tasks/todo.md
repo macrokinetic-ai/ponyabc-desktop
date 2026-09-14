@@ -36,11 +36,11 @@ file, not guessed.
       minimal `FakeAudioContext` (jsdom has neither WASM-audio nor Web Audio APIs
       pre-wired for this); 157 tests total (+2 vs v0.2.6: decode-failure path,
       StrictMode play/pause regression), typecheck clean
-- [ ] Bump version 0.2.7, commit, tag (does not overwrite v0.2.6), push
-- [ ] Build mac dmgs from the tagged commit; re-verify ad-hoc signature
-- [ ] Final CDP pass on the packaged build: real pen file playback + 820px layout
-      with the player bar active (still no overlap)
-- [ ] gh release create v0.2.7, 3 installers + sha256, notes explaining the real
-      root cause (Layer II vs Layer III) so the user understands why last round's
-      preview looked broken despite passing all prior testing
-- [ ] Final Traditional Chinese report
+- [x] Bump version 0.2.7, commit (b82c777), tag (does not overwrite v0.2.6), push
+- [x] Built mac dmgs from the tagged commit; both pass codesign --verify
+- [x] Final CDP pass on the packaged build with the real pen file: play/pause
+      (time genuinely freezes)/resume/natural-end all correct; 820px layout with
+      the player bar active has zero overlap (screenshot confirmed)
+- [x] gh release create v0.2.7, 3 installers + sha256, notes explain the real root
+      cause (Layer II vs Layer III); re-downloaded published dmg, checksum matches
+- [x] Final Traditional Chinese report
