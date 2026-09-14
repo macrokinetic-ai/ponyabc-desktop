@@ -47,19 +47,30 @@ function immediateFetch(bytes: Buffer, status = 200): typeof fetch {
 }
 
 /** A fetch whose response body only emits once `release()` is called — lets a test control
- *  exactly when a download "finishes" relative to a concurrent second call. */
+ *  exactly when a download "finishes" relative to a concurrent second call. Abort-aware (like
+ *  a real in-flight fetch): if the passed signal aborts before release(), the stream errors
+ *  with an AbortError instead of hanging forever, matching what a real aborted network
+ *  request does to its response body reader. */
 function controllableFetch(bytes: Buffer): { fetchFn: typeof fetch; release: () => void; calls: number[] } {
   const calls: number[] = [];
   let releaseFn: (() => void) | null = null;
   const released = new Promise<void>((resolve) => {
     releaseFn = resolve;
   });
-  const fetchFn = (async () => {
+  const fetchFn = (async (_url: string, init?: RequestInit) => {
     calls.push(Date.now());
+    const signal = init?.signal;
     return new Response(
       new ReadableStream({
         async start(controller) {
-          await released;
+          await new Promise<void>((resolve, reject) => {
+            if (signal?.aborted) {
+              reject(new DOMException('Aborted', 'AbortError'));
+              return;
+            }
+            released.then(resolve);
+            signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+          });
           controller.enqueue(bytes);
           controller.close();
         },
