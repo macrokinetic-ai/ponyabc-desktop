@@ -50,6 +50,7 @@
     "verifying": "A verificar o conteúdo da caneta…",
     "verifiedCurrent": "Última verificação: corresponde à versão oficial",
     "verifiedDiffers": "Última verificação: difere da versão oficial",
+    "sizeDiffers": "O tamanho difere da versão oficial",
     "matchedHashUnknown": "Não é possível verificar com o catálogo",
     "awaitingCatalog": "A aguardar correspondência com o catálogo",
     "unknown": "Desconhecido",
@@ -57,6 +58,7 @@
     "onPenPresent": "Na caneta — ainda não verificado",
     "onPenCurrent": "Na caneta — verificado, corresponde",
     "onPenDiffers": "Na caneta — verificado, difere",
+    "onPenSizeDiffers": "Na caneta — o tamanho difere do oficial",
     "onPenVerifying": "A verificar o conteúdo da caneta…",
     "metadataIncomplete": "Informações de catálogo incompletas",
     "ambiguous": "Entrada de catálogo ambígua"

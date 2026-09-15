@@ -50,6 +50,7 @@
     "verifying": "正在校验笔内内容…",
     "verifiedCurrent": "上次校验：与官方版本相符",
     "verifiedDiffers": "上次校验：与官方版本不同",
+    "sizeDiffers": "大小与官方版本不同",
     "matchedHashUnknown": "无法与目录核对",
     "awaitingCatalog": "等待目录匹配",
     "unknown": "未知内容",
@@ -57,6 +58,7 @@
     "onPenPresent": "笔内已有——未校验",
     "onPenCurrent": "笔内已有——已校验，相符",
     "onPenDiffers": "笔内已有——已校验，不同",
+    "onPenSizeDiffers": "笔内已有——大小与官方不同",
     "onPenVerifying": "正在校验笔内内容…",
     "metadataIncomplete": "目录信息不完整",
     "ambiguous": "目录项存在歧义"

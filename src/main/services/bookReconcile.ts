@@ -110,12 +110,17 @@ export function buildBookLibrary(params: {
     const key = entry.filename.toLowerCase();
     const penFile = !isAmbiguous && entryByFilenameLower.get(key) === entry ? penByFilenameLower.get(key) : undefined;
     const hasPenFile = penFile !== undefined;
-    const outcome = hasPenFile && eligible ? verifiedOutcome(entry, penFile) : null;
+    // A size mismatch is a conclusive, stat-only signal — decided before any hash lookup, and
+    // it short-circuits verifiedOutcome() entirely (no point consulting a verify record for a
+    // file we already know isn't size-matched).
+    const sizeDiffers = hasPenFile && penFile.sizeBytes !== entry.sizeBytes;
+    const outcome = hasPenFile && eligible && !sizeDiffers ? verifiedOutcome(entry, penFile) : null;
 
     let status: BookCatalogItemStatus;
     if (isAmbiguous) status = 'ambiguous';
     else if (!eligible) status = 'metadata-incomplete';
     else if (!hasPenFile) status = 'not-on-pen';
+    else if (sizeDiffers) status = 'on-pen-size-differs';
     else if (outcome === 'current') status = 'on-pen-current';
     else if (outcome === 'differs') status = 'on-pen-differs';
     else status = 'on-pen-present';
@@ -130,7 +135,10 @@ export function buildBookLibrary(params: {
       sizeBytes: entry.sizeBytes,
       status,
       cached: cached !== null,
-      actionable: eligible && !isAmbiguous && (status === 'not-on-pen' || status === 'on-pen-present' || status === 'on-pen-differs'),
+      actionable:
+        eligible &&
+        !isAmbiguous &&
+        (status === 'not-on-pen' || status === 'on-pen-present' || status === 'on-pen-differs' || status === 'on-pen-size-differs'),
       updatedAtMs: entry.updatedAtMs,
     };
   });
@@ -153,14 +161,17 @@ export function buildBookLibrary(params: {
         };
       }
       const eligible = isInstallEligible(entry);
-      const outcome = eligible ? verifiedOutcome(entry, f) : null;
-      const matchStatus: BookPenMatchStatus = !eligible
-        ? 'matched-hash-unknown'
-        : outcome === 'current'
-          ? 'verified-current'
-          : outcome === 'differs'
-            ? 'verified-differs'
-            : 'present';
+      const sizeDiffers = f.sizeBytes !== entry.sizeBytes;
+      const outcome = eligible && !sizeDiffers ? verifiedOutcome(entry, f) : null;
+      const matchStatus: BookPenMatchStatus = sizeDiffers
+        ? 'size-differs'
+        : !eligible
+          ? 'matched-hash-unknown'
+          : outcome === 'current'
+            ? 'verified-current'
+            : outcome === 'differs'
+              ? 'verified-differs'
+              : 'present';
       return {
         fileName: f.fileName,
         sizeBytes: f.sizeBytes,

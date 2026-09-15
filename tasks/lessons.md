@@ -357,3 +357,22 @@ already attached at that exact point in execution — not just "attached somewhe
 function" — and write the test for the *already in the terminal state before you start*
 case specifically (not just "abort while in progress"), since that's the one most likely to
 race ahead of setup code.
+
+## "Matched by filename" quietly absorbed "matched but wrong size" too
+
+`buildBookLibrary`'s filename-lowercase join only ever compared names — a
+pen file that matched a catalog entry's filename but had a different
+declared size fell into the exact same "present"/"on-pen-present" bucket as
+a genuine, correctly-sized, simply-not-yet-hashed match. Both are
+legitimately "not yet verified," but a size mismatch is a far stronger,
+zero-cost (stat-only) signal that something is actually wrong, and burying
+it inside the generic "unverified" bucket meant the user had no way to
+notice without manually running a full hash verify. Fix: compare
+`penFile.sizeBytes` to `entry.sizeBytes` as its own decision point, before
+falling back to the verify-record lookup — a size-differs status is decided
+and shown before any hashing question even arises. General rule: when a
+"matched" concept is built from a single join key (filename here), check
+whether OTHER already-known-for-free fields (size, mtime — anything from a
+plain `stat`) can further distinguish "matched and this looks right" from
+"matched but something is already suspicious," and surface that distinction
+immediately rather than lumping it into "not yet checked."

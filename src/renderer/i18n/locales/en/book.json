@@ -50,6 +50,7 @@
     "verifying": "Verifying pen content…",
     "verifiedCurrent": "Last verified: matches official version",
     "verifiedDiffers": "Last verified: differs from official version",
+    "sizeDiffers": "Size differs from official version",
     "matchedHashUnknown": "Cannot verify against the catalog",
     "awaitingCatalog": "Waiting for catalog match",
     "unknown": "Unknown",
@@ -57,6 +58,7 @@
     "onPenPresent": "On pen — not yet verified",
     "onPenCurrent": "On pen — verified, matches",
     "onPenDiffers": "On pen — verified, differs",
+    "onPenSizeDiffers": "On pen — size differs from official",
     "onPenVerifying": "Verifying pen content…",
     "metadataIncomplete": "Catalog information incomplete",
     "ambiguous": "Ambiguous catalog entry"

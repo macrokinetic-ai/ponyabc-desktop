@@ -223,6 +223,13 @@ describe('BookLibraryScreen — left pane (pen)', () => {
     expect((checkbox as HTMLInputElement).checked).toBe(true);
   });
 
+  it('a pen file matched by name but with a differing size shows "Size differs from official version", stays selectable/removable (never auto-flagged as corrupted)', async () => {
+    await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
+    await screen.findByText(/Size differs from official version/);
+    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
+    expect(checkbox).not.toBeNull(); // still selectable — not treated like Unknown
+  });
+
   it('selecting a matched pen file and clicking Remove shows an explicit confirm panel with filename and size', async () => {
     await renderScreen();
     const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -262,6 +269,16 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Replace' }));
     fireEvent.click(confirmButton);
     await waitFor(() => expect(window.ponyabc.bookUpdate).toHaveBeenCalledWith({ contentId: 'b1', penGeneration: 1 }));
+  });
+
+  it('an on-pen-size-differs catalog item is actionable and shows the size-mismatch status text, requiring the same Replace/Skip confirm as a hash-differs item', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-size-differs' })] }));
+    await screen.findByText(/size differs from official/i);
+    const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    await screen.findByText('Some selected items differ from the pen');
+    expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
   });
 
   it('no progress bar renders until a real download-progress event arrives — never a fake/animated one', async () => {

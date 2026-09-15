@@ -82,7 +82,13 @@ function formatDate(ms: number): string {
  *  backup flow applies the same way whether or not it's been explicitly verified to differ,
  *  since an unverified match is never assumed safe to silently overwrite. */
 function isOnPen(status: BookCatalogItem['status']): boolean {
-  return status === 'on-pen-present' || status === 'on-pen-verifying' || status === 'on-pen-current' || status === 'on-pen-differs';
+  return (
+    status === 'on-pen-present' ||
+    status === 'on-pen-verifying' ||
+    status === 'on-pen-current' ||
+    status === 'on-pen-differs' ||
+    status === 'on-pen-size-differs'
+  );
 }
 
 export function BookLibraryScreen() {
@@ -223,6 +229,7 @@ export function BookLibraryScreen() {
     verifying: 'status.verifying',
     'verified-current': 'status.verifiedCurrent',
     'verified-differs': 'status.verifiedDiffers',
+    'size-differs': 'status.sizeDiffers',
     'matched-hash-unknown': 'status.matchedHashUnknown',
     'awaiting-catalog': 'status.awaitingCatalog',
     unknown: 'status.unknown',
@@ -232,6 +239,7 @@ export function BookLibraryScreen() {
     'on-pen-present': 'status.onPenPresent',
     'on-pen-current': 'status.onPenCurrent',
     'on-pen-differs': 'status.onPenDiffers',
+    'on-pen-size-differs': 'status.onPenSizeDiffers',
     'on-pen-verifying': 'status.onPenVerifying',
     'metadata-incomplete': 'status.metadataIncomplete',
     ambiguous: 'status.ambiguous',

@@ -185,6 +185,45 @@ describe('buildBookLibrary — never hashes, is synchronous/fast', () => {
     expect(penItems?.[0].status).toBe('present');
   });
 
+  it('a filename match with a differing SIZE is "size-differs"/"on-pen-size-differs" — decided by stat alone, no hashing, even with a matching verify record on file', () => {
+    const dir = mkTempDir();
+    const f = writePenFile(dir, '0451.axb', 'hello-extra-bytes'); // 18 bytes, catalog declares 5
+    const officialSha256 = 'a'.repeat(64);
+    // A verify record exists for this exact pen/file identity (stale relative to the new size,
+    // but even if it somehow matched, size must still be checked first).
+    const staleRecord: BookVerifyRecord = {
+      penVolumeLabel: PEN_LABEL,
+      penGenerationAtVerify: PEN_GEN,
+      fileName: f.fileName,
+      sizeBytes: f.sizeBytes,
+      mtimeMs: f.mtimeMs,
+      observedSha256: officialSha256,
+      officialSha256,
+      contentId: 'b1',
+      verifiedAtMs: 1,
+    };
+    const { penItems, catalogItems } = buildLib({
+      snapshot: { entries: [entry({ sha256: officialSha256, sizeBytes: 5 })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      penFiles: [f],
+      verifyRecords: [staleRecord],
+    });
+    expect(penItems?.[0].status).toBe('size-differs');
+    expect(penItems?.[0].removable).toBe(true); // still user-removable/replaceable, never auto-acted-on
+    expect(catalogItems[0].status).toBe('on-pen-size-differs');
+    expect(catalogItems[0].actionable).toBe(true); // "Replace with official version" is offered
+  });
+
+  it('on the pen side, a size mismatch takes priority over "matched-hash-unknown" (no catalog hash at all) — the catalog side still reports metadata-incomplete independent of the pen, since an ineligible entry is never actionable regardless of what is on the pen', () => {
+    const dir = mkTempDir();
+    const f = writePenFile(dir, '0451.axb', 'hello-extra-bytes');
+    const { penItems, catalogItems } = buildLib({
+      snapshot: { entries: [entry({ sha256: null, sizeBytes: 5 })], fetchedAtMs: 1, source: 'fixture', conflicts: [] },
+      penFiles: [f],
+    });
+    expect(penItems?.[0].status).toBe('size-differs');
+    expect(catalogItems[0].status).toBe('metadata-incomplete');
+  });
+
   it('metadata-incomplete is never actionable, even with a matching pen file', () => {
     const dir = mkTempDir();
     const f = writePenFile(dir, '0451.axb', 'hello');

@@ -319,6 +319,12 @@ export type BookPenMatchStatus =
   | 'verified-current'
   /** The last explicit verification found this file's content differs from the official hash. */
   | 'verified-differs'
+  /** Matched by filename, but the pen file's SIZE (from a plain stat, no content read) already
+   *  differs from the catalog's declared size — a strong, no-hash-needed signal that this is
+   *  not the official file. Never auto-treated as corruption and never auto-replaced; purely
+   *  informational until the user explicitly chooses to verify or replace it. Takes priority
+   *  over 'matched-hash-unknown' since a size mismatch is conclusive on its own. */
+  | 'size-differs'
   /** The catalog has no official hash for this entry at all — can never be verified. */
   | 'matched-hash-unknown'
   /** No catalog has ever been successfully fetched, so this file has genuinely never been
@@ -353,6 +359,9 @@ export type BookCatalogItemStatus =
   | 'on-pen-verifying'
   | 'on-pen-current'
   | 'on-pen-differs'
+  /** Mirrors BookPenMatchStatus's 'size-differs' — matched by filename, but the pen file's
+   *  size (stat only, no content read) already differs from the catalog's declared size. */
+  | 'on-pen-size-differs'
   | 'metadata-incomplete'
   | 'ambiguous';
 
@@ -366,11 +375,11 @@ export interface BookCatalogItem {
   /** Whether a verified-good copy sits in the App's own local download cache — entirely about
    *  the LOCAL CACHE, never about what's on the pen. Independent of `status`. */
   cached: boolean;
-  /** true for 'not-on-pen', 'on-pen-present', and 'on-pen-differs' — declared filename +
-   *  trustworthy hash, not ambiguous, and not already confirmed current. Gates "Add"/"Replace"
-   *  in the UI; bookInstall.ts enforces the same eligibility rule independently via
-   *  isInstallEligible(). Never true while 'on-pen-verifying' (avoid racing a write against an
-   *  in-flight read) or 'on-pen-current' (nothing to do). */
+  /** true for 'not-on-pen', 'on-pen-present', 'on-pen-differs', and 'on-pen-size-differs' —
+   *  declared filename + trustworthy hash, not ambiguous, and not already confirmed current.
+   *  Gates "Add"/"Replace" in the UI; bookInstall.ts enforces the same eligibility rule
+   *  independently via isInstallEligible(). Never true while 'on-pen-verifying' (avoid racing a
+   *  write against an in-flight read) or 'on-pen-current' (nothing to do). */
   actionable: boolean;
   updatedAtMs: number | null;
 }

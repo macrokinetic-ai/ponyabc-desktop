@@ -50,6 +50,7 @@
     "verifying": "Verifica del contenuto della penna…",
     "verifiedCurrent": "Ultima verifica: corrisponde alla versione ufficiale",
     "verifiedDiffers": "Ultima verifica: differisce dalla versione ufficiale",
+    "sizeDiffers": "La dimensione differisce dalla versione ufficiale",
     "matchedHashUnknown": "Impossibile verificare rispetto al catalogo",
     "awaitingCatalog": "In attesa di corrispondenza col catalogo",
     "unknown": "Sconosciuto",
@@ -57,6 +58,7 @@
     "onPenPresent": "Sulla penna — non ancora verificato",
     "onPenCurrent": "Sulla penna — verificato, corrisponde",
     "onPenDiffers": "Sulla penna — verificato, differisce",
+    "onPenSizeDiffers": "Sulla penna — la dimensione differisce dall'ufficiale",
     "onPenVerifying": "Verifica del contenuto della penna…",
     "metadataIncomplete": "Informazioni di catalogo incomplete",
     "ambiguous": "Voce di catalogo ambigua"

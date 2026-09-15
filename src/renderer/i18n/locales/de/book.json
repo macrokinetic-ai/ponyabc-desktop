@@ -50,6 +50,7 @@
     "verifying": "Stiftinhalt wird überprüft…",
     "verifiedCurrent": "Letzte Prüfung: entspricht der offiziellen Version",
     "verifiedDiffers": "Letzte Prüfung: weicht von der offiziellen Version ab",
+    "sizeDiffers": "Größe weicht von der offiziellen Version ab",
     "matchedHashUnknown": "Kann nicht mit dem Katalog abgeglichen werden",
     "awaitingCatalog": "Wartet auf Katalogabgleich",
     "unknown": "Unbekannt",
@@ -57,6 +58,7 @@
     "onPenPresent": "Auf dem Stift — noch nicht überprüft",
     "onPenCurrent": "Auf dem Stift — geprüft, stimmt überein",
     "onPenDiffers": "Auf dem Stift — geprüft, weicht ab",
+    "onPenSizeDiffers": "Auf dem Stift — Größe weicht vom offiziellen ab",
     "onPenVerifying": "Stiftinhalt wird überprüft…",
     "metadataIncomplete": "Katalogdaten unvollständig",
     "ambiguous": "Mehrdeutiger Katalogeintrag"

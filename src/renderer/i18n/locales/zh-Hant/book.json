@@ -50,6 +50,7 @@
     "verifying": "正在校驗筆內內容…",
     "verifiedCurrent": "上次校驗：與官方版本相符",
     "verifiedDiffers": "上次校驗：與官方版本不同",
+    "sizeDiffers": "大小與官方版本不同",
     "matchedHashUnknown": "無法與目錄核對",
     "awaitingCatalog": "等待目錄配對",
     "unknown": "未知內容",
@@ -57,6 +58,7 @@
     "onPenPresent": "筆內已有——未校驗",
     "onPenCurrent": "筆內已有——已校驗，相符",
     "onPenDiffers": "筆內已有——已校驗，不同",
+    "onPenSizeDiffers": "筆內已有——大小與官方不同",
     "onPenVerifying": "正在校驗筆內內容…",
     "metadataIncomplete": "目錄資料不完整",
     "ambiguous": "目錄項目有歧義"

@@ -50,6 +50,7 @@
     "verifying": "Verificando contenido del lápiz…",
     "verifiedCurrent": "Última verificación: coincide con la versión oficial",
     "verifiedDiffers": "Última verificación: difiere de la versión oficial",
+    "sizeDiffers": "El tamaño difiere de la versión oficial",
     "matchedHashUnknown": "No se puede verificar contra el catálogo",
     "awaitingCatalog": "Esperando coincidencia con el catálogo",
     "unknown": "Desconocido",
@@ -57,6 +58,7 @@
     "onPenPresent": "En el lápiz — sin verificar",
     "onPenCurrent": "En el lápiz — verificado, coincide",
     "onPenDiffers": "En el lápiz — verificado, difiere",
+    "onPenSizeDiffers": "En el lápiz — el tamaño difiere del oficial",
     "onPenVerifying": "Verificando contenido del lápiz…",
     "metadataIncomplete": "Información del catálogo incompleta",
     "ambiguous": "Entrada de catálogo ambigua"

@@ -50,6 +50,7 @@
     "verifying": "Vérification du contenu du stylo…",
     "verifiedCurrent": "Dernière vérification : correspond à la version officielle",
     "verifiedDiffers": "Dernière vérification : diffère de la version officielle",
+    "sizeDiffers": "La taille diffère de la version officielle",
     "matchedHashUnknown": "Impossible de vérifier par rapport au catalogue",
     "awaitingCatalog": "En attente de correspondance avec le catalogue",
     "unknown": "Inconnu",
@@ -57,6 +58,7 @@
     "onPenPresent": "Sur le stylo — non vérifié",
     "onPenCurrent": "Sur le stylo — vérifié, correspond",
     "onPenDiffers": "Sur le stylo — vérifié, diffère",
+    "onPenSizeDiffers": "Sur le stylo — la taille diffère de la version officielle",
     "onPenVerifying": "Vérification du contenu du stylo…",
     "metadataIncomplete": "Informations du catalogue incomplètes",
     "ambiguous": "Entrée de catalogue ambiguë"

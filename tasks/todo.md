@@ -209,3 +209,60 @@ same large AXBs from the pen over and over.
       (content is random bytes, doesn't match the real official hash),
       second refresh reflects it instantly from the persisted index, zero
       console errors. Never wrote to a real physical pen.
+
+# v0.3.3 — filename+size quick-match only; connect/browse/refresh never hashes
+
+A follow-up spec (attributed to the user's consultant, confirmed against the
+real v0.3.2 code) pointed out a real remaining gap: `buildBookLibrary`
+matched pen files by filename only — it never compared the pen file's SIZE
+against the catalog's declared size, so a filename match with a wrong size
+fell through to the same "present"/"on-pen-present" bucket as a genuine,
+size-correct, not-yet-hashed match. Connecting/opening/refreshing already
+never hashed file content (fixed in v0.3.2), but this size-blind bucketing
+meant a size-mismatched file couldn't be told apart from an ordinary
+unverified match without the user manually running "Verify selected
+content."
+
+- [x] `BookPenMatchStatus` gained `'size-differs'`; `BookCatalogItemStatus`
+      gained `'on-pen-size-differs'` — both decided purely from `fs.stat`
+      (filename + size), never a content read. Takes priority over
+      `'matched-hash-unknown'`/`'on-pen-present'` on the pen side (size
+      mismatch is conclusive on its own); on the catalog side,
+      `'metadata-incomplete'` (no declared hash — install-ineligible
+      regardless of the pen) still takes priority, matching the pre-existing
+      rule that an ineligible catalog entry is never actionable no matter
+      what's on the pen.
+- [x] Purely informational — never auto-replaces, never auto-deletes, never
+      claims corruption. The item stays selectable/removable exactly like
+      any other matched file; "Replace with official version" is offered
+      the same way as for a hash-confirmed `on-pen-differs`. Explicit
+      "Verify selected content" still works on a size-differs file if the
+      user chooses to run it (resolves to `verified-differs`, which then
+      supersedes the size-only guess with a confirmed result).
+- [x] i18n: `status.sizeDiffers` / `status.onPenSizeDiffers` added to all 8
+      locales (`en, zh-Hant, zh-Hans, es, fr, de, it, pt`) — verified all 64
+      keys match across locales.
+- [x] Tests: 300 total (was 296). New `bookReconcile.test.ts` cases (size
+      mismatch wins over a matching-but-stale verify record, and over
+      `matched-hash-unknown`, with the catalog-side metadata-incomplete
+      precedence explicitly asserted); new `BookLibraryScreen.test.tsx`
+      cases (left-pane size-differs stays selectable, right-pane
+      on-pen-size-differs is actionable and requires the same Replace/Skip
+      confirm as a hash-differs item).
+- [x] Live CDP verification against a rebuilt dev binary with a completely
+      fresh user-data profile and a real simulated pen volume
+      (`<root>/PEN/BOOK` + `<root>/PEN/DIY`), using two real catalog
+      entries from the live production API: one AXB written at the WRONG
+      size (5MB vs. the catalog's declared 11.2MB) and one written at the
+      EXACT correct size (54,064,704 bytes) with random (non-matching)
+      content. Confirmed: catalog+pen reconciliation completes in ~256ms
+      regardless of the 5MB+54MB on-pen files (no hashing); the
+      wrong-size file shows "Size differs from official version" /
+      "On pen — size differs from official" on both panes; the
+      correct-size file shows the ordinary "On pen — not yet verified"
+      (never claims verified); a manual refresh (~216ms) leaves the
+      size-differs status unchanged (never auto-resolved); an explicit
+      "Verify selected content" on the size-differs file still runs and
+      resolves it to a confirmed "differs"; 820px minimum width has no
+      horizontal overflow; zero console errors across the whole session.
+      Never wrote to a real physical pen.
