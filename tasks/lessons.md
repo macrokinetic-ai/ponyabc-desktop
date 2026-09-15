@@ -467,3 +467,49 @@ rule: when a real, confirmed-working outcome conflicts with a script's
 apparent hard dependency, don't stop at "it must be fine" — trace the actual
 control flow far enough to explain the specific mechanism, since that
 mechanism is often exactly what later engineering decisions should hinge on.
+
+## A missing source file and a same-SIZE destination are not proof a copy step is a no-op — test the real platform semantics and hash the bytes
+
+**Correction to the lesson above (2026-09-15).** The trace was right to go looking
+for a mechanism instead of assuming, but two of its specific claims were
+unverified assumptions dressed up as conclusions: (1) "`bank.bin` doesn't exist,
+so [`copy /b`] structurally cannot ever produce fresh output" — this assumes
+`copy /b` aborts/no-ops when one source in a `+`-joined list is missing, never
+actually tested. (2) "byte-identical in **size**... making that copy a no-op" —
+same size is not the same as same bytes. The user caught both by asking a
+specific, falsifiable question rather than accepting the narrative.
+
+**What real testing showed:** dispatching a manual-only GitHub Actions workflow
+against `windows-latest` with 100%-synthetic placeholder files (never the vendor
+tool) proved `copy /b f1+f2+missing.bin dest` does NOT skip or abort — it silently
+drops the missing source and still overwrites `dest` from whatever sources exist,
+exit code 0, no error text. So claim (1) was false as a mechanism. Separately,
+hashing (SHA-256, not `ls -la` size) directly from the pristine `.zip` via
+`unzip -p file | shasum -a 256` — never from possibly-already-touched extracted
+copies — proved claim (2)'s files WERE actually byte-identical, and additionally
+proved the *real* reason the net effect is still a no-op: concatenating the 13
+present source files (bank.bin correctly omitted) reproduces the destination's
+exact hash. The right conclusion turned out to be reachable, but only by verifying
+the actual mechanism, not by the two shortcuts originally taken.
+
+**How to apply, generally:**
+- Never conclude "a command can't do X" from "one of its inputs is missing"
+  without checking that platform/tool's actual documented or tested behavior on a
+  missing input — many copy/build/link tools skip-and-continue rather than abort,
+  especially multi-source concatenation syntax like `copy /b a+b+c`.
+- Never treat matching file **size** as evidence of matching **content**. Hash it
+  (SHA-256 here; whatever's cheap and collision-safe for the context). This
+  project already had `sha256File` and `certutil -hashfile` idioms in active use
+  elsewhere (BOOK downloads, `safeWriteFile`) — the same discipline should have
+  applied to this investigation from the start, not just to code paths that ship.
+- When a real Windows-only behavior is in question and a real Windows CI runner
+  is available (`windows-latest` via `workflow_dispatch`, the existing pattern
+  from the elevation-smoke workflow), reproduce the EXACT structure (same `+`
+  count/position of the missing file, same pre-existing-destination-or-not cases)
+  with harmless synthetic files rather than reasoning about cmd.exe semantics
+  from memory — it's cheap (seconds of runner time) and removes the guesswork
+  entirely.
+- A "confirmed/inferred/unverified" split in the write-up (rather than a single
+  flat conclusion) makes gaps like the still-open `remove_tailing_zeros.exe`
+  question in this same investigation visible instead of buried — keep using it
+  for any multi-step no-vendor-execution investigation.

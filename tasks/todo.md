@@ -471,20 +471,20 @@ User confirmed the successful real-P5 upgrade entry point: root `tools\download.
 
 - [x] **Full dependency-chain trace of `tools\download.bat`.** It's a build/
       post-link wrapper needing `C:\JL\pi32\bin\llvm-objcopy.exe` (a dev-only
-      toolchain path essentially never present on an end-user PC) — but every
-      one of its objcopy/objdump/`copy` steps is a provable no-op when that
-      toolchain is missing: `remove_tailing_zeros.exe`'s own inputs
-      (aeco.bin/wavo.bin/etc.) already ship pre-built in the zip; the final
-      `copy /b ... app.bin` even references a `bank.bin` that doesn't exist
-      anywhere in the package, so it can't ever produce fresh output; and the
-      pre-existing root `app.bin`/`br25loader.bin` are byte-identical in size
-      to the ones already sitting in `soundbox\standard\`, so the trailing
-      `copy app.bin soundbox\standard\app.bin` is a no-op copy-over-itself
-      regardless. Net effect: the script prints a page of harmless "not
-      recognized" errors, then reaches its last line —
-      `soundbox\standard\download.bat` — using exactly the same pre-built
-      files that were already correct. This is WHY the user's success makes
-      sense with zero dev tooling installed, not a coincidence.
+      toolchain path essentially never present on an end-user PC), so its
+      `objcopy`/`objdump` steps are a no-op (cmd.exe prints "not recognized"
+      and leaves every target file untouched) when that toolchain is missing.
+      **CORRECTED (2026-09-15) — see the verification round below: the
+      original claim that the trailing `copy /b ...+bank.bin app.bin` "can't
+      ever produce fresh output" because `bank.bin` is missing was WRONG as a
+      mechanism.** Real `copy /b` does not abort or skip the destination when
+      one source in the list is missing — it silently drops just that source
+      and still overwrites the destination from whichever sources ARE
+      present, exit code 0, no error text. The reason the net effect is still
+      a no-op for THIS package is a *fact about the package's current bytes*
+      (verified by hash, not inferred from the missing file): concatenating
+      the 13 present sources reproduces `app.bin` byte-for-byte. That's a
+      narrower, more fragile guarantee than originally claimed — see below.
 - [x] **Real bug found via this trace, fixed, and proven on real Windows
       CI**: the confirmed chain ends in a bare `pause` (waits for a keypress
       that automation can never provide) — `elevatedRun.ts` now redirects
@@ -542,3 +542,108 @@ User confirmed the successful real-P5 upgrade entry point: root `tools\download.
 - [ ] Real-device test steps handed to the user for their own Windows
       notebook — see chat. Not run by the agent; no real pen was flashed,
       no cable-pull/power-cut test was performed.
+
+# Firmware milestone — targeted re-verification of "harmless no-op" claim (2026-09-15)
+
+User (correctly) rejected the earlier "all pre-steps are harmless no-ops" framing:
+missing `bank.bin` doesn't prove `copy /b` won't touch `app.bin`, and matching file
+*size* doesn't prove matching *bytes*. No vendor tool was executed this round; no
+real device was touched; no vendor package was uploaded anywhere.
+
+**CONFIRMED, from a real Windows runner (GitHub Actions `windows-latest`), 100%
+synthetic placeholder files, vendor tool never invoked** —
+`.github/workflows/copy-b-synthetic-repro.yml` (manual `workflow_dispatch` only,
+same pattern as the existing elevation-smoke workflow), run
+[34976484902](https://github.com/macrokinetic-ai/ponyabc-desktop/actions/runs/34976484902):
+`copy /b f1+f2+f3+missing.bin dest` does **not** error out or leave `dest`
+untouched when `missing.bin` doesn't exist — cmd.exe silently drops just that one
+source from the list (no error text, exit code 0, "N file(s) copied.") and still
+overwrites `dest` with the concatenation of whichever sources DO exist. True
+whether `dest` pre-existed or not, and whether the missing file was last in the
+list (matches the real `bank.bin` position) or in the middle. **The original
+report's mechanism claim was wrong** — the copy is a real, unconditional write on
+every run, not a guaranteed skip.
+
+**CONFIRMED, by SHA-256 (not size) computed directly from the untouched
+`tools.zip` stream via `unzip -p | shasum`, never from possibly-touched extracted
+copies** — three independent facts:
+1. No `bank.bin` file exists anywhere in `tools.zip` (strict path-component match,
+   not just a substring grep — `ai_single_bank`/`ai_double_bank` directory names
+   don't count).
+2. Root `app.bin` / `br25loader.bin` are **byte-identical** (not just same-size) to
+   `soundbox\standard\app.bin` / `br25loader.bin` — hash
+   `0d8c86ea...adee16dc` / `6cb7f0f9...a160ea83` respectively, matched on both
+   copies.
+3. Concatenating `text.bin+data.bin+data_code.bin+aec.bin+wav.bin+ape.bin+
+   flac.bin+m4a.bin+amr.bin+dts.bin+fm.bin+mp3.bin+wma.bin` — exactly the
+   `copy /b` line's source list with only the always-absent `bank.bin` omitted —
+   reproduces `app.bin`'s exact SHA-256, `0d8c86ea...adee16dc`.
+
+**Net, corrected conclusion:** given fact (1) proven with certainty via the CI repro
+above, `copy /b` DOES execute and DOES overwrite `app.bin` on every run of this
+script. But fact (3) proves that, for the *exact bytes currently sitting in
+`tools.zip`*, that overwrite reproduces the identical file — so the observed
+practical effect (no change) still holds, just for a package-content reason, not a
+missing-file-blocks-the-copy reason. This is a **narrower and more fragile**
+guarantee than originally claimed: it holds only as long as `text.bin`/`data.bin`/
+`data_code.bin`/`aec.bin`/`wav.bin`/etc. keep exactly these bytes. It is NOT a
+property of the script that would survive, e.g., a different/updated package where
+those files differ even slightly — a future package could get a silently wrong
+`app.bin` with zero error signal, and this same investigation would need to be
+redone against that package's own bytes.
+
+**UNVERIFIED — flagged, not resolved, per instruction not to execute vendor
+tools:** `remove_tailing_zeros.exe` (unlike the `objcopy`/`objdump` steps) is
+*not* gated on the missing dev toolchain — it ships in the package and its inputs
+(`aeco.bin`/`wavo.bin`/etc., also pre-shipped) are already present, so on a real
+end-user Windows PC this step plausibly *does* actually execute and overwrite
+`aec.bin`/`wav.bin`/`ape.bin`/etc. with a freshly recomputed result. Whether that
+recomputed result is byte-identical to the pre-shipped `aec.bin`/`wav.bin`/etc.
+(the ones fact (3) above relies on) has **not** been checked — doing so would mean
+running the vendor's own `.exe`, which is exactly what the user asked not to do
+this round. This is the one remaining load-bearing gap in "the whole chain is a
+no-op": everything downstream of `remove_tailing_zeros.exe` has now been verified
+by hash; whether `remove_tailing_zeros.exe` itself is a no-op on this package has
+not.
+
+**Success-signal audit (`src/main/services/firmwareUpgrade.ts` `determineOutcome`,
+`src/main/ipc/firmware.ts` `startFirmwareUpgrade`) — confirmed by code reading, no
+changes needed:**
+- The log is genuinely fresh every run: `workDir` (containing `run.log`) is
+  `fs.rmSync(..., force: true)`-deleted before every invocation, and
+  `accumulatedLog` is a fresh local variable per call — a stale log from a
+  previous attempt cannot leak a "download success" string into a new run.
+- `"download success"` is matched against the full accumulated log text (not the
+  4000-char UI excerpt, so truncation can't cause a false negative), and is only
+  ever consulted after `elevation.status === 'completed'` — i.e. after
+  PowerShell's `Start-Process -Wait` has confirmed the elevated process actually
+  exited. A string appearing while the tool might still be running can't trigger
+  success; declined/launch-error/timeout/unsupported/unparseable are all
+  intercepted before the log is ever consulted, so a real exit code is carried
+  through for diagnostics but deliberately never overrides the log signal either
+  way (documented in the source: the vendor's own chain never checks `errorlevel`
+  after the actual flash step, so a "clean" exit code isn't trustworthy signal to
+  contradict a real "download success").
+
+**"I understand" gating (`acknowledgeFirmwareOutcome`, `FirmwareScreen.tsx`,
+`penOperationLock.ts`) — confirmed by code reading, no changes needed:** for an
+`unclear` outcome, both the firmware in-progress guard and the pen-write mutex
+(`acquirePenLock()`, the same lock every BOOK/DIY write path
+(`bookInstall.ts`/`bookRemove.ts`/`bookRestore.ts`/`transferPlanner.ts`) acquires)
+stay held until `acknowledgeFirmwareOutcome()` runs. The "I understand" button
+calls only that — it releases the lock and resets the wizard to `prepare`; it does
+**not** itself start a new burn or perform any BOOK/DIY write. Any BOOK/DIY write a
+user triggers while `unclear` is still pending sits queued on the shared mutex
+(never silently dropped, never silently run early) and only proceeds once
+acknowledged — and only because the user's own separate click on that write
+already authorized it, not because of the acknowledge click.
+
+**No code changes were required this round** (the success-detection and
+lock-gating logic already satisfied items 4–5; only `tasks/todo.md`'s prose
+conclusion needed correcting) — so **no new installer build is needed**. The
+confirmed root-entry-point behavior (`tools\download.bat`, never
+`download-nokey.bat`, never manually entering `soundbox\standard`) is unchanged
+and was not touched. Before a real burn: the `remove_tailing_zeros.exe` gap above
+is the one open question the user should weigh — it can only be closed by either
+running the vendor tool once under supervision (outside this round's scope) or by
+accepting the residual risk it names.
