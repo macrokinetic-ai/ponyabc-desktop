@@ -1,0 +1,112 @@
+name: Firmware script.ver copy-step smoke test (manual only)
+
+# Deliberately workflow_dispatch ONLY — never runs on push/tag, so it can never block or hang a
+# real release build. Needs zero repo content (no checkout step) — everything is built from
+# synthetic files on the runner.
+#
+# This reproduces the EXACT relative-path copy line from the real
+# tools\soundbox\standard\download.bat ("cd %~dp0" then "copy ..\..\script.ver ."), run from the
+# same relative depth, against a synthetic package skeleton — never the vendor's own download.bat,
+# never isd_download.exe/ufw_maker.exe/remove_tailing_zeros.exe, never a real device, never the
+# real vendor script.ver content.
+#
+# It answers exactly one narrow question: when the root-level source file is absent and the
+# destination already holds its own pre-shipped copy, does cmd.exe's `copy` (a) leave that
+# existing destination file byte-for-byte untouched on failure, and (b) let the batch script
+# continue to its next line rather than aborting? It proves nothing about whether the actual
+# flashing tools succeed, or about any real pen — see
+# src/main/services/firmwareUpgrade.ts's REQUIRED_RELATIVE_FILES doc comment for the current,
+# honest scope of what has and hasn't been verified.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scriptver-copy-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Build the synthetic package skeleton (no vendor files, no real script.ver content)
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP\pkgroot"
+          $standard = Join-Path $root "soundbox\standard"
+          New-Item -ItemType Directory -Force -Path $standard | Out-Null
+          # Deliberately synthetic, clearly-marked content — never the real vendor script.ver.
+          Set-Content -Path (Join-Path $standard "script.ver") -Value "SYNTHETIC-SCRIPT-VER-DO-NOT-USE-v1" -NoNewline -Encoding ascii
+
+          # Confirm the real preconditions this test depends on before testing anything.
+          if (Test-Path (Join-Path $root "script.ver")) { throw "Test setup bug: root script.ver should NOT exist for this scenario" }
+          if (-not (Test-Path (Join-Path $standard "script.ver"))) { throw "Test setup bug: nested script.ver should exist" }
+
+          echo "PKGROOT=$root" >> $env:GITHUB_ENV
+          echo "Setup OK: $root\script.ver absent, $standard\script.ver present."
+
+      - name: Hash + print nested script.ver BEFORE the copy step
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:PKGROOT "soundbox\standard\script.ver"
+          $hash = (Get-FileHash -Path $path -Algorithm SHA256).Hash
+          $content = Get-Content -Path $path -Raw
+          echo "Before: sha256=$hash content='$content'"
+          echo "HASH_BEFORE=$hash" >> $env:GITHUB_ENV
+          echo "CONTENT_BEFORE=$content" >> $env:GITHUB_ENV
+
+      - name: Write a harness .bat containing ONLY the real chain's own cd + copy lines
+        shell: pwsh
+        run: |
+          $standard = Join-Path $env:PKGROOT "soundbox\standard"
+          $batPath = Join-Path $standard "test-copy-step.bat"
+          # Line-for-line copy of tools\soundbox\standard\download.bat's own "cd %~dp0" and
+          # "copy ..\..\script.ver ." — nothing else from that file is reproduced, so no vendor
+          # tool (isd_download.exe/ufw_maker.exe/etc.) is ever referenced or invoked.
+          $lines = @(
+            '@echo off',
+            'cd %~dp0',
+            'copy ..\..\script.ver .',
+            'set COPY_ERRORLEVEL=%errorlevel%',
+            'echo NEXT_STEP_REACHED',
+            'echo COPY_EXIT_CODE=%COPY_ERRORLEVEL%'
+          )
+          Set-Content -Path $batPath -Value $lines -Encoding ascii
+          Get-Content -Path $batPath | ForEach-Object { echo "  $_" }
+
+      - name: Run the harness batch file (cmd.exe, real Windows semantics) — command output + exit code recorded here
+        shell: cmd
+        run: call "%PKGROOT%\soundbox\standard\test-copy-step.bat"
+
+      - name: Hash + print nested script.ver AFTER the copy step, and assert nothing changed
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:PKGROOT "soundbox\standard\script.ver"
+          $hashAfter = (Get-FileHash -Path $path -Algorithm SHA256).Hash
+          $contentAfter = Get-Content -Path $path -Raw
+          echo "After: sha256=$hashAfter content='$contentAfter'"
+
+          $failed = $false
+          $summary = @()
+          $summary += "### Firmware script.ver copy-step smoke test"
+          $summary += ""
+          $summary += "| Check | Before | After | Match |"
+          $summary += "|---|---|---|---|"
+          $summary += "| SHA-256 | ``$env:HASH_BEFORE`` | ``$hashAfter`` | $(if ($hashAfter -eq $env:HASH_BEFORE) { '✅' } else { '❌' }) |"
+          $summary += "| Content | ``$env:CONTENT_BEFORE`` | ``$contentAfter`` | $(if ($contentAfter -eq $env:CONTENT_BEFORE) { '✅' } else { '❌' }) |"
+
+          if ($hashAfter -ne $env:HASH_BEFORE) {
+            echo "::error::Hash changed! before=$env:HASH_BEFORE after=$hashAfter"
+            $failed = $true
+          }
+          if ($contentAfter -ne $env:CONTENT_BEFORE) {
+            echo "::error::Content changed! before='$env:CONTENT_BEFORE' after='$contentAfter'"
+            $failed = $true
+          }
+
+          $summary += ""
+          if ($failed) {
+            $summary += "**Result: FAILED — the nested script.ver was modified by the copy step. Do not treat it as a safe substitute for the missing root-level file.**"
+          } else {
+            $summary += "**Result: CONFIRMED — the nested soundbox\standard\script.ver is byte-for-byte unchanged after the copy step failed against the missing root-level source. See the raw step output above for the copy command's own error text, exit code, and confirmation that NEXT_STEP_REACHED printed (batch execution continued past the failed copy).**"
+          }
+          $summary -join "`n" >> $env:GITHUB_STEP_SUMMARY
+
+          if ($failed) { exit 1 }
