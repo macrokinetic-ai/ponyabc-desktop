@@ -22,6 +22,11 @@
     "title": "固件套件",
     "devModeNotice": "仅供测试／支持使用：请自行选择已解压的供应商套件文件夹。大多数用户应使用上方的官方下载功能。",
     "selectButton": "测试／支持：自行选择本机文件夹",
+    "advanced": {
+      "title": "高级／支持",
+      "readButton": "显示",
+      "collapseButton": "隐藏"
+    },
     "selectedPath": "已选择：{{path}}",
     "looksValid": "此文件夹具备已确认升级路径所需的文件。",
     "invalid": "此文件夹缺少升级所需的文件，将不会执行任何操作。",
@@ -40,6 +45,7 @@
       "downloadButton": "下载官方更新",
       "cancelButton": "取消下载",
       "reinstallButton": "高级：重新安装此版本",
+      "ready": "已就绪——点击“下一步”继续。",
       "phase": {
         "downloading": "下载中…",
         "verifying": "校验中…",

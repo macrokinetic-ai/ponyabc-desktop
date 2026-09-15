@@ -22,6 +22,11 @@
     "title": "韌體套件",
     "devModeNotice": "僅供測試／支援使用：請自行選擇已解壓的供應商套件資料夾。大部分使用者應使用上方的官方下載功能。",
     "selectButton": "測試／支援：自行選擇本機資料夾",
+    "advanced": {
+      "title": "進階／支援",
+      "readButton": "顯示",
+      "collapseButton": "隱藏"
+    },
     "selectedPath": "已選擇：{{path}}",
     "looksValid": "此資料夾具備已確認升級路徑所需的檔案。",
     "invalid": "此資料夾缺少升級所需的檔案，將不會執行任何操作。",
@@ -40,6 +45,7 @@
       "downloadButton": "下載官方更新",
       "cancelButton": "取消下載",
       "reinstallButton": "進階：重新安裝此版本",
+      "ready": "已就緒——點擊「下一步」繼續。",
       "phase": {
         "downloading": "下載中…",
         "verifying": "驗證中…",

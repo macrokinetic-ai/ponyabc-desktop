@@ -22,6 +22,11 @@
     "title": "Pacote de firmware",
     "devModeNotice": "Apenas para teste/suporte: selecione você mesmo a pasta do pacote do fornecedor já extraída. A maioria das pessoas deve usar a transferência oficial acima.",
     "selectButton": "Teste/suporte: selecionar uma pasta local…",
+    "advanced": {
+      "title": "Avançado / suporte",
+      "readButton": "Mostrar",
+      "collapseButton": "Ocultar"
+    },
     "selectedPath": "Selecionado: {{path}}",
     "looksValid": "Esta pasta tem os ficheiros que o caminho de atualização confirmado necessita.",
     "invalid": "Faltam a esta pasta ficheiros necessários para a atualização. Nada será executado.",
@@ -40,6 +45,7 @@
       "downloadButton": "Transferir atualização oficial",
       "cancelButton": "Cancelar transferência",
       "reinstallButton": "Avançado: reinstalar esta versão",
+      "ready": "Pronto — clique em \"Seguinte\" para continuar.",
       "phase": {
         "downloading": "A transferir…",
         "verifying": "A verificar…",

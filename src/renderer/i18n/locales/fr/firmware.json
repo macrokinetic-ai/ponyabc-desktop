@@ -22,6 +22,11 @@
     "title": "Paquet de firmware",
     "devModeNotice": "Réservé aux tests/au support : sélectionnez vous-même le dossier du paquet fournisseur déjà extrait. La plupart des utilisateurs devraient plutôt utiliser le téléchargement officiel ci-dessus.",
     "selectButton": "Test/support : sélectionner un dossier local…",
+    "advanced": {
+      "title": "Avancé / support",
+      "readButton": "Afficher",
+      "collapseButton": "Masquer"
+    },
     "selectedPath": "Sélectionné : {{path}}",
     "looksValid": "Ce dossier contient les fichiers requis par le chemin de mise à jour confirmé.",
     "invalid": "Il manque à ce dossier des fichiers nécessaires à la mise à jour. Rien ne sera exécuté.",
@@ -40,6 +45,7 @@
       "downloadButton": "Télécharger la mise à jour officielle",
       "cancelButton": "Annuler le téléchargement",
       "reinstallButton": "Avancé : réinstaller cette version",
+      "ready": "Prêt — cliquez sur « Suivant » pour continuer.",
       "phase": {
         "downloading": "Téléchargement…",
         "verifying": "Vérification…",

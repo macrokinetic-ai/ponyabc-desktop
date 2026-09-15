@@ -114,7 +114,10 @@ async function advanceToConfirm() {
   await screen.findByText('Pen detected.');
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Firmware package' });
-  fireEvent.click(screen.getByRole('button', { name: 'Test/support: select a local folder…' }));
+  // The local-folder chooser lives behind the "Advanced / support" disclosure, collapsed by
+  // default — this is the exact fix for it no longer being a required, always-visible step.
+  fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
   await screen.findByText(/Selected:/);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Confirm' });
@@ -145,6 +148,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     renderScreen();
     await screen.findByText('Pen detected.');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
     await screen.findByText('isd_download.exe');
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
@@ -265,6 +269,76 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     // Still on the Confirm step — never silently advanced to "Upgrading" for a run that didn't
     // actually start.
     expect(screen.queryByRole('heading', { name: 'Upgrading' })).toBeNull();
+  });
+});
+
+const fakeRelease = {
+  id: 'rel-1',
+  version: 'AC6966-V1.18',
+  hardwareRev: 'PENDING-HWREV',
+  notes: 'Test release notes.',
+  sizeBytes: 49027437,
+  sha256: 'abc123',
+  minAppVersion: null,
+  releasedAt: '2026-09-16T00:00:00.000Z',
+  packageLabel: 'AC6966-V1.18 20260316',
+  packageDate: '2026-03-16',
+  recommended: false,
+  downloadUrl: 'https://register.ponyabc.uk/api/public/firmware/download?id=rel-1',
+};
+
+describe('FirmwareScreen — official download flow (Windows), simulated release (no real device/flash)', () => {
+  it('a published release: download -> prepare -> reach Confirm WITHOUT ever touching the local-folder chooser', async () => {
+    window.ponyabc.getOfficialFirmwareRelease = vi.fn(async () => ({ status: 'ok', release: fakeRelease }));
+    window.ponyabc.prepareOfficialFirmwarePackage = vi.fn(async () => ({ status: 'ok', packageDir: 'C:\\Users\\teacher\\AppData\\Roaming\\ponyabc-desktop\\firmwareDownloads\\PENDING-HWREV\\AC6966-V1.18\\tools' }));
+
+    renderScreen();
+    await screen.findByText('Pen detected.');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Firmware package' });
+
+    // The official release info renders on its own, before any user action.
+    await screen.findByText('Official version: AC6966-V1.18');
+    await screen.findByText(/AC6966-V1\.18 20260316/);
+    await screen.findByText('Test release notes.');
+
+    // The Advanced/support disclosure stays collapsed — its local-folder button never appears.
+    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download official update' }));
+    await screen.findByText('Ready — click Next to continue.');
+    expect(window.ponyabc.prepareOfficialFirmwarePackage).toHaveBeenCalledWith(fakeRelease);
+    // Still never touched the local-folder chooser.
+    expect(window.ponyabc.selectFirmwarePackage).not.toHaveBeenCalled();
+
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Confirm' });
+  });
+
+  it('no published release: shows "no update available" and does NOT fall back to the local-folder chooser — Next stays disabled until the user explicitly opens Advanced/support', async () => {
+    window.ponyabc.getOfficialFirmwareRelease = vi.fn(async () => ({ status: 'no-release' }));
+    renderScreen();
+    await screen.findByText('Pen detected.');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Firmware package' });
+
+    await screen.findByText('No official firmware release has been published yet.');
+    expect(screen.queryByRole('button', { name: 'Download official update' })).toBeNull();
+    // The disclosure exists but is collapsed — no local-folder button visible without opening it.
+    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('a network error checking for the release shows a message distinct from "no release"', async () => {
+    window.ponyabc.getOfficialFirmwareRelease = vi.fn(async () => ({ status: 'no-network', message: 'offline' }));
+    renderScreen();
+    await screen.findByText('Pen detected.');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Firmware package' });
+
+    await screen.findByText('Could not reach the update server. Check your internet connection and try again.');
+    expect(screen.queryByText('No official firmware release has been published yet.')).toBeNull();
   });
 });
 

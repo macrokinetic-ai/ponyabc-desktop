@@ -11,6 +11,7 @@ import type {
 } from '@shared/types';
 import { usePenRoot } from '../state/PenRootContext';
 import { compareOfficialToOnPen } from './firmwareVersionCompare';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
 
@@ -29,6 +30,10 @@ export function FirmwareScreen() {
 
   const [step, setStep] = useState<WizardStep>('prepare');
   const [packageInfo, setPackageInfo] = useState<FirmwarePackageInfo | null>(null);
+  // Which path produced the current packageInfo — so the official flow shows its own plain
+  // "ready to continue" confirmation, and the advanced/local-folder path keeps its own detailed
+  // path + missing-files display, without either path showing the other's UI.
+  const [packageSource, setPackageSource] = useState<'official' | 'local' | null>(null);
   const [selecting, setSelecting] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startMessage, setStartMessage] = useState<string | null>(null);
@@ -131,6 +136,7 @@ export function FirmwareScreen() {
       setPrepareResult(result);
       if (result.status === 'ok') {
         setPackageInfo(buildOfficialPackageInfo(result.packageDir));
+        setPackageSource('official');
         setLastOfficialPackageDir(result.packageDir);
       }
     } finally {
@@ -143,6 +149,7 @@ export function FirmwareScreen() {
   function handleReinstallOfficial() {
     if (!lastOfficialPackageDir) return;
     setPackageInfo(buildOfficialPackageInfo(lastOfficialPackageDir));
+    setPackageSource('official');
     setStep('confirm');
   }
 
@@ -151,7 +158,10 @@ export function FirmwareScreen() {
     setStartMessage(null);
     try {
       const result = await window.ponyabc.selectFirmwarePackage();
-      if (result.status === 'selected') setPackageInfo(result.info);
+      if (result.status === 'selected') {
+        setPackageInfo(result.info);
+        setPackageSource('local');
+      }
     } finally {
       setSelecting(false);
     }
@@ -217,6 +227,7 @@ export function FirmwareScreen() {
   function startOver() {
     setStep('prepare');
     setPackageInfo(null);
+    setPackageSource(null);
     setStartMessage(null);
     setProgress(null);
     setOutcome(null);
@@ -357,6 +368,10 @@ export function FirmwareScreen() {
                   </>
                 )}
 
+                {packageSource === 'official' && packageInfo?.looksValid && (
+                  <p className="hint">{t('package.official.ready')}</p>
+                )}
+
                 <div className="firmware-wizard__actions">
                   <button type="button" className="button button--primary" disabled={preparing} onClick={() => void handleDownloadOfficial()}>
                     {t('package.official.downloadButton')}
@@ -376,12 +391,17 @@ export function FirmwareScreen() {
             )}
           </div>
 
-          <div className="firmware-local-folder">
-            <p className="hint">{t('package.devModeNotice')}</p>
+          <CollapsibleSection
+            title={t('package.advanced.title')}
+            summary={t('package.devModeNotice')}
+            readLabel={t('package.advanced.readButton')}
+            collapseLabel={t('package.advanced.collapseButton')}
+            defaultOpen={false}
+          >
             <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
               {t('package.selectButton')}
             </button>
-            {packageInfo && (
+            {packageSource === 'local' && packageInfo && (
               <div className="firmware-package-info">
                 <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
                 {packageInfo.looksValid ? (
@@ -398,7 +418,7 @@ export function FirmwareScreen() {
                 )}
               </div>
             )}
-          </div>
+          </CollapsibleSection>
 
           <div className="firmware-wizard__actions">
             <button type="button" className="button" onClick={() => setStep('prepare')}>

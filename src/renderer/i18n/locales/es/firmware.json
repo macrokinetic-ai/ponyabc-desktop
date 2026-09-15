@@ -22,6 +22,11 @@
     "title": "Paquete de firmware",
     "devModeNotice": "Solo para pruebas/soporte: seleccione usted mismo la carpeta del paquete del proveedor ya extraída. La mayoría de las personas deberían usar la descarga oficial de arriba.",
     "selectButton": "Prueba/soporte: seleccionar una carpeta local…",
+    "advanced": {
+      "title": "Avanzado / soporte",
+      "readButton": "Mostrar",
+      "collapseButton": "Ocultar"
+    },
     "selectedPath": "Seleccionado: {{path}}",
     "looksValid": "Esta carpeta tiene los archivos que necesita la ruta de actualización confirmada.",
     "invalid": "A esta carpeta le faltan archivos necesarios para la actualización. No se ejecutará nada.",
@@ -40,6 +45,7 @@
       "downloadButton": "Descargar actualización oficial",
       "cancelButton": "Cancelar descarga",
       "reinstallButton": "Avanzado: reinstalar esta versión",
+      "ready": "Listo — haga clic en «Siguiente» para continuar.",
       "phase": {
         "downloading": "Descargando…",
         "verifying": "Verificando…",

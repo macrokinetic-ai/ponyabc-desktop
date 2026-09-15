@@ -22,6 +22,11 @@
     "title": "Pacchetto firmware",
     "devModeNotice": "Solo per test/supporto: seleziona tu stesso la cartella del pacchetto del fornitore già estratta. La maggior parte delle persone dovrebbe invece usare il download ufficiale sopra.",
     "selectButton": "Test/supporto: seleziona una cartella locale…",
+    "advanced": {
+      "title": "Avanzate / supporto",
+      "readButton": "Mostra",
+      "collapseButton": "Nascondi"
+    },
     "selectedPath": "Selezionato: {{path}}",
     "looksValid": "Questa cartella contiene i file richiesti dal percorso di aggiornamento confermato.",
     "invalid": "A questa cartella mancano i file necessari per l'aggiornamento. Non verrà eseguito nulla.",
@@ -40,6 +45,7 @@
       "downloadButton": "Scarica l'aggiornamento ufficiale",
       "cancelButton": "Annulla download",
       "reinstallButton": "Avanzate: reinstalla questa versione",
+      "ready": "Pronto — fai clic su \"Avanti\" per continuare.",
       "phase": {
         "downloading": "Download in corso…",
         "verifying": "Verifica in corso…",
