@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "Compreendo — vou reiniciar o aplicativo",
     "restartNoticeAcknowledged": "Registrado. Este aplicativo permanecerá bloqueado para novas atualizações de firmware e gravações BOOK/DIY até que você o feche completamente e o reabra.",
     "startOverButton": "Recomeçar"
+  },
+  "recovery": {
+    "title": "Atualização anterior não confirmada como concluída",
+    "stillRunningBody": "Uma atualização de firmware de uma sessão anterior parece continuar em execução fora deste aplicativo. Reiniciar este aplicativo não é evidência de que ela parou. Novas atualizações de firmware e gravações BOOK/DIY na caneta permanecem bloqueadas, e este aplicativo não tentará interromper o outro processo por conta própria.",
+    "unknownBody": "Este aplicativo não conseguiu determinar se uma atualização de firmware de uma sessão anterior foi concluída. Novas atualizações de firmware e gravações BOOK/DIY na caneta permanecem bloqueadas até que isso possa ser confirmado.",
+    "checking": "Verificando…",
+    "checkAgainButton": "Verificar novamente",
+    "startedAt": "Tentativa de atualização iniciada: {{time}}",
+    "lastChecked": "Última verificação: {{time}}"
   }
 }

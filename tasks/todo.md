@@ -733,3 +733,75 @@ executed, no real pen touched, no full re-investigation.
       currently-shipped `aec.bin`/`wav.bin`/etc. bytes — remains unverified.
       Resolving it would require running the vendor tool, which continues to be
       out of scope unless the user explicitly asks for it.
+
+# Firmware milestone — cross-restart recovery: a restart is NOT evidence of termination (v0.3.8, 2026-09-15)
+
+User correctly pointed out the v0.3.7 fix still had a hole: it relied on "restarting the app
+resets the in-memory lock" as the escape hatch for a genuinely-uncertain outcome — but the real
+elevated process (`isd_download.exe` etc., running in a separate elevated process tree, per
+`elevatedRun.ts`'s own doc comment) could still be running after the Electron app itself is fully
+quit and reopened. Fixed for real, not documented around.
+
+- [x] **`src/main/services/firmwareRecovery.ts` (new)** — persists a `PendingFirmwareRun` marker
+      (`startedAtMs`/`workDir`/`packageDir`/`entryBatPath`) to `<userData>/firmwareRecovery/
+      pending.json`, deliberately NOT inside the `firmwareRun/` scratch dir that
+      `startFirmwareUpgrade` wipes at the top of every run — this marker must survive that wipe,
+      an app crash, and a plain quit. `listRunningProcessesWindows()` shells out to
+      `Get-CimInstance Win32_Process` (gives `CommandLine`, unlike plain `tasklist`) — strictly
+      read-only, never signals/suspends/kills anything. `matchesPendingRun()` is a broad,
+      case-insensitive substring match of the pending `workDir`/`packageDir` against a process's
+      executable path or command line — deliberately not an exact PID match, since the real
+      elevated PID was never captured in the first place (`Start-Process -Verb RunAs -PassThru`'s
+      `$p` is only assigned once `-Wait` itself returns). `checkStillRunning()` reports 'unknown'
+      (never 'not-running') if the enumeration itself fails — a failed check must never be treated
+      as safe.
+- [x] **`src/main/ipc/firmware.ts`**: `startFirmwareUpgrade` now calls `writePendingRun()` right
+      before the elevated launch is attempted (survives a crash mid-flight) and `clearPendingRun()`
+      the moment `processTerminationConfirmed` becomes true (both the immediate-release and the
+      confirmed-but-unclear pendingRelease branches, and the catch block's confirmed-safe branch)
+      — independent of whether the user has acknowledged anything. New
+      `checkPendingFirmwareRecoveryOnStartup()` — called exactly once, at app startup, BEFORE
+      `registerIpcHandlers` (see `src/main/index.ts`) — reads any pending marker, seeds BOTH the
+      pen lock and the firmware in-progress guard as held before any IPC handler exists to race
+      it, and runs one real `checkStillRunning`. `recheckFirmwareRecovery()` re-runs the same
+      check on demand (a "Check again" button); a no-op once already resolved. Both expose their
+      result via a new `FirmwareRecoveryStatus` (`'none' | 'checking' | 'still-running' |
+      'unknown'`) through `getFirmwareRecoveryStatus()`. Crucially: **nothing in this path — not
+      `acknowledgeFirmwareOutcome()`, not the recovery IPC itself — can release either lock for
+      `'still-running'`/`'unknown'`; only `checkStillRunning` reporting `'not-running'` does, and
+      this app never attempts to terminate the other process itself.**
+- [x] **Renderer**: `FirmwareScreen.tsx` queries `getFirmwareRecoveryStatus()` on mount and, while
+      it's anything but `'none'`, renders a dedicated blocking screen (distinct body text for
+      "still running" vs "check failed/unknown", the pending run's start time, last-checked time,
+      and a "Check again" button) INSTEAD of the normal wizard — the wizard steps never render
+      underneath it. New i18n keys (`recovery.*`) added to all 8 locales.
+- [x] **Tests, all simulated/injectable except one opt-in real-Windows suite:**
+  - `tests/unit/firmwareRecovery.test.ts` (12 tests) — pure logic: marker round-trip, survives a
+    simulated `firmwareRun/` wipe, malformed/missing file handling, `matchesPendingRun` string
+    matching, `checkStillRunning` with an injectable process lister (running/not-running/the
+    listing itself throwing → 'unknown').
+  - `tests/unit/firmwareIpc.test.ts` — new "cross-restart recovery" describe block (4 tests)
+    directly simulates **"app closed/reopened while an external process may still be running"**:
+    a `vi.resetModules()` mid-test (fresh in-memory state, same on-disk userData — a real
+    restart's exact effect) after a `'timeout'` outcome, confirming the persisted marker alone
+    (re-read by the new session) re-locks both the pen lock and the in-progress guard with
+    `checkStillRunning` mocked to 'running', that a queued BOOK/DIY-style `acquirePenLock()`
+    caller and a new `startFirmwareUpgrade` attempt both stay correctly blocked, and that only a
+    subsequent check reporting 'not-running' clears the marker and both locks. Plus an 'unknown'
+    variant and two no-pending-state no-op controls.
+  - `tests/unit/FirmwareScreen.test.tsx` — 5 new tests: the recovery screen blocks the normal
+    wizard for 'still-running'/'unknown' with the right distinct body text, "Check again" both
+    unblocking (on a 'none' response) and correctly staying blocked (on a repeat 'still-running'
+    response), and the 'none' common case rendering the wizard immediately.
+  - `tests/unit/firmwareRecovery.windows-smoke.test.ts` (new, opt-in via
+    `PONYABC_RUN_RECOVERY_SMOKE=1`, real Windows only) + `.github/workflows/
+    firmware-recovery-smoke.yml` (manual-dispatch-only, same pattern as the existing elevation
+    smoke workflow) — spawns a genuinely-still-running, completely harmless placeholder `.bat`
+    (`ping -n 60 127.0.0.1 >nul`) on a real `windows-latest` runner, runs the REAL
+    `checkStillRunning` (real `Get-CimInstance` enumeration, not mocked) against it, confirms it
+    reports `'running'`, kills the placeholder (test cleanup of its own harmless stand-in, not
+    the vendor tool), and confirms a repeat check reports `'not-running'`. This is the one part of
+    the fix that genuinely needs a real OS and can't be proven by a mock alone.
+  - **400 tests pass, 4 skipped** (the two real-Windows-only smoke test files, opt-in outside
+    CI); `typecheck` and `electron-vite build` both clean.
+- [x] Version bumped to **v0.3.8**.

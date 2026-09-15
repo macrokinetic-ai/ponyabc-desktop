@@ -1,0 +1,33 @@
+name: Firmware cross-restart recovery smoke test (manual only)
+
+# Deliberately workflow_dispatch ONLY — never runs on push/tag. Exercises checkStillRunning's
+# real Windows process enumeration (src/main/services/firmwareRecovery.ts) against a completely
+# harmless placeholder process on a real Windows machine (a GitHub-hosted windows-latest runner)
+# — never the vendor's firmware tool, never a real device. See
+# tests/unit/firmwareRecovery.windows-smoke.test.ts for exactly what this proves: that a genuinely
+# still-running process is actually found by real Get-CimInstance enumeration + string matching,
+# and that it's correctly reported gone once it actually exits — the one part of the 2026-09-15
+# cross-restart recovery fix that can't be proven by a mock.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  recovery-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run the cross-restart recovery smoke test
+        shell: bash
+        env:
+          PONYABC_RUN_RECOVERY_SMOKE: '1'
+        run: npx vitest run tests/unit/firmwareRecovery.windows-smoke.test.ts --reporter=verbose

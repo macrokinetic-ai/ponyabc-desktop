@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "我明白——我会重新启动应用程序",
     "restartNoticeAcknowledged": "已记录。在你完全关闭并重新打开本应用程序之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
     "startOverButton": "重新开始"
+  },
+  "recovery": {
+    "title": "先前的升级尚未确认结束",
+    "stillRunningBody": "先前会话的固件升级，看起来仍在本应用程序之外运行中。重新启动本应用程序并不代表它已经停止。新的固件升级与 BOOK/DIY 写入点读笔将保持锁定，本应用程序也不会尝试自行终止该进程。",
+    "unknownBody": "本应用程序无法判断先前会话的固件升级是否已经结束。在此确认之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
+    "checking": "检查中…",
+    "checkAgainButton": "重新检查",
+    "startedAt": "升级尝试开始时间：{{time}}",
+    "lastChecked": "上次检查时间：{{time}}"
   }
 }

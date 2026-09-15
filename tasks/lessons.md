@@ -564,3 +564,44 @@ even one value is ambiguous (as `'unclear'` was here), split the side-effect
 question into its own explicitly-computed field instead of overloading the
 display status — and write the test that proves the dangerous value can never
 accidentally take the safe path.
+
+## "In-memory lock resets on restart" is itself an unverified safety claim when the real danger lives OUTSIDE the process
+
+**What happened (2026-09-15, v0.3.8, one turn after the fix above).** The
+`processTerminationConfirmed` fix correctly stopped a UI acknowledgment from
+releasing a lock for a genuinely-uncertain outcome — but its escape hatch was
+"the user can always restart the app, which resets the in-memory lock." The
+user immediately caught that this reasoning silently smuggled back in exactly
+the bug just fixed: restarting the app is STILL not evidence the real device
+has stopped writing, because the actually-dangerous thing (the elevated
+`isd_download.exe` process, launched via `Start-Process -Verb RunAs` into a
+SEPARATE elevated process tree — see `elevatedRun.ts`'s own doc comment on why
+this app can't even kill it) keeps running independently of the Electron
+process that spawned its wrapper. "The lock is in-memory" was true and
+irrelevant; the actual claim being made — "no real device write can still be
+in flight once the app restarts" — was never checked at all.
+
+**The general trap:** a safety mechanism built entirely out of in-process
+state (a mutex, a flag, a promise chain) can only ever prove facts about THAT
+process. The moment the real hazard is an external resource (another process,
+a network operation, a physical device) that outlives or is decoupled from
+your process's lifetime, "my process restarted cleanly" stops being evidence
+of anything about that resource — it's evidence about your bookkeeping, not
+about the world. The fix had to add a second, independent check of the real
+world (persist a marker identifying what was launched, then on the next
+startup actually enumerate real OS processes and pattern-match for it) rather
+than trusting process restart as an implicit "everything reset" signal.
+
+**How to apply:** whenever a lock/guard exists specifically because of an
+EXTERNAL, out-of-process hazard (a subprocess that can outlive this process,
+a pending network request against another party, a physical device mid-write),
+ask separately: "does restarting THIS process actually stop the external
+thing?" If the answer is no (or unknown), the lock's persistence and release
+conditions must be tied to real evidence about the external thing (querying
+its actual state), not to this process's own lifecycle — a fresh module graph
+or a cleared in-memory flag proves nothing about it. Corollary: never let an
+app's own crash-recovery/restart path silently become a laundering mechanism
+for a safety invariant — if crashing and reopening can turn "unconfirmed" into
+"assumed fine," that recovery path needs the same real-world check a live
+session's uncertain outcome does, persisted across the restart it's supposed
+to survive.

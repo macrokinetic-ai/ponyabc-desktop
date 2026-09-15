@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "I understand — I will restart the app",
     "restartNoticeAcknowledged": "Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.",
     "startOverButton": "Start over"
+  },
+  "recovery": {
+    "title": "Previous upgrade not confirmed finished",
+    "stillRunningBody": "A firmware upgrade from a previous session appears to still be running outside this app. Restarting this app is not evidence it has stopped. New firmware upgrades and BOOK/DIY pen writes stay blocked, and this app will not attempt to stop the other process itself.",
+    "unknownBody": "This app could not determine whether a firmware upgrade from a previous session has finished. New firmware upgrades and BOOK/DIY pen writes stay blocked until this can be confirmed.",
+    "checking": "Checking…",
+    "checkAgainButton": "Check again",
+    "startedAt": "Upgrade attempt started: {{time}}",
+    "lastChecked": "Last checked: {{time}}"
   }
 }

@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "Je comprends — je vais redémarrer l'application",
     "restartNoticeAcknowledged": "Noté. Cette application restera verrouillée pour toute nouvelle mise à jour du micrologiciel et toute écriture BOOK/DIY tant que vous ne l'aurez pas complètement quittée puis rouverte.",
     "startOverButton": "Recommencer"
+  },
+  "recovery": {
+    "title": "Mise à jour précédente non confirmée comme terminée",
+    "stillRunningBody": "Une mise à jour du micrologiciel d'une session précédente semble toujours en cours d'exécution en dehors de cette application. Redémarrer cette application n'est pas une preuve qu'elle s'est arrêtée. Les nouvelles mises à jour du micrologiciel et les écritures BOOK/DIY sur le stylo restent bloquées, et cette application ne tentera pas d'arrêter elle-même l'autre processus.",
+    "unknownBody": "Cette application n'a pas pu déterminer si une mise à jour du micrologiciel d'une session précédente est terminée. Les nouvelles mises à jour du micrologiciel et les écritures BOOK/DIY sur le stylo restent bloquées tant que cela n'est pas confirmé.",
+    "checking": "Vérification…",
+    "checkAgainButton": "Vérifier à nouveau",
+    "startedAt": "Tentative de mise à jour démarrée : {{time}}",
+    "lastChecked": "Dernière vérification : {{time}}"
   }
 }

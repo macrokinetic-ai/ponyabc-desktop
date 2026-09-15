@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "Ho capito — riavvierò l'app",
     "restartNoticeAcknowledged": "Annotato. Questa app resterà bloccata per nuovi aggiornamenti del firmware e scritture BOOK/DIY finché non la chiuderai completamente e la riaprirai.",
     "startOverButton": "Ricomincia"
+  },
+  "recovery": {
+    "title": "Aggiornamento precedente non confermato come terminato",
+    "stillRunningBody": "Un aggiornamento del firmware di una sessione precedente sembra essere ancora in esecuzione al di fuori di questa app. Riavviare questa app non è una prova che si sia arrestato. I nuovi aggiornamenti del firmware e le scritture BOOK/DIY sulla penna restano bloccati, e questa app non tenterà di arrestare l'altro processo da sola.",
+    "unknownBody": "Questa app non è riuscita a determinare se un aggiornamento del firmware di una sessione precedente sia terminato. I nuovi aggiornamenti del firmware e le scritture BOOK/DIY sulla penna restano bloccati finché ciò non può essere confermato.",
+    "checking": "Verifica in corso…",
+    "checkAgainButton": "Verifica di nuovo",
+    "startedAt": "Tentativo di aggiornamento avviato: {{time}}",
+    "lastChecked": "Ultima verifica: {{time}}"
   }
 }

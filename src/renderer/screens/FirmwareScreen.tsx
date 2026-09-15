@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FirmwarePackageInfo, FirmwareProgressEvent, FirmwareUpgradeOutcome } from '@shared/types';
+import type { FirmwarePackageInfo, FirmwareProgressEvent, FirmwareRecoveryStatus, FirmwareUpgradeOutcome } from '@shared/types';
 import { usePenRoot } from '../state/PenRootContext';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
@@ -27,7 +27,36 @@ export function FirmwareScreen() {
   const [outcome, setOutcome] = useState<FirmwareUpgradeOutcome | null>(null);
   const [acknowledging, setAcknowledging] = useState(false);
   const [restartNoticeShown, setRestartNoticeShown] = useState(false);
+  const [recovery, setRecovery] = useState<FirmwareRecoveryStatus | null>(null);
+  const [rechecking, setRechecking] = useState(false);
   const logRef = useRef<HTMLPreElement | null>(null);
+
+  // A previous session's firmware upgrade may not have been confirmed finished — see
+  // src/main/ipc/firmware.ts's checkPendingFirmwareRecoveryOnStartup. This is checked once by
+  // the main process before this window even exists; here we just read the result and, while it
+  // is anything but 'none', render a dedicated blocking screen below instead of the normal
+  // wizard — a real process check is the only thing that can clear it, never this component
+  // re-mounting or the user navigating around.
+  useEffect(() => {
+    if (isMac) return;
+    let cancelled = false;
+    void window.ponyabc.getFirmwareRecoveryStatus().then((status) => {
+      if (!cancelled) setRecovery(status);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMac]);
+
+  async function handleRecheck() {
+    setRechecking(true);
+    try {
+      const status = await window.ponyabc.recheckFirmwareRecovery();
+      setRecovery(status);
+    } finally {
+      setRechecking(false);
+    }
+  }
 
   useEffect(() => {
     if (isMac) return;
@@ -129,6 +158,38 @@ export function FirmwareScreen() {
       <div className="screen">
         <h1>{t('title')}</h1>
         <div className="not-implemented-banner">{t('macRequiresWindows')}</div>
+      </div>
+    );
+  }
+
+  if (recovery && (recovery.status === 'still-running' || recovery.status === 'unknown' || recovery.status === 'checking')) {
+    return (
+      <div className="screen">
+        <h1>{t('title')}</h1>
+        <section>
+          <h2>{t('recovery.title')}</h2>
+          <div className="note-box">
+            <p className="error-text">
+              {recovery.status === 'checking'
+                ? t('recovery.checking')
+                : recovery.status === 'still-running'
+                  ? t('recovery.stillRunningBody')
+                  : t('recovery.unknownBody')}
+            </p>
+          </div>
+          <p className="hint">{t('recovery.startedAt', { time: new Date(recovery.pending.startedAtMs).toLocaleString() })}</p>
+          {recovery.status !== 'checking' && (
+            <p className="hint">{t('recovery.lastChecked', { time: new Date(recovery.lastCheckedAtMs).toLocaleString() })}</p>
+          )}
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={rechecking || recovery.status === 'checking'}
+            onClick={() => void handleRecheck()}
+          >
+            {rechecking ? t('recovery.checking') : t('recovery.checkAgainButton')}
+          </button>
+        </section>
       </div>
     );
   }

@@ -77,6 +77,8 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     }),
     acknowledgeFirmwareOutcome: vi.fn(async () => ({ ok: true, locked: false })),
     isFirmwareUpgradeInProgress: vi.fn(async () => false),
+    getFirmwareRecoveryStatus: vi.fn(async () => ({ status: 'none' }) as const),
+    recheckFirmwareRecovery: vi.fn(async () => ({ status: 'none' }) as const),
     ...overrides,
   } as PonyAbcApi;
 }
@@ -259,5 +261,93 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     // Still on the Confirm step — never silently advanced to "Upgrading" for a run that didn't
     // actually start.
     expect(screen.queryByRole('heading', { name: 'Upgrading' })).toBeNull();
+  });
+});
+
+const pendingFixture = {
+  startedAtMs: 1_700_000_000_000,
+  workDir: 'C:\\Users\\teacher\\AppData\\Roaming\\ponyabc-desktop\\firmwareRun',
+  packageDir: 'C:\\Users\\teacher\\Desktop\\tools',
+  entryBatPath: 'C:\\Users\\teacher\\Desktop\\tools\\download.bat',
+};
+
+describe('FirmwareScreen — cross-restart recovery screen (a previous session left an unresolved upgrade)', () => {
+  it('"still-running": renders the blocking recovery screen instead of the normal wizard, never the "Prepare your pen" step', async () => {
+    window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({
+      status: 'still-running',
+      pending: pendingFixture,
+      lastCheckedAtMs: 1_700_000_001_000,
+    }));
+    renderScreen();
+    await screen.findByText('Previous upgrade not confirmed finished');
+    expect(
+      screen.getByText(
+        'A firmware upgrade from a previous session appears to still be running outside this app. Restarting this app is not evidence it has stopped. New firmware upgrades and BOOK/DIY pen writes stay blocked, and this app will not attempt to stop the other process itself.',
+      ),
+    ).toBeTruthy();
+    // The normal wizard must not render underneath/instead — no way to sneak into a new attempt.
+    expect(screen.queryByText('Prepare your pen')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
+  });
+
+  it('"unknown": distinct body text from "still-running", same blocking behavior', async () => {
+    window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({
+      status: 'unknown',
+      pending: pendingFixture,
+      lastCheckedAtMs: 1_700_000_001_000,
+    }));
+    renderScreen();
+    await screen.findByText('Previous upgrade not confirmed finished');
+    expect(
+      screen.getByText(
+        'This app could not determine whether a firmware upgrade from a previous session has finished. New firmware upgrades and BOOK/DIY pen writes stay blocked until this can be confirmed.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Prepare your pen')).toBeNull();
+  });
+
+  it('"Check again" calls the real (read-only) recheck IPC and, once it reports clear, unblocks the normal wizard', async () => {
+    window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({
+      status: 'still-running',
+      pending: pendingFixture,
+      lastCheckedAtMs: 1_700_000_001_000,
+    }));
+    window.ponyabc.recheckFirmwareRecovery = vi.fn(async () => ({ status: 'none' }) as const);
+    renderScreen();
+    await screen.findByText('Previous upgrade not confirmed finished');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
+
+    // Now unblocked — the normal wizard renders.
+    await screen.findByText('Prepare your pen');
+  });
+
+  it('"Check again" still reporting still-running keeps the blocking screen up — never optimistically clears on its own', async () => {
+    window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({
+      status: 'still-running',
+      pending: pendingFixture,
+      lastCheckedAtMs: 1_700_000_001_000,
+    }));
+    window.ponyabc.recheckFirmwareRecovery = vi.fn(async () => ({
+      status: 'still-running',
+      pending: pendingFixture,
+      lastCheckedAtMs: 1_700_000_002_000,
+    }));
+    renderScreen();
+    await screen.findByText('Previous upgrade not confirmed finished');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
+
+    expect(screen.queryByText('Prepare your pen')).toBeNull();
+    await screen.findByText('Previous upgrade not confirmed finished');
+  });
+
+  it('"none" (the common case): the normal wizard renders immediately, no recovery screen at all', async () => {
+    window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({ status: 'none' }) as const);
+    renderScreen();
+    await screen.findByText('Prepare your pen');
+    expect(screen.queryByText('Previous upgrade not confirmed finished')).toBeNull();
   });
 });

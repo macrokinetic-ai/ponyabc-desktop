@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "我明白——我會重新啟動應用程式",
     "restartNoticeAcknowledged": "已記錄。在你完全關閉並重新開啟本應用程式之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
     "startOverButton": "重新開始"
+  },
+  "recovery": {
+    "title": "先前的升級尚未確認結束",
+    "stillRunningBody": "先前工作階段的韌體升級，看起來仍在本應用程式之外執行中。重新啟動本應用程式並不代表它已經停止。新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定，本應用程式亦不會嘗試自行終止該程序。",
+    "unknownBody": "本應用程式無法判斷先前工作階段的韌體升級是否已經結束。在此確認之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
+    "checking": "檢查中…",
+    "checkAgainButton": "重新檢查",
+    "startedAt": "升級嘗試開始時間：{{time}}",
+    "lastChecked": "上次檢查時間：{{time}}"
   }
 }

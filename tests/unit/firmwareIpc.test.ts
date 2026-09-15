@@ -23,6 +23,14 @@ vi.mock('electron', () => ({
   dialog: { showOpenDialog: vi.fn() },
 }));
 vi.mock('../../src/main/services/elevatedRun', () => ({ runElevated: vi.fn() }));
+// Partial mock: real persistence (writePendingRun/readPendingRun/clearPendingRun) so a marker
+// genuinely round-trips through real fs across a simulated app restart within a test, but
+// checkStillRunning is replaced with a controllable vi.fn() so "still running" / "not running" /
+// "the check itself failed" can be simulated deterministically without a real elevated process.
+vi.mock('../../src/main/services/firmwareRecovery', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/main/services/firmwareRecovery')>();
+  return { ...actual, checkStillRunning: vi.fn() };
+});
 
 const tempDirs: string[] = [];
 function mkTempDir(prefix: string): string {
@@ -119,6 +127,7 @@ async function freshImports() {
   const session = await import('../../src/main/services/session');
   const { resolvePenRoot } = await import('../../src/main/services/pathSecurity');
   const { runElevated } = await import('../../src/main/services/elevatedRun');
+  const firmwareRecovery = await import('../../src/main/services/firmwareRecovery');
   const firmwareIpc = await import('../../src/main/ipc/firmware');
   const penOperationLock = await import('../../src/main/services/penOperationLock');
 
@@ -129,7 +138,13 @@ async function freshImports() {
   if (resolved.status !== 'ok') throw new Error('fixture pen root invalid');
   session.setPenRoot(resolved);
 
-  return { session, runElevated: vi.mocked(runElevated), firmwareIpc, penOperationLock };
+  return {
+    session,
+    runElevated: vi.mocked(runElevated),
+    checkStillRunning: vi.mocked(firmwareRecovery.checkStillRunning),
+    firmwareIpc,
+    penOperationLock,
+  };
 }
 
 describe('startFirmwareUpgrade — lock only releases with confirmed process termination', () => {
@@ -244,5 +259,94 @@ describe('startFirmwareUpgrade — lock only releases with confirmed process ter
     expect(outcome).toMatchObject({ status: 'failed', reason: 'declined', processTerminationConfirmed: true });
     expect(await firmwareIpc.isFirmwareInProgress()).toBe(false);
     expect(await acquiresWithin(() => penOperationLock.acquirePenLock())).toBe(true);
+  });
+});
+
+describe('cross-restart recovery — simulates "app closed/reopened while an external process may still be running"', () => {
+  // Each "session" here is a fully fresh module graph (vi.resetModules() + dynamic import),
+  // exactly mirroring a real app restart's reset in-memory state — but h.userDataDir (and
+  // therefore the pending-run marker on real disk) is NOT reset, exactly mirroring how a real
+  // restart keeps the same userData directory. Nothing here spawns a real elevated process —
+  // "the external process is still running" is simulated purely via the injectable
+  // checkStillRunning mock.
+
+  it('a timeout leaves a marker; a simulated restart re-locks and reports still-running; only a later check finding it gone clears everything', async () => {
+    // --- "session 1": a firmware attempt whose outcome is a timeout ---
+    const s1 = await freshImports();
+    s1.runElevated.mockResolvedValueOnce({ status: 'timeout' });
+    const { win: win1, send: send1 } = makeWindow();
+    await s1.firmwareIpc.startFirmwareUpgrade(win1, { packageDir });
+    const outcome1 = await waitForOutcome(send1);
+    expect(outcome1).toMatchObject({ status: 'unclear', reason: 'timeout', processTerminationConfirmed: false });
+
+    const markerPath = path.join(h.userDataDir, 'firmwareRecovery', 'pending.json');
+    expect(fs.existsSync(markerPath)).toBe(true); // the marker outlives "session 1"
+
+    // --- simulate the app fully quitting and a fresh process starting: reset ALL module state,
+    // but the on-disk userData (and therefore the marker) is untouched. ---
+    vi.resetModules();
+    const s2 = await freshImports();
+    s2.checkStillRunning.mockResolvedValueOnce('running'); // the harmless placeholder "vendor tool" is still up
+
+    await s2.firmwareIpc.checkPendingFirmwareRecoveryOnStartup();
+    expect(s2.checkStillRunning).toHaveBeenCalledTimes(1);
+
+    const status1 = s2.firmwareIpc.getFirmwareRecoveryStatus();
+    expect(status1.status).toBe('still-running');
+    if (status1.status !== 'still-running') throw new Error('unreachable');
+    expect(status1.pending).toMatchObject({ packageDir });
+
+    // Restarting did NOT unlock anything — new firmware attempts and BOOK/DIY writes both stay
+    // blocked purely because of the persisted marker, before the user has done anything at all.
+    expect(await s2.firmwareIpc.isFirmwareInProgress()).toBe(true);
+    expect(await acquiresWithin(() => s2.penOperationLock.acquirePenLock())).toBe(false);
+    expect(await s2.firmwareIpc.startFirmwareUpgrade(win1, { packageDir })).toEqual({ status: 'already-in-progress' });
+    expect(fs.existsSync(markerPath)).toBe(true); // still persisted — a further restart would find it too
+
+    // --- the harmless placeholder process finishes; a manual recheck notices ---
+    s2.checkStillRunning.mockResolvedValueOnce('not-running');
+    const status2 = await s2.firmwareIpc.recheckFirmwareRecovery();
+    expect(status2).toEqual({ status: 'none' });
+    expect(await s2.firmwareIpc.isFirmwareInProgress()).toBe(false);
+    expect(await acquiresWithin(() => s2.penOperationLock.acquirePenLock())).toBe(true);
+    expect(fs.existsSync(markerPath)).toBe(false); // cleared only by the confirming check, nothing else
+  });
+
+  it('when the check itself fails (real process listing unavailable), stays locked exactly like "still-running" — never treated as safe', async () => {
+    const s1 = await freshImports();
+    s1.runElevated.mockResolvedValueOnce({ status: 'timeout' });
+    const { win: win1, send: send1 } = makeWindow();
+    await s1.firmwareIpc.startFirmwareUpgrade(win1, { packageDir });
+    await waitForOutcome(send1);
+
+    vi.resetModules();
+    const s2 = await freshImports();
+    s2.checkStillRunning.mockResolvedValueOnce('unknown');
+    await s2.firmwareIpc.checkPendingFirmwareRecoveryOnStartup();
+
+    const status = s2.firmwareIpc.getFirmwareRecoveryStatus();
+    expect(status.status).toBe('unknown');
+    expect(await s2.firmwareIpc.isFirmwareInProgress()).toBe(true);
+    expect(await acquiresWithin(() => s2.penOperationLock.acquirePenLock())).toBe(false);
+
+    s2.checkStillRunning.mockResolvedValueOnce('not-running');
+    expect(await s2.firmwareIpc.recheckFirmwareRecovery()).toEqual({ status: 'none' });
+    expect(await s2.firmwareIpc.isFirmwareInProgress()).toBe(false);
+  });
+
+  it('a fresh app start with nothing pending is a complete no-op — no lock held, no check ever run', async () => {
+    const { checkStillRunning, firmwareIpc, penOperationLock } = await freshImports();
+    await firmwareIpc.checkPendingFirmwareRecoveryOnStartup();
+    expect(checkStillRunning).not.toHaveBeenCalled();
+    expect(firmwareIpc.getFirmwareRecoveryStatus()).toEqual({ status: 'none' });
+    expect(await firmwareIpc.isFirmwareInProgress()).toBe(false);
+    expect(await acquiresWithin(() => penOperationLock.acquirePenLock())).toBe(true);
+  });
+
+  it('recheckFirmwareRecovery is a no-op once already "none" — never calls checkStillRunning again', async () => {
+    const { checkStillRunning, firmwareIpc } = await freshImports();
+    await firmwareIpc.checkPendingFirmwareRecoveryOnStartup(); // nothing pending → 'none'
+    expect(await firmwareIpc.recheckFirmwareRecovery()).toEqual({ status: 'none' });
+    expect(checkStillRunning).not.toHaveBeenCalled();
   });
 });

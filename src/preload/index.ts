@@ -22,6 +22,7 @@ import type {
   CopyProgressEvent,
   CopySummary,
   FirmwareProgressEvent,
+  FirmwareRecoveryStatus,
   FirmwareSelectPackageResult,
   FirmwareStartResult,
   FirmwareUpgradeOutcome,
@@ -111,6 +112,8 @@ const api: PonyAbcApi = {
   onFirmwareOutcome: (listener: (event: FirmwareUpgradeOutcome) => void) => subscribe(IPC.firmwareOutcome, listener),
   acknowledgeFirmwareOutcome: () => ipcRenderer.invoke(IPC.firmwareAcknowledgeOutcome) as Promise<{ ok: boolean; locked: boolean }>,
   isFirmwareUpgradeInProgress: () => ipcRenderer.invoke(IPC.firmwareIsInProgress) as Promise<boolean>,
+  getFirmwareRecoveryStatus: () => ipcRenderer.invoke(IPC.firmwareRecoveryStatus) as Promise<FirmwareRecoveryStatus>,
+  recheckFirmwareRecovery: () => ipcRenderer.invoke(IPC.firmwareRecoveryRecheck) as Promise<FirmwareRecoveryStatus>,
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

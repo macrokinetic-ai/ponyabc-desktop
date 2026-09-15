@@ -599,7 +599,8 @@ export type DiagnosticEntryKind =
   | 'book-download'
   | 'pen-verify'
   | 'pen-verify-batch'
-  | 'firmware-upgrade';
+  | 'firmware-upgrade'
+  | 'firmware-recovery';
 
 export interface DiagnosticEntry {
   atMs: number;
@@ -687,6 +688,36 @@ export type FirmwareStartResult =
   | { status: 'no-pen-selected' }
   | { status: 'invalid-package' }
   | { status: 'unsupported-platform' };
+
+/**
+ * Persisted to disk (src/main/services/firmwareRecovery.ts) the moment an elevated launch is
+ * attempted, and cleared ONLY once process termination is confirmed — see
+ * `FirmwareUpgradeOutcome.processTerminationConfirmed`. Deliberately survives an app crash or a
+ * plain quit: restarting the app is NOT evidence the real device stopped writing, so on the next
+ * launch this record is what makes the app re-enter a recovery check instead of allowing a new
+ * firmware upgrade or BOOK/DIY pen write.
+ */
+export interface PendingFirmwareRun {
+  startedAtMs: number;
+  workDir: string;
+  packageDir: string;
+  entryBatPath: string;
+}
+
+/**
+ * Cross-restart recovery state for an unresolved previous firmware upgrade. 'none' is the normal
+ * case (nothing pending). When a pending record is found at startup, the pen lock and the
+ * firmware in-progress guard are held BEFORE this can ever report anything but 'checking' or a
+ * resolved state — see `checkPendingFirmwareRecoveryOnStartup` in `src/main/ipc/firmware.ts`.
+ * 'still-running' and 'unknown' both keep the app locked; the ONLY thing that can clear either
+ * one is a fresh `checkStillRunning` call reporting 'not-running' — never a UI acknowledgement,
+ * and this app never attempts to terminate the other process itself.
+ */
+export type FirmwareRecoveryStatus =
+  | { status: 'none' }
+  | { status: 'checking'; pending: PendingFirmwareRun }
+  | { status: 'still-running'; pending: PendingFirmwareRun; lastCheckedAtMs: number }
+  | { status: 'unknown'; pending: PendingFirmwareRun; lastCheckedAtMs: number };
 
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
@@ -779,4 +810,8 @@ export interface PonyAbcApi {
    *  in-app action left that can release them — see `FirmwareUpgradeOutcome.processTerminationConfirmed`. */
   acknowledgeFirmwareOutcome: () => Promise<{ ok: boolean; locked: boolean }>;
   isFirmwareUpgradeInProgress: () => Promise<boolean>;
+  getFirmwareRecoveryStatus: () => Promise<FirmwareRecoveryStatus>;
+  /** Re-runs the real (read-only) process check. A no-op returning the current status unless
+   *  the status is 'still-running' or 'unknown'. */
+  recheckFirmwareRecovery: () => Promise<FirmwareRecoveryStatus>;
 }

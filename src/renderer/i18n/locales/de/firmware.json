@@ -56,5 +56,14 @@
     "acknowledgeButtonUnconfirmed": "Verstanden — ich starte die App neu",
     "restartNoticeAcknowledged": "Notiert. Diese App bleibt für neue Firmware-Updates und BOOK/DIY-Schreibvorgänge gesperrt, bis Sie sie vollständig beenden und neu öffnen.",
     "startOverButton": "Neu starten"
+  },
+  "recovery": {
+    "title": "Vorheriges Update nicht als abgeschlossen bestätigt",
+    "stillRunningBody": "Ein Firmware-Update aus einer vorherigen Sitzung scheint außerhalb dieser App noch zu laufen. Ein Neustart dieser App ist kein Beweis dafür, dass es beendet wurde. Neue Firmware-Updates und BOOK/DIY-Schreibvorgänge auf den Stift bleiben gesperrt, und diese App wird nicht versuchen, den anderen Prozess selbst zu beenden.",
+    "unknownBody": "Diese App konnte nicht feststellen, ob ein Firmware-Update aus einer vorherigen Sitzung abgeschlossen wurde. Neue Firmware-Updates und BOOK/DIY-Schreibvorgänge auf den Stift bleiben gesperrt, bis dies bestätigt werden kann.",
+    "checking": "Wird geprüft…",
+    "checkAgainButton": "Erneut prüfen",
+    "startedAt": "Update-Versuch gestartet: {{time}}",
+    "lastChecked": "Zuletzt geprüft: {{time}}"
   }
 }

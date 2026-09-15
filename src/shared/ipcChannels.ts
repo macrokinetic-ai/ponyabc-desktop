@@ -54,6 +54,8 @@ export const IPC = {
   firmwareOutcome: 'ponyabc:firmware:outcome',
   firmwareAcknowledgeOutcome: 'ponyabc:firmware:acknowledgeOutcome',
   firmwareIsInProgress: 'ponyabc:firmware:isInProgress',
+  firmwareRecoveryStatus: 'ponyabc:firmware:recoveryStatus',
+  firmwareRecoveryRecheck: 'ponyabc:firmware:recoveryRecheck',
 
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',

@@ -28,7 +28,14 @@ import { exportDiagnostics, getDiagnosticsSummary, logAppStart } from './diagnos
 import { getSettings, setSettings } from './settings';
 import { getAppInfo } from './appInfo';
 import { checkForUpdates, openLatestReleasePage } from './updates';
-import { acknowledgeFirmwareOutcome, isFirmwareInProgress, selectFirmwarePackage, startFirmwareUpgrade } from './firmware';
+import {
+  acknowledgeFirmwareOutcome,
+  getFirmwareRecoveryStatus,
+  isFirmwareInProgress,
+  recheckFirmwareRecovery,
+  selectFirmwarePackage,
+  startFirmwareUpgrade,
+} from './firmware';
 
 let handlersRegistered = false;
 
@@ -109,6 +116,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.firmwareStart, (_event, params) => startFirmwareUpgrade(getWindow(), params));
   ipcMain.handle(IPC.firmwareAcknowledgeOutcome, () => acknowledgeFirmwareOutcome());
   ipcMain.handle(IPC.firmwareIsInProgress, () => isFirmwareInProgress());
+  ipcMain.handle(IPC.firmwareRecoveryStatus, () => getFirmwareRecoveryStatus());
+  ipcMain.handle(IPC.firmwareRecoveryRecheck, () => recheckFirmwareRecovery());
 
   logAppStart();
   startVolumeWatcher(getWindow);
