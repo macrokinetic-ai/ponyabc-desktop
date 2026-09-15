@@ -27,11 +27,19 @@ function mkTempDir(): string {
   return dir;
 }
 afterEach(() => {
-  for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
+  for (const dir of tempDirs.splice(0)) {
+    // maxRetries/retryDelay matter for real evidence, not just tidiness: a real run on real
+    // Windows hit EBUSY here (antivirus/real-time-scan or a not-yet-fully-released handle on a
+    // just-closed file) — confirmed by a real CI failure, not a hypothetical.
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+  }
 });
 
 describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target, no vendor tool, no device)', () => {
   it('actually elevates, streams real incremental log output, and returns a real exit code', async () => {
+    // Vitest's own default per-test timeout (5000ms) is shorter than the 60s runElevated()
+    // timeoutMs below it — a real run on real Windows hit exactly this, failing the test before
+    // the real elevation even had a chance to finish. Must stay comfortably above that 60s.
     const dir = mkTempDir();
     const targetPath = path.join(dir, 'harmless-target.bat');
     // A trivial, self-contained target: prints two lines with a real delay between them (so the
@@ -74,7 +82,7 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     expect(fullLog).toContain('line-two');
     // Proves genuine incremental delivery, not "read the whole file once at the end".
     expect(deltas.length).toBeGreaterThan(1);
-  });
+  }, 90_000);
 
   it('a target that ends in a bare `pause` (the confirmed real chain does) still completes promptly instead of hanging forever on a keypress that can never arrive', async () => {
     const dir = mkTempDir();
@@ -110,7 +118,7 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     const fullLog = deltas.join('');
     expect(fullLog).toContain('before-pause');
     expect(fullLog).toContain('after-pause');
-  });
+  }, 60_000);
 });
 
 describe.skipIf(RUN)('runElevated — real Windows smoke test (skipped)', () => {
