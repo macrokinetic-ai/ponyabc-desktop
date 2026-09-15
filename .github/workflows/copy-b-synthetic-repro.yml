@@ -1,0 +1,105 @@
+name: copy /b synthetic repro (manual only)
+
+# Deliberately workflow_dispatch ONLY. Answers one narrow, previously-unverified question about
+# the CONFIRMED P5 firmware entry point (tools\download.bat, see tasks/todo.md's dependency
+# trace): its line
+#   copy /b text.bin+data.bin+...+wma.bin+bank.bin app.bin
+# references a source file (bank.bin) that is provably absent from the vendor package. The
+# earlier report inferred from that absence alone that the copy "can't produce fresh output" —
+# but that is an assumption about cmd.exe's real `copy /b` behavior, never actually observed.
+# This workflow reproduces the exact multi-file `copy /b ... missingFile dest` structure with
+# 100% synthetic, harmless placeholder files on a real Windows runner, and records byte-for-byte
+# before/after state of the destination file — it never touches, downloads, or executes any
+# vendor tool/binary (isd_download.exe, download.bat, etc.) and never talks to a real device.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copy-b-repro:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reproduce copy /b with a missing final source file
+        shell: cmd
+        run: |
+          setlocal enabledelayedexpansion
+          set WORK=%RUNNER_TEMP%\copyb-repro
+          rmdir /s /q "%WORK%" 2>nul
+          mkdir "%WORK%"
+          cd /d "%WORK%"
+
+          echo AAAA-SOURCE-ONE> f1.bin
+          echo BBBB-SOURCE-TWO> f2.bin
+          echo CCCC-SOURCE-THREE> f3.bin
+          rem missing.bin is deliberately never created - stands in for the real chain's bank.bin
+
+          echo ================================================================
+          echo TEST 1: dest.bin PRE-EXISTS with known sentinel content; last source in the list is missing
+          echo ================================================================
+          echo SENTINEL-PREEXISTING-CONTENT-DO-NOT-LOSE-ME> dest.bin
+          echo --- dest.bin BEFORE ---
+          for %%F in (dest.bin) do echo size=%%~zF
+          certutil -hashfile dest.bin SHA256
+          type dest.bin
+          echo --- running: copy /b f1.bin+f2.bin+f3.bin+missing.bin dest.bin ---
+          copy /b f1.bin+f2.bin+f3.bin+missing.bin dest.bin
+          echo COPY_EXITCODE=%errorlevel%
+          echo --- dest.bin AFTER ---
+          if exist dest.bin (
+            echo dest.bin EXISTS after the command
+            for %%F in (dest.bin) do echo size=%%~zF
+            certutil -hashfile dest.bin SHA256
+            echo --- content ---
+            type dest.bin
+          ) else (
+            echo dest.bin DOES NOT EXIST after the command
+          )
+
+          echo ================================================================
+          echo TEST 2: dest.bin does NOT pre-exist; last source in the list is missing
+          echo ================================================================
+          del dest.bin 2>nul
+          echo --- running: copy /b f1.bin+f2.bin+f3.bin+missing.bin dest.bin ---
+          copy /b f1.bin+f2.bin+f3.bin+missing.bin dest.bin
+          echo COPY_EXITCODE=%errorlevel%
+          if exist dest.bin (
+            echo dest.bin EXISTS after the command
+            for %%F in (dest.bin) do echo size=%%~zF
+            certutil -hashfile dest.bin SHA256
+            echo --- content ---
+            type dest.bin
+          ) else (
+            echo dest.bin DOES NOT EXIST after the command
+          )
+
+          echo ================================================================
+          echo TEST 3: control - all sources present, nothing missing
+          echo ================================================================
+          del dest.bin 2>nul
+          copy /b f1.bin+f2.bin+f3.bin dest.bin
+          echo COPY_EXITCODE=%errorlevel%
+          for %%F in (dest.bin) do echo size=%%~zF
+          certutil -hashfile dest.bin SHA256
+          echo --- content ---
+          type dest.bin
+
+          echo ================================================================
+          echo TEST 4: dest.bin PRE-EXISTS with sentinel content; missing source is in the MIDDLE of the list
+          echo ================================================================
+          echo SENTINEL-2-PREEXISTING-CONTENT-DO-NOT-LOSE-ME> dest.bin
+          certutil -hashfile dest.bin SHA256
+          echo --- running: copy /b f1.bin+missing.bin+f3.bin dest.bin ---
+          copy /b f1.bin+missing.bin+f3.bin dest.bin
+          echo COPY_EXITCODE=%errorlevel%
+          if exist dest.bin (
+            echo dest.bin EXISTS after the command
+            for %%F in (dest.bin) do echo size=%%~zF
+            certutil -hashfile dest.bin SHA256
+            echo --- content ---
+            type dest.bin
+          ) else (
+            echo dest.bin DOES NOT EXIST after the command
+          )
+
+          endlocal
