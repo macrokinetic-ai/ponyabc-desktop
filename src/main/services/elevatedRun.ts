@@ -53,7 +53,13 @@ export function buildFlashBatchScript(params: BuildFlashBatchParams): string {
   return [
     '@echo off',
     `cd /d ${quoteBatchArg(cwd)}`,
-    `${quoteBatchArg(exePath)}${argsStr ? ' ' + argsStr : ''} > ${quoteBatchArg(logFilePath)} 2>&1`,
+    // `< nul` matters for real vendor chains, not just hygiene: the confirmed working P5 entry
+    // point (tools\download.bat) ends by delegating to a nested script that finishes with a
+    // bare `pause` — waiting on a keypress forever on a real interactive console. Redirecting
+    // stdin from `nul` makes `pause` see immediate EOF and fall through instead of hanging,
+    // which is what makes `-Wait`/exit-code capture usable at all for this exact chain. Applied
+    // unconditionally since it's a no-op for any target that never reads stdin.
+    `${quoteBatchArg(exePath)}${argsStr ? ' ' + argsStr : ''} < nul > ${quoteBatchArg(logFilePath)} 2>&1`,
     'exit /b %errorlevel%',
     '',
   ].join('\r\n');

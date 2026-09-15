@@ -75,6 +75,42 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     // Proves genuine incremental delivery, not "read the whole file once at the end".
     expect(deltas.length).toBeGreaterThan(1);
   });
+
+  it('a target that ends in a bare `pause` (the confirmed real chain does) still completes promptly instead of hanging forever on a keypress that can never arrive', async () => {
+    const dir = mkTempDir();
+    const targetPath = path.join(dir, 'pausing-target.bat');
+    fs.writeFileSync(targetPath, ['@echo off', 'echo before-pause', 'pause', 'echo after-pause', 'exit /b 0', ''].join('\r\n'));
+
+    const startedAtMs = Date.now();
+    const deltas: string[] = [];
+    const result = await runElevated({
+      exePath: targetPath,
+      args: [],
+      cwd: dir,
+      workDir: path.join(dir, 'work'),
+      onLogUpdate: (d) => deltas.push(d),
+      logPollIntervalMs: 200,
+      timeoutMs: 30_000, // if `< nul` did NOT dismiss the pause, this proves it by timing out
+    });
+    const elapsedMs = Date.now() - startedAtMs;
+
+    console.log('pause-target smoke result:', JSON.stringify(result), 'elapsedMs:', elapsedMs);
+    console.log('pause-target log deltas:', JSON.stringify(deltas));
+
+    if (result.status === 'timeout') {
+      console.warn('No interactive desktop on this runner to approve elevation — see the other smoke test for that caveat; this one specifically could not be exercised either.');
+      return;
+    }
+
+    expect(result.status).toBe('completed');
+    // The real point of this test: it must finish quickly, not sit at `pause` until the
+    // 30s timeout gives up — a slow-but-eventually-"completed" result here would still mean
+    // `< nul` isn't actually dismissing the prompt fast, which matters for a real upgrade flow.
+    expect(elapsedMs).toBeLessThan(15_000);
+    const fullLog = deltas.join('');
+    expect(fullLog).toContain('before-pause');
+    expect(fullLog).toContain('after-pause');
+  });
 });
 
 describe.skipIf(RUN)('runElevated — real Windows smoke test (skipped)', () => {

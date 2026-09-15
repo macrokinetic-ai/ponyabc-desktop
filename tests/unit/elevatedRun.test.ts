@@ -29,7 +29,7 @@ describe('buildFlashBatchScript — pure script generation, no process/filesyste
       logFilePath: 'C:\\scratch\\run.log',
     });
     expect(script).toContain('cd /d "C:\\tools\\soundbox\\standard"');
-    expect(script).toContain('"C:\\tools\\isd_download.exe" "-dev" "br23" "-app" "app.bin" > "C:\\scratch\\run.log" 2>&1');
+    expect(script).toContain('"C:\\tools\\isd_download.exe" "-dev" "br23" "-app" "app.bin" < nul > "C:\\scratch\\run.log" 2>&1');
     expect(script).toContain('exit /b %errorlevel%');
   });
 
@@ -45,7 +45,12 @@ describe('buildFlashBatchScript — pure script generation, no process/filesyste
 
   it('produces a valid line even with zero arguments', () => {
     const script = buildFlashBatchScript({ exePath: 'C:\\a.exe', args: [], cwd: 'C:\\', logFilePath: 'C:\\a.log' });
-    expect(script).toContain('"C:\\a.exe" > "C:\\a.log" 2>&1');
+    expect(script).toContain('"C:\\a.exe" < nul > "C:\\a.log" 2>&1');
+  });
+
+  it('always redirects the target\'s stdin from nul — the confirmed real chain (tools\\download.bat) ends in a bare `pause`, which would otherwise hang forever waiting for a keypress that can never arrive', () => {
+    const script = buildFlashBatchScript({ exePath: 'C:\\tools\\download.bat', args: [], cwd: 'C:\\tools', logFilePath: 'C:\\scratch\\run.log' });
+    expect(script).toContain('< nul');
   });
 });
 
