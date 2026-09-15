@@ -16,6 +16,7 @@
     "dist:win": "npm run build && electron-builder --win && node scripts/checksum.mjs"
   },
   "dependencies": {
+    "extract-zip": "^2.0.1",
     "i18next": "^24.2.0",
     "mpg123-decoder": "^1.0.3",
     "react": "^18.3.1",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
+    "archiver": "^5.3.2",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

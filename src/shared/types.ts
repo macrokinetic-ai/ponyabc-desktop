@@ -719,6 +719,65 @@ export type FirmwareRecoveryStatus =
   | { status: 'still-running'; pending: PendingFirmwareRun; lastCheckedAtMs: number }
   | { status: 'unknown'; pending: PendingFirmwareRun; lastCheckedAtMs: number };
 
+// ---------------------------------------------------------------------------------------
+// Official firmware download flow (Windows only) — talks to the secret-free public
+// `register.ponyabc.uk` firmware catalog (mirrors the BOOK catalog's public API shape). Never
+// reaches a draft/withdrawn release: the public API structurally only ever returns the current
+// `status='active'` release for a hardware_rev, or `{ release: null }`. This is purely additive
+// to the existing local-folder test/support flow (FirmwarePackageInfo/FirmwareSelectPackageResult
+// above) — both flows converge on the same FirmwarePackageInfo before `confirm`/`upgrading`.
+// ---------------------------------------------------------------------------------------
+
+export interface FirmwareReleaseInfo {
+  id: string;
+  version: string;
+  hardwareRev: string;
+  notes: string | null;
+  sizeBytes: number;
+  sha256: string | null;
+  minAppVersion: string | null;
+  releasedAt: string | null;
+  packageLabel: string | null;
+  packageDate: string | null;
+  recommended: boolean;
+  /** Relative or absolute — always resolved against the same host the catalog fetch used. */
+  downloadUrl: string;
+}
+
+export type FirmwareReleaseFetchResult =
+  | { status: 'ok'; release: FirmwareReleaseInfo }
+  | { status: 'no-release' }
+  | { status: 'no-network'; message: string }
+  | { status: 'unsupported-platform' };
+
+export type FirmwareDownloadProgressPhase = 'downloading' | 'verifying' | 'extracting' | 'done' | 'failed';
+
+export interface FirmwareDownloadProgressEvent {
+  phase: FirmwareDownloadProgressPhase;
+  bytesReceived?: number;
+  totalBytes?: number;
+  message?: string;
+}
+
+export type FirmwarePrepareResult =
+  | { status: 'ok'; packageDir: string }
+  | { status: 'no-network'; message: string }
+  | { status: 'download-failed'; message: string }
+  | { status: 'verify-failed'; message: string }
+  /** missingFiles carries inspectFirmwarePackage()'s real per-path result when the failure is
+   *  specifically "extracted fine but the layout doesn't pass the required-files check" — lets
+   *  the UI show exactly which paths are absent and why, matching the local-folder path's own
+   *  display, instead of a generic message. Absent for other extract-failed causes (e.g. a
+   *  corrupt zip or a zip-slip rejection), where there's no meaningful file list to show. */
+  | { status: 'extract-failed'; message: string; missingFiles?: string[] }
+  | { status: 'cancelled' }
+  /** Not in the original plan's literal union — added for parity with
+   *  FirmwareReleaseFetchResult's own 'unsupported-platform' member, since the IPC handler for
+   *  prepareOfficialFirmwarePackage applies the exact same platform guard. Never actually
+   *  reachable from the shipped renderer (the Mac branch never calls this IPC at all), but the
+   *  main-process handler still needs a real value to return defensively. */
+  | { status: 'unsupported-platform' };
+
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
   platform: string;
@@ -814,4 +873,10 @@ export interface PonyAbcApi {
   /** Re-runs the real (read-only) process check. A no-op returning the current status unless
    *  the status is 'still-running' or 'unknown'. */
   recheckFirmwareRecovery: () => Promise<FirmwareRecoveryStatus>;
+
+  // Official firmware download flow (Windows only) — see the block comment above these types.
+  getOfficialFirmwareRelease: () => Promise<FirmwareReleaseFetchResult>;
+  prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
+  onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
+  cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
 }

@@ -605,3 +605,42 @@ for a safety invariant — if crashing and reopening can turn "unconfirmed" into
 "assumed fine," that recovery path needs the same real-world check a live
 session's uncertain outcome does, persisted across the restart it's supposed
 to survive.
+
+## A verified mechanism for one command does not carry over to a different command that merely looks similar — verify the specific one in question
+
+**What happened (2026-09-15, firmware official-download milestone).** The real
+`tools.zip` snapshot has no root-level `script.ver`, only
+`soundbox\standard\script.ver` (pre-shipped there directly). The instinct was
+to treat this the same way the earlier `copy /b ...+bank.bin` investigation
+(above) treated a missing concatenation source: "a `copy` command tolerating a
+missing input was already proven, so a different `copy` command's missing
+input is probably fine too." The user rejected this immediately and correctly:
+the earlier round tested `copy /b a+b+c` (multi-source concatenation, silently
+drops a missing source and reconstructs the destination from what's present).
+The command actually in question here — `copy ..\..\script.ver .` — is a
+single-source copy with completely different failure semantics (does it
+overwrite the destination with nothing? delete it? leave it untouched?), and
+nothing had actually tested that. Citing `tasks/lessons.md`'s existing
+`copy /b` finding, or citing "we already have N passing tests," was correctly
+called out as not being evidence for THIS command.
+
+**What real testing showed:** a manual-only Windows CI run
+(`.github/workflows/firmware-scriptver-copy-smoke.yml`, run
+`35014413934`) reproduced the exact `cd %~dp0` + `copy ..\..\script.ver .`
+lines against a synthetic root-absent/nested-present skeleton (never the
+vendor's own `download.bat`, never a real device). Real result: `copy` printed
+"The system cannot find the file specified.", set errorlevel 1, left the
+nested `script.ver` byte-for-byte unchanged (SHA-256 identical before/after),
+and the batch continued to its next line. This happened to confirm the same
+direction as the `copy /b` finding, but that agreement was the OUTCOME of a
+fresh test, not something inferable in advance from the earlier one.
+
+**How to apply, generally:** "we already verified X's failure mode" is
+evidence about X, not about Y, even when X and Y are the same shell built-in,
+the same file, or one line apart in the same script. Two commands sharing a
+name (`copy`) or a topic (this same investigation) do not share a proof
+unless their actual semantics are checked to be the same case (single-source
+vs. multi-source `copy` behave differently on a missing input). When tempted
+to extend a hard-won verified conclusion to a new but similar-looking
+question, that temptation is itself the signal to run one more narrowly-
+targeted test rather than reach for the existing evidence file.

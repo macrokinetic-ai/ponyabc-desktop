@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Firmware-Paket",
-    "devModeNotice": "Testmodus: Wählen Sie selbst den bereits entpackten Herstellerpaket-Ordner aus. Das Herunterladen und Überprüfen eines offiziellen Pakets vom PonyABC-Server ist noch nicht verfügbar.",
-    "selectButton": "Paketordner auswählen…",
+    "devModeNotice": "Nur für Test/Support: Wählen Sie selbst den bereits entpackten Herstellerpaket-Ordner aus. Die meisten Personen sollten stattdessen den offiziellen Download oben verwenden.",
+    "selectButton": "Test/Support: lokalen Ordner auswählen…",
     "selectedPath": "Ausgewählt: {{path}}",
     "looksValid": "Dieser Ordner enthält die für den bestätigten Update-Pfad benötigten Dateien.",
     "invalid": "Diesem Ordner fehlen für das Update benötigte Dateien. Es wird nichts ausgeführt.",
-    "nextButton": "Weiter"
+    "nextButton": "Weiter",
+    "official": {
+      "loading": "Offizielle Firmware-Version wird geprüft…",
+      "noRelease": "Es wurde noch keine offizielle Firmware-Version veröffentlicht.",
+      "noNetwork": "Der Update-Server konnte nicht erreicht werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "downloadFailed": "Der Download ist fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "verifyFailed": "Die heruntergeladene Datei hat die Überprüfung nicht bestanden und wurde verworfen. Bitte versuchen Sie es erneut.",
+      "extractFailed": "Das heruntergeladene Paket konnte nicht entpackt werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.",
+      "version": "Offizielle Version: {{version}}",
+      "packageLabel": "Paket: {{label}} ({{date}})",
+      "onPenVersionUnknown": "Aktuelle Version auf dem Stift: nicht auslesbar",
+      "onPenVersionHint": "Diese App kann die bereits auf dem Stift vorhandene Firmware-Version nicht auslesen — dafür gibt es derzeit keine zuverlässige Methode.",
+      "downloadButton": "Offizielles Update herunterladen",
+      "cancelButton": "Download abbrechen",
+      "reinstallButton": "Erweitert: diese Version erneut installieren",
+      "phase": {
+        "downloading": "Wird heruntergeladen…",
+        "verifying": "Wird überprüft…",
+        "extracting": "Wird entpackt…",
+        "done": "Fertig.",
+        "failed": "Fehlgeschlagen."
+      }
+    }
   },
   "confirm": {
     "title": "Bestätigung",

@@ -30,8 +30,11 @@ import { getAppInfo } from './appInfo';
 import { checkForUpdates, openLatestReleasePage } from './updates';
 import {
   acknowledgeFirmwareOutcome,
+  cancelFirmwareDownload,
   getFirmwareRecoveryStatus,
+  getOfficialFirmwareRelease,
   isFirmwareInProgress,
+  prepareOfficialFirmwarePackage,
   recheckFirmwareRecovery,
   selectFirmwarePackage,
   startFirmwareUpgrade,
@@ -118,6 +121,10 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.firmwareIsInProgress, () => isFirmwareInProgress());
   ipcMain.handle(IPC.firmwareRecoveryStatus, () => getFirmwareRecoveryStatus());
   ipcMain.handle(IPC.firmwareRecoveryRecheck, () => recheckFirmwareRecovery());
+
+  ipcMain.handle(IPC.firmwareGetOfficialRelease, () => getOfficialFirmwareRelease());
+  ipcMain.handle(IPC.firmwarePrepareOfficialPackage, (_event, params) => prepareOfficialFirmwarePackage(getWindow(), params));
+  ipcMain.handle(IPC.firmwareCancelDownload, () => cancelFirmwareDownload());
 
   logAppStart();
   startVolumeWatcher(getWindow);

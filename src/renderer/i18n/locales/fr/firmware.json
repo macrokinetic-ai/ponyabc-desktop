@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Paquet de firmware",
-    "devModeNotice": "Mode test : sélectionnez vous-même le dossier du paquet fournisseur déjà extrait. Le téléchargement et la vérification d'un paquet officiel depuis le serveur de PonyABC ne sont pas encore disponibles.",
-    "selectButton": "Sélectionner le dossier du paquet…",
+    "devModeNotice": "Réservé aux tests/au support : sélectionnez vous-même le dossier du paquet fournisseur déjà extrait. La plupart des utilisateurs devraient plutôt utiliser le téléchargement officiel ci-dessus.",
+    "selectButton": "Test/support : sélectionner un dossier local…",
     "selectedPath": "Sélectionné : {{path}}",
     "looksValid": "Ce dossier contient les fichiers requis par le chemin de mise à jour confirmé.",
     "invalid": "Il manque à ce dossier des fichiers nécessaires à la mise à jour. Rien ne sera exécuté.",
-    "nextButton": "Suivant"
+    "nextButton": "Suivant",
+    "official": {
+      "loading": "Vérification de la version officielle du firmware…",
+      "noRelease": "Aucune version officielle du firmware n'a encore été publiée.",
+      "noNetwork": "Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion internet et réessayez.",
+      "downloadFailed": "Le téléchargement a échoué. Vérifiez votre connexion internet et réessayez.",
+      "verifyFailed": "Le fichier téléchargé n'a pas réussi la vérification et a été supprimé. Veuillez réessayer.",
+      "extractFailed": "Le paquet téléchargé n'a pas pu être extrait. Réessayez ou contactez le support.",
+      "version": "Version officielle : {{version}}",
+      "packageLabel": "Paquet : {{label}} ({{date}})",
+      "onPenVersionUnknown": "Version actuelle sur le stylo : indisponible",
+      "onPenVersionHint": "Cette application ne peut pas lire la version du firmware déjà présente sur le stylo — il n'existe actuellement aucun moyen fiable de le vérifier.",
+      "downloadButton": "Télécharger la mise à jour officielle",
+      "cancelButton": "Annuler le téléchargement",
+      "reinstallButton": "Avancé : réinstaller cette version",
+      "phase": {
+        "downloading": "Téléchargement…",
+        "verifying": "Vérification…",
+        "extracting": "Extraction…",
+        "done": "Terminé.",
+        "failed": "Échoué."
+      }
+    }
   },
   "confirm": {
     "title": "Confirmation",

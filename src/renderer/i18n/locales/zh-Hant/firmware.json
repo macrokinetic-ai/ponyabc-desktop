@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "韌體套件",
-    "devModeNotice": "測試模式：請自行選擇已解壓的供應商套件資料夾。由 PonyABC 伺服器下載並核對官方套件的功能尚未上線。",
-    "selectButton": "選擇套件資料夾…",
+    "devModeNotice": "僅供測試／支援使用：請自行選擇已解壓的供應商套件資料夾。大部分使用者應使用上方的官方下載功能。",
+    "selectButton": "測試／支援：自行選擇本機資料夾",
     "selectedPath": "已選擇：{{path}}",
     "looksValid": "此資料夾具備已確認升級路徑所需的檔案。",
     "invalid": "此資料夾缺少升級所需的檔案，將不會執行任何操作。",
-    "nextButton": "下一步"
+    "nextButton": "下一步",
+    "official": {
+      "loading": "正在查詢官方韌體版本…",
+      "noRelease": "尚未發佈官方韌體版本。",
+      "noNetwork": "無法連接到更新伺服器，請檢查網絡連線後再試。",
+      "downloadFailed": "下載失敗，請檢查網絡連線後再試。",
+      "verifyFailed": "下載的檔案未能通過驗證，已被捨棄，請重新嘗試。",
+      "extractFailed": "無法解壓縮下載的套件，請重新嘗試或聯絡支援。",
+      "version": "官方版本：{{version}}",
+      "packageLabel": "套件：{{label}}（{{date}}）",
+      "onPenVersionUnknown": "目前筆內版本：尚未能讀取",
+      "onPenVersionHint": "本應用程式目前無法讀取點讀筆上既有的韌體版本——現時沒有可靠的方法查詢。",
+      "downloadButton": "下載官方更新",
+      "cancelButton": "取消下載",
+      "reinstallButton": "進階：重新安裝此版本",
+      "phase": {
+        "downloading": "下載中…",
+        "verifying": "驗證中…",
+        "extracting": "解壓縮中…",
+        "done": "完成。",
+        "failed": "失敗。"
+      }
+    }
   },
   "confirm": {
     "title": "確認",

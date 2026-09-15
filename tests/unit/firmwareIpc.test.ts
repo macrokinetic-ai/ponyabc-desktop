@@ -49,7 +49,7 @@ const REQUIRED_FILES = [
   'remove_tailing_zeros.exe',
   'uboot.boot',
   'ota.bin',
-  'script.ver',
+  path.join('soundbox', 'standard', 'script.ver'),
   path.join('soundbox', 'standard', 'app.bin'),
   path.join('soundbox', 'standard', 'br25loader.bin'),
   'text.bin',

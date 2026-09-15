@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Pacote de firmware",
-    "devModeNotice": "Modo de teste: selecione você mesmo a pasta do pacote do fornecedor já extraída. A transferência e verificação de um pacote oficial a partir do servidor da PonyABC ainda não está disponível.",
-    "selectButton": "Selecionar pasta do pacote…",
+    "devModeNotice": "Apenas para teste/suporte: selecione você mesmo a pasta do pacote do fornecedor já extraída. A maioria das pessoas deve usar a transferência oficial acima.",
+    "selectButton": "Teste/suporte: selecionar uma pasta local…",
     "selectedPath": "Selecionado: {{path}}",
     "looksValid": "Esta pasta tem os ficheiros que o caminho de atualização confirmado necessita.",
     "invalid": "Faltam a esta pasta ficheiros necessários para a atualização. Nada será executado.",
-    "nextButton": "Seguinte"
+    "nextButton": "Seguinte",
+    "official": {
+      "loading": "A verificar a versão oficial do firmware…",
+      "noRelease": "Ainda não foi publicada nenhuma versão oficial do firmware.",
+      "noNetwork": "Não foi possível contactar o servidor de atualizações. Verifique a sua ligação à internet e tente novamente.",
+      "downloadFailed": "A transferência falhou. Verifique a sua ligação à internet e tente novamente.",
+      "verifyFailed": "O ficheiro transferido não passou na verificação e foi descartado. Tente novamente.",
+      "extractFailed": "Não foi possível extrair o pacote transferido. Tente novamente ou contacte o suporte.",
+      "version": "Versão oficial: {{version}}",
+      "packageLabel": "Pacote: {{label}} ({{date}})",
+      "onPenVersionUnknown": "Versão atual na caneta: não disponível",
+      "onPenVersionHint": "Esta app não consegue ler a versão do firmware já existente na caneta — atualmente não existe uma forma fiável de a consultar.",
+      "downloadButton": "Transferir atualização oficial",
+      "cancelButton": "Cancelar transferência",
+      "reinstallButton": "Avançado: reinstalar esta versão",
+      "phase": {
+        "downloading": "A transferir…",
+        "verifying": "A verificar…",
+        "extracting": "A extrair…",
+        "done": "Concluído.",
+        "failed": "Falhou."
+      }
+    }
   },
   "confirm": {
     "title": "Confirmar",

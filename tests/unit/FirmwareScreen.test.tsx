@@ -63,6 +63,10 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     openLatestReleasePage: vi.fn(async () => ({ ok: true })),
     selectFirmwarePackage: vi.fn(async () => ({ status: 'selected', info: validPackage })),
     startFirmwareUpgrade: vi.fn(async () => ({ status: 'started' })),
+    getOfficialFirmwareRelease: vi.fn(async () => ({ status: 'no-release' }) as const),
+    prepareOfficialFirmwarePackage: vi.fn(async () => ({ status: 'no-network', message: 'offline' }) as const),
+    onFirmwareDownloadProgress: vi.fn(() => () => {}),
+    cancelFirmwareDownload: vi.fn(async () => ({ ok: false })),
     onFirmwareProgress: vi.fn((listener) => {
       progressListener = listener;
       return () => {
@@ -110,7 +114,7 @@ async function advanceToConfirm() {
   await screen.findByText('Pen detected.');
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Firmware package' });
-  fireEvent.click(screen.getByRole('button', { name: 'Select package folder…' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Test/support: select a local folder…' }));
   await screen.findByText(/Selected:/);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Confirm' });
@@ -141,7 +145,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     renderScreen();
     await screen.findByText('Pen detected.');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Select package folder…' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
     await screen.findByText('isd_download.exe');
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
   });

@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Pacchetto firmware",
-    "devModeNotice": "Modalità test: seleziona tu stesso la cartella del pacchetto del fornitore già estratta. Il download e la verifica di un pacchetto ufficiale dal server di PonyABC non sono ancora disponibili.",
-    "selectButton": "Seleziona cartella del pacchetto…",
+    "devModeNotice": "Solo per test/supporto: seleziona tu stesso la cartella del pacchetto del fornitore già estratta. La maggior parte delle persone dovrebbe invece usare il download ufficiale sopra.",
+    "selectButton": "Test/supporto: seleziona una cartella locale…",
     "selectedPath": "Selezionato: {{path}}",
     "looksValid": "Questa cartella contiene i file richiesti dal percorso di aggiornamento confermato.",
     "invalid": "A questa cartella mancano i file necessari per l'aggiornamento. Non verrà eseguito nulla.",
-    "nextButton": "Avanti"
+    "nextButton": "Avanti",
+    "official": {
+      "loading": "Verifica della versione firmware ufficiale…",
+      "noRelease": "Non è stata ancora pubblicata alcuna versione ufficiale del firmware.",
+      "noNetwork": "Impossibile raggiungere il server degli aggiornamenti. Controlla la connessione a Internet e riprova.",
+      "downloadFailed": "Il download non è riuscito. Controlla la connessione a Internet e riprova.",
+      "verifyFailed": "Il file scaricato non ha superato la verifica ed è stato scartato. Riprova.",
+      "extractFailed": "Impossibile estrarre il pacchetto scaricato. Riprova o contatta l'assistenza.",
+      "version": "Versione ufficiale: {{version}}",
+      "packageLabel": "Pacchetto: {{label}} ({{date}})",
+      "onPenVersionUnknown": "Versione attuale sulla penna: non disponibile",
+      "onPenVersionHint": "Questa app non può leggere la versione del firmware già presente sulla penna — al momento non esiste un modo affidabile per verificarla.",
+      "downloadButton": "Scarica l'aggiornamento ufficiale",
+      "cancelButton": "Annulla download",
+      "reinstallButton": "Avanzate: reinstalla questa versione",
+      "phase": {
+        "downloading": "Download in corso…",
+        "verifying": "Verifica in corso…",
+        "extracting": "Estrazione in corso…",
+        "done": "Completato.",
+        "failed": "Non riuscito."
+      }
+    }
   },
   "confirm": {
     "title": "Conferma",

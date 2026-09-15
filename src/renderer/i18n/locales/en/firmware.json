@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Firmware package",
-    "devModeNotice": "Test mode: select the extracted vendor package folder yourself. Downloading and verifying an official package from PonyABC's server is not available yet.",
-    "selectButton": "Select package folder…",
+    "devModeNotice": "Test/support only: pick an already-extracted vendor package folder yourself. Most people should use the official download above instead.",
+    "selectButton": "Test/support: select a local folder…",
     "selectedPath": "Selected: {{path}}",
     "looksValid": "This folder has the files the confirmed upgrade path needs.",
     "invalid": "This folder is missing files the upgrade needs. Nothing will be run.",
-    "nextButton": "Next"
+    "nextButton": "Next",
+    "official": {
+      "loading": "Checking for the official firmware release…",
+      "noRelease": "No official firmware release has been published yet.",
+      "noNetwork": "Could not reach the update server. Check your internet connection and try again.",
+      "downloadFailed": "The download failed. Check your internet connection and try again.",
+      "verifyFailed": "The downloaded file failed verification and was discarded. Please try again.",
+      "extractFailed": "The downloaded package could not be extracted. Please try again or contact support.",
+      "version": "Official version: {{version}}",
+      "packageLabel": "Package: {{label}} ({{date}})",
+      "onPenVersionUnknown": "Current on-pen version: unavailable",
+      "onPenVersionHint": "This app cannot read the firmware version already on the pen — there is no reliable way to query it today.",
+      "downloadButton": "Download official update",
+      "cancelButton": "Cancel download",
+      "reinstallButton": "Advanced: reinstall this version",
+      "phase": {
+        "downloading": "Downloading…",
+        "verifying": "Verifying…",
+        "extracting": "Extracting…",
+        "done": "Done.",
+        "failed": "Failed."
+      }
+    }
   },
   "confirm": {
     "title": "Confirm",

@@ -805,3 +805,50 @@ quit and reopened. Fixed for real, not documented around.
   - **400 tests pass, 4 skipped** (the two real-Windows-only smoke test files, opt-in outside
     CI); `typecheck` and `electron-vite build` both clean.
 - [x] Version bumped to **v0.3.8**.
+
+# Firmware milestone — official-download flow (v0.3.9-in-progress, 2026-09-15): script.ver required-file correction, verified with real Windows CI, not assumed
+
+While building the Windows-only official-download flow (new `firmwareCatalog`/`firmwareDownload`/
+`firmwareExtract`/`firmwareRelease` modules — download → SHA-256 verify → safe zip-slip-guarded
+extract → the existing, unmodified `startFirmwareUpgrade`/`inspectFirmwarePackage` chain), running
+the real `tools.zip` through the new pipeline end-to-end surfaced that it has no root-level
+`script.ver` — only `soundbox\standard\script.ver`. `REQUIRED_RELATIVE_FILES` required the
+root-level copy, so the real package failed validation.
+
+- [x] **Did not assume the prior `copy /b` (`bank.bin`) finding covered this.** The user
+      explicitly rejected that shortcut — a multi-source `copy /b` skip-and-continue and a
+      single-source `copy source dest` against a missing source are different mechanisms, and
+      only the former had ever actually been tested. See the new `tasks/lessons.md` entry.
+- [x] **Ran a real, harmless Windows CI verification**
+      (`.github/workflows/firmware-scriptver-copy-smoke.yml`, manual-dispatch only, needs zero
+      repo checkout — pure synthetic files): reproduces exactly `tools\soundbox\standard\
+      download.bat`'s own `cd %~dp0` + `copy ..\..\script.ver .` lines against a root-absent/
+      nested-present skeleton. Never invokes any vendor tool, never touches a device, never
+      modifies the real `tools.zip`. Run `35014413934`: copy failed with the real cmd.exe error
+      ("The system cannot find the file specified.", errorlevel 1), the nested `script.ver` was
+      byte-for-byte unchanged after (SHA-256 identical before/after), and the batch continued to
+      its next line — committed and pushed to `main` directly (a `workflow_dispatch` workflow
+      must exist on the default branch to be dispatchable at all; the file itself only ever runs
+      on manual trigger).
+- [x] **Corrected `REQUIRED_RELATIVE_FILES`** (`firmwareUpgrade.ts`) to require
+      `soundbox\standard\script.ver` (the real point of consumption) instead of the copy step's
+      absent root-level source, with a doc comment citing the exact run/evidence — explicitly
+      scoped as proof of only this one copy step's failure mode, not of
+      `isd_download.exe`/`ufw_maker.exe`/`remove_tailing_zeros.exe` succeeding or any real flash
+      outcome. Updated the three test files with their own hand-mirrored required-file lists
+      (`firmwareUpgrade.test.ts`, `firmwareExtract.test.ts`, `firmwareIpc.test.ts`) to match.
+- [x] **Added targeted regression tests** (`firmwareUpgrade.test.ts`): root absent + nested
+      present → still `looksValid`; both absent → still correctly flagged, at the real nested
+      path (never the old root path). Also surfaced `missingFiles` through
+      `FirmwareExtractOutcome`/`FirmwarePrepareResult` so the official-download UI shows the same
+      specific missing-path list the local-folder path already did, instead of a generic message.
+- [x] **The real `tools.zip` end-to-end test now asserts `status: 'ok'`** (was previously a
+      documented, honest "currently fails on this one known gap" branch) — the real package
+      genuinely passes the corrected check now. Not a re-upload of the zip; a corrected
+      understanding of where the confirmed chain actually needs the file.
+- [x] **432 tests pass, 4 skipped**; `typecheck` clean.
+- [ ] **Still unverified, explicitly not claimed by any of the above:** whether
+      `isd_download.exe`/`ufw_maker.exe` actually succeed against a real pen with this package,
+      and the still-open `remove_tailing_zeros.exe` regeneration question from the v0.3.7 round.
+      Resolving either requires running the vendor tool against real hardware, which remains out
+      of scope unless the user explicitly asks for it.

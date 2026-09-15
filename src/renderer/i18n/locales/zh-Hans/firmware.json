@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "固件套件",
-    "devModeNotice": "测试模式：请自行选择已解压的供应商套件文件夹。从 PonyABC 服务器下载并校验官方套件的功能尚未上线。",
-    "selectButton": "选择套件文件夹…",
+    "devModeNotice": "仅供测试／支持使用：请自行选择已解压的供应商套件文件夹。大多数用户应使用上方的官方下载功能。",
+    "selectButton": "测试／支持：自行选择本机文件夹",
     "selectedPath": "已选择：{{path}}",
     "looksValid": "此文件夹具备已确认升级路径所需的文件。",
     "invalid": "此文件夹缺少升级所需的文件，将不会执行任何操作。",
-    "nextButton": "下一步"
+    "nextButton": "下一步",
+    "official": {
+      "loading": "正在查询官方固件版本…",
+      "noRelease": "尚未发布官方固件版本。",
+      "noNetwork": "无法连接到更新服务器，请检查网络连接后重试。",
+      "downloadFailed": "下载失败，请检查网络连接后重试。",
+      "verifyFailed": "下载的文件未通过校验，已被丢弃，请重新尝试。",
+      "extractFailed": "无法解压下载的套件，请重新尝试或联系支持。",
+      "version": "官方版本：{{version}}",
+      "packageLabel": "套件：{{label}}（{{date}}）",
+      "onPenVersionUnknown": "目前笔内版本：尚未能读取",
+      "onPenVersionHint": "本应用程序目前无法读取点读笔上已有的固件版本——现时没有可靠的方法查询。",
+      "downloadButton": "下载官方更新",
+      "cancelButton": "取消下载",
+      "reinstallButton": "高级：重新安装此版本",
+      "phase": {
+        "downloading": "下载中…",
+        "verifying": "校验中…",
+        "extracting": "解压中…",
+        "done": "完成。",
+        "failed": "失败。"
+      }
+    }
   },
   "confirm": {
     "title": "确认",

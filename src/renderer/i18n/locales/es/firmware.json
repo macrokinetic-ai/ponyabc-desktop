@@ -20,12 +20,34 @@
   },
   "package": {
     "title": "Paquete de firmware",
-    "devModeNotice": "Modo de prueba: seleccione usted mismo la carpeta del paquete del proveedor ya extraída. Descargar y verificar un paquete oficial desde el servidor de PonyABC aún no está disponible.",
-    "selectButton": "Seleccionar carpeta del paquete…",
+    "devModeNotice": "Solo para pruebas/soporte: seleccione usted mismo la carpeta del paquete del proveedor ya extraída. La mayoría de las personas deberían usar la descarga oficial de arriba.",
+    "selectButton": "Prueba/soporte: seleccionar una carpeta local…",
     "selectedPath": "Seleccionado: {{path}}",
     "looksValid": "Esta carpeta tiene los archivos que necesita la ruta de actualización confirmada.",
     "invalid": "A esta carpeta le faltan archivos necesarios para la actualización. No se ejecutará nada.",
-    "nextButton": "Siguiente"
+    "nextButton": "Siguiente",
+    "official": {
+      "loading": "Comprobando la versión oficial del firmware…",
+      "noRelease": "Aún no se ha publicado ninguna versión oficial del firmware.",
+      "noNetwork": "No se pudo contactar con el servidor de actualizaciones. Compruebe su conexión a internet e inténtelo de nuevo.",
+      "downloadFailed": "La descarga falló. Compruebe su conexión a internet e inténtelo de nuevo.",
+      "verifyFailed": "El archivo descargado no superó la verificación y fue descartado. Vuelva a intentarlo.",
+      "extractFailed": "No se pudo extraer el paquete descargado. Vuelva a intentarlo o contacte con soporte.",
+      "version": "Versión oficial: {{version}}",
+      "packageLabel": "Paquete: {{label}} ({{date}})",
+      "onPenVersionUnknown": "Versión actual en el lápiz: no disponible",
+      "onPenVersionHint": "Esta aplicación no puede leer la versión del firmware ya presente en el lápiz — actualmente no existe una forma fiable de consultarla.",
+      "downloadButton": "Descargar actualización oficial",
+      "cancelButton": "Cancelar descarga",
+      "reinstallButton": "Avanzado: reinstalar esta versión",
+      "phase": {
+        "downloading": "Descargando…",
+        "verifying": "Verificando…",
+        "extracting": "Extrayendo…",
+        "done": "Completado.",
+        "failed": "Fallido."
+      }
+    }
   },
   "confirm": {
     "title": "Confirmar",

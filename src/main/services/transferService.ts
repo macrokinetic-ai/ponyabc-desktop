@@ -125,6 +125,145 @@ async function unlinkQuiet(p: string): Promise<void> {
   await fs.promises.unlink(p).catch(() => {});
 }
 
+export type DownloadFilePhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled';
+
+export interface DownloadFileProgressEvent {
+  bytesReceived: number;
+  totalBytes: number;
+  phase: DownloadFilePhase;
+}
+
+export type DownloadFileOutcome =
+  | { status: 'ok'; sizeBytes: number; sha256: string }
+  | { status: 'cancelled' }
+  /** actualSha256 is null when the size itself already didn't match (no point hashing). */
+  | { status: 'hash-mismatch'; actualSizeBytes: number; actualSha256: string | null }
+  | { status: 'network-error'; message: string };
+
+/**
+ * Generic streaming download + verify core, extracted (behavior-preserving) from
+ * bookDownload.ts's original inline `runDownload` so firmwareDownload.ts can reuse the exact
+ * same, already-hardened Electron stream-handling — see the comment on the WHATWG reader below,
+ * which is the load-bearing part of this function and must never be replaced with
+ * `Readable.fromWeb` + `stream/promises.pipeline`.
+ *
+ * Downloads `url` into `destTmpPath` (the caller picks the temp path and is responsible for
+ * renaming it into its own final location on `status: 'ok'` — this function never renames).
+ * `expectedSha256` may be null to skip hash verification (size is still checked) — used for a
+ * release whose catalog entry doesn't carry a trustworthy hash.
+ */
+export async function downloadFile(params: {
+  url: string;
+  destTmpPath: string;
+  expectedSize: number;
+  expectedSha256: string | null;
+  signal: AbortSignal;
+  onProgress?: (e: DownloadFileProgressEvent) => void;
+  fetchFn?: typeof fetch;
+}): Promise<DownloadFileOutcome> {
+  const { url, destTmpPath, expectedSize, expectedSha256, signal, onProgress } = params;
+  const fetchFn = params.fetchFn ?? fetch;
+
+  fs.mkdirSync(path.dirname(destTmpPath), { recursive: true });
+  onProgress?.({ bytesReceived: 0, totalBytes: expectedSize, phase: 'downloading' });
+
+  let response: Response;
+  try {
+    response = await fetchFn(url, { signal });
+  } catch (err) {
+    if (signal.aborted) return { status: 'cancelled' };
+    return { status: 'network-error', message: err instanceof Error ? err.message : String(err) };
+  }
+  if (!response.ok || !response.body) {
+    return { status: 'network-error', message: `Server returned ${response.status}.` };
+  }
+
+  let bytesReceived = 0;
+  const writeStream = fs.createWriteStream(destTmpPath);
+  try {
+    // Deliberately NOT `Readable.fromWeb(response.body)` + `stream/promises.pipeline` — that
+    // interop was confirmed (via a real Electron main-process run, reproduced against the
+    // real live API: exact declared byte COUNT arrived, but the computed SHA-256 didn't match
+    // — the identical code against the identical URL was byte-correct in plain Node) to
+    // silently corrupt bytes somewhere in Electron's WHATWG-stream-to-Node-stream conversion,
+    // without ever throwing or changing the total length. Reading the WHATWG stream directly
+    // via its own reader avoids that conversion layer entirely.
+    const reader = (response.body as ReadableStream<Uint8Array>).getReader();
+    // Race each read against the abort signal directly, rather than trusting reader.cancel()
+    // to make a pending read() settle — cancellation propagation through a stream is exactly
+    // the class of interop this file has already found to be unreliable in practice. This is
+    // also why reader.cancel() is only ever called AFTER the race, as pure cleanup in the
+    // catch block below — calling it as part of the race itself is actively wrong: per the
+    // streams spec, canceling a reader makes its PENDING read() resolve as `{done: true}` (a
+    // normal-completion signal), not reject — so if a cancel-on-abort listener fires before
+    // the rejection listener below, the race can resolve as "finished successfully" with a
+    // truncated read instead of surfacing as an abort (confirmed by a real failing test: it
+    // silently produced a false 'hash-mismatch' instead of 'cancelled').
+    let rejectOnAbort!: () => void;
+    const abortRejection = new Promise<never>((_, reject) => {
+      rejectOnAbort = () => reject(new DOMException('Aborted', 'AbortError'));
+      if (signal.aborted) rejectOnAbort();
+      else signal.addEventListener('abort', rejectOnAbort, { once: true });
+    });
+    abortRejection.catch(() => {}); // never left unhandled if it rejects after the loop already moved on
+    try {
+      for (;;) {
+        const { done, value } = await Promise.race([reader.read(), abortRejection]);
+        if (done) break;
+        bytesReceived += value.byteLength;
+        if (bytesReceived > expectedSize) {
+          throw new Error('Downloaded more bytes than the declared size.');
+        }
+        onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'downloading' });
+        if (!writeStream.write(value)) {
+          await new Promise<void>((resolve) => writeStream.once('drain', resolve));
+        }
+      }
+    } finally {
+      signal.removeEventListener('abort', rejectOnAbort);
+      if (signal.aborted) reader.cancel().catch(() => {});
+    }
+    await new Promise<void>((resolve, reject) => {
+      writeStream.end((err: NodeJS.ErrnoException | null | undefined) => (err ? reject(err) : resolve()));
+    });
+  } catch (err) {
+    // Wait for the write stream to actually finish closing before unlinking — destroy() can
+    // be called while the stream's own fs.open() is still in flight (e.g. the very first
+    // chunk already failed validation, before any write() ever happened), and an unlink
+    // issued immediately can race ahead of that pending open, missing the file it then
+    // creates a moment later and leaving an orphaned empty temp file behind.
+    await new Promise<void>((resolve) => {
+      writeStream.once('close', resolve);
+      writeStream.destroy();
+    });
+    await unlinkQuiet(destTmpPath);
+    if (signal.aborted) {
+      onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'cancelled' });
+      return { status: 'cancelled' };
+    }
+    onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'failed' });
+    return { status: 'network-error', message: err instanceof Error ? err.message : String(err) };
+  }
+
+  onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'verifying' });
+
+  const stagedStat = await fs.promises.stat(destTmpPath);
+  if (stagedStat.size !== expectedSize) {
+    await unlinkQuiet(destTmpPath);
+    onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'failed' });
+    return { status: 'hash-mismatch', actualSizeBytes: stagedStat.size, actualSha256: null };
+  }
+  const stagedHash = await sha256File(destTmpPath);
+  if (expectedSha256 !== null && stagedHash !== expectedSha256) {
+    await unlinkQuiet(destTmpPath);
+    onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'failed' });
+    return { status: 'hash-mismatch', actualSizeBytes: stagedStat.size, actualSha256: stagedHash };
+  }
+
+  onProgress?.({ bytesReceived, totalBytes: expectedSize, phase: 'done' });
+  return { status: 'ok', sizeBytes: stagedStat.size, sha256: stagedHash };
+}
+
 /**
  * Safely writes `sourcePath`'s content to `targetDir/targetFileName`, preserving the exact
  * target filename. Order of operations, chosen specifically so a crash or mid-operation

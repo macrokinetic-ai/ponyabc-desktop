@@ -3,7 +3,11 @@ import path from 'node:path';
 import { app, dialog, type BrowserWindow } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type {
+  FirmwareDownloadProgressEvent,
+  FirmwarePrepareResult,
   FirmwareRecoveryStatus,
+  FirmwareReleaseFetchResult,
+  FirmwareReleaseInfo,
   FirmwareSelectPackageResult,
   FirmwareStartResult,
   FirmwareUpgradeOutcome,
@@ -18,6 +22,8 @@ import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrad
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
 import { appendDiagnostic } from '../services/diagnostics';
 import { diagnosticsStore } from './book';
+import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
+import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
   const result = await dialog.showOpenDialog(window, {
@@ -256,4 +262,61 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
   })();
 
   return { status: 'started' };
+}
+
+// ---------------------------------------------------------------------------------------
+// Official firmware download flow (Windows only) — talks to the secret-free public
+// register.ponyabc.uk firmware catalog. Both handlers apply the exact same platform guard as
+// startFirmwareUpgrade above, BEFORE any network call — Mac never makes a request whose only
+// purpose would be decorating a screen it's telling the user not to use (FirmwareScreen.tsx's
+// isMac branch never even calls these).
+// ---------------------------------------------------------------------------------------
+
+function firmwareDownloadsRootDir(): string {
+  return path.join(app.getPath('userData'), 'firmwareDownloads');
+}
+
+export async function getOfficialFirmwareRelease(): Promise<FirmwareReleaseFetchResult> {
+  if (process.platform !== 'win32') return { status: 'unsupported-platform' };
+  return fetchOfficialFirmwareRelease(HARDWARE_REV_CONST);
+}
+
+/** The in-flight official download's abort controller, if any — cancelFirmwareDownload() is the
+ *  only thing that ever aborts it. Module-level and single-slot: only one official download can
+ *  usefully run at a time from a single wizard, mirroring the rest of this file's pattern. */
+let currentPrepareController: AbortController | null = null;
+
+export async function prepareOfficialFirmwarePackage(
+  window: BrowserWindow,
+  params: { release: FirmwareReleaseInfo },
+): Promise<FirmwarePrepareResult> {
+  if (process.platform !== 'win32') return { status: 'unsupported-platform' };
+
+  const controller = new AbortController();
+  currentPrepareController = controller;
+  try {
+    return await runPrepareOfficialFirmwarePackage({
+      release: params.release,
+      downloadsRootDir: firmwareDownloadsRootDir(),
+      signal: controller.signal,
+      onProgress: (event) => {
+        try {
+          window.webContents.send(IPC.firmwareDownloadProgress, event satisfies FirmwareDownloadProgressEvent);
+        } catch {
+          // window already gone
+        }
+      },
+    });
+  } finally {
+    if (currentPrepareController === controller) currentPrepareController = null;
+  }
+}
+
+/** Aborts the in-flight official download, if any. Never touches startFirmwareUpgrade's own
+ *  pen lock/in-progress guard — those only ever apply once a package is actually being flashed,
+ *  which this download step is strictly before. */
+export function cancelFirmwareDownload(): { ok: boolean } {
+  const had = currentPrepareController !== null;
+  currentPrepareController?.abort();
+  return { ok: had };
 }

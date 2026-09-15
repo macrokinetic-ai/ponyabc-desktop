@@ -40,7 +40,22 @@ const REQUIRED_RELATIVE_FILES = [
   // Copied into soundbox\standard\ by download.bat itself, then consumed by isd_download.exe.
   'uboot.boot',
   'ota.bin',
-  'script.ver',
+  // script.ver is the one exception to "require the copy's root-level source": the confirmed
+  // real tools.zip snapshot has NO root-level script.ver, only soundbox\standard\script.ver
+  // (pre-shipped there directly, not merely a leftover). That would make `copy ..\..\script.ver
+  // .` fail every time — verified for real, not assumed, via a harmless synthetic-file Windows
+  // CI run (.github/workflows/firmware-scriptver-copy-smoke.yml, run
+  // https://github.com/macrokinetic-ai/ponyabc-desktop/actions/runs/35014413934, 2026-09-15):
+  // reproducing the exact `cd %~dp0` + `copy ..\..\script.ver .` lines against a synthetic
+  // root-absent/nested-present skeleton produced the real cmd.exe error "The system cannot find
+  // the file specified.", errorlevel 1, a byte-for-byte-unchanged nested script.ver (SHA-256
+  // identical before/after), and execution continuing to the next line — i.e. this specific
+  // package's pre-shipped nested copy is definitely NOT overwritten or removed by the expected
+  // copy failure, and the batch doesn't abort. So the requirement here targets the file's real
+  // point of consumption instead of the copy's (absent) source. This is NOT a claim that
+  // isd_download.exe/ufw_maker.exe/remove_tailing_zeros.exe actually succeed, or that any real
+  // pen flash works — only that THIS specific copy step's failure mode is harmless.
+  path.join('soundbox', 'standard', 'script.ver'),
   path.join('soundbox', 'standard', 'app.bin'),
   path.join('soundbox', 'standard', 'br25loader.bin'),
 

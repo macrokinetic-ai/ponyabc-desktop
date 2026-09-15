@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FirmwarePackageInfo, FirmwareProgressEvent, FirmwareRecoveryStatus, FirmwareUpgradeOutcome } from '@shared/types';
+import type {
+  FirmwareDownloadProgressEvent,
+  FirmwarePackageInfo,
+  FirmwarePrepareResult,
+  FirmwareProgressEvent,
+  FirmwareRecoveryStatus,
+  FirmwareReleaseFetchResult,
+  FirmwareUpgradeOutcome,
+} from '@shared/types';
 import { usePenRoot } from '../state/PenRootContext';
+import { compareOfficialToOnPen } from './firmwareVersionCompare';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
 
@@ -30,6 +39,16 @@ export function FirmwareScreen() {
   const [recovery, setRecovery] = useState<FirmwareRecoveryStatus | null>(null);
   const [rechecking, setRechecking] = useState(false);
   const logRef = useRef<HTMLPreElement | null>(null);
+
+  // Official firmware download flow (Windows only) — see the block comment in shared/types.ts.
+  // 'loading' until the initial fetch on mount settles.
+  const [officialFetch, setOfficialFetch] = useState<FirmwareReleaseFetchResult | 'loading'>('loading');
+  const [preparing, setPreparing] = useState(false);
+  const [prepareResult, setPrepareResult] = useState<FirmwarePrepareResult | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<FirmwareDownloadProgressEvent | null>(null);
+  // Session-only (never persisted): the packageDir of the most recent successful official
+  // download, enabling the "reinstall this version" advanced affordance without re-downloading.
+  const [lastOfficialPackageDir, setLastOfficialPackageDir] = useState<string | null>(null);
 
   // A previous session's firmware upgrade may not have been confirmed finished — see
   // src/main/ipc/firmware.ts's checkPendingFirmwareRecoveryOnStartup. This is checked once by
@@ -75,6 +94,57 @@ export function FirmwareScreen() {
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [progress]);
+
+  useEffect(() => {
+    if (isMac) return;
+    let cancelled = false;
+    void window.ponyabc.getOfficialFirmwareRelease().then((result) => {
+      if (!cancelled) setOfficialFetch(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMac]);
+
+  useEffect(() => {
+    if (isMac) return;
+    return window.ponyabc.onFirmwareDownloadProgress((event) => setDownloadProgress(event));
+  }, [isMac]);
+
+  /** The extraction step (main process, firmwareExtract.ts) only ever returns a packageDir that
+   *  already passed inspectFirmwarePackage().looksValid — that's the whole point of its
+   *  auto-detection. Safe to construct FirmwarePackageInfo directly here without a second
+   *  main-process round-trip, exactly as the local-folder flow's own inspectFirmwarePackage()
+   *  result would. */
+  function buildOfficialPackageInfo(rootDir: string): FirmwarePackageInfo {
+    const sep = rootDir.endsWith('\\') || rootDir.endsWith('/') ? '' : '\\';
+    return { rootDir, entryBatPath: `${rootDir}${sep}download.bat`, looksValid: true, missingFiles: [] };
+  }
+
+  async function handleDownloadOfficial() {
+    if (officialFetch === 'loading' || officialFetch.status !== 'ok') return;
+    setPreparing(true);
+    setPrepareResult(null);
+    setDownloadProgress(null);
+    try {
+      const result = await window.ponyabc.prepareOfficialFirmwarePackage(officialFetch.release);
+      setPrepareResult(result);
+      if (result.status === 'ok') {
+        setPackageInfo(buildOfficialPackageInfo(result.packageDir));
+        setLastOfficialPackageDir(result.packageDir);
+      }
+    } finally {
+      setPreparing(false);
+    }
+  }
+
+  /** Advanced, explicit-only affordance — never auto-offered/auto-triggered. Re-enters the
+   *  confirm/upgrade flow against the already-downloaded packageDir without re-downloading. */
+  function handleReinstallOfficial() {
+    if (!lastOfficialPackageDir) return;
+    setPackageInfo(buildOfficialPackageInfo(lastOfficialPackageDir));
+    setStep('confirm');
+  }
 
   async function handleSelectPackage() {
     setSelecting(true);
@@ -151,6 +221,8 @@ export function FirmwareScreen() {
     setProgress(null);
     setOutcome(null);
     setRestartNoticeShown(false);
+    setPrepareResult(null);
+    setDownloadProgress(null);
   }
 
   if (isMac) {
@@ -194,6 +266,13 @@ export function FirmwareScreen() {
     );
   }
 
+  // onPenVersion is always null — no reliable read-only on-pen firmware version query exists in
+  // the vendor toolkit today (see firmwareUpgrade.ts's REQUIRED_RELATIVE_FILES doc: every
+  // scripted path traced is write-only). See firmwareVersionCompare.ts for the full comparator,
+  // unit-tested for all 4 branches even though only 'unknown' is ever reachable here.
+  const versionCompare =
+    officialFetch !== 'loading' && officialFetch.status === 'ok' ? compareOfficialToOnPen(null, officialFetch.release) : null;
+
   return (
     <div className="screen">
       <h1>{t('title')}</h1>
@@ -223,27 +302,104 @@ export function FirmwareScreen() {
       {step === 'package' && (
         <section>
           <h2>{t('package.title')}</h2>
-          <p className="hint">{t('package.devModeNotice')}</p>
-          <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
-            {t('package.selectButton')}
-          </button>
-          {packageInfo && (
-            <div className="firmware-package-info">
-              <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
-              {packageInfo.looksValid ? (
-                <p className="hint">{t('package.looksValid')}</p>
-              ) : (
-                <>
-                  <p className="error-text">{t('package.invalid')}</p>
-                  <ul>
-                    {packageInfo.missingFiles.map((f) => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
+
+          <div className="firmware-official">
+            {officialFetch === 'loading' && <p className="hint">{t('package.official.loading')}</p>}
+            {officialFetch !== 'loading' && officialFetch.status === 'no-release' && (
+              <p className="hint">{t('package.official.noRelease')}</p>
+            )}
+            {officialFetch !== 'loading' && officialFetch.status === 'no-network' && (
+              <p className="error-text">{t('package.official.noNetwork')}</p>
+            )}
+            {officialFetch !== 'loading' && officialFetch.status === 'ok' && (
+              <div className="note-box">
+                <p>{t('package.official.version', { version: officialFetch.release.version })}</p>
+                {officialFetch.release.packageLabel && (
+                  <p className="hint">
+                    {t('package.official.packageLabel', {
+                      label: officialFetch.release.packageLabel,
+                      date: officialFetch.release.packageDate ? new Date(officialFetch.release.packageDate).toLocaleDateString() : '',
+                    })}
+                  </p>
+                )}
+                {officialFetch.release.notes && <p className="hint">{officialFetch.release.notes}</p>}
+                {versionCompare === 'unknown' && (
+                  <p className="hint" title={t('package.official.onPenVersionHint')}>
+                    {t('package.official.onPenVersionUnknown')}
+                  </p>
+                )}
+
+                {preparing && downloadProgress && (
+                  <div className="firmware-official__progress">
+                    {(downloadProgress.phase === 'downloading' || downloadProgress.phase === 'verifying') && (
+                      <progress value={downloadProgress.bytesReceived ?? 0} max={downloadProgress.totalBytes ?? 1} />
+                    )}
+                    <p className="hint">{t(`package.official.phase.${downloadProgress.phase}`)}</p>
+                  </div>
+                )}
+
+                {prepareResult?.status === 'no-network' && <p className="error-text">{t('package.official.noNetwork')}</p>}
+                {prepareResult?.status === 'download-failed' && <p className="error-text">{t('package.official.downloadFailed')}</p>}
+                {prepareResult?.status === 'verify-failed' && <p className="error-text">{t('package.official.verifyFailed')}</p>}
+                {prepareResult?.status === 'extract-failed' && (
+                  <>
+                    <p className="error-text">{t('package.official.extractFailed')}</p>
+                    {prepareResult.missingFiles && prepareResult.missingFiles.length > 0 && (
+                      <>
+                        <p className="error-text">{t('package.invalid')}</p>
+                        <ul>
+                          {prepareResult.missingFiles.map((f) => (
+                            <li key={f}>{f}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </>
+                )}
+
+                <div className="firmware-wizard__actions">
+                  <button type="button" className="button button--primary" disabled={preparing} onClick={() => void handleDownloadOfficial()}>
+                    {t('package.official.downloadButton')}
+                  </button>
+                  {preparing && (
+                    <button type="button" className="button" onClick={() => void window.ponyabc.cancelFirmwareDownload()}>
+                      {t('package.official.cancelButton')}
+                    </button>
+                  )}
+                  {lastOfficialPackageDir && !preparing && (
+                    <button type="button" className="button" onClick={handleReinstallOfficial}>
+                      {t('package.official.reinstallButton')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="firmware-local-folder">
+            <p className="hint">{t('package.devModeNotice')}</p>
+            <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
+              {t('package.selectButton')}
+            </button>
+            {packageInfo && (
+              <div className="firmware-package-info">
+                <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
+                {packageInfo.looksValid ? (
+                  <p className="hint">{t('package.looksValid')}</p>
+                ) : (
+                  <>
+                    <p className="error-text">{t('package.invalid')}</p>
+                    <ul>
+                      {packageInfo.missingFiles.map((f) => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="firmware-wizard__actions">
             <button type="button" className="button" onClick={() => setStep('prepare')}>
               {t('back')}

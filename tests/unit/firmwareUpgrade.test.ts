@@ -25,7 +25,7 @@ const REQUIRED_FILES = [
   'remove_tailing_zeros.exe',
   'uboot.boot',
   'ota.bin',
-  'script.ver',
+  path.join('soundbox', 'standard', 'script.ver'),
   path.join('soundbox', 'standard', 'app.bin'),
   path.join('soundbox', 'standard', 'br25loader.bin'),
   'text.bin',
@@ -130,6 +130,34 @@ describe('inspectFirmwarePackage — real filesystem, never inferred from folder
     writeFullPackage(dir);
     const info = inspectFirmwarePackage(dir);
     expect(info.missingFiles).not.toContain('bank.bin');
+  });
+
+  // 2026-09-15: corrected from requiring root-level script.ver to requiring
+  // soundbox/standard/script.ver (the real point of consumption), backed by a real Windows CI
+  // run (.github/workflows/firmware-scriptver-copy-smoke.yml) proving the nested copy survives
+  // the expected `copy ..\..\script.ver .` failure byte-for-byte and the batch continues past
+  // it — not by assuming a same-location file is an equivalent substitute. See the doc comment
+  // on REQUIRED_RELATIVE_FILES for the full evidence. This does NOT verify the actual flashing
+  // tools or a real device — only that this specific package layout (root script.ver absent,
+  // nested copy present) is not incorrectly flagged invalid.
+  it('root-level script.ver absent, nested soundbox/standard/script.ver present — still looksValid (verified real-CI substitute)', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir); // writeFullPackage only ever writes the nested path — root never existed
+    expect(fs.existsSync(path.join(dir, 'script.ver'))).toBe(false);
+    expect(fs.existsSync(path.join(dir, 'soundbox', 'standard', 'script.ver'))).toBe(true);
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(true);
+    expect(info.missingFiles).toEqual([]);
+  });
+
+  it('script.ver missing from BOTH root and its real consumption point is still flagged, at the real path', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    fs.rmSync(path.join(dir, 'soundbox', 'standard', 'script.ver'));
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(false);
+    expect(info.missingFiles).toContain(path.join('soundbox', 'standard', 'script.ver'));
+    expect(info.missingFiles).not.toContain('script.ver');
   });
 });
 
