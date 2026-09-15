@@ -39,7 +39,15 @@ win:
       arch:
         - x64
   artifactName: PonyABC-Desktop-v${version}-winx64.${ext}
-  signAndEditExecutable: false
+  # signAndEditExecutable was previously set to false here. That flag gates BOTH code signing
+  # AND rcedit's resource editing (icon + FileDescription/ProductName/version strings) as a
+  # single switch in app-builder-lib's WinPackager — disabling it meant rcedit's --set-icon
+  # step never ran, so every packaged .exe silently kept Electron's stock default icon instead
+  # of build/icon.png's PonyABC logo (confirmed directly: the shipped exe's icon resource was
+  # byte-identical to the untouched electron.exe download). It was never needed to avoid a
+  # signing failure either — with no certificate configured, signing already no-ops safely
+  # (only throws if forceCodeSigning is true, which it isn't). Left at the documented default
+  # (true) so rcedit runs; signing itself still safely no-ops with no certificate present.
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
