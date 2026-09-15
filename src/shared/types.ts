@@ -615,6 +615,8 @@ export interface PonyAbcApi {
   platform: string;
 
   openRegistrationPage: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  openPrivacyPolicyPage: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  openSupportEmail: (params: { subject: string }) => Promise<{ ok: true } | { ok: false; error: string }>;
 
   // Pen root — auto-detection + manual fallback.
   scanForPenRoot: () => Promise<PenRootScanResult>;

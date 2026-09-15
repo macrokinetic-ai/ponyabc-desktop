@@ -28,5 +28,31 @@
     "exportButton": "匯出診斷紀錄…",
     "exportSaved": "已儲存至 {{path}}",
     "exportFailed": "無法儲存檔案。"
+  },
+  "legal": {
+    "title": "私隱、法律與支援",
+    "englishOnlyNotice": "以下私隱及法律／版權內容目前只有英文版本，中文譯本仍待審閱。",
+    "privacy": {
+      "title": "私隱",
+      "versionLine": "版本 {{version}} · 最後更新：{{date}}",
+      "localHeading": "留在您電腦上的內容",
+      "networkHeading": "本 App 會透過網絡傳送的內容，及原因",
+      "registrationHeading": "保養註冊（與本 App 分開）",
+      "retentionHeading": "資料保留多久",
+      "rightsHeading": "您的權利",
+      "openFullPolicyButton": "開啟完整網站私隱政策"
+    },
+    "legalCopyright": {
+      "title": "法律與版權",
+      "thirdPartyHeading": "第三方軟件聲明"
+    },
+    "support": {
+      "title": "聯絡支援",
+      "emailLabel": "支援電郵",
+      "contactButton": "聯絡支援",
+      "copyButton": "複製電郵地址",
+      "copiedConfirmation": "已複製！",
+      "openFailedHint": "未能自動開啟郵件程式——您可以複製上方地址。"
+    }
   }
 }

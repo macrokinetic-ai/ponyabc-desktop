@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { initI18n } from '../../src/renderer/i18n';
+import i18n from '../../src/renderer/i18n';
 import { SettingsScreen } from '../../src/renderer/screens/SettingsScreen';
 import type { PonyAbcApi } from '../../src/shared/types';
 
@@ -9,6 +10,8 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
     platform: 'darwin',
     openRegistrationPage: vi.fn(async () => ({ ok: true })),
+    openPrivacyPolicyPage: vi.fn(async () => ({ ok: true })),
+    openSupportEmail: vi.fn(async () => ({ ok: true })),
     scanForPenRoot: vi.fn(async () => ({ status: 'none' })),
     chooseCandidatePenRoot: vi.fn(async () => ({ status: 'none' })),
     selectPenRoot: vi.fn(async () => ({ status: 'cancelled' })),
@@ -47,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  void i18n.changeLanguage('en');
 });
 
 describe('SettingsScreen — About this App', () => {
@@ -116,5 +120,70 @@ describe('SettingsScreen — check for updates', () => {
 
     fireEvent.click(screen.getByText('Check for updates'));
     await waitFor(() => expect(checkForUpdates).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('SettingsScreen — Privacy, Legal & Support', () => {
+  it('is visible to an ordinary user with no passcode gate at all', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText('Privacy, Legal & Support')).toBeTruthy());
+    expect(screen.getByRole('heading', { name: 'Privacy' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Legal & Copyright' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Contact Support' })).toBeTruthy();
+  });
+
+  it('describes real app behavior — network requests, local-only DIY/BOOK storage, and diagnostics — never claims "no data is collected"', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText(/register\.ponyabc\.uk/)).toBeTruthy());
+    expect(screen.getByText(/github\.com/)).toBeTruthy();
+    expect(screen.getByText(/is ever uploaded anywhere by this app/)).toBeTruthy();
+    expect(screen.queryByText(/we (do not|don't) collect any data/i)).toBeNull();
+  });
+
+  it('marks unconfirmed company/legal details as "to be confirmed" rather than inventing them', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getAllByText(/to be confirmed/).length).toBeGreaterThan(0));
+  });
+
+  it('shows the legal/privacy body text in English even when the UI language is switched, with a translated notice explaining why', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText('Privacy, Legal & Support')).toBeTruthy());
+    await i18n.changeLanguage('zh-Hant');
+    await screen.findByText('私隱、法律與支援'); // chrome is translated
+    expect(screen.getByText(/register\.ponyabc\.uk/)).toBeTruthy(); // body stays English
+    expect(screen.getByText(/仍待審閱/)).toBeTruthy(); // translated "pending review" notice
+  });
+
+  it('"Open full website privacy policy" calls the dedicated privacy-policy opener, never the registration one', async () => {
+    render(<SettingsScreen />);
+    fireEvent.click(await screen.findByText('Open full website privacy policy'));
+    await waitFor(() => expect(window.ponyabc.openPrivacyPolicyPage).toHaveBeenCalled());
+    expect(window.ponyabc.openRegistrationPage).not.toHaveBeenCalled();
+  });
+
+  it('displays the support email and copies it to the clipboard on request', async () => {
+    render(<SettingsScreen />);
+    await screen.findByText('marketing@ponyabc.co.uk');
+    fireEvent.click(screen.getByText('Copy email address'));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith('marketing@ponyabc.co.uk'));
+    await waitFor(() => expect(screen.getByText('Copied!')).toBeTruthy());
+  });
+
+  it('"Contact Support" opens a mail draft with a subject naming the app version/platform, never auto-attaching diagnostics or files', async () => {
+    render(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText('0.2.2')).toBeTruthy()); // appInfo loaded
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact Support' }));
+    await waitFor(() => expect(window.ponyabc.openSupportEmail).toHaveBeenCalled());
+    const call = (window.ponyabc.openSupportEmail as ReturnType<typeof vi.fn>).mock.calls[0][0] as { subject: string };
+    expect(call.subject).toContain('0.2.2');
+    expect(call.subject).toContain('darwin');
+    expect(call).toEqual({ subject: call.subject }); // no other fields (no file/diagnostics payload)
+  });
+
+  it('shows a hint instead of crashing when no mail client is available to handle the support email', async () => {
+    window.ponyabc.openSupportEmail = vi.fn(async () => ({ ok: false, error: 'no handler' }));
+    render(<SettingsScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Contact Support' }));
+    await screen.findByText("Couldn't open a mail app automatically — you can copy the address above instead.");
   });
 });

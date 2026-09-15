@@ -391,3 +391,37 @@ an existing single-purpose string is being asked to serve both purposes —
 if the two contexts have different accuracy/verbosity requirements (here:
 default must never overclaim "verified", detail should say the full state
 plainly), split the string, don't compromise on one shared version.
+
+## A trivial-looking "open URL" wrapper is still a real bug surface — don't copy-paste it wrong
+
+While wiring the new "Open full website privacy policy" button, the first
+draft called `window.ponyabc.openRegistrationPage()` (opens the REGISTRATION
+page) instead of a new privacy-policy opener, then tried to paper over it
+with a `window.open(PRIVACY_POLICY_URL)` fallback chained with `&&` after a
+`void`-prefixed call — which never ran at all, since `void expr` evaluates
+to `undefined` and `undefined && x` never reaches `x`. Caught by re-reading
+the diff before testing, not by a test catching it. Fixed by adding a
+proper, separate main-process handler (`openPrivacyPolicyPage()`, mirroring
+the existing `openRegistrationPage()` pattern exactly: its own hardcoded
+URL, its own IPC channel) rather than trying to reuse or patch around the
+wrong one. General rule: when a screen needs to open a NEW external URL,
+add a new dedicated hardcoded-URL handler mirroring the existing one — never
+reuse an existing single-purpose "open X" function for a different
+destination, and never chain a fire-and-forget `void` call with `&&` as if
+it were synchronous.
+
+## When legal/privacy content needs translation, translate the chrome, not the substance — until it's actually reviewed
+
+For the new Privacy/Legal & Copyright section, the user's instruction was:
+don't present a translation as reviewed when it isn't. Rather than
+translating the full legal body into 8 languages and appending a disclaimer
+(which still ships potentially-wrong legal nuance to users who can't
+independently check it against English), only the UI chrome (headings,
+button labels, the "pending review" notice itself) was translated; the
+substantive paragraphs were kept English-only and fetched via i18next's
+`t(key, { lng: 'en' })` override regardless of the active UI locale. General
+rule: "don't claim a translation is reviewed" is better satisfied by not
+translating the reviewable-risk content at all yet than by translating it
+and hoping a disclaimer is enough — reserve full translation for content
+where a wrong nuance is low-stakes (ordinary UI copy), not for rights/
+retention/company-identity language.

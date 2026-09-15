@@ -339,3 +339,89 @@ overall progress, cancel, and a completion summary — entirely separate from
       after every download action (nothing was ever written to it); 820px
       minimum width has no horizontal overflow; zero console errors
       throughout. Never wrote to a real physical pen.
+
+# v0.3.5 — Settings: "Privacy, Legal & Support" (no passcode required)
+
+New user request, separate from the BOOK milestone work above: a Settings
+section any ordinary user can open directly — unlike Diagnostics, never
+gated behind the hidden passcode — covering privacy, legal/copyright, and a
+support contact path. Explicitly required to be grounded in the REAL
+website `/privacy` content and REAL app data flows, not assumptions, and to
+never invent company/legal facts that aren't actually confirmed anywhere.
+
+- [x] **Researched first, before writing any copy.** Read `ponyabc-web`'s
+      `src/app/privacy/page.tsx` — confirmed it's explicitly marked
+      "placeholder pending legal review" in its own source comment, scoped
+      only to warranty-registration data (name/email/purchase date/intended
+      use/pen serial), and says nothing about the desktop app at all — so
+      it does NOT already cover the app, confirming the user's instinct not
+      to assume it applied. No `/terms` route exists anywhere. Traced every
+      network call in `ponyabc-desktop`'s main process (only 3 call sites
+      exist: BOOK catalog/download → `register.ponyabc.uk`, no headers, no
+      device/user id; GitHub update check → `api.github.com`, a static
+      `User-Agent: PonyABC-Desktop-UpdateCheck`, no personal identifier).
+      Confirmed DIY recordings, diagnostics, and settings are 100% local
+      with zero network code anywhere near them. Confirmed `register.ponyabc.uk`
+      runs on Cloudflare (R2 bucket + Workers, from `wrangler.jsonc`) — a
+      real, citable fact, not a guess.
+- [x] **Privacy section**: an offline-readable summary — version/last-
+      updated line, then real, specific paragraphs on what stays local
+      (DIY/BOOK), what's sent over the network and why (catalog/download
+      requests, GitHub update checks, both described precisely — never "we
+      don't collect any data"), the diagnostics log's actual shape/redaction/
+      export mechanism, that warranty registration happens separately in an
+      external browser, how long local content/logs actually stick around,
+      and a rights/complaints paragraph naming the real (manual, email-only
+      — self-service deletion is confirmed NOT built) request path and the
+      ICO as the UK supervisory authority. A "Full legal company name,
+      registration number, and registered address: to be confirmed" line
+      and a "retention period... to be confirmed" line — neither invented,
+      since neither exists anywhere in either repo. A button opens the real
+      website privacy policy via a new dedicated `openPrivacyPolicyPage()`
+      main-process handler (hardcoded URL, mirrors `openRegistrationPage()`
+      — never reuses the registration opener for a different URL, a bug I
+      caught and fixed before it shipped).
+- [x] **Legal & Copyright section**: affirms (never limits) the user's own
+      rights over their DIY recordings, states the BOOK-content license
+      scope and the registered trade mark fact, notes the formal Terms of
+      Use itself doesn't exist yet ("to be confirmed") rather than
+      fabricating one and passing it off as final, and lists the MIT-
+      licensed open-source dependencies (Electron, React, react-dom,
+      react-i18next, i18next, mpg123-decoder).
+- [x] **Contact Support section**: shows `marketing@ponyabc.co.uk`, a
+      "Contact Support" button (new `openSupportEmail()` main-process
+      handler — hardcoded recipient, renderer only ever supplies a subject
+      line naming the app version/platform; the subject is percent-encoded
+      so it can never inject extra mailto fields like cc/bcc/body — covered
+      by a dedicated injection test), and a "Copy email address" button
+      (reuses the existing About-panel clipboard pattern) that still works
+      even if no mail client responds.
+- [x] **Translation honesty**: only UI chrome (section/heading labels,
+      button text, the notice itself) is translated into all 8 locales;
+      the substantive Privacy/Legal body paragraphs are deliberately kept
+      English-only (fetched via an explicit `{ lng: 'en' }` override
+      regardless of the active UI language) with a translated notice
+      explaining why — rather than shipping 7 languages of unreviewed
+      legal-nuance translation and merely disclaiming it, per the explicit
+      instruction not to pretend translations have been reviewed when they
+      haven't.
+- [x] Never gated behind the diagnostics passcode — visible immediately to
+      any user who opens Settings.
+- [x] Tests: 329 total (was 314). New `registrationAndSupport.test.ts` (7
+      tests, including the mailto-injection-resistance case); 8 new
+      `SettingsScreen.test.tsx` cases (passcode-free visibility, real
+      behavior described without an unverified "no data collected" claim,
+      "to be confirmed" placeholders present, English body persists across
+      a live UI-language switch, the policy button calls the dedicated
+      privacy opener and never the registration one, copy-email, contact-
+      support subject contents, and the no-mail-client fallback hint).
+- [x] Live CDP verification against a rebuilt dev binary with a fresh
+      profile: the section renders with no passcode; real network facts
+      (register.ponyabc.uk, github.com) and "to be confirmed" placeholders
+      are visible; switching the UI language to zh-Hant translates the
+      chrome/notice while the English legal body stays verbatim; 820px
+      minimum width has no horizontal overflow; zero console errors. The
+      actual "Contact Support"/"Open full policy" external-open actions
+      were verified only via mocked unit tests, not by actually invoking
+      `shell.openExternal` during the live CDP pass (that would have
+      launched a real mail client/browser on the test machine).

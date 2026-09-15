@@ -28,5 +28,31 @@
     "exportButton": "Esporta diagnostica…",
     "exportSaved": "Salvato in {{path}}",
     "exportFailed": "Impossibile salvare il file."
+  },
+  "legal": {
+    "title": "Privacy, note legali e assistenza",
+    "englishOnlyNotice": "Il testo di Privacy e Note legali e copyright qui sotto è al momento disponibile solo in inglese; le traduzioni sono in attesa di revisione.",
+    "privacy": {
+      "title": "Privacy",
+      "versionLine": "Versione {{version}} · Ultimo aggiornamento: {{date}}",
+      "localHeading": "Cosa resta sul tuo computer",
+      "networkHeading": "Cosa invia questa app in rete, e perché",
+      "registrationHeading": "Registrazione della garanzia (separata da questa app)",
+      "retentionHeading": "Per quanto tempo vengono conservati i dati",
+      "rightsHeading": "I tuoi diritti",
+      "openFullPolicyButton": "Apri l'informativa sulla privacy completa del sito"
+    },
+    "legalCopyright": {
+      "title": "Note legali e copyright",
+      "thirdPartyHeading": "Note sui software di terze parti"
+    },
+    "support": {
+      "title": "Contatta l'assistenza",
+      "emailLabel": "Email di assistenza",
+      "contactButton": "Contatta l'assistenza",
+      "copyButton": "Copia indirizzo email",
+      "copiedConfirmation": "Copiato!",
+      "openFailedHint": "Impossibile aprire automaticamente un'app di posta — puoi copiare l'indirizzo qui sopra."
+    }
   }
 }

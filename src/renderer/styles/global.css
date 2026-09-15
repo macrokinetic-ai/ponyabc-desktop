@@ -559,6 +559,28 @@ body {
   gap: 8px;
 }
 
+.legal-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  max-width: 640px;
+}
+
+.legal-section h4 {
+  margin-bottom: 4px;
+}
+
+.legal-section p {
+  margin: 4px 0 12px;
+}
+
+.legal-section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1c1c1e;

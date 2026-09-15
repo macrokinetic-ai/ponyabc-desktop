@@ -28,5 +28,44 @@
     "exportButton": "Export diagnostics…",
     "exportSaved": "Saved to {{path}}",
     "exportFailed": "Couldn't save the file."
+  },
+  "legal": {
+    "title": "Privacy, Legal & Support",
+    "englishOnlyNotice": "The Privacy and Legal & Copyright text below is currently available in English only; translations are pending review.",
+    "privacy": {
+      "title": "Privacy",
+      "versionLine": "Version {{version}} · Last updated {{date}}",
+      "companyLine": "Responsible company: PonyABC (trading name; \"PonyABC\" is a registered trade mark, registered in England). Full legal company name, registration number, and registered address: to be confirmed.",
+      "localHeading": "What stays on your computer",
+      "localBody": "Your DIY recordings and any BOOK content are copied directly between your pen and this computer by this app. Neither is ever uploaded anywhere by this app.",
+      "networkHeading": "What this app sends over the network, and why",
+      "networkBookBody": "BOOK catalog & downloads: browsing or downloading BOOK content sends a plain request to our server at register.ponyabc.uk (hosted on Cloudflare) to fetch the catalog or a book file. This request carries no device ID, account ID, or other personal identifier — our server sees only your IP address and the request's timing, the same as any ordinary website visit.",
+      "networkUpdateBody": "Update checks: this app periodically checks GitHub (github.com) for a newer version, identifying itself only as \"PonyABC-Desktop-UpdateCheck\" — this identifies the software making the request, not you personally. GitHub, as a third-party service we use to host releases, sees your IP address and this request like any visitor.",
+      "networkDiagnosticsBody": "Diagnostics log: this app keeps a small local technical log (connection attempts, catalog/download outcomes, matching results) to help troubleshoot problems — capped at the most recent 500 entries, with file paths, personal data, and authentication details automatically removed before anything is shown or saved. This log is never sent anywhere automatically; only you can choose to export it to a file and send it to us.",
+      "registrationHeading": "Warranty registration (separate from this app)",
+      "registrationBody": "Warranty registration happens in your regular web browser, not inside this app — this app only opens the registration page for you. That flow is covered by our website's own privacy policy, not by this summary.",
+      "retentionHeading": "How long things are kept",
+      "retentionBody": "DIY recordings, downloaded BOOK content, and backups remain on your computer until you remove them yourself or uninstall the app. The diagnostics log automatically discards its oldest entries once it passes 500. A fixed retention period for website registration data is not yet published — to be confirmed.",
+      "rightsHeading": "Your rights",
+      "rightsBody": "If you've registered a warranty with us, you may ask to access, correct, or delete the information you submitted, by emailing {{email}}. We don't yet offer self-service deletion — every request is handled manually by our team. If you are in the UK or EEA, you also have the right to complain to your local data protection authority (in the UK, the Information Commissioner's Office, ico.org.uk).",
+      "openFullPolicyButton": "Open full website privacy policy"
+    },
+    "legalCopyright": {
+      "title": "Legal & Copyright",
+      "materialsBody": "PonyABC learning materials (BOOK content, artwork, audio) are licensed for use with a genuine PonyABC pen for personal, non-commercial use. Redistributing BOOK content outside this app is not permitted.",
+      "diyBody": "Recordings you make yourself (DIY content) remain entirely yours. This app makes no claim over them and only ever copies them between your pen and this computer at your direction.",
+      "trademarkBody": "\"PonyABC\" is a registered trade mark, registered in England.",
+      "termsNotice": "This is a plain-language summary, not a substitute for our full Terms of Use, which has not yet been published — to be confirmed.",
+      "thirdPartyHeading": "Third-party software notices",
+      "thirdPartyBody": "This app is built with open-source software under the MIT License, including Electron, React, react-dom, react-i18next, i18next, and mpg123-decoder. Full license texts are available from each project's own repository."
+    },
+    "support": {
+      "title": "Contact Support",
+      "emailLabel": "Support email",
+      "contactButton": "Contact Support",
+      "copyButton": "Copy email address",
+      "copiedConfirmation": "Copied!",
+      "openFailedHint": "Couldn't open a mail app automatically — you can copy the address above instead."
+    }
   }
 }

@@ -9,6 +9,15 @@ import type { AppInfo, DiagnosticsSummary, UpdateCheckResult } from '@shared/typ
  *  for what's actually redacted from the exported log. */
 const DIAGNOSTICS_PASSCODE = '00000000';
 
+// Display copies only — the main process independently hardcodes the real mailto recipient
+// (src/main/ipc/support.ts) and the real registration/privacy URLs; the renderer never gets
+// to supply either, only a subject line for the support email.
+const SUPPORT_EMAIL = 'marketing@ponyabc.co.uk';
+const PRIVACY_VERSION = '1';
+// The date this Privacy/Legal & Copyright text was last written/reviewed by this project —
+// bump it by hand whenever the copy below actually changes, never auto-derived from "today".
+const PRIVACY_LAST_UPDATED = new Date('2026-09-15T00:00:00Z');
+
 export function SettingsScreen() {
   const { t, i18n } = useTranslation('settings');
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -18,6 +27,8 @@ export function SettingsScreen() {
   const [diagCode, setDiagCode] = useState('');
   const [diagSummary, setDiagSummary] = useState<DiagnosticsSummary | null>(null);
   const [diagMessage, setDiagMessage] = useState<string | null>(null);
+  const [emailCopied, setEmailCopied] = useState(false);
+  const [supportMessage, setSupportMessage] = useState<string | null>(null);
   const diagUnlocked = diagCode === DIAGNOSTICS_PASSCODE;
 
   useEffect(() => {
@@ -65,6 +76,25 @@ export function SettingsScreen() {
     if (result.status === 'ok') setDiagMessage(t('diagnostics.exportSaved', { path: result.path }));
     else if (result.status === 'error') setDiagMessage(t('diagnostics.exportFailed'));
     else setDiagMessage(null);
+  }
+
+  async function handleCopySupportEmail() {
+    try {
+      await navigator.clipboard.writeText(SUPPORT_EMAIL);
+      setEmailCopied(true);
+      setTimeout(() => setEmailCopied(false), 2000);
+    } catch {
+      setEmailCopied(false);
+    }
+  }
+
+  async function handleContactSupport() {
+    setSupportMessage(null);
+    // No diagnostics, files, or other personal data are ever attached here — only a subject
+    // line naming the app version/platform, which are already public, non-sensitive info.
+    const subject = `PonyABC Desktop Support — v${appInfo?.version ?? '?'} (${appInfo?.platform ?? '?'})`;
+    const result = await window.ponyabc.openSupportEmail({ subject });
+    if (!result.ok) setSupportMessage(t('legal.support.openFailedHint'));
   }
 
   const current = isSupportedLocale(i18n.language) ? i18n.language : 'en';
@@ -171,6 +201,65 @@ export function SettingsScreen() {
           {diagMessage && <p className="hint">{diagMessage}</p>}
         </div>
       )}
+
+      <h2>{t('legal.title')}</h2>
+      <p className="hint">{t('legal.englishOnlyNotice')}</p>
+
+      <div className="legal-section">
+        <h3>{t('legal.privacy.title')}</h3>
+        <p className="hint">
+          {t('legal.privacy.versionLine', { version: PRIVACY_VERSION, date: PRIVACY_LAST_UPDATED.toLocaleDateString(i18n.language) })}
+        </p>
+        <p>{t('legal.privacy.companyLine', { lng: 'en' })}</p>
+
+        <h4>{t('legal.privacy.localHeading')}</h4>
+        <p>{t('legal.privacy.localBody', { lng: 'en' })}</p>
+
+        <h4>{t('legal.privacy.networkHeading')}</h4>
+        <p>{t('legal.privacy.networkBookBody', { lng: 'en' })}</p>
+        <p>{t('legal.privacy.networkUpdateBody', { lng: 'en' })}</p>
+        <p>{t('legal.privacy.networkDiagnosticsBody', { lng: 'en' })}</p>
+
+        <h4>{t('legal.privacy.registrationHeading')}</h4>
+        <p>{t('legal.privacy.registrationBody', { lng: 'en' })}</p>
+
+        <h4>{t('legal.privacy.retentionHeading')}</h4>
+        <p>{t('legal.privacy.retentionBody', { lng: 'en' })}</p>
+
+        <h4>{t('legal.privacy.rightsHeading')}</h4>
+        <p>{t('legal.privacy.rightsBody', { lng: 'en', email: SUPPORT_EMAIL })}</p>
+
+        <button type="button" className="button" onClick={() => void window.ponyabc.openPrivacyPolicyPage()}>
+          {t('legal.privacy.openFullPolicyButton')}
+        </button>
+      </div>
+
+      <div className="legal-section">
+        <h3>{t('legal.legalCopyright.title')}</h3>
+        <p>{t('legal.legalCopyright.materialsBody', { lng: 'en' })}</p>
+        <p>{t('legal.legalCopyright.diyBody', { lng: 'en' })}</p>
+        <p>{t('legal.legalCopyright.trademarkBody', { lng: 'en' })}</p>
+        <p className="hint">{t('legal.legalCopyright.termsNotice', { lng: 'en' })}</p>
+
+        <h4>{t('legal.legalCopyright.thirdPartyHeading')}</h4>
+        <p>{t('legal.legalCopyright.thirdPartyBody', { lng: 'en' })}</p>
+      </div>
+
+      <div className="legal-section">
+        <h3>{t('legal.support.title')}</h3>
+        <p>
+          {t('legal.support.emailLabel')}: <code>{SUPPORT_EMAIL}</code>
+        </p>
+        <div className="legal-section__actions">
+          <button type="button" className="button button--primary" onClick={() => void handleContactSupport()}>
+            {t('legal.support.contactButton')}
+          </button>
+          <button type="button" className="button" onClick={() => void handleCopySupportEmail()}>
+            {emailCopied ? t('legal.support.copiedConfirmation') : t('legal.support.copyButton')}
+          </button>
+        </div>
+        {supportMessage && <p className="hint">{supportMessage}</p>}
+      </div>
     </div>
   );
 }

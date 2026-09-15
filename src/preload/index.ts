@@ -43,6 +43,8 @@ const api: PonyAbcApi = {
   platform: process.platform,
 
   openRegistrationPage: () => ipcRenderer.invoke(IPC.registrationOpen),
+  openPrivacyPolicyPage: () => ipcRenderer.invoke(IPC.privacyPolicyOpen),
+  openSupportEmail: (params: { subject: string }) => ipcRenderer.invoke(IPC.supportEmailOpen, params) as Promise<{ ok: true } | { ok: false; error: string }>,
 
   scanForPenRoot: () => ipcRenderer.invoke(IPC.penRootScan) as Promise<PenRootScanResult>,
   chooseCandidatePenRoot: (index: number) => ipcRenderer.invoke(IPC.penRootChooseCandidate, index) as Promise<PenRootResult>,

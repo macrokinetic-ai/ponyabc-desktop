@@ -2,6 +2,8 @@
 // Renderer never invokes these strings directly; it only calls window.ponyabc.* methods.
 export const IPC = {
   registrationOpen: 'ponyabc:registration:open',
+  privacyPolicyOpen: 'ponyabc:registration:privacyOpen',
+  supportEmailOpen: 'ponyabc:support:emailOpen',
 
   penRootScan: 'ponyabc:penRoot:scan',
   penRootChooseCandidate: 'ponyabc:penRoot:chooseCandidate',

@@ -2,7 +2,8 @@ import { ipcMain, type BrowserWindow } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type { SettingsStore } from '../services/settingsStore';
 import { currentMountFingerprint } from '../services/volumeDiscovery';
-import { openRegistrationPage } from './registration';
+import { openPrivacyPolicyPage, openRegistrationPage } from './registration';
+import { openSupportEmail } from './support';
 import { chooseCandidatePenRoot, scanPenRoot, selectPenRoot } from './penRoot';
 import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
@@ -57,6 +58,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   handlersRegistered = true;
 
   ipcMain.handle(IPC.registrationOpen, () => openRegistrationPage());
+  ipcMain.handle(IPC.privacyPolicyOpen, () => openPrivacyPolicyPage());
+  ipcMain.handle(IPC.supportEmailOpen, (_event, params: { subject: string }) => openSupportEmail(params));
 
   ipcMain.handle(IPC.penRootScan, () => scanPenRoot(store));
   ipcMain.handle(IPC.penRootChooseCandidate, (_event, index: number) => chooseCandidatePenRoot(store, index));

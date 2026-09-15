@@ -28,5 +28,31 @@
     "exportButton": "Exporter le diagnostic…",
     "exportSaved": "Enregistré dans {{path}}",
     "exportFailed": "Impossible d'enregistrer le fichier."
+  },
+  "legal": {
+    "title": "Confidentialité, mentions légales et assistance",
+    "englishOnlyNotice": "Le texte de Confidentialité et Mentions légales et droits d'auteur ci-dessous n'est actuellement disponible qu'en anglais ; les traductions sont en attente de relecture.",
+    "privacy": {
+      "title": "Confidentialité",
+      "versionLine": "Version {{version}} · Dernière mise à jour : {{date}}",
+      "localHeading": "Ce qui reste sur votre ordinateur",
+      "networkHeading": "Ce que cette application envoie sur le réseau, et pourquoi",
+      "registrationHeading": "Enregistrement de garantie (indépendant de cette application)",
+      "retentionHeading": "Durée de conservation",
+      "rightsHeading": "Vos droits",
+      "openFullPolicyButton": "Ouvrir la politique de confidentialité complète du site"
+    },
+    "legalCopyright": {
+      "title": "Mentions légales et droits d'auteur",
+      "thirdPartyHeading": "Avis logiciels tiers"
+    },
+    "support": {
+      "title": "Contacter le support",
+      "emailLabel": "E-mail du support",
+      "contactButton": "Contacter le support",
+      "copyButton": "Copier l'adresse e-mail",
+      "copiedConfirmation": "Copié !",
+      "openFailedHint": "Impossible d'ouvrir automatiquement une messagerie — vous pouvez copier l'adresse ci-dessus."
+    }
   }
 }
