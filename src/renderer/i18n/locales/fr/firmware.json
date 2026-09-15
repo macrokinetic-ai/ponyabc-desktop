@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "L'assistant de mise à jour du firmware n'est pas encore implémenté.",
-  "macRequiresWindows": "Les mises à jour du firmware nécessitent l'application PonyABC Desktop sous Windows. Cette fonctionnalité n'est pas disponible sur Mac, et l'assistant firmware pour Windows lui-même n'est pas encore implémenté."
+  "macRequiresWindows": "Les mises à jour du firmware nécessitent l'application PonyABC Desktop sous Windows. Cette fonctionnalité n'est pas disponible sur Mac.",
+  "back": "Retour",
+  "steps": {
+    "prepare": "Préparation",
+    "package": "Paquet",
+    "confirm": "Confirmation",
+    "upgrading": "Mise à jour",
+    "result": "Résultat"
+  },
+  "prepare": {
+    "title": "Préparez votre stylo",
+    "checklistUsb": "Connectez le stylo P5 à cet ordinateur avec un câble USB.",
+    "checklistPower": "Gardez le stylo connecté et alimenté pendant toute la mise à jour — ne le débranchez pas.",
+    "checklistNoOtherOps": "Assurez-vous qu'aucune autre opération de fichiers (BOOK, DIY ou une autre mise à jour) n'est en cours.",
+    "penDetected": "Stylo détecté.",
+    "penRequired": "Connectez un stylo pour continuer.",
+    "nextButton": "Suivant"
+  },
+  "package": {
+    "title": "Paquet de firmware",
+    "devModeNotice": "Mode test : sélectionnez vous-même le dossier du paquet fournisseur déjà extrait. Le téléchargement et la vérification d'un paquet officiel depuis le serveur de PonyABC ne sont pas encore disponibles.",
+    "selectButton": "Sélectionner le dossier du paquet…",
+    "selectedPath": "Sélectionné : {{path}}",
+    "looksValid": "Ce dossier contient les fichiers requis par le chemin de mise à jour confirmé.",
+    "invalid": "Il manque à ce dossier des fichiers nécessaires à la mise à jour. Rien ne sera exécuté.",
+    "nextButton": "Suivant"
+  },
+  "confirm": {
+    "title": "Confirmation",
+    "summary": "Prêt à effectuer la mise à jour avec le paquet situé dans {{path}}.",
+    "uacNotice": "Windows vous demandera d'approuver cette action — veuillez répondre vous-même à cette invite lorsqu'elle apparaît.",
+    "startButton": "Démarrer la mise à jour",
+    "alreadyInProgress": "Une mise à jour du firmware est déjà en cours.",
+    "unsupportedPlatform": "Les mises à jour du firmware ne sont disponibles que sous Windows."
+  },
+  "upgrading": {
+    "title": "Mise à jour en cours",
+    "phasePreparing": "Préparation de l'outil de mise à jour…",
+    "phaseAwaitingAuth": "En attente d'autorisation Windows, ou démarrage…",
+    "phaseToolRunning": "Écriture sur le stylo — ne le débranchez pas…",
+    "phaseFinishing": "Finalisation…",
+    "noCancelNotice": "La mise à jour ne peut pas être annulée de force une fois commencée.",
+    "noOutputYet": "Aucune sortie pour le moment."
+  },
+  "result": {
+    "title": "Résultat",
+    "successTitle": "Mise à jour terminée avec succès.",
+    "failedTitle": "La mise à jour n'a pas démarré ou ne s'est pas terminée.",
+    "unclearTitle": "Le résultat n'a pas pu être confirmé.",
+    "unclearBody": "L'outil s'est terminé sans afficher le message de succès attendu. Le stylo a peut-être été mis à jour avec succès, ou non — vérifiez-le manuellement avant de l'utiliser, ou réessayez.",
+    "reason": "Détails : {{reason}}",
+    "acknowledgeButton": "Je comprends — résultat non confirmé",
+    "startOverButton": "Recommencer"
+  }
 }

@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "The firmware upgrade wizard is not implemented yet.",
-  "macRequiresWindows": "Firmware upgrades require the PonyABC Desktop app on Windows. This feature is not available on Mac, and the Windows firmware wizard itself is not implemented yet either."
+  "macRequiresWindows": "Firmware upgrades require the PonyABC Desktop app on Windows. This feature is not available on Mac.",
+  "back": "Back",
+  "steps": {
+    "prepare": "Prepare",
+    "package": "Package",
+    "confirm": "Confirm",
+    "upgrading": "Upgrading",
+    "result": "Result"
+  },
+  "prepare": {
+    "title": "Prepare your pen",
+    "checklistUsb": "Connect the P5 pen to this computer with a USB cable.",
+    "checklistPower": "Keep the pen connected and powered for the whole upgrade — do not unplug it.",
+    "checklistNoOtherOps": "Make sure no other file operation (BOOK, DIY, or another upgrade) is running.",
+    "penDetected": "Pen detected.",
+    "penRequired": "Connect a pen to continue.",
+    "nextButton": "Next"
+  },
+  "package": {
+    "title": "Firmware package",
+    "devModeNotice": "Test mode: select the extracted vendor package folder yourself. Downloading and verifying an official package from PonyABC's server is not available yet.",
+    "selectButton": "Select package folder…",
+    "selectedPath": "Selected: {{path}}",
+    "looksValid": "This folder has the files the confirmed upgrade path needs.",
+    "invalid": "This folder is missing files the upgrade needs. Nothing will be run.",
+    "nextButton": "Next"
+  },
+  "confirm": {
+    "title": "Confirm",
+    "summary": "Ready to upgrade using the package at {{path}}.",
+    "uacNotice": "Windows will ask you to approve this — please respond to that prompt yourself when it appears.",
+    "startButton": "Start upgrade",
+    "alreadyInProgress": "A firmware upgrade is already in progress.",
+    "unsupportedPlatform": "Firmware upgrades are only available on Windows."
+  },
+  "upgrading": {
+    "title": "Upgrading",
+    "phasePreparing": "Preparing the upgrade tool…",
+    "phaseAwaitingAuth": "Waiting for Windows authorization, or starting…",
+    "phaseToolRunning": "Writing to the pen — do not disconnect it…",
+    "phaseFinishing": "Finishing up…",
+    "noCancelNotice": "The upgrade cannot be force-cancelled once it has started.",
+    "noOutputYet": "No output yet."
+  },
+  "result": {
+    "title": "Result",
+    "successTitle": "Upgrade completed successfully.",
+    "failedTitle": "The upgrade did not start or did not complete.",
+    "unclearTitle": "The result could not be confirmed.",
+    "unclearBody": "The tool finished without showing the expected success message. The pen may or may not have been upgraded successfully — check it manually before using it, or try again.",
+    "reason": "Details: {{reason}}",
+    "acknowledgeButton": "I understand — result unclear",
+    "startOverButton": "Start over"
+  }
 }

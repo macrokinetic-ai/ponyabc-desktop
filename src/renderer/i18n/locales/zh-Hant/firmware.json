@@ -1,5 +1,57 @@
 {
   "title": "韌體",
-  "windowsNotImplemented": "韌體升級精靈尚未實作。",
-  "macRequiresWindows": "韌體升級需要使用 Windows 版的 PonyABC 桌面應用程式。此功能在 Mac 上無法使用，而 Windows 版的韌體升級精靈本身亦尚未實作。"
+  "macRequiresWindows": "韌體升級需要喺 Windows 上使用 PonyABC Desktop App。呢個功能喺 Mac 上未能使用。",
+  "back": "返回",
+  "steps": {
+    "prepare": "準備",
+    "package": "套件",
+    "confirm": "確認",
+    "upgrading": "升級中",
+    "result": "結果"
+  },
+  "prepare": {
+    "title": "準備你的點讀筆",
+    "checklistUsb": "用 USB 線將 P5 點讀筆接到這部電腦。",
+    "checklistPower": "整個升級過程請保持點讀筆連接及有電——不要拔除。",
+    "checklistNoOtherOps": "請確認沒有其他檔案操作（BOOK、DIY 或另一個升級）正在進行。",
+    "penDetected": "已偵測到點讀筆。",
+    "penRequired": "請先連接點讀筆才能繼續。",
+    "nextButton": "下一步"
+  },
+  "package": {
+    "title": "韌體套件",
+    "devModeNotice": "測試模式：請自行選擇已解壓的供應商套件資料夾。由 PonyABC 伺服器下載並核對官方套件的功能尚未上線。",
+    "selectButton": "選擇套件資料夾…",
+    "selectedPath": "已選擇：{{path}}",
+    "looksValid": "此資料夾具備已確認升級路徑所需的檔案。",
+    "invalid": "此資料夾缺少升級所需的檔案，將不會執行任何操作。",
+    "nextButton": "下一步"
+  },
+  "confirm": {
+    "title": "確認",
+    "summary": "已準備好使用 {{path}} 的套件進行升級。",
+    "uacNotice": "Windows 會要求你授權——出現提示時請自行確認。",
+    "startButton": "開始升級",
+    "alreadyInProgress": "已經有一個韌體升級正在進行中。",
+    "unsupportedPlatform": "韌體升級只能在 Windows 上使用。"
+  },
+  "upgrading": {
+    "title": "升級中",
+    "phasePreparing": "正在準備升級工具…",
+    "phaseAwaitingAuth": "等待 Windows 授權，或正在啟動中…",
+    "phaseToolRunning": "正在寫入點讀筆——請勿中斷連接…",
+    "phaseFinishing": "正在完成…",
+    "noCancelNotice": "升級開始後無法強行取消。",
+    "noOutputYet": "暫時未有輸出。"
+  },
+  "result": {
+    "title": "結果",
+    "successTitle": "升級成功完成。",
+    "failedTitle": "升級未能啟動或未能完成。",
+    "unclearTitle": "無法確認結果。",
+    "unclearBody": "工具結束時沒有顯示預期的成功訊息。點讀筆可能已經升級成功，也可能未有——請先手動檢查，或重新嘗試。",
+    "reason": "詳情：{{reason}}",
+    "acknowledgeButton": "我明白——結果無法確認",
+    "startOverButton": "重新開始"
+  }
 }

@@ -21,6 +21,10 @@ import type {
   ConflictDecision,
   CopyProgressEvent,
   CopySummary,
+  FirmwareProgressEvent,
+  FirmwareSelectPackageResult,
+  FirmwareStartResult,
+  FirmwareUpgradeOutcome,
   PenRootResult,
   PenRootScanResult,
   PonyAbcApi,
@@ -100,6 +104,13 @@ const api: PonyAbcApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.appInfoGet) as Promise<AppInfo>,
   checkForUpdates: () => ipcRenderer.invoke(IPC.appCheckForUpdates) as Promise<UpdateCheckResult>,
   openLatestReleasePage: () => ipcRenderer.invoke(IPC.appOpenLatestReleasePage),
+
+  selectFirmwarePackage: () => ipcRenderer.invoke(IPC.firmwareSelectPackage) as Promise<FirmwareSelectPackageResult>,
+  startFirmwareUpgrade: (params: { packageDir: string }) => ipcRenderer.invoke(IPC.firmwareStart, params) as Promise<FirmwareStartResult>,
+  onFirmwareProgress: (listener: (event: FirmwareProgressEvent) => void) => subscribe(IPC.firmwareProgress, listener),
+  onFirmwareOutcome: (listener: (event: FirmwareUpgradeOutcome) => void) => subscribe(IPC.firmwareOutcome, listener),
+  acknowledgeFirmwareOutcome: () => ipcRenderer.invoke(IPC.firmwareAcknowledgeOutcome) as Promise<{ ok: boolean }>,
+  isFirmwareUpgradeInProgress: () => ipcRenderer.invoke(IPC.firmwareIsInProgress) as Promise<boolean>,
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

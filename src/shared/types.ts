@@ -592,7 +592,14 @@ export interface BookBackupSummary {
 // in Settings; export goes through a native save dialog the user drives, never auto-uploaded.
 // ---------------------------------------------------------------------------------------
 
-export type DiagnosticEntryKind = 'app-start' | 'catalog-fetch' | 'pen-reconcile' | 'book-download' | 'pen-verify' | 'pen-verify-batch';
+export type DiagnosticEntryKind =
+  | 'app-start'
+  | 'catalog-fetch'
+  | 'pen-reconcile'
+  | 'book-download'
+  | 'pen-verify'
+  | 'pen-verify-batch'
+  | 'firmware-upgrade';
 
 export interface DiagnosticEntry {
   atMs: number;
@@ -609,6 +616,62 @@ export interface DiagnosticsSummary {
 }
 
 export type DiagnosticsExportResult = { status: 'ok'; path: string } | { status: 'cancelled' } | { status: 'error'; message: string };
+
+// ---------------------------------------------------------------------------------------
+// P5 firmware upgrade wizard (Windows only). The confirmed working entry point is the
+// vendor's own `download.bat` at the root of an extracted package folder — the app never
+// invokes the vendor's inner tools directly, and never regenerates/re-derives firmware
+// bytes itself. This round's "package" step is a local-folder picker (the real download-
+// and-verify-from-server step needs a new public firmware API, not yet built — see
+// tasks/todo.md); everything downstream of picking a package folder is real, not simulated.
+// ---------------------------------------------------------------------------------------
+
+export interface FirmwarePackageInfo {
+  rootDir: string;
+  /** rootDir + 'download.bat' — the one confirmed entry point; never any other script or exe
+   *  inside the package, even though several exist. */
+  entryBatPath: string;
+  /** True only when every file in REQUIRED_RELATIVE_FILES (main process, firmware.ts) was
+   *  found under rootDir — never inferred from the folder name or any file's mtime. */
+  looksValid: boolean;
+  missingFiles: string[];
+}
+
+export type FirmwareSelectPackageResult = { status: 'selected'; info: FirmwarePackageInfo } | { status: 'cancelled' };
+
+/** 'awaiting-authorization' and 'tool-running' are honestly merged from the outside: Windows
+ *  gives no clean signal distinguishing "UAC prompt is on screen, unanswered" from "elevation
+ *  was silently granted and the tool just hasn't printed anything yet" — the first real
+ *  evidence of the latter is the first byte of log output, which is exactly the transition
+ *  used here. */
+export type FirmwareUpgradePhase = 'preparing-launcher' | 'awaiting-authorization-or-starting' | 'tool-running' | 'finishing';
+
+export interface FirmwareProgressEvent {
+  phase: FirmwareUpgradePhase;
+  /** Real, tailing text from the tool's own output — never a fabricated percentage. May be
+   *  empty (nothing written yet). */
+  logTailText: string;
+}
+
+export type FirmwareUpgradeOutcomeStatus = 'success' | 'failed' | 'unclear';
+
+export interface FirmwareUpgradeOutcome {
+  status: FirmwareUpgradeOutcomeStatus;
+  /** Machine-oriented tag explaining WHY this status was chosen — e.g.
+   *  'log-contains-download-success' | 'declined' | 'launch-error' | 'no-recognized-signal' |
+   *  'timeout' | 'internal-error'. Always present, shown to the user and logged. */
+  reason: string;
+  exitCode: number | null;
+  /** Last portion only (a few KB) — never the full log dumped into IPC/UI. */
+  logExcerpt: string;
+}
+
+export type FirmwareStartResult =
+  | { status: 'started' }
+  | { status: 'already-in-progress' }
+  | { status: 'no-pen-selected' }
+  | { status: 'invalid-package' }
+  | { status: 'unsupported-platform' };
 
 export interface PonyAbcApi {
   /** process.platform value from the main process, e.g. 'darwin' | 'win32' | 'linux'. */
@@ -687,4 +750,16 @@ export interface PonyAbcApi {
   getAppInfo: () => Promise<AppInfo>;
   checkForUpdates: () => Promise<UpdateCheckResult>;
   openLatestReleasePage: () => Promise<{ ok: true } | { ok: false; error: string }>;
+
+  // P5 firmware upgrade wizard (Windows only) — see the block comment above these types.
+  selectFirmwarePackage: () => Promise<FirmwareSelectPackageResult>;
+  startFirmwareUpgrade: (params: { packageDir: string }) => Promise<FirmwareStartResult>;
+  onFirmwareProgress: (listener: (event: FirmwareProgressEvent) => void) => () => void;
+  onFirmwareOutcome: (listener: (event: FirmwareUpgradeOutcome) => void) => () => void;
+  /** Must be called once the user has seen a result — for 'unclear' specifically, this is the
+   *  ONLY thing that releases the pen-write lock and the "already in progress" guard; neither
+   *  clears automatically, so a genuinely ambiguous outcome can never silently let a second
+   *  attempt or a BOOK/DIY write start while the real device might still be mid-flash. */
+  acknowledgeFirmwareOutcome: () => Promise<{ ok: boolean }>;
+  isFirmwareUpgradeInProgress: () => Promise<boolean>;
 }

@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "El asistente de actualización de firmware aún no está implementado.",
-  "macRequiresWindows": "Las actualizaciones de firmware requieren la aplicación PonyABC Desktop para Windows. Esta función no está disponible en Mac, y el propio asistente de firmware para Windows tampoco está implementado todavía."
+  "macRequiresWindows": "Las actualizaciones de firmware requieren la app PonyABC Desktop en Windows. Esta función no está disponible en Mac.",
+  "back": "Atrás",
+  "steps": {
+    "prepare": "Preparar",
+    "package": "Paquete",
+    "confirm": "Confirmar",
+    "upgrading": "Actualizando",
+    "result": "Resultado"
+  },
+  "prepare": {
+    "title": "Prepare su lápiz",
+    "checklistUsb": "Conecte el lápiz P5 a este ordenador con un cable USB.",
+    "checklistPower": "Mantenga el lápiz conectado y con alimentación durante toda la actualización — no lo desconecte.",
+    "checklistNoOtherOps": "Asegúrese de que no haya otra operación de archivos (BOOK, DIY u otra actualización) en curso.",
+    "penDetected": "Lápiz detectado.",
+    "penRequired": "Conecte un lápiz para continuar.",
+    "nextButton": "Siguiente"
+  },
+  "package": {
+    "title": "Paquete de firmware",
+    "devModeNotice": "Modo de prueba: seleccione usted mismo la carpeta del paquete del proveedor ya extraída. Descargar y verificar un paquete oficial desde el servidor de PonyABC aún no está disponible.",
+    "selectButton": "Seleccionar carpeta del paquete…",
+    "selectedPath": "Seleccionado: {{path}}",
+    "looksValid": "Esta carpeta tiene los archivos que necesita la ruta de actualización confirmada.",
+    "invalid": "A esta carpeta le faltan archivos necesarios para la actualización. No se ejecutará nada.",
+    "nextButton": "Siguiente"
+  },
+  "confirm": {
+    "title": "Confirmar",
+    "summary": "Listo para actualizar usando el paquete en {{path}}.",
+    "uacNotice": "Windows le pedirá que lo apruebe — responda a ese aviso usted mismo cuando aparezca.",
+    "startButton": "Iniciar actualización",
+    "alreadyInProgress": "Ya hay una actualización de firmware en curso.",
+    "unsupportedPlatform": "Las actualizaciones de firmware solo están disponibles en Windows."
+  },
+  "upgrading": {
+    "title": "Actualizando",
+    "phasePreparing": "Preparando la herramienta de actualización…",
+    "phaseAwaitingAuth": "Esperando autorización de Windows, o iniciando…",
+    "phaseToolRunning": "Escribiendo en el lápiz — no lo desconecte…",
+    "phaseFinishing": "Finalizando…",
+    "noCancelNotice": "La actualización no se puede cancelar a la fuerza una vez iniciada.",
+    "noOutputYet": "Aún no hay salida."
+  },
+  "result": {
+    "title": "Resultado",
+    "successTitle": "Actualización completada con éxito.",
+    "failedTitle": "La actualización no se inició o no se completó.",
+    "unclearTitle": "No se pudo confirmar el resultado.",
+    "unclearBody": "La herramienta terminó sin mostrar el mensaje de éxito esperado. Es posible que el lápiz se haya actualizado correctamente o no — compruébelo manualmente antes de usarlo, o vuelva a intentarlo.",
+    "reason": "Detalles: {{reason}}",
+    "acknowledgeButton": "Entiendo — resultado no confirmado",
+    "startOverButton": "Empezar de nuevo"
+  }
 }

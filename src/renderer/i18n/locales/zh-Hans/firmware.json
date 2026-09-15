@@ -1,5 +1,57 @@
 {
   "title": "固件",
-  "windowsNotImplemented": "固件升级向导尚未实现。",
-  "macRequiresWindows": "固件升级需要使用 Windows 版的 PonyABC 桌面应用程序。此功能在 Mac 上不可用，而 Windows 版的固件升级向导本身也尚未实现。"
+  "macRequiresWindows": "固件升级需要在 Windows 上使用 PonyABC Desktop App。此功能在 Mac 上暂不可用。",
+  "back": "返回",
+  "steps": {
+    "prepare": "准备",
+    "package": "套件",
+    "confirm": "确认",
+    "upgrading": "升级中",
+    "result": "结果"
+  },
+  "prepare": {
+    "title": "准备你的点读笔",
+    "checklistUsb": "用 USB 线将 P5 点读笔连接到这台电脑。",
+    "checklistPower": "整个升级过程请保持点读笔连接并供电——不要拔除。",
+    "checklistNoOtherOps": "请确认没有其他文件操作（BOOK、DIY 或另一个升级）正在进行。",
+    "penDetected": "已检测到点读笔。",
+    "penRequired": "请先连接点读笔才能继续。",
+    "nextButton": "下一步"
+  },
+  "package": {
+    "title": "固件套件",
+    "devModeNotice": "测试模式：请自行选择已解压的供应商套件文件夹。从 PonyABC 服务器下载并校验官方套件的功能尚未上线。",
+    "selectButton": "选择套件文件夹…",
+    "selectedPath": "已选择：{{path}}",
+    "looksValid": "此文件夹具备已确认升级路径所需的文件。",
+    "invalid": "此文件夹缺少升级所需的文件，将不会执行任何操作。",
+    "nextButton": "下一步"
+  },
+  "confirm": {
+    "title": "确认",
+    "summary": "已准备好使用 {{path}} 的套件进行升级。",
+    "uacNotice": "Windows 会要求你授权——出现提示时请自行确认。",
+    "startButton": "开始升级",
+    "alreadyInProgress": "已经有一个固件升级正在进行中。",
+    "unsupportedPlatform": "固件升级仅在 Windows 上可用。"
+  },
+  "upgrading": {
+    "title": "升级中",
+    "phasePreparing": "正在准备升级工具…",
+    "phaseAwaitingAuth": "等待 Windows 授权，或正在启动中…",
+    "phaseToolRunning": "正在写入点读笔——请勿断开连接…",
+    "phaseFinishing": "正在完成…",
+    "noCancelNotice": "升级开始后无法强行取消。",
+    "noOutputYet": "暂时没有输出。"
+  },
+  "result": {
+    "title": "结果",
+    "successTitle": "升级成功完成。",
+    "failedTitle": "升级未能启动或未能完成。",
+    "unclearTitle": "无法确认结果。",
+    "unclearBody": "工具结束时没有显示预期的成功信息。点读笔可能已经升级成功，也可能没有——请先手动检查，或重新尝试。",
+    "reason": "详情：{{reason}}",
+    "acknowledgeButton": "我明白——结果无法确认",
+    "startOverButton": "重新开始"
+  }
 }

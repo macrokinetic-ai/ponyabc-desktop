@@ -463,3 +463,82 @@ config. Lesson captured in `tasks/lessons.md`. Proceeding on the basis that
 `tools.zip` IS viable; the open question now is only WHICH exact entry
 point inside it the user actually ran (root `tools/download.bat` vs.
 `tools/soundbox/standard/download.bat`), asked directly in chat.
+
+# Firmware milestone — confirmed entry point + working wizard (test/dev mode)
+
+User confirmed the successful real-P5 upgrade entry point: root `tools\download.bat`
+(not `download-nokey.bat`, not manually entering `soundbox\standard`).
+
+- [x] **Full dependency-chain trace of `tools\download.bat`.** It's a build/
+      post-link wrapper needing `C:\JL\pi32\bin\llvm-objcopy.exe` (a dev-only
+      toolchain path essentially never present on an end-user PC) — but every
+      one of its objcopy/objdump/`copy` steps is a provable no-op when that
+      toolchain is missing: `remove_tailing_zeros.exe`'s own inputs
+      (aeco.bin/wavo.bin/etc.) already ship pre-built in the zip; the final
+      `copy /b ... app.bin` even references a `bank.bin` that doesn't exist
+      anywhere in the package, so it can't ever produce fresh output; and the
+      pre-existing root `app.bin`/`br25loader.bin` are byte-identical in size
+      to the ones already sitting in `soundbox\standard\`, so the trailing
+      `copy app.bin soundbox\standard\app.bin` is a no-op copy-over-itself
+      regardless. Net effect: the script prints a page of harmless "not
+      recognized" errors, then reaches its last line —
+      `soundbox\standard\download.bat` — using exactly the same pre-built
+      files that were already correct. This is WHY the user's success makes
+      sense with zero dev tooling installed, not a coincidence.
+- [x] **Real bug found via this trace, fixed, and proven on real Windows
+      CI**: the confirmed chain ends in a bare `pause` (waits for a keypress
+      that automation can never provide) — `elevatedRun.ts` now redirects
+      the target's stdin from `nul` so `pause` sees immediate EOF. A
+      harmless-target smoke test with a trailing `pause` confirmed this
+      resolves in ~1.5s instead of hanging, on a real windows-latest runner
+      (dispatched twice; the first real run also caught two unrelated test-
+      infra bugs — Vitest's 5000ms default per-test timeout being shorter
+      than the internal 60s runElevated timeout, and a Windows EBUSY on temp-
+      dir cleanup — both fixed and reconfirmed passing on a third real run).
+- [x] **Original package preserved, never modified/regenerated.** The app
+      invokes the user's own extracted `download.bat` exactly as-is —
+      `startFirmwareUpgrade` never writes into the package folder, never
+      calls any inner tool directly, never re-derives firmware bytes itself.
+- [x] **Windows wizard UI (real, not just simulated) built**: Prepare →
+      Package → Confirm → Upgrading → Result. "Package" step is an explicit
+      dev/test-mode local-folder picker (validates required-file presence
+      only — never infers a version from the folder name or file dates);
+      real download-and-verify against an official server catalogue needs a
+      new public firmware API, not built this round (see the proposal
+      below). "Upgrading" shows real phase text (preparing / awaiting-
+      authorization-or-starting — Windows gives no clean signal to tell
+      these two apart from outside the elevated process, disclosed as such
+      / tool-running / finishing) plus the real live log tail — no fake
+      percentage anywhere, and no cancel button once started. "Result"
+      distinguishes success (ONLY ever the literal "download success" string
+      appearing in the tool's real output — a real exit code of 0 is never
+      by itself sufficient, since the confirmed chain's own batch scripts
+      never check errorlevel after the actual flash step) from failed
+      (declined UAC / launch error) from unclear (everything else, including
+      a timeout) — unclear requires an explicit user acknowledgement before
+      the pen-write lock and the "already in progress" guard clear, so a
+      genuinely ambiguous result can never silently allow a second attempt
+      or a BOOK/DIY write while the device might still be mid-flash.
+- [x] Firmware upgrade holds the existing shared `acquirePenLock()` for its
+      entire duration (real mutex with BOOK/DIY pen writes) plus a dedicated
+      `firmwareLock.ts` guard refusing a second concurrent attempt outright.
+- [x] Tests: 367 total (was 347 before this session's firmware work; 365
+      passing + 2 Windows-only-opt-in skipped locally). New
+      `elevatedRun.test.ts` (15), `elevatedRun.windows-smoke.test.ts` (real-
+      Windows-only, opt-in), `firmwareUpgrade.test.ts` (11, pure outcome-
+      determination + package validation), `FirmwareScreen.test.tsx` (9,
+      full simulated wizard flow: pen-gate, invalid package, explicit-
+      confirm-required, real phase/log rendering with no fake percentage and
+      no cancel button, success/failed/unclear all rendering distinctly,
+      unclear requiring acknowledgement before reset, double-click-start
+      surfacing "already-in-progress" rather than a duplicate real run).
+- [x] Minimal server-side proposal (not implemented/deployed): existing
+      `/api/admin/content/upload-url` already accepts a `.zip` firmware
+      artifact with ZERO schema changes (extension validator already allows
+      1-8 alphanumeric chars); the one real gap is a new public, secret-free
+      `/api/public/firmware` + `/api/public/firmware/download`, mirroring
+      `/api/public/books` exactly (id-based download URL, re-validated per
+      request) — `/api/pen/firmware` stays bearer-gated and unchanged.
+- [ ] Real-device test steps handed to the user for their own Windows
+      notebook — see chat. Not run by the agent; no real pen was flashed,
+      no cable-pull/power-cut test was performed.

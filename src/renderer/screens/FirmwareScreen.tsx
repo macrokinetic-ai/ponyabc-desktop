@@ -1,13 +1,246 @@
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { FirmwarePackageInfo, FirmwareProgressEvent, FirmwareUpgradeOutcome } from '@shared/types';
+import { usePenRoot } from '../state/PenRootContext';
+
+type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
+
+const PHASE_KEY: Record<FirmwareProgressEvent['phase'], string> = {
+  'preparing-launcher': 'upgrading.phasePreparing',
+  'awaiting-authorization-or-starting': 'upgrading.phaseAwaitingAuth',
+  'tool-running': 'upgrading.phaseToolRunning',
+  finishing: 'upgrading.phaseFinishing',
+};
 
 export function FirmwareScreen() {
   const { t } = useTranslation('firmware');
+  const penRoot = usePenRoot();
   const isMac = window.ponyabc.platform === 'darwin';
+  const penConnected = penRoot.result.status === 'ok';
+
+  const [step, setStep] = useState<WizardStep>('prepare');
+  const [packageInfo, setPackageInfo] = useState<FirmwarePackageInfo | null>(null);
+  const [selecting, setSelecting] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startMessage, setStartMessage] = useState<string | null>(null);
+  const [progress, setProgress] = useState<FirmwareProgressEvent | null>(null);
+  const [outcome, setOutcome] = useState<FirmwareUpgradeOutcome | null>(null);
+  const [acknowledging, setAcknowledging] = useState(false);
+  const logRef = useRef<HTMLPreElement | null>(null);
+
+  useEffect(() => {
+    if (isMac) return;
+    return window.ponyabc.onFirmwareProgress((event) => setProgress(event));
+  }, [isMac]);
+
+  useEffect(() => {
+    if (isMac) return;
+    return window.ponyabc.onFirmwareOutcome((event) => {
+      setOutcome(event);
+      setStep('result');
+    });
+  }, [isMac]);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [progress]);
+
+  async function handleSelectPackage() {
+    setSelecting(true);
+    setStartMessage(null);
+    try {
+      const result = await window.ponyabc.selectFirmwarePackage();
+      if (result.status === 'selected') setPackageInfo(result.info);
+    } finally {
+      setSelecting(false);
+    }
+  }
+
+  async function handleStart() {
+    if (!packageInfo) return;
+    setStarting(true);
+    setStartMessage(null);
+    try {
+      const result = await window.ponyabc.startFirmwareUpgrade({ packageDir: packageInfo.rootDir });
+      if (result.status === 'started') {
+        setProgress(null);
+        setOutcome(null);
+        setStep('upgrading');
+      } else if (result.status === 'already-in-progress') {
+        setStartMessage(t('confirm.alreadyInProgress'));
+      } else if (result.status === 'no-pen-selected') {
+        setStartMessage(t('prepare.penRequired'));
+      } else if (result.status === 'invalid-package') {
+        setStartMessage(t('package.invalid'));
+      } else {
+        setStartMessage(t('confirm.unsupportedPlatform'));
+      }
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  async function handleAcknowledge() {
+    setAcknowledging(true);
+    try {
+      await window.ponyabc.acknowledgeFirmwareOutcome();
+    } finally {
+      setAcknowledging(false);
+      setStep('prepare');
+      setPackageInfo(null);
+      setProgress(null);
+      setOutcome(null);
+    }
+  }
+
+  function startOver() {
+    setStep('prepare');
+    setPackageInfo(null);
+    setStartMessage(null);
+    setProgress(null);
+    setOutcome(null);
+  }
+
+  if (isMac) {
+    return (
+      <div className="screen">
+        <h1>{t('title')}</h1>
+        <div className="not-implemented-banner">{t('macRequiresWindows')}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
       <h1>{t('title')}</h1>
-      <div className="not-implemented-banner">{isMac ? t('macRequiresWindows') : t('windowsNotImplemented')}</div>
+      <ol className="wizard-steps">
+        {(['prepare', 'package', 'confirm', 'upgrading', 'result'] as WizardStep[]).map((s) => (
+          <li key={s} className={s === step ? 'wizard-steps__current' : undefined}>
+            {t(`steps.${s}`)}
+          </li>
+        ))}
+      </ol>
+
+      {step === 'prepare' && (
+        <section>
+          <h2>{t('prepare.title')}</h2>
+          <ul>
+            <li>{t('prepare.checklistUsb')}</li>
+            <li>{t('prepare.checklistPower')}</li>
+            <li>{t('prepare.checklistNoOtherOps')}</li>
+          </ul>
+          <p className="hint">{penConnected ? t('prepare.penDetected') : t('prepare.penRequired')}</p>
+          <button type="button" className="button button--primary" disabled={!penConnected} onClick={() => setStep('package')}>
+            {t('prepare.nextButton')}
+          </button>
+        </section>
+      )}
+
+      {step === 'package' && (
+        <section>
+          <h2>{t('package.title')}</h2>
+          <p className="hint">{t('package.devModeNotice')}</p>
+          <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
+            {t('package.selectButton')}
+          </button>
+          {packageInfo && (
+            <div className="firmware-package-info">
+              <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
+              {packageInfo.looksValid ? (
+                <p className="hint">{t('package.looksValid')}</p>
+              ) : (
+                <>
+                  <p className="error-text">{t('package.invalid')}</p>
+                  <ul>
+                    {packageInfo.missingFiles.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+          <div className="firmware-wizard__actions">
+            <button type="button" className="button" onClick={() => setStep('prepare')}>
+              {t('back')}
+            </button>
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={!packageInfo?.looksValid}
+              onClick={() => setStep('confirm')}
+            >
+              {t('package.nextButton')}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 'confirm' && packageInfo && (
+        <section>
+          <h2>{t('confirm.title')}</h2>
+          <p>{t('confirm.summary', { path: packageInfo.rootDir })}</p>
+          <p className="hint">{t('confirm.uacNotice')}</p>
+          {startMessage && <p className="error-text">{startMessage}</p>}
+          <div className="firmware-wizard__actions">
+            <button type="button" className="button" disabled={starting} onClick={() => setStep('package')}>
+              {t('back')}
+            </button>
+            <button type="button" className="button button--primary" disabled={starting} onClick={() => void handleStart()}>
+              {t('confirm.startButton')}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === 'upgrading' && (
+        <section>
+          <h2>{t('upgrading.title')}</h2>
+          <p className="firmware-wizard__phase">
+            <span className="firmware-wizard__spinner" aria-hidden="true" />
+            {t(progress ? PHASE_KEY[progress.phase] : 'upgrading.phasePreparing')}
+          </p>
+          <p className="hint">{t('upgrading.noCancelNotice')}</p>
+          <pre ref={logRef} className="firmware-wizard__log">
+            {progress?.logTailText || t('upgrading.noOutputYet')}
+          </pre>
+        </section>
+      )}
+
+      {step === 'result' && outcome && (
+        <section>
+          <h2>{t('result.title')}</h2>
+          {outcome.status === 'success' && (
+            <div className="note-box">
+              <p>{t('result.successTitle')}</p>
+              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
+            </div>
+          )}
+          {outcome.status === 'failed' && (
+            <div className="note-box">
+              <p className="error-text">{t('result.failedTitle')}</p>
+              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
+            </div>
+          )}
+          {outcome.status === 'unclear' && (
+            <div className="note-box">
+              <p className="error-text">{t('result.unclearTitle')}</p>
+              <p className="hint">{t('result.unclearBody')}</p>
+              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
+            </div>
+          )}
+          <pre className="firmware-wizard__log">{outcome.logExcerpt || t('upgrading.noOutputYet')}</pre>
+          {outcome.status === 'unclear' ? (
+            <button type="button" className="button button--primary" disabled={acknowledging} onClick={() => void handleAcknowledge()}>
+              {t('result.acknowledgeButton')}
+            </button>
+          ) : (
+            <button type="button" className="button button--primary" onClick={startOver}>
+              {t('result.startOverButton')}
+            </button>
+          )}
+        </section>
+      )}
     </div>
   );
 }

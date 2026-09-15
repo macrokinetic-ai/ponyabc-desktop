@@ -447,3 +447,23 @@ real outcome wins — reframe a "definitely wrong" static finding as "this
 looks surprising, worth confirming" rather than reporting it as a settled
 conclusion, especially when the user hasn't yet been asked whether they've
 actually tried it. Ask before concluding, when asking is possible.
+
+## When a "confirmed working" script has a dev-toolchain dependency that's provably absent, trace WHY it still worked instead of guessing
+
+The confirmed real upgrade entry point (`tools\download.bat`) starts by
+invoking a hardcoded `C:\JL\pi32\bin\llvm-objcopy.exe` that essentially no
+end-user machine has. Rather than assuming "it must silently succeed
+somehow" or "the user must have had the toolchain installed", traced every
+subsequent line: each objcopy/objdump failure is harmless because its
+output file already exists pre-built in the package; the final concatenation
+step even references a `bank.bin` that doesn't exist anywhere in the zip, so
+it structurally cannot ever produce fresh output; and the two files that DO
+get unconditionally copied afterward are byte-identical in size to what's
+already at the destination, making that copy a no-op. This turned "trust me,
+it works" into a specific, verifiable mechanical explanation, which then
+directly justified a design decision (invoke the top-level script as-is,
+never skip to the inner tool) with evidence instead of assumption. General
+rule: when a real, confirmed-working outcome conflicts with a script's
+apparent hard dependency, don't stop at "it must be fine" — trace the actual
+control flow far enough to explain the specific mechanism, since that
+mechanism is often exactly what later engineering decisions should hinge on.

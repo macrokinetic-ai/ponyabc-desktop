@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "La procedura guidata di aggiornamento del firmware non è ancora implementata.",
-  "macRequiresWindows": "Gli aggiornamenti del firmware richiedono l'app PonyABC Desktop su Windows. Questa funzione non è disponibile su Mac, e la procedura guidata firmware per Windows stessa non è ancora implementata."
+  "macRequiresWindows": "Gli aggiornamenti del firmware richiedono l'app PonyABC Desktop su Windows. Questa funzione non è disponibile su Mac.",
+  "back": "Indietro",
+  "steps": {
+    "prepare": "Preparazione",
+    "package": "Pacchetto",
+    "confirm": "Conferma",
+    "upgrading": "Aggiornamento",
+    "result": "Risultato"
+  },
+  "prepare": {
+    "title": "Prepara la tua penna",
+    "checklistUsb": "Collega la penna P5 a questo computer con un cavo USB.",
+    "checklistPower": "Mantieni la penna collegata e alimentata per tutta la durata dell'aggiornamento — non scollegarla.",
+    "checklistNoOtherOps": "Assicurati che non sia in corso nessun'altra operazione sui file (BOOK, DIY o un altro aggiornamento).",
+    "penDetected": "Penna rilevata.",
+    "penRequired": "Collega una penna per continuare.",
+    "nextButton": "Avanti"
+  },
+  "package": {
+    "title": "Pacchetto firmware",
+    "devModeNotice": "Modalità test: seleziona tu stesso la cartella del pacchetto del fornitore già estratta. Il download e la verifica di un pacchetto ufficiale dal server di PonyABC non sono ancora disponibili.",
+    "selectButton": "Seleziona cartella del pacchetto…",
+    "selectedPath": "Selezionato: {{path}}",
+    "looksValid": "Questa cartella contiene i file richiesti dal percorso di aggiornamento confermato.",
+    "invalid": "A questa cartella mancano i file necessari per l'aggiornamento. Non verrà eseguito nulla.",
+    "nextButton": "Avanti"
+  },
+  "confirm": {
+    "title": "Conferma",
+    "summary": "Pronto per l'aggiornamento usando il pacchetto in {{path}}.",
+    "uacNotice": "Windows ti chiederà di approvare — rispondi tu stesso a quella richiesta quando appare.",
+    "startButton": "Avvia aggiornamento",
+    "alreadyInProgress": "È già in corso un aggiornamento del firmware.",
+    "unsupportedPlatform": "Gli aggiornamenti del firmware sono disponibili solo su Windows."
+  },
+  "upgrading": {
+    "title": "Aggiornamento in corso",
+    "phasePreparing": "Preparazione dello strumento di aggiornamento…",
+    "phaseAwaitingAuth": "In attesa dell'autorizzazione di Windows, o avvio…",
+    "phaseToolRunning": "Scrittura sulla penna — non scollegarla…",
+    "phaseFinishing": "Completamento…",
+    "noCancelNotice": "L'aggiornamento non può essere annullato forzatamente una volta avviato.",
+    "noOutputYet": "Nessun output ancora."
+  },
+  "result": {
+    "title": "Risultato",
+    "successTitle": "Aggiornamento completato con successo.",
+    "failedTitle": "L'aggiornamento non è iniziato o non si è completato.",
+    "unclearTitle": "Impossibile confermare il risultato.",
+    "unclearBody": "Lo strumento è terminato senza mostrare il messaggio di successo previsto. La penna potrebbe essere stata aggiornata con successo oppure no — controllala manualmente prima di usarla, oppure riprova.",
+    "reason": "Dettagli: {{reason}}",
+    "acknowledgeButton": "Ho capito — risultato non confermato",
+    "startOverButton": "Ricomincia"
+  }
 }

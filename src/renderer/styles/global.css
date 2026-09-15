@@ -581,6 +581,71 @@ body {
   margin-top: 8px;
 }
 
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 0;
+  margin: 0 0 20px;
+  list-style: none;
+  font-size: 13px;
+  color: #888;
+}
+
+.wizard-steps__current {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.firmware-package-info {
+  margin: 12px 0;
+}
+
+.firmware-wizard__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.firmware-wizard__phase {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* No fake percentage — a plain spinning indicator only ever means "something real is actively
+ * happening right now", never a progress fraction. */
+.firmware-wizard__spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--fg);
+  border-radius: 50%;
+  animation: firmware-spin 0.8s linear infinite;
+}
+
+@keyframes firmware-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.firmware-wizard__log {
+  margin-top: 12px;
+  padding: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #111;
+  color: #ddd;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1c1c1e;

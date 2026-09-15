@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "O assistente de atualização de firmware ainda não está implementado.",
-  "macRequiresWindows": "As atualizações de firmware requerem a aplicação PonyABC Desktop no Windows. Esta funcionalidade não está disponível no Mac, e o próprio assistente de firmware para Windows também ainda não está implementado."
+  "macRequiresWindows": "As atualizações de firmware requerem a app PonyABC Desktop no Windows. Esta funcionalidade não está disponível no Mac.",
+  "back": "Voltar",
+  "steps": {
+    "prepare": "Preparar",
+    "package": "Pacote",
+    "confirm": "Confirmar",
+    "upgrading": "A atualizar",
+    "result": "Resultado"
+  },
+  "prepare": {
+    "title": "Prepare a sua caneta",
+    "checklistUsb": "Ligue a caneta P5 a este computador com um cabo USB.",
+    "checklistPower": "Mantenha a caneta ligada e com alimentação durante toda a atualização — não a desligue.",
+    "checklistNoOtherOps": "Certifique-se de que nenhuma outra operação de ficheiros (BOOK, DIY ou outra atualização) está em curso.",
+    "penDetected": "Caneta detetada.",
+    "penRequired": "Ligue uma caneta para continuar.",
+    "nextButton": "Seguinte"
+  },
+  "package": {
+    "title": "Pacote de firmware",
+    "devModeNotice": "Modo de teste: selecione você mesmo a pasta do pacote do fornecedor já extraída. A transferência e verificação de um pacote oficial a partir do servidor da PonyABC ainda não está disponível.",
+    "selectButton": "Selecionar pasta do pacote…",
+    "selectedPath": "Selecionado: {{path}}",
+    "looksValid": "Esta pasta tem os ficheiros que o caminho de atualização confirmado necessita.",
+    "invalid": "Faltam a esta pasta ficheiros necessários para a atualização. Nada será executado.",
+    "nextButton": "Seguinte"
+  },
+  "confirm": {
+    "title": "Confirmar",
+    "summary": "Pronto para atualizar usando o pacote em {{path}}.",
+    "uacNotice": "O Windows irá pedir-lhe para aprovar — responda a esse aviso você mesmo quando aparecer.",
+    "startButton": "Iniciar atualização",
+    "alreadyInProgress": "Já existe uma atualização de firmware em curso.",
+    "unsupportedPlatform": "As atualizações de firmware só estão disponíveis no Windows."
+  },
+  "upgrading": {
+    "title": "A atualizar",
+    "phasePreparing": "A preparar a ferramenta de atualização…",
+    "phaseAwaitingAuth": "A aguardar autorização do Windows, ou a iniciar…",
+    "phaseToolRunning": "A escrever na caneta — não a desligue…",
+    "phaseFinishing": "A finalizar…",
+    "noCancelNotice": "A atualização não pode ser cancelada à força depois de iniciada.",
+    "noOutputYet": "Ainda sem resultado."
+  },
+  "result": {
+    "title": "Resultado",
+    "successTitle": "Atualização concluída com sucesso.",
+    "failedTitle": "A atualização não foi iniciada ou não foi concluída.",
+    "unclearTitle": "Não foi possível confirmar o resultado.",
+    "unclearBody": "A ferramenta terminou sem mostrar a mensagem de sucesso esperada. A caneta pode ou não ter sido atualizada com sucesso — verifique manualmente antes de a usar, ou tente novamente.",
+    "reason": "Detalhes: {{reason}}",
+    "acknowledgeButton": "Compreendo — resultado não confirmado",
+    "startOverButton": "Recomeçar"
+  }
 }

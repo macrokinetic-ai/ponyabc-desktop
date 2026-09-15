@@ -1,5 +1,57 @@
 {
   "title": "Firmware",
-  "windowsNotImplemented": "Der Firmware-Update-Assistent ist noch nicht implementiert.",
-  "macRequiresWindows": "Firmware-Updates erfordern die PonyABC Desktop App unter Windows. Diese Funktion ist auf dem Mac nicht verfügbar, und der Firmware-Assistent für Windows selbst ist ebenfalls noch nicht implementiert."
+  "macRequiresWindows": "Firmware-Updates erfordern die PonyABC-Desktop-App unter Windows. Diese Funktion ist auf dem Mac nicht verfügbar.",
+  "back": "Zurück",
+  "steps": {
+    "prepare": "Vorbereitung",
+    "package": "Paket",
+    "confirm": "Bestätigung",
+    "upgrading": "Aktualisierung",
+    "result": "Ergebnis"
+  },
+  "prepare": {
+    "title": "Bereiten Sie Ihren Stift vor",
+    "checklistUsb": "Verbinden Sie den P5-Stift über ein USB-Kabel mit diesem Computer.",
+    "checklistPower": "Halten Sie den Stift während des gesamten Updates angeschlossen und mit Strom versorgt — trennen Sie ihn nicht.",
+    "checklistNoOtherOps": "Stellen Sie sicher, dass kein anderer Dateivorgang (BOOK, DIY oder ein weiteres Update) läuft.",
+    "penDetected": "Stift erkannt.",
+    "penRequired": "Schließen Sie einen Stift an, um fortzufahren.",
+    "nextButton": "Weiter"
+  },
+  "package": {
+    "title": "Firmware-Paket",
+    "devModeNotice": "Testmodus: Wählen Sie selbst den bereits entpackten Herstellerpaket-Ordner aus. Das Herunterladen und Überprüfen eines offiziellen Pakets vom PonyABC-Server ist noch nicht verfügbar.",
+    "selectButton": "Paketordner auswählen…",
+    "selectedPath": "Ausgewählt: {{path}}",
+    "looksValid": "Dieser Ordner enthält die für den bestätigten Update-Pfad benötigten Dateien.",
+    "invalid": "Diesem Ordner fehlen für das Update benötigte Dateien. Es wird nichts ausgeführt.",
+    "nextButton": "Weiter"
+  },
+  "confirm": {
+    "title": "Bestätigung",
+    "summary": "Bereit für das Update mit dem Paket unter {{path}}.",
+    "uacNotice": "Windows wird Sie um Genehmigung bitten — bitte bestätigen Sie diese Aufforderung selbst, wenn sie erscheint.",
+    "startButton": "Update starten",
+    "alreadyInProgress": "Es läuft bereits ein Firmware-Update.",
+    "unsupportedPlatform": "Firmware-Updates sind nur unter Windows verfügbar."
+  },
+  "upgrading": {
+    "title": "Aktualisierung läuft",
+    "phasePreparing": "Update-Tool wird vorbereitet…",
+    "phaseAwaitingAuth": "Warten auf Windows-Autorisierung oder Start…",
+    "phaseToolRunning": "Schreibe auf den Stift — nicht trennen…",
+    "phaseFinishing": "Wird abgeschlossen…",
+    "noCancelNotice": "Das Update kann nach dem Start nicht erzwungen abgebrochen werden.",
+    "noOutputYet": "Noch keine Ausgabe."
+  },
+  "result": {
+    "title": "Ergebnis",
+    "successTitle": "Update erfolgreich abgeschlossen.",
+    "failedTitle": "Das Update wurde nicht gestartet oder nicht abgeschlossen.",
+    "unclearTitle": "Das Ergebnis konnte nicht bestätigt werden.",
+    "unclearBody": "Das Tool wurde beendet, ohne die erwartete Erfolgsmeldung anzuzeigen. Der Stift wurde möglicherweise erfolgreich aktualisiert oder auch nicht — prüfen Sie ihn manuell, bevor Sie ihn verwenden, oder versuchen Sie es erneut.",
+    "reason": "Details: {{reason}}",
+    "acknowledgeButton": "Verstanden — Ergebnis unklar",
+    "startOverButton": "Neu starten"
+  }
 }
