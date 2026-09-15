@@ -425,3 +425,41 @@ never invent company/legal facts that aren't actually confirmed anywhere.
       were verified only via mocked unit tests, not by actually invoking
       `shell.openExternal` during the live CDP pass (that would have
       launched a real mail client/browser on the test machine).
+
+# Firmware milestone — feasibility investigation (no code shipped this round)
+
+Static investigation only, per explicit user instruction: did not execute
+`isd_download.exe`/any `download.bat`, did not write to a real pen, did not
+redistribute the vendor toolkit anywhere. Sources reviewed: `P5点读笔升级方法.pdf`,
+`tools.zip` (listing + text/config files only — no `.exe`/`.bin` executed),
+8 extracted frames of the vendor demo `.mp4` (no ffmpeg available; used
+`avconvert`+`qlmanage` to sample ~8 timestamps), existing `ponyabc-web`
+`/api/pen/firmware` route + `content.ts` firmware queries + admin content
+upload, existing `ponyabc-desktop` `FirmwareScreen.tsx` (still a placeholder).
+
+**Headline finding: `tools.zip` is NOT the P5 pen's firmware package.**
+`tools/soundbox/standard/isd_config.ini` declares `CHIP_NAME=AC696X`,
+`PID=AC696x_TWS`, `SDK_TYPE=SOUNDBOX` — a generic Jieli TWS-earbuds/speaker
+reference SDK, using `br25loader.bin`. The vendor's own demo video shows the
+real package is a Baidu-Netdisk-distributed `点读笔－升级工具－V1.12－.rar`
+(19.3MB, dated 2025-01-23) whose internal `tools` folder is named
+`师大pen－V1.12－20250109` and uses `br23loader.bin`/`.uart` — a different
+loader than both `tools.zip` (br25) and the PDF's own older example
+screenshot (br21). Full report given to the user in chat.
+
+- [ ] Vendor must supply the actual current P5-pen-specific flash package
+      (matching the "师大pen" folder layout seen in the demo video), not the
+      generic AC696X/soundbox SDK currently in `tools.zip`.
+- [ ] No code implemented this round — investigation/recommendation only.
+
+**CORRECTION (next round):** the "headline finding" above was WRONG and is
+withdrawn. The user has personally, successfully flashed a real P5 pen using
+this exact `tools.zip` — a real confirmed outcome outranks static config-
+string evidence. `CHIP_NAME=AC696X`/`PID=AC696x_TWS`/`SDK_TYPE=SOUNDBOX` and
+the br25-vs-br23 loader naming are real observations, but vendors routinely
+reuse/relabel shared SDK templates across product lines without renaming
+internal config strings — a "wrong-looking" label is not proof of a wrong
+config. Lesson captured in `tasks/lessons.md`. Proceeding on the basis that
+`tools.zip` IS viable; the open question now is only WHICH exact entry
+point inside it the user actually ran (root `tools/download.bat` vs.
+`tools/soundbox/standard/download.bat`), asked directly in chat.

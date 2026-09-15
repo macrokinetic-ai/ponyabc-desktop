@@ -425,3 +425,25 @@ translating the reviewable-risk content at all yet than by translating it
 and hoping a disclaimer is enough — reserve full translation for content
 where a wrong nuance is low-stakes (ordinary UI copy), not for rights/
 retention/company-identity language.
+
+## A real confirmed outcome outranks static config-string evidence — don't let "the label looks wrong" become "this doesn't work"
+
+Investigated `tools.zip` and found `isd_config.ini` declaring
+`PID=AC696x_TWS`/`SDK_TYPE=SOUNDBOX` (a Bluetooth-earbud/speaker product
+identifier) plus a different bootloader filename (`br25loader.bin`) than a
+PDF screenshot (`br21loader.bin`). Concluded and reported, as a headline
+finding, that the zip was "NOT the P5 pen's firmware package" — a strong,
+unqualified negative claim built entirely from static text inside
+config/filenames. The user then reported they had personally, successfully
+flashed a real P5 pen using that exact zip — the static evidence was real,
+but the inference drawn from it was wrong. Vendors commonly reuse a shared
+SDK template (with its original product-line labels left untouched inside
+config comments) across genuinely different hardware products; a label that
+looks like it names the wrong product is not proof the config doesn't work
+for this one — it's only proof the vendor didn't bother renaming an internal
+string. General rule: when static/textual evidence (file names, embedded
+labels, config strings) conflicts with a real, user-confirmed outcome, the
+real outcome wins — reframe a "definitely wrong" static finding as "this
+looks surprising, worth confirming" rather than reporting it as a settled
+conclusion, especially when the user hasn't yet been asked whether they've
+actually tried it. Ask before concluding, when asking is possible.

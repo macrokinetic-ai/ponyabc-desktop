@@ -1,0 +1,35 @@
+name: Firmware elevation smoke test (manual only)
+
+# Deliberately workflow_dispatch ONLY — never runs on push/tag, so it can never block or hang a
+# real release build. Exercises the UAC-elevation + log-capture mechanism in
+# src/main/services/elevatedRun.ts against a completely harmless target script on a real Windows
+# machine (a GitHub-hosted windows-latest runner) — never the vendor's firmware tool, never a
+# real device. See tests/unit/elevatedRun.windows-smoke.test.ts for what this actually proves
+# (and what it can't: a headless runner has no interactive desktop to click "No" on a UAC
+# prompt, so the declined-elevation path still needs a human on a real Windows session).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  elevation-smoke:
+    runs-on: windows-latest
+    # If elevation blocks on a prompt that can never be answered here, fail fast and visibly
+    # rather than silently burning CI minutes — that itself is useful evidence, not a hang to
+    # hide from.
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run the elevation/log-capture smoke test
+        shell: bash
+        env:
+          PONYABC_RUN_ELEVATION_SMOKE: '1'
+        run: npx vitest run tests/unit/elevatedRun.windows-smoke.test.ts --reporter=verbose
