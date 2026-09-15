@@ -1,6 +1,18 @@
 {
+  "kicker": "PonyABC P5 点读笔",
   "title": "欢迎使用 PonyABC 桌面应用程序",
   "intro": "为您的点读笔注册保修，或在左侧各栏管理其内容。",
+  "connection": {
+    "checking": "正在检测您的点读笔…",
+    "connectedTitle": "P5 点读笔已连接",
+    "disconnectedTitle": "未连接 P5 点读笔"
+  },
+  "entries": {
+    "recordingsBody": "在点读笔与电脑文件夹之间复制 DIY 录音，并替换贴纸音频。",
+    "bookBody": "将官方 BOOK 内容添加到点读笔，或先下载到这台电脑。",
+    "firmwareBody": "仅支持 Windows。逐步引导完成点读笔固件升级。"
+  },
+  "warrantyTitle": "保修注册",
   "registerButton": "注册您的点读笔",
   "registerHint": "将在您的网页浏览器中打开注册页面。",
   "registerError": "无法打开注册页面：{{error}}"

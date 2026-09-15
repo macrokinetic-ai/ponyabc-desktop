@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import logo from '../assets/ponyabc-logo.png';
 
 export type Section = 'home' | 'recordings' | 'book' | 'firmware' | 'settings';
 
@@ -15,7 +16,10 @@ export function NavSidebar({ active, onSelect }: { active: Section; onSelect: (s
 
   return (
     <nav className="nav-sidebar">
-      <div className="nav-sidebar__title">{t('appName')}</div>
+      <div className="nav-sidebar__brand">
+        <img src={logo} alt="" className="nav-sidebar__logo" />
+        <div className="nav-sidebar__title">{t('appName')}</div>
+      </div>
       <ul>
         {SECTIONS.map((section) => (
           <li key={section.id}>

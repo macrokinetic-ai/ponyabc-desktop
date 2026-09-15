@@ -1,6 +1,18 @@
 {
+  "kicker": "Stylo lecteur PonyABC P5",
   "title": "Bienvenue dans PonyABC Desktop",
   "intro": "Enregistrez votre stylo pour la garantie, ou gérez son contenu depuis les sections à gauche.",
+  "connection": {
+    "checking": "Recherche de votre stylo…",
+    "connectedTitle": "Stylo P5 connecté",
+    "disconnectedTitle": "Stylo P5 non connecté"
+  },
+  "entries": {
+    "recordingsBody": "Copiez des enregistrements DIY MP3 entre le stylo et un dossier de cet ordinateur, et remplacez l'audio des autocollants.",
+    "bookBody": "Ajoutez du contenu BOOK officiel au stylo, ou téléchargez-le d'abord sur cet ordinateur.",
+    "firmwareBody": "Windows uniquement. Assistant pas à pas pour mettre à jour le micrologiciel du stylo."
+  },
+  "warrantyTitle": "Enregistrez votre garantie",
   "registerButton": "Enregistrer votre stylo",
   "registerHint": "Ouvre la page d'enregistrement dans votre navigateur web.",
   "registerError": "Impossible d'ouvrir la page d'enregistrement : {{error}}"

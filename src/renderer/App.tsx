@@ -19,7 +19,7 @@ export default function App() {
           <div className="app-shell">
             <NavSidebar active={section} onSelect={setSection} />
             <main className="app-content">
-              {section === 'home' && <HomeScreen />}
+              {section === 'home' && <HomeScreen onNavigate={setSection} />}
               {section === 'recordings' && <MyRecordingsScreen />}
               {section === 'book' && <BookLibraryScreen />}
               {section === 'firmware' && <FirmwareScreen />}

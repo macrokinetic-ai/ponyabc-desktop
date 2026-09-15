@@ -1,6 +1,18 @@
 {
+  "kicker": "PonyABC P5 reading pen",
   "title": "Welcome to PonyABC Desktop",
   "intro": "Register your pen for warranty, or manage its content from the sections on the left.",
+  "connection": {
+    "checking": "Checking for your pen…",
+    "connectedTitle": "P5 pen connected",
+    "disconnectedTitle": "P5 pen not connected"
+  },
+  "entries": {
+    "recordingsBody": "Copy DIY MP3 recordings between the pen and a folder on this computer, and replace sticker audio.",
+    "bookBody": "Add official BOOK content to the pen, or download it to this computer first.",
+    "firmwareBody": "Windows only. Step-by-step wizard for updating the pen's firmware."
+  },
+  "warrantyTitle": "Register your warranty",
   "registerButton": "Register your pen",
   "registerHint": "Opens the registration page in your web browser.",
   "registerError": "Couldn't open the registration page: {{error}}"

@@ -1,6 +1,18 @@
 {
+  "kicker": "Caneta leitora PonyABC P5",
   "title": "Bem-vindo ao PonyABC Desktop",
   "intro": "Registe a sua caneta para a garantia, ou faça a gestão do seu conteúdo a partir das secções à esquerda.",
+  "connection": {
+    "checking": "A procurar a sua caneta…",
+    "connectedTitle": "Caneta P5 ligada",
+    "disconnectedTitle": "Caneta P5 não ligada"
+  },
+  "entries": {
+    "recordingsBody": "Copie gravações DIY em MP3 entre a caneta e uma pasta neste computador, e substitua o áudio dos autocolantes.",
+    "bookBody": "Adicione conteúdo oficial do BOOK à caneta, ou transfira-o primeiro para este computador.",
+    "firmwareBody": "Apenas Windows. Assistente passo a passo para atualizar o firmware da caneta."
+  },
+  "warrantyTitle": "Registe a sua garantia",
   "registerButton": "Registar a sua caneta",
   "registerHint": "Abre a página de registo no seu navegador web.",
   "registerError": "Não foi possível abrir a página de registo: {{error}}"

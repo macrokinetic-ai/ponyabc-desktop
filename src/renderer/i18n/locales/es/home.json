@@ -1,6 +1,18 @@
 {
+  "kicker": "Lápiz lector PonyABC P5",
   "title": "Bienvenido a PonyABC Desktop",
   "intro": "Registre su lápiz para la garantía, o administre su contenido desde las secciones de la izquierda.",
+  "connection": {
+    "checking": "Buscando su lápiz…",
+    "connectedTitle": "Lápiz P5 conectado",
+    "disconnectedTitle": "Lápiz P5 no conectado"
+  },
+  "entries": {
+    "recordingsBody": "Copie grabaciones DIY en MP3 entre el lápiz y una carpeta de este ordenador, y reemplace el audio de las pegatinas.",
+    "bookBody": "Añada contenido oficial de BOOK al lápiz, o descárguelo primero a este ordenador.",
+    "firmwareBody": "Solo Windows. Asistente paso a paso para actualizar el firmware del lápiz."
+  },
+  "warrantyTitle": "Registre su garantía",
   "registerButton": "Registrar su lápiz",
   "registerHint": "Abre la página de registro en su navegador web.",
   "registerError": "No se pudo abrir la página de registro: {{error}}"

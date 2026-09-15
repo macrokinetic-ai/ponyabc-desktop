@@ -1,6 +1,18 @@
 {
+  "kicker": "PonyABC P5 Lesestift",
   "title": "Willkommen bei PonyABC Desktop",
   "intro": "Registrieren Sie Ihren Stift für die Garantie oder verwalten Sie dessen Inhalte über die Bereiche links.",
+  "connection": {
+    "checking": "Suche nach Ihrem Stift…",
+    "connectedTitle": "P5-Stift verbunden",
+    "disconnectedTitle": "P5-Stift nicht verbunden"
+  },
+  "entries": {
+    "recordingsBody": "Kopieren Sie DIY-MP3-Aufnahmen zwischen dem Stift und einem Ordner auf diesem Computer, und ersetzen Sie Sticker-Audio.",
+    "bookBody": "Fügen Sie offizielle BOOK-Inhalte zum Stift hinzu oder laden Sie sie zuerst auf diesen Computer herunter.",
+    "firmwareBody": "Nur Windows. Schrittweiser Assistent für das Firmware-Update des Stifts."
+  },
+  "warrantyTitle": "Garantie registrieren",
   "registerButton": "Ihren Stift registrieren",
   "registerHint": "Öffnet die Registrierungsseite in Ihrem Webbrowser.",
   "registerError": "Registrierungsseite konnte nicht geöffnet werden: {{error}}"

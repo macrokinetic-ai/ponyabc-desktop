@@ -1,6 +1,18 @@
 {
+  "kicker": "Penna lettrice PonyABC P5",
   "title": "Benvenuto in PonyABC Desktop",
   "intro": "Registra la tua penna per la garanzia, oppure gestisci i suoi contenuti dalle sezioni a sinistra.",
+  "connection": {
+    "checking": "Ricerca della penna in corso…",
+    "connectedTitle": "Penna P5 connessa",
+    "disconnectedTitle": "Penna P5 non connessa"
+  },
+  "entries": {
+    "recordingsBody": "Copia le registrazioni DIY MP3 tra la penna e una cartella su questo computer, e sostituisci l'audio degli sticker.",
+    "bookBody": "Aggiungi contenuti BOOK ufficiali alla penna, oppure scaricali prima su questo computer.",
+    "firmwareBody": "Solo Windows. Procedura guidata passo passo per aggiornare il firmware della penna."
+  },
+  "warrantyTitle": "Registra la garanzia",
   "registerButton": "Registra la tua penna",
   "registerHint": "Apre la pagina di registrazione nel tuo browser web.",
   "registerError": "Impossibile aprire la pagina di registrazione: {{error}}"
