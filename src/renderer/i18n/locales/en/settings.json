@@ -1,6 +1,6 @@
 {
   "title": "Settings",
-  "languageLabel": "Language",
+  "languageLabel": "Interface Language",
   "languageHint": "Some translations are AI-generated and pending native-speaker review.",
   "about": {
     "title": "About this App",
@@ -30,7 +30,7 @@
     "exportFailed": "Couldn't save the file."
   },
   "legal": {
-    "title": "Privacy, Legal & Support",
+    "title": "Privacy & Legal",
     "englishOnlyNotice": "The Privacy and Legal & Copyright text below is currently available in English only; translations are pending review.",
     "privacy": {
       "title": "Privacy",
@@ -51,7 +51,7 @@
       "openFullPolicyButton": "Open full website privacy policy"
     },
     "legalCopyright": {
-      "title": "Legal & Copyright",
+      "title": "Terms of Use",
       "materialsBody": "PonyABC learning materials (BOOK content, artwork, audio) are licensed for use with a genuine PonyABC pen for personal, non-commercial use. Redistributing BOOK content outside this app is not permitted.",
       "diyBody": "Recordings you make yourself (DIY content) remain entirely yours. This app makes no claim over them and only ever copies them between your pen and this computer at your direction.",
       "trademarkBody": "\"PonyABC\" is a registered trade mark, registered in England.",
@@ -66,6 +66,13 @@
       "copyButton": "Copy email address",
       "copiedConfirmation": "Copied!",
       "openFailedHint": "Couldn't open a mail app automatically — you can copy the address above instead."
-    }
+    },
+    "readButton": "Read",
+    "collapseButton": "Collapse"
+  },
+  "tabs": {
+    "versionUpdates": "Version & Updates",
+    "support": "Support",
+    "privacyLegal": "Privacy & Legal"
   }
 }

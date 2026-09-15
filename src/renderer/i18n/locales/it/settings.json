@@ -1,6 +1,6 @@
 {
   "title": "Impostazioni",
-  "languageLabel": "Lingua",
+  "languageLabel": "Lingua dell'interfaccia",
   "languageHint": "Alcune traduzioni sono generate dall'IA e in attesa di revisione da parte di madrelingua.",
   "about": {
     "title": "Informazioni su questa app",
@@ -30,7 +30,7 @@
     "exportFailed": "Impossibile salvare il file."
   },
   "legal": {
-    "title": "Privacy, note legali e assistenza",
+    "title": "Privacy e note legali",
     "englishOnlyNotice": "Il testo di Privacy e Note legali e copyright qui sotto è al momento disponibile solo in inglese; le traduzioni sono in attesa di revisione.",
     "privacy": {
       "title": "Privacy",
@@ -43,7 +43,7 @@
       "openFullPolicyButton": "Apri l'informativa sulla privacy completa del sito"
     },
     "legalCopyright": {
-      "title": "Note legali e copyright",
+      "title": "Termini di utilizzo",
       "thirdPartyHeading": "Note sui software di terze parti"
     },
     "support": {
@@ -53,6 +53,13 @@
       "copyButton": "Copia indirizzo email",
       "copiedConfirmation": "Copiato!",
       "openFailedHint": "Impossibile aprire automaticamente un'app di posta — puoi copiare l'indirizzo qui sopra."
-    }
+    },
+    "readButton": "Leggi",
+    "collapseButton": "Comprimi"
+  },
+  "tabs": {
+    "versionUpdates": "Versione e aggiornamenti",
+    "support": "Assistenza",
+    "privacyLegal": "Privacy e note legali"
   }
 }

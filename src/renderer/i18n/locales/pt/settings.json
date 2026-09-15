@@ -1,6 +1,6 @@
 {
   "title": "Definições",
-  "languageLabel": "Idioma",
+  "languageLabel": "Idioma da interface",
   "languageHint": "Algumas traduções são geradas por IA e aguardam revisão por falantes nativos.",
   "about": {
     "title": "Sobre esta aplicação",
@@ -30,7 +30,7 @@
     "exportFailed": "Não foi possível guardar o ficheiro."
   },
   "legal": {
-    "title": "Privacidade, legal e suporte",
+    "title": "Privacidade e legal",
     "englishOnlyNotice": "O texto de Privacidade e Legal e direitos de autor abaixo está atualmente disponível apenas em inglês; as traduções aguardam revisão.",
     "privacy": {
       "title": "Privacidade",
@@ -43,7 +43,7 @@
       "openFullPolicyButton": "Abrir a política de privacidade completa do site"
     },
     "legalCopyright": {
-      "title": "Legal e direitos de autor",
+      "title": "Termos de utilização",
       "thirdPartyHeading": "Avisos de software de terceiros"
     },
     "support": {
@@ -53,6 +53,13 @@
       "copyButton": "Copiar endereço de email",
       "copiedConfirmation": "Copiado!",
       "openFailedHint": "Não foi possível abrir automaticamente uma app de email — pode copiar o endereço acima."
-    }
+    },
+    "readButton": "Ler",
+    "collapseButton": "Recolher"
+  },
+  "tabs": {
+    "versionUpdates": "Versão e atualizações",
+    "support": "Suporte",
+    "privacyLegal": "Privacidade e legal"
   }
 }

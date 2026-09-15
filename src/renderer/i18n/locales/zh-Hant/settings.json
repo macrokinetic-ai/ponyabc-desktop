@@ -1,6 +1,6 @@
 {
   "title": "設定",
-  "languageLabel": "語言",
+  "languageLabel": "介面語言",
   "languageHint": "部分翻譯由 AI 產生，尚待母語人士審閱。",
   "about": {
     "title": "關於此 App",
@@ -30,7 +30,7 @@
     "exportFailed": "無法儲存檔案。"
   },
   "legal": {
-    "title": "私隱、法律與支援",
+    "title": "私隱與法律",
     "englishOnlyNotice": "以下私隱及法律／版權內容目前只有英文版本，中文譯本仍待審閱。",
     "privacy": {
       "title": "私隱",
@@ -43,7 +43,7 @@
       "openFullPolicyButton": "開啟完整網站私隱政策"
     },
     "legalCopyright": {
-      "title": "法律與版權",
+      "title": "使用條款",
       "thirdPartyHeading": "第三方軟件聲明"
     },
     "support": {
@@ -53,6 +53,13 @@
       "copyButton": "複製電郵地址",
       "copiedConfirmation": "已複製！",
       "openFailedHint": "未能自動開啟郵件程式——您可以複製上方地址。"
-    }
+    },
+    "readButton": "閱讀",
+    "collapseButton": "收合"
+  },
+  "tabs": {
+    "versionUpdates": "版本與更新",
+    "support": "支援",
+    "privacyLegal": "私隱與法律"
   }
 }

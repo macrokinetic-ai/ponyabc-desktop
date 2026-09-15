@@ -1,6 +1,6 @@
 {
   "title": "设置",
-  "languageLabel": "语言",
+  "languageLabel": "界面语言",
   "languageHint": "部分翻译由 AI 生成，尚待母语人士审阅。",
   "about": {
     "title": "关于此 App",
@@ -30,7 +30,7 @@
     "exportFailed": "无法保存文件。"
   },
   "legal": {
-    "title": "隐私、法律与支持",
+    "title": "隐私与法律",
     "englishOnlyNotice": "以下隐私及法律/版权内容目前只有英文版本，中文译本仍待审阅。",
     "privacy": {
       "title": "隐私",
@@ -43,7 +43,7 @@
       "openFullPolicyButton": "打开完整网站隐私政策"
     },
     "legalCopyright": {
-      "title": "法律与版权",
+      "title": "使用条款",
       "thirdPartyHeading": "第三方软件声明"
     },
     "support": {
@@ -53,6 +53,13 @@
       "copyButton": "复制邮箱地址",
       "copiedConfirmation": "已复制！",
       "openFailedHint": "未能自动打开邮件程序——您可以复制上方地址。"
-    }
+    },
+    "readButton": "阅读",
+    "collapseButton": "收起"
+  },
+  "tabs": {
+    "versionUpdates": "版本与更新",
+    "support": "支持",
+    "privacyLegal": "隐私与法律"
   }
 }

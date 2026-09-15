@@ -1,6 +1,6 @@
 {
   "title": "Paramètres",
-  "languageLabel": "Langue",
+  "languageLabel": "Langue de l'interface",
   "languageHint": "Certaines traductions sont générées par IA et en attente de relecture par un locuteur natif.",
   "about": {
     "title": "À propos de cette application",
@@ -30,7 +30,7 @@
     "exportFailed": "Impossible d'enregistrer le fichier."
   },
   "legal": {
-    "title": "Confidentialité, mentions légales et assistance",
+    "title": "Confidentialité et mentions légales",
     "englishOnlyNotice": "Le texte de Confidentialité et Mentions légales et droits d'auteur ci-dessous n'est actuellement disponible qu'en anglais ; les traductions sont en attente de relecture.",
     "privacy": {
       "title": "Confidentialité",
@@ -43,7 +43,7 @@
       "openFullPolicyButton": "Ouvrir la politique de confidentialité complète du site"
     },
     "legalCopyright": {
-      "title": "Mentions légales et droits d'auteur",
+      "title": "Conditions d'utilisation",
       "thirdPartyHeading": "Avis logiciels tiers"
     },
     "support": {
@@ -53,6 +53,13 @@
       "copyButton": "Copier l'adresse e-mail",
       "copiedConfirmation": "Copié !",
       "openFailedHint": "Impossible d'ouvrir automatiquement une messagerie — vous pouvez copier l'adresse ci-dessus."
-    }
+    },
+    "readButton": "Lire",
+    "collapseButton": "Réduire"
+  },
+  "tabs": {
+    "versionUpdates": "Version et mises à jour",
+    "support": "Assistance",
+    "privacyLegal": "Confidentialité et mentions légales"
   }
 }

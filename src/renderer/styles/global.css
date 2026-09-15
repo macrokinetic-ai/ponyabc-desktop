@@ -1027,3 +1027,127 @@ body {
   color: var(--fg-muted);
   margin: 0;
 }
+
+/* Settings screen IA: pinned language picker + tabs (Version & Updates / Support /
+ * Privacy & Legal). Sizing uses rem/em/relative units rather than fixed px so layout stays
+ * correct under Windows display scaling (125%/150%), and the tablist wraps rather than
+ * clipping at narrow widths (e.g. an 820px-wide window) or with long strings in any of the
+ * 8 supported languages (German labels tend to run long). */
+.settings-language select {
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--fg);
+  font-family: var(--font-body);
+  padding: 0.5em 0.75em;
+  font-size: 0.9375rem;
+}
+
+.settings-language select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin: 1.25rem 0 1rem;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--fg-muted);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  padding: 0.6em 0.9em;
+  cursor: pointer;
+  white-space: normal;
+  max-width: 100%;
+}
+
+.settings-tab:hover {
+  color: var(--fg);
+  background: var(--bg-tint);
+}
+
+.settings-tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.settings-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-panel {
+  padding-top: 0.25rem;
+}
+
+.legal-section--first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.collapsible {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  max-width: 640px;
+}
+
+.collapsible__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.collapsible__heading {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.collapsible__title {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-heading);
+}
+
+.collapsible__summary {
+  margin: 0;
+}
+
+.collapsible__toggle {
+  flex-shrink: 0;
+}
+
+.collapsible__toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.collapsible__content {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.collapsible__content h4 {
+  margin-bottom: 0.25rem;
+  font-family: var(--font-heading);
+}
+
+.collapsible__content p {
+  margin: 0.25rem 0 0.75rem;
+}
