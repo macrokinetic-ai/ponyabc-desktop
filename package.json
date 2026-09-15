@@ -1,6 +1,6 @@
 {
   "name": "ponyabc-desktop",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "PonyABC Desktop companion app (registration, auto pen discovery, two-pane DIY recording manager, BOOK library, firmware)",
   "private": true,
   "main": "./out/main/index.js",
