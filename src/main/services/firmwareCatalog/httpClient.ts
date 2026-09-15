@@ -7,12 +7,17 @@ import type { FirmwareReleaseFetchResult, FirmwareReleaseInfo } from '@shared/ty
 export const FIRMWARE_API_BASE_URL = 'https://register.ponyabc.uk';
 
 /**
- * PLACEHOLDER — matches the placeholder hardware_rev used for the first draft firmware upload
- * (see plan §8). MUST be updated to the real confirmed hardware_rev once verified; this is a
- * deliberate v1 simplification since only one hardware model is supported and there's no way to
- * detect a connected pen's hardware_rev today.
+ * The confirmed real-device-verified hardware_rev for the officially published firmware
+ * (matches product_serials.hardware_rev — see supabase/migrations/20260909120003_
+ * product_serials.sql in ponyabc-web). Real registered serials currently exist for BOTH 'v1'
+ * (7 serials) and 'v2' (3 serials) — this app has no way to detect which one a connected pen
+ * actually is, and the officially published firmware has ONLY been confirmed on 'v1' hardware.
+ * Hardcoding a single value is a deliberate v1 simplification, not a claim that all P5 hardware
+ * batches are covered — a 'v2' pen querying the server gets `{release: null}` (no firmware
+ * published for it) rather than being offered firmware never verified on its hardware. Revisit
+ * if/when a real hardware-detection method or a 'v2' release exists.
  */
-export const HARDWARE_REV_CONST = 'PENDING-HWREV';
+export const HARDWARE_REV_CONST = 'v1';
 
 interface RawFirmwareRelease {
   id: unknown;
