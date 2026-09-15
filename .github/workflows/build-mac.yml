@@ -30,6 +30,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # pack:mac:* (unlike dist:win) does not run the app build itself — it's designed for local
+      # use where `npm run build` already ran once and both arches get packed from the same
+      # output. CI needs it explicit.
+      - run: npm run build
       - run: npm run pack:mac:${{ matrix.arch }}
 
       - uses: actions/upload-artifact@v4
