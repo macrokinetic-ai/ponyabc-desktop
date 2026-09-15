@@ -109,7 +109,7 @@ const api: PonyAbcApi = {
   startFirmwareUpgrade: (params: { packageDir: string }) => ipcRenderer.invoke(IPC.firmwareStart, params) as Promise<FirmwareStartResult>,
   onFirmwareProgress: (listener: (event: FirmwareProgressEvent) => void) => subscribe(IPC.firmwareProgress, listener),
   onFirmwareOutcome: (listener: (event: FirmwareUpgradeOutcome) => void) => subscribe(IPC.firmwareOutcome, listener),
-  acknowledgeFirmwareOutcome: () => ipcRenderer.invoke(IPC.firmwareAcknowledgeOutcome) as Promise<{ ok: boolean }>,
+  acknowledgeFirmwareOutcome: () => ipcRenderer.invoke(IPC.firmwareAcknowledgeOutcome) as Promise<{ ok: boolean; locked: boolean }>,
   isFirmwareUpgradeInProgress: () => ipcRenderer.invoke(IPC.firmwareIsInProgress) as Promise<boolean>,
 };
 

@@ -659,11 +659,26 @@ export interface FirmwareUpgradeOutcome {
   status: FirmwareUpgradeOutcomeStatus;
   /** Machine-oriented tag explaining WHY this status was chosen — e.g.
    *  'log-contains-download-success' | 'declined' | 'launch-error' | 'no-recognized-signal' |
-   *  'timeout' | 'internal-error'. Always present, shown to the user and logged. */
+   *  'timeout' | 'unparseable-wrapper-output' | 'internal-error-before-launch' |
+   *  'internal-error-uncertain'. Always present, shown to the user and logged. */
   reason: string;
   exitCode: number | null;
   /** Last portion only (a few KB) — never the full log dumped into IPC/UI. */
   logExcerpt: string;
+  /**
+   * True ONLY when there is positive evidence the elevated process is no longer running —
+   * either it never launched at all (declined/launch-error/unsupported-platform, or an error
+   * thrown before the launch attempt), or PowerShell's `Start-Process -Wait` genuinely returned
+   * with a real exit code (elevation.status === 'completed', whether or not the log shows the
+   * confirmed success string). False for 'timeout' (we gave up watching — the real process may
+   * still be running), 'unparseable-wrapper-output' (the outer wrapper's own stdout didn't match
+   * any known shape, so whether the elevated launch ever happened is itself unclear), and an
+   * internal error thrown AFTER the elevated launch was attempted but before its result could be
+   * read. This is the ONLY fact `acknowledgeFirmwareOutcome` is allowed to act on — the user
+   * clicking "I understand" is never by itself evidence of termination. See
+   * `src/main/ipc/firmware.ts` and `tasks/lessons.md` (2026-09-15).
+   */
+  processTerminationConfirmed: boolean;
 }
 
 export type FirmwareStartResult =
@@ -760,6 +775,8 @@ export interface PonyAbcApi {
    *  ONLY thing that releases the pen-write lock and the "already in progress" guard; neither
    *  clears automatically, so a genuinely ambiguous outcome can never silently let a second
    *  attempt or a BOOK/DIY write start while the real device might still be mid-flash. */
-  acknowledgeFirmwareOutcome: () => Promise<{ ok: boolean }>;
+  /** `locked: true` means the pen lock / in-progress guard are still held and there is no
+   *  in-app action left that can release them — see `FirmwareUpgradeOutcome.processTerminationConfirmed`. */
+  acknowledgeFirmwareOutcome: () => Promise<{ ok: boolean; locked: boolean }>;
   isFirmwareUpgradeInProgress: () => Promise<boolean>;
 }

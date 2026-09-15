@@ -75,7 +75,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         outcomeListener = null;
       };
     }),
-    acknowledgeFirmwareOutcome: vi.fn(async () => ({ ok: true })),
+    acknowledgeFirmwareOutcome: vi.fn(async () => ({ ok: true, locked: false })),
     isFirmwareUpgradeInProgress: vi.fn(async () => false),
     ...overrides,
   } as PonyAbcApi;
@@ -173,7 +173,13 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
     await screen.findByRole('heading', { name: 'Upgrading' });
 
-    outcomeListener?.({ status: 'success', reason: 'log-contains-download-success', exitCode: 0, logExcerpt: 'download success' });
+    outcomeListener?.({
+      status: 'success',
+      reason: 'log-contains-download-success',
+      exitCode: 0,
+      logExcerpt: 'download success',
+      processTerminationConfirmed: true,
+    });
     await screen.findByText('Upgrade completed successfully.');
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
@@ -184,7 +190,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
     await screen.findByRole('heading', { name: 'Upgrading' });
 
-    outcomeListener?.({ status: 'failed', reason: 'declined', exitCode: null, logExcerpt: '' });
+    outcomeListener?.({ status: 'failed', reason: 'declined', exitCode: null, logExcerpt: '', processTerminationConfirmed: true });
     await screen.findByText('The upgrade did not start or did not complete.');
     await screen.findByText('Details: declined');
   });
@@ -195,7 +201,13 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
     await screen.findByRole('heading', { name: 'Upgrading' });
 
-    outcomeListener?.({ status: 'unclear', reason: 'no-recognized-signal', exitCode: 0, logExcerpt: 'finished, no signal seen' });
+    outcomeListener?.({
+      status: 'unclear',
+      reason: 'no-recognized-signal',
+      exitCode: 0,
+      logExcerpt: 'finished, no signal seen',
+      processTerminationConfirmed: true,
+    });
     await screen.findByText('The result could not be confirmed.');
     expect(screen.queryByText('Upgrade completed successfully.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull(); // only the explicit acknowledge path is offered
@@ -204,6 +216,38 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(ackButton);
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
     await screen.findByText('Prepare your pen'); // wizard resets to step 1 only after acknowledgement
+  });
+
+  it('an "unclear" outcome whose termination could NOT be confirmed (e.g. a timeout) never offers the normal acknowledge path, never resets the wizard, and stays locked even after the user clicks through', async () => {
+    window.ponyabc.acknowledgeFirmwareOutcome = vi.fn(async () => ({ ok: false, locked: true }));
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'unclear',
+      reason: 'timeout',
+      exitCode: null,
+      logExcerpt: 'partial output, then nothing',
+      processTerminationConfirmed: false,
+    });
+    await screen.findByText('The result could not be confirmed.');
+    // The normal "I understand — result unclear" acknowledge button (which resets the wizard)
+    // must NOT be offered here — that path is only for a confirmed-terminated outcome.
+    expect(screen.queryByRole('button', { name: 'I understand — result unclear' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
+
+    const restartButton = screen.getByRole('button', { name: 'I understand — I will restart the app' });
+    fireEvent.click(restartButton);
+    await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
+
+    // Clicking through shows the persistent "still locked" notice — never the reset wizard.
+    await screen.findByText(
+      'Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.',
+    );
+    expect(screen.queryByText('Prepare your pen')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'I understand — I will restart the app' })).toBeNull();
   });
 
   it('double-clicking "Start upgrade" (or a second attempt while one is already running) surfaces "already-in-progress", not a duplicate real run', async () => {

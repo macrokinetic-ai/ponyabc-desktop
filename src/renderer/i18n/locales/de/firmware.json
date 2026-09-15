@@ -50,8 +50,11 @@
     "failedTitle": "Das Update wurde nicht gestartet oder nicht abgeschlossen.",
     "unclearTitle": "Das Ergebnis konnte nicht bestätigt werden.",
     "unclearBody": "Das Tool wurde beendet, ohne die erwartete Erfolgsmeldung anzuzeigen. Der Stift wurde möglicherweise erfolgreich aktualisiert oder auch nicht — prüfen Sie ihn manuell, bevor Sie ihn verwenden, oder versuchen Sie es erneut.",
+    "unclearBodyUnconfirmed": "Es konnte nicht bestätigt werden, ob das Update-Tool tatsächlich fertig ausgeführt wurde. Aus Sicherheitsgründen wird kein neues Firmware-Update und kein BOOK/DIY-Schreibvorgang auf den Stift zugelassen, solange dies ungeklärt ist. Beenden Sie diese App erst vollständig und öffnen Sie sie erst dann neu, wenn Sie selbst bestätigt haben (z. B. im Windows-Task-Manager oder durch Prüfen des Stifts selbst), dass der Vorgang beendet ist.",
     "reason": "Details: {{reason}}",
     "acknowledgeButton": "Verstanden — Ergebnis unklar",
+    "acknowledgeButtonUnconfirmed": "Verstanden — ich starte die App neu",
+    "restartNoticeAcknowledged": "Notiert. Diese App bleibt für neue Firmware-Updates und BOOK/DIY-Schreibvorgänge gesperrt, bis Sie sie vollständig beenden und neu öffnen.",
     "startOverButton": "Neu starten"
   }
 }

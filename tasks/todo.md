@@ -647,3 +647,89 @@ and was not touched. Before a real burn: the `remove_tailing_zeros.exe` gap abov
 is the one open question the user should weigh — it can only be closed by either
 running the vendor tool once under supervision (outside this round's scope) or by
 accepting the residual risk it names.
+
+# Firmware milestone — real code fixes for the lock-safety gaps (v0.3.7, 2026-09-15)
+
+User correctly rejected the previous round as documentation-only and pointed at
+three specific, still-open code defects. All three fixed; no vendor tool
+executed, no real pen touched, no full re-investigation.
+
+- [x] **`acknowledgeFirmwareOutcome()` no longer trusts the user's click as proof
+      the elevated process stopped.** `FirmwareUpgradeOutcome` gained a new field,
+      `processTerminationConfirmed: boolean` (`src/shared/types.ts`) — true only
+      when there is positive evidence the elevated process is no longer running
+      (never launched at all, or PowerShell's `Start-Process -Wait` genuinely
+      returned). `determineOutcome()` (`firmwareUpgrade.ts`) sets it false for
+      exactly `'timeout'` and `'unparseable-wrapper-output'` — the two cases where
+      the real process's state is genuinely unknown. `startFirmwareUpgrade()`
+      (`firmware.ts`) now only ever stashes `pendingRelease` when this flag is
+      true; when it's false, NEITHER the pen lock NOR the firmware in-progress
+      guard are released, and no reference to the release function is kept
+      anywhere reachable from the UI. `acknowledgeFirmwareOutcome()` is now a
+      pure function of whether something was actually stashed — for a
+      not-confirmed outcome it returns `{ ok: false, locked: true }` and touches
+      nothing. The only way to clear this state is fully restarting the app
+      (both locks are in-memory module state that resets on its own).
+- [x] **`startFirmwareUpgrade()`'s catch block distinguishes "confirmed nothing
+      launched" from "the launch was attempted, outcome unknown."** Previously
+      ANY caught error unconditionally released both locks. Now two flags
+      (`calledRunElevated`, `elevationResult`) track whether `runElevated()` was
+      ever invoked and, if so, what it returned before the throw. Termination is
+      only treated as confirmed if the throw happened before `runElevated()` was
+      called (`reason: 'internal-error-before-launch'`) or after it resolved with
+      `status: 'completed'`; a throw during/after an attempted-but-unresolved
+      launch (`reason: 'internal-error-uncertain'`) leaves both locks held with
+      no in-app release path, same as a timeout.
+- [x] **`REQUIRED_RELATIVE_FILES` (`firmwareUpgrade.ts`) now traces the real
+      root `download.bat` → `soundbox\standard\download.bat` call chain** instead
+      of the earlier no-op-derived list: adds `remove_tailing_zeros.exe` (the
+      processing tool that is NOT toolchain-gated — see the verification round
+      above), all 13 `copy /b` concatenation sources (text.bin/data.bin/
+      data_code.bin/aec.bin/wav.bin/ape.bin/flac.bin/m4a.bin/amr.bin/dts.bin/
+      fm.bin/mp3.bin/wma.bin), `soundbox\standard\`'s `tone.cfg`/`cfg_tool.bin`
+      (isd_download.exe's `-res` args), the exact `-key` argument
+      (`026AC690X-5309.key` — the package's OTHER `.key` file is never actually
+      passed and stays unlisted), `jl_isd.fw` (ufw_maker.exe's input), and
+      `isd_config.ini` (the chip/board config — consumption path not fully
+      traced, required anyway since every confirmed-working layout has it).
+      `bank.bin` stays deliberately excluded — see the verification round above.
+      Doc comment corrected to state plainly that this check is a necessary
+      precondition, never a claim the package is confirmed-compatible or safe.
+- [x] **Renderer**: `FirmwareScreen.tsx` branches the "unclear" result screen on
+      `outcome.processTerminationConfirmed`. Confirmed → unchanged existing
+      acknowledge flow (resets the wizard). Not confirmed → a distinct warning
+      body, a differently-labeled button ("I understand — I will restart the
+      app") that calls the same IPC method for an audit trail but deliberately
+      never resets wizard state, and a persistent post-click notice explaining
+      the app stays locked until fully restarted. New i18n keys added to all 8
+      locales (`unclearBodyUnconfirmed`, `acknowledgeButtonUnconfirmed`,
+      `restartNoticeAcknowledged`).
+- [x] **Targeted regression tests, 100% simulated (mocked `runElevated`, no
+      vendor tool, no pen)**: new `tests/unit/firmwareIpc.test.ts` (7 tests)
+      exercises `src/main/ipc/firmware.ts` end-to-end with a fresh module graph
+      per test (`vi.resetModules()` + dynamic import — necessary because the
+      "not confirmed" cases intentionally leave module-level lock state
+      permanently held, which would otherwise leak across tests) — success,
+      unclear-confirmed (acknowledge releases + a queued `acquirePenLock()`
+      caller then proceeds), timeout and unparseable (acknowledge is proven a
+      no-op — the core regression check for item 1), an error before vs. after
+      the launch was attempted (item 2), and a declined UAC prompt (unaffected
+      control case). `firmwareUpgrade.test.ts` updated: `writeFullPackage()`
+      now writes the full corrected file list, new tests per required-file
+      category (concatenation source / processing tool / config / key), and
+      `processTerminationConfirmed` assertions added to every `determineOutcome`
+      case. `FirmwareScreen.test.tsx` updated similarly, plus a new test proving
+      the not-confirmed screen never shows the normal acknowledge button and
+      never navigates back to "Prepare your pen." **385 tests pass** (was 367);
+      `typecheck` and `electron-vite build` both clean.
+- [x] Version bumped to **v0.3.7** (`package.json`) for a real Windows test
+      installer build via the existing `build-windows.yml` CI workflow (builds
+      real `windows-latest`, uploads `windows-installer` artifact — exe +
+      sha256). No vendor firmware package is bundled into the app; this only
+      packages the Electron app itself.
+- [ ] **Still open, unchanged from the previous round:** the
+      `remove_tailing_zeros.exe` regeneration question — whether it actually
+      running on this package's `aeco.bin`/`wavo.bin`/etc. reproduces the
+      currently-shipped `aec.bin`/`wav.bin`/etc. bytes — remains unverified.
+      Resolving it would require running the vendor tool, which continues to be
+      out of scope unless the user explicitly asks for it.

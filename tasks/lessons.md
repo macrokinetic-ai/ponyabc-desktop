@@ -513,3 +513,54 @@ the actual mechanism, not by the two shortcuts originally taken.
   flat conclusion) makes gaps like the still-open `remove_tailing_zeros.exe`
   question in this same investigation visible instead of buried — keep using it
   for any multi-step no-vendor-execution investigation.
+
+## "The user clicking acknowledge" is not evidence of anything about the real world — encode what IS evidence as a typed fact, not as a status label
+
+**What happened (2026-09-15, v0.3.7).** The previous round fixed the *documentation*
+around the firmware wizard's lock safety but left the actual code unchanged: on
+an `'unclear'` outcome, `acknowledgeFirmwareOutcome()` unconditionally released
+both the pen lock and the firmware in-progress guard the moment the user clicked
+"I understand" — for EVERY unclear reason, including `'timeout'` (we gave up
+watching; the real elevated process might still be running) and an internal
+error thrown who-knows-when relative to the actual launch. The user rejected
+this immediately: a UI acknowledgment is evidence the user read a message, never
+evidence about a real external device's state.
+
+**The fix's shape, generalizable beyond this feature:** don't let a single
+`status` enum (`'success' | 'failed' | 'unclear'`) carry two different meanings
+at once — "what should the user see" and "is it safe to unlock shared state."
+Those turned out to need different answers for the same `status: 'unclear'`
+value (a `'no-recognized-signal'` unclear has confirmed termination and CAN be
+unlocked; a `'timeout'` or `'unparseable'` unclear does NOT and must not be,
+ever, short of a full app restart resetting the in-memory lock). Splitting them
+into a second explicit boolean field (`processTerminationConfirmed`) computed
+once, close to the actual evidence (`elevation.status === 'completed'` — i.e.
+PowerShell's own `-Wait` genuinely returned), and then gating every
+lock-release/no-release decision on THAT field rather than on `status`, made an
+entire class of "acknowledge secretly means different things depending on
+reason" bugs impossible to reintroduce by accident — a future new `'unclear'`
+reason has to explicitly pick true or false, there's no silent default that
+unlocks.
+
+**Testing an intentionally-permanent lock requires per-test module isolation.**
+The regression tests for this (`tests/unit/firmwareIpc.test.ts`) needed to
+prove a lock STAYS held forever (until app restart) for the not-confirmed
+cases — but `penOperationLock.ts`/`firmwareLock.ts` are plain module-level
+singletons, so a lock left deliberately un-released by one test would still be
+held in the very next test in the same file, breaking it for an unrelated
+reason. Fix: `vi.resetModules()` in `beforeEach` + dynamically re-`import()`
+every module in the dependency graph (including the mocked `elevatedRun`) at
+the start of each test, so every test gets a completely fresh set of
+module-level singletons. Reach for this pattern specifically when a test needs
+to assert that some state is NEVER cleared by the code under test — the
+"happy path always cleans up" assumption baked into most module-level test
+setups is exactly backwards for a safety invariant like this one.
+
+**How to apply, generally:** when a boolean/enum result is used to gate BOTH a
+user-facing message AND an irreversible-ish side effect (releasing a lock,
+starting a payment, enabling a button that fires once), check whether every
+value of that result actually implies a single answer for the side effect. If
+even one value is ambiguous (as `'unclear'` was here), split the side-effect
+question into its own explicitly-computed field instead of overloading the
+display status — and write the test that proves the dangerous value can never
+accidentally take the safe path.

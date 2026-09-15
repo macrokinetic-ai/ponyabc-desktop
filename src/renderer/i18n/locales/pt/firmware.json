@@ -50,8 +50,11 @@
     "failedTitle": "A atualização não foi iniciada ou não foi concluída.",
     "unclearTitle": "Não foi possível confirmar o resultado.",
     "unclearBody": "A ferramenta terminou sem mostrar a mensagem de sucesso esperada. A caneta pode ou não ter sido atualizada com sucesso — verifique manualmente antes de a usar, ou tente novamente.",
+    "unclearBodyUnconfirmed": "Não foi possível confirmar se a ferramenta de atualização realmente terminou de ser executada. Por segurança, nenhuma nova atualização de firmware ou gravação BOOK/DIY na caneta será permitida enquanto isso não for resolvido. Feche completamente este aplicativo e reabra-o somente depois de confirmar por conta própria (por exemplo, no Gerenciador de Tarefas do Windows, ou verificando a própria caneta) que o processo foi interrompido.",
     "reason": "Detalhes: {{reason}}",
     "acknowledgeButton": "Compreendo — resultado não confirmado",
+    "acknowledgeButtonUnconfirmed": "Compreendo — vou reiniciar o aplicativo",
+    "restartNoticeAcknowledged": "Registrado. Este aplicativo permanecerá bloqueado para novas atualizações de firmware e gravações BOOK/DIY até que você o feche completamente e o reabra.",
     "startOverButton": "Recomeçar"
   }
 }

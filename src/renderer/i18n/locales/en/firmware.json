@@ -50,8 +50,11 @@
     "failedTitle": "The upgrade did not start or did not complete.",
     "unclearTitle": "The result could not be confirmed.",
     "unclearBody": "The tool finished without showing the expected success message. The pen may or may not have been upgraded successfully — check it manually before using it, or try again.",
+    "unclearBodyUnconfirmed": "We could not confirm whether the upgrade tool has actually finished running. For safety, no new firmware upgrade or BOOK/DIY pen write is allowed while this is unresolved. Please fully quit and reopen this app only after you have independently confirmed (for example in Windows Task Manager, or by checking the pen itself) that the process has stopped.",
     "reason": "Details: {{reason}}",
     "acknowledgeButton": "I understand — result unclear",
+    "acknowledgeButtonUnconfirmed": "I understand — I will restart the app",
+    "restartNoticeAcknowledged": "Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.",
     "startOverButton": "Start over"
   }
 }

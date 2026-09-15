@@ -50,8 +50,11 @@
     "failedTitle": "La actualización no se inició o no se completó.",
     "unclearTitle": "No se pudo confirmar el resultado.",
     "unclearBody": "La herramienta terminó sin mostrar el mensaje de éxito esperado. Es posible que el lápiz se haya actualizado correctamente o no — compruébelo manualmente antes de usarlo, o vuelva a intentarlo.",
+    "unclearBodyUnconfirmed": "No se pudo confirmar si la herramienta de actualización realmente terminó de ejecutarse. Por seguridad, no se permitirá ninguna nueva actualización de firmware ni escritura BOOK/DIY en el lápiz mientras esto no se resuelva. Cierre completamente esta aplicación y vuelva a abrirla solo después de haber confirmado usted mismo (por ejemplo, en el Administrador de tareas de Windows, o revisando el propio lápiz) que el proceso se ha detenido.",
     "reason": "Detalles: {{reason}}",
     "acknowledgeButton": "Entiendo — resultado no confirmado",
+    "acknowledgeButtonUnconfirmed": "Entiendo — reiniciaré la aplicación",
+    "restartNoticeAcknowledged": "Anotado. Esta aplicación permanecerá bloqueada para nuevas actualizaciones de firmware y escrituras BOOK/DIY hasta que la cierre por completo y la vuelva a abrir.",
     "startOverButton": "Empezar de nuevo"
   }
 }

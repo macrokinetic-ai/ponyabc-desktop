@@ -15,17 +15,45 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
+// Every file firmwareUpgrade.ts's REQUIRED_RELATIVE_FILES currently lists — kept in sync by
+// hand; a drift here would show up as the "looksValid=true" test below failing.
+const REQUIRED_FILES = [
+  'download.bat',
+  path.join('soundbox', 'standard', 'download.bat'),
+  'isd_download.exe',
+  'ufw_maker.exe',
+  'remove_tailing_zeros.exe',
+  'uboot.boot',
+  'ota.bin',
+  'script.ver',
+  path.join('soundbox', 'standard', 'app.bin'),
+  path.join('soundbox', 'standard', 'br25loader.bin'),
+  'text.bin',
+  'data.bin',
+  'data_code.bin',
+  'aec.bin',
+  'wav.bin',
+  'ape.bin',
+  'flac.bin',
+  'm4a.bin',
+  'amr.bin',
+  'dts.bin',
+  'fm.bin',
+  'mp3.bin',
+  'wma.bin',
+  path.join('soundbox', 'standard', 'tone.cfg'),
+  path.join('soundbox', 'standard', 'cfg_tool.bin'),
+  path.join('soundbox', 'standard', '026AC690X-5309.key'),
+  path.join('soundbox', 'standard', 'jl_isd.fw'),
+  path.join('soundbox', 'standard', 'isd_config.ini'),
+];
+
 function writeFullPackage(dir: string): void {
-  fs.writeFileSync(path.join(dir, 'download.bat'), '');
-  fs.writeFileSync(path.join(dir, 'isd_download.exe'), '');
-  fs.writeFileSync(path.join(dir, 'ufw_maker.exe'), '');
-  fs.writeFileSync(path.join(dir, 'uboot.boot'), '');
-  fs.writeFileSync(path.join(dir, 'ota.bin'), '');
-  fs.writeFileSync(path.join(dir, 'script.ver'), '');
-  fs.mkdirSync(path.join(dir, 'soundbox', 'standard'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'soundbox', 'standard', 'download.bat'), '');
-  fs.writeFileSync(path.join(dir, 'soundbox', 'standard', 'app.bin'), '');
-  fs.writeFileSync(path.join(dir, 'soundbox', 'standard', 'br25loader.bin'), '');
+  for (const rel of REQUIRED_FILES) {
+    const p = path.join(dir, rel);
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, '');
+  }
 }
 
 describe('inspectFirmwarePackage — real filesystem, never inferred from folder name or mtime', () => {
@@ -55,6 +83,54 @@ describe('inspectFirmwarePackage — real filesystem, never inferred from folder
     expect(info.looksValid).toBe(false);
     expect(info.missingFiles.length).toBeGreaterThan(0);
   });
+
+  // 2026-09-15: the required-file list was corrected to actually trace the root download.bat →
+  // soundbox\standard\download.bat call chain (concatenation sources, the processing tool that
+  // is NOT toolchain-gated, the config, and the exact -key argument) instead of a smaller list
+  // that happened to be enough for looksValid but missed real inputs. One targeted test per
+  // category the user asked to be covered.
+  it('a missing copy /b concatenation source (e.g. aec.bin) is flagged, not silently ignored', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    fs.rmSync(path.join(dir, 'aec.bin'));
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(false);
+    expect(info.missingFiles).toContain('aec.bin');
+  });
+
+  it('a missing processing tool (remove_tailing_zeros.exe — NOT toolchain-gated, unlike objcopy) is flagged', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    fs.rmSync(path.join(dir, 'remove_tailing_zeros.exe'));
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(false);
+    expect(info.missingFiles).toContain('remove_tailing_zeros.exe');
+  });
+
+  it('a missing chip/board config (isd_config.ini) is flagged', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    fs.rmSync(path.join(dir, 'soundbox', 'standard', 'isd_config.ini'));
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(false);
+    expect(info.missingFiles).toContain(path.join('soundbox', 'standard', 'isd_config.ini'));
+  });
+
+  it('a missing key file (the exact -key argument the confirmed chain passes) is flagged', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    fs.rmSync(path.join(dir, 'soundbox', 'standard', '026AC690X-5309.key'));
+    const info = inspectFirmwarePackage(dir);
+    expect(info.looksValid).toBe(false);
+    expect(info.missingFiles).toContain(path.join('soundbox', 'standard', '026AC690X-5309.key'));
+  });
+
+  it('bank.bin is deliberately NOT required — it does not exist in the confirmed package and the chain runs without it', () => {
+    const dir = mkTempDir();
+    writeFullPackage(dir);
+    const info = inspectFirmwarePackage(dir);
+    expect(info.missingFiles).not.toContain('bank.bin');
+  });
 });
 
 describe('determineOutcome — pure, no I/O', () => {
@@ -64,16 +140,18 @@ describe('determineOutcome — pure, no I/O', () => {
       status: 'success',
       reason: 'log-contains-download-success',
       exitCode: 0,
+      processTerminationConfirmed: true,
     });
     expect(determineOutcome({ logText: 'DOWNLOAD SUCCESS', elevation })).toMatchObject({ status: 'success' });
   });
 
-  it('a completed run with exit code 0 but WITHOUT the confirmed signal is "unclear", never guessed as success — the confirmed batch chain never checks errorlevel after the real flash step, so a clean exit code alone proves nothing', () => {
+  it('a completed run with exit code 0 but WITHOUT the confirmed signal is "unclear", never guessed as success — the confirmed batch chain never checks errorlevel after the real flash step, so a clean exit code alone proves nothing. Termination IS confirmed here: Start-Process -Wait genuinely returned.', () => {
     const elevation: RunElevatedResult = { status: 'completed', exitCode: 0 };
     const result = determineOutcome({ logText: 'some unrelated output, no signal here', elevation });
     expect(result.status).toBe('unclear');
     expect(result.reason).toBe('no-recognized-signal');
     expect(result.exitCode).toBe(0);
+    expect(result.processTerminationConfirmed).toBe(true);
   });
 
   it('a completed run with a non-zero exit code but no recognized signal is still "unclear", not "failed" — no vendor-confirmed failure signal exists yet', () => {
@@ -81,26 +159,44 @@ describe('determineOutcome — pure, no I/O', () => {
     const result = determineOutcome({ logText: 'no signal', elevation });
     expect(result.status).toBe('unclear');
     expect(result.exitCode).toBe(1);
+    expect(result.processTerminationConfirmed).toBe(true);
   });
 
-  it('a declined UAC prompt is "failed", distinctly reasoned, never silently retried or hidden', () => {
+  it('a declined UAC prompt is "failed", distinctly reasoned, never silently retried or hidden — nothing ever launched, so termination is confirmed', () => {
     const elevation: RunElevatedResult = { status: 'declined' };
-    expect(determineOutcome({ logText: '', elevation })).toMatchObject({ status: 'failed', reason: 'declined', exitCode: null });
+    expect(determineOutcome({ logText: '', elevation })).toMatchObject({
+      status: 'failed',
+      reason: 'declined',
+      exitCode: null,
+      processTerminationConfirmed: true,
+    });
   });
 
-  it('a launch error (before the tool ever ran) is "failed"', () => {
+  it('a launch error (before the tool ever ran) is "failed", termination confirmed', () => {
     const elevation: RunElevatedResult = { status: 'launch-error', message: 'nope' };
-    expect(determineOutcome({ logText: '', elevation })).toMatchObject({ status: 'failed', reason: 'launch-error' });
+    expect(determineOutcome({ logText: '', elevation })).toMatchObject({
+      status: 'failed',
+      reason: 'launch-error',
+      processTerminationConfirmed: true,
+    });
   });
 
-  it('a timeout is "unclear", never "failed" — the real process may still be running unobserved', () => {
+  it('a timeout is "unclear", never "failed" — the real process may still be running unobserved, so termination is NOT confirmed', () => {
     const elevation: RunElevatedResult = { status: 'timeout' };
-    expect(determineOutcome({ logText: 'partial output so far', elevation })).toMatchObject({ status: 'unclear', reason: 'timeout' });
+    expect(determineOutcome({ logText: 'partial output so far', elevation })).toMatchObject({
+      status: 'unclear',
+      reason: 'timeout',
+      processTerminationConfirmed: false,
+    });
   });
 
-  it('unparseable wrapper output is "unclear"', () => {
+  it('unparseable wrapper output is "unclear", termination NOT confirmed — even whether the elevated launch was ever attempted is unclear', () => {
     const elevation: RunElevatedResult = { status: 'unparseable', raw: 'garbage' };
-    expect(determineOutcome({ logText: '', elevation })).toMatchObject({ status: 'unclear', reason: 'unparseable-wrapper-output' });
+    expect(determineOutcome({ logText: '', elevation })).toMatchObject({
+      status: 'unclear',
+      reason: 'unparseable-wrapper-output',
+      processTerminationConfirmed: false,
+    });
   });
 
   it('the log excerpt is capped to a tail, never the entire (potentially huge) log', () => {

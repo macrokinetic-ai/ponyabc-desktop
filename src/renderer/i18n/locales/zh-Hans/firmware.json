@@ -50,8 +50,11 @@
     "failedTitle": "升级未能启动或未能完成。",
     "unclearTitle": "无法确认结果。",
     "unclearBody": "工具结束时没有显示预期的成功信息。点读笔可能已经升级成功，也可能没有——请先手动检查，或重新尝试。",
+    "unclearBodyUnconfirmed": "无法确认升级工具是否已经真正执行完毕。为安全起见，在此问题解决之前，将不允许进行新的固件升级或 BOOK/DIY 写入点读笔。请在你自行确认（例如通过 Windows 任务管理器，或直接检查点读笔本身）该进程已经停止后，才完全关闭并重新打开本应用程序。",
     "reason": "详情：{{reason}}",
     "acknowledgeButton": "我明白——结果无法确认",
+    "acknowledgeButtonUnconfirmed": "我明白——我会重新启动应用程序",
+    "restartNoticeAcknowledged": "已记录。在你完全关闭并重新打开本应用程序之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
     "startOverButton": "重新开始"
   }
 }

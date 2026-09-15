@@ -26,6 +26,7 @@ export function FirmwareScreen() {
   const [progress, setProgress] = useState<FirmwareProgressEvent | null>(null);
   const [outcome, setOutcome] = useState<FirmwareUpgradeOutcome | null>(null);
   const [acknowledging, setAcknowledging] = useState(false);
+  const [restartNoticeShown, setRestartNoticeShown] = useState(false);
   const logRef = useRef<HTMLPreElement | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export function FirmwareScreen() {
     return window.ponyabc.onFirmwareOutcome((event) => {
       setOutcome(event);
       setStep('result');
+      setRestartNoticeShown(false);
     });
   }, [isMac]);
 
@@ -80,6 +82,8 @@ export function FirmwareScreen() {
     }
   }
 
+  /** Only for an outcome with `processTerminationConfirmed: true` — see the branch in the
+   *  render below. Resets the wizard because the backend has genuinely released the lock. */
   async function handleAcknowledge() {
     setAcknowledging(true);
     try {
@@ -93,12 +97,31 @@ export function FirmwareScreen() {
     }
   }
 
+  /**
+   * Only for an outcome with `processTerminationConfirmed: false` — the real device's status is
+   * genuinely unknown, so unlike handleAcknowledge this deliberately does NOT reset the wizard
+   * or clear the outcome: the backend keeps the pen lock and the firmware in-progress guard held
+   * with no in-app release path (acknowledgeFirmwareOutcome() is a no-op for this case — see
+   * src/main/ipc/firmware.ts). This only records that the user has seen the warning and shows a
+   * persistent notice; the only real recovery is fully quitting and reopening the app.
+   */
+  async function handleAcknowledgeUnconfirmed() {
+    setAcknowledging(true);
+    try {
+      await window.ponyabc.acknowledgeFirmwareOutcome();
+    } finally {
+      setAcknowledging(false);
+      setRestartNoticeShown(true);
+    }
+  }
+
   function startOver() {
     setStep('prepare');
     setPackageInfo(null);
     setStartMessage(null);
     setProgress(null);
     setOutcome(null);
+    setRestartNoticeShown(false);
   }
 
   if (isMac) {
@@ -225,15 +248,28 @@ export function FirmwareScreen() {
           {outcome.status === 'unclear' && (
             <div className="note-box">
               <p className="error-text">{t('result.unclearTitle')}</p>
-              <p className="hint">{t('result.unclearBody')}</p>
+              <p className="hint">{outcome.processTerminationConfirmed ? t('result.unclearBody') : t('result.unclearBodyUnconfirmed')}</p>
               <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
             </div>
           )}
           <pre className="firmware-wizard__log">{outcome.logExcerpt || t('upgrading.noOutputYet')}</pre>
           {outcome.status === 'unclear' ? (
-            <button type="button" className="button button--primary" disabled={acknowledging} onClick={() => void handleAcknowledge()}>
-              {t('result.acknowledgeButton')}
-            </button>
+            outcome.processTerminationConfirmed ? (
+              <button type="button" className="button button--primary" disabled={acknowledging} onClick={() => void handleAcknowledge()}>
+                {t('result.acknowledgeButton')}
+              </button>
+            ) : restartNoticeShown ? (
+              <p className="hint">{t('result.restartNoticeAcknowledged')}</p>
+            ) : (
+              <button
+                type="button"
+                className="button button--primary"
+                disabled={acknowledging}
+                onClick={() => void handleAcknowledgeUnconfirmed()}
+              >
+                {t('result.acknowledgeButtonUnconfirmed')}
+              </button>
+            )
           ) : (
             <button type="button" className="button button--primary" onClick={startOver}>
               {t('result.startOverButton')}
