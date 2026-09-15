@@ -51,6 +51,12 @@ export function FirmwareScreen() {
   const [preparing, setPreparing] = useState(false);
   const [prepareResult, setPrepareResult] = useState<FirmwarePrepareResult | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<FirmwareDownloadProgressEvent | null>(null);
+  // No automatic hardware-revision detection exists — the app hardcodes a single hardware_rev
+  // in every /api/public/firmware query (HARDWARE_REV_CONST), regardless of which pen is
+  // actually connected (real registered serials exist for BOTH v1 and v2 today). This is a
+  // manual, explicit user confirmation gate, never pre-checked, never inferred — a 'v2' (or
+  // any non-matching) pen must not be treated as confirmed-applicable just because it's a P5.
+  const [hardwareConfirmation, setHardwareConfirmation] = useState<'unconfirmed' | 'confirmed' | 'not-sure'>('unconfirmed');
   // Session-only (never persisted): the packageDir of the most recent successful official
   // download, enabling the "reinstall this version" advanced affordance without re-downloading.
   const [lastOfficialPackageDir, setLastOfficialPackageDir] = useState<string | null>(null);
@@ -234,6 +240,7 @@ export function FirmwareScreen() {
     setRestartNoticeShown(false);
     setPrepareResult(null);
     setDownloadProgress(null);
+    setHardwareConfirmation('unconfirmed');
   }
 
   if (isMac) {
@@ -340,6 +347,38 @@ export function FirmwareScreen() {
                   </p>
                 )}
 
+                <div className="firmware-hardware-confirm">
+                  <p className="error-text">
+                    {t('package.official.hardwareRevNotice', { hardwareRev: officialFetch.release.hardwareRev })}
+                  </p>
+                  <fieldset>
+                    <legend>{t('package.official.hardwareConfirmLegend')}</legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name="hardware-confirmation"
+                        value="confirmed"
+                        checked={hardwareConfirmation === 'confirmed'}
+                        onChange={() => setHardwareConfirmation('confirmed')}
+                      />
+                      {t('package.official.hardwareConfirmYes', { hardwareRev: officialFetch.release.hardwareRev })}
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="hardware-confirmation"
+                        value="not-sure"
+                        checked={hardwareConfirmation === 'not-sure'}
+                        onChange={() => setHardwareConfirmation('not-sure')}
+                      />
+                      {t('package.official.hardwareConfirmNotSure')}
+                    </label>
+                  </fieldset>
+                  {hardwareConfirmation !== 'confirmed' && (
+                    <p className="hint">{t('package.official.hardwareConfirmRequired')}</p>
+                  )}
+                </div>
+
                 {preparing && downloadProgress && (
                   <div className="firmware-official__progress">
                     {(downloadProgress.phase === 'downloading' || downloadProgress.phase === 'verifying') && (
@@ -427,7 +466,7 @@ export function FirmwareScreen() {
             <button
               type="button"
               className="button button--primary"
-              disabled={!packageInfo?.looksValid}
+              disabled={!packageInfo?.looksValid || (packageSource === 'official' && hardwareConfirmation !== 'confirmed')}
               onClick={() => setStep('confirm')}
             >
               {t('package.nextButton')}

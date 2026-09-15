@@ -7,15 +7,18 @@ import type { FirmwareReleaseFetchResult, FirmwareReleaseInfo } from '@shared/ty
 export const FIRMWARE_API_BASE_URL = 'https://register.ponyabc.uk';
 
 /**
- * The confirmed real-device-verified hardware_rev for the officially published firmware
- * (matches product_serials.hardware_rev — see supabase/migrations/20260909120003_
- * product_serials.sql in ponyabc-web). Real registered serials currently exist for BOTH 'v1'
- * (7 serials) and 'v2' (3 serials) — this app has no way to detect which one a connected pen
- * actually is, and the officially published firmware has ONLY been confirmed on 'v1' hardware.
- * Hardcoding a single value is a deliberate v1 simplification, not a claim that all P5 hardware
- * batches are covered — a 'v2' pen querying the server gets `{release: null}` (no firmware
- * published for it) rather than being offered firmware never verified on its hardware. Revisit
- * if/when a real hardware-detection method or a 'v2' release exists.
+ * The hardware_rev this app ALWAYS queries the public firmware API with — NOT a detected or
+ * confirmed property of whichever pen happens to be connected (matches product_serials.
+ * hardware_rev — see supabase/migrations/20260909120003_product_serials.sql in ponyabc-web).
+ * Real registered serials currently exist for BOTH 'v1' (7 serials) and 'v2' (3 serials); this
+ * app has no way to detect which one is actually connected, so a real 'v2' pen gets shown the
+ * SAME 'v1' release info as a real 'v1' pen would — the server has no idea which physical pen
+ * is asking, and this constant never varies per-connection. This does NOT mean a 'v2' pen is
+ * safe to flash with it: only a human, explicit confirmation (FirmwareScreen.tsx's
+ * hardwareConfirmation gate — never pre-checked, blocks "Next" until the user affirmatively
+ * confirms, with a "not sure" option that keeps it blocked) stands between this release and the
+ * actual burn action. Revisit this constant (and the gate) if/when a real hardware-detection
+ * method or a 'v2'-specific release exists.
  */
 export const HARDWARE_REV_CONST = 'v1';
 

@@ -311,9 +311,61 @@ describe('FirmwareScreen — official download flow (Windows), simulated release
     // Still never touched the local-folder chooser.
     expect(window.ponyabc.selectFirmwarePackage).not.toHaveBeenCalled();
 
+    // A successful download alone does NOT enable Next — the hardware-applicability
+    // confirmation gate is a separate, required, explicit step (see the describe block below
+    // for the gate's own dedicated tests). Only after explicitly confirming does Next enable.
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('radio', { name: /Confirmed — my pen is hardware version/ }));
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await screen.findByRole('heading', { name: 'Confirm' });
+  });
+
+  it('hardware-applicability confirmation gate: never pre-checked, "not sure" never enables Next, and it can be un-confirmed again', async () => {
+    window.ponyabc.getOfficialFirmwareRelease = vi.fn(async () => ({ status: 'ok', release: fakeRelease }));
+    window.ponyabc.prepareOfficialFirmwarePackage = vi.fn(async () => ({ status: 'ok', packageDir: 'C:\\pkg' }));
+    renderScreen();
+    await screen.findByText('Pen detected.');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByText('Official version: AC6966-V1.18');
+
+    // Neither option is pre-selected — the app never defaults to "confirmed" for any pen.
+    const confirmedRadio = screen.getByRole('radio', { name: /Confirmed — my pen is hardware version/ }) as HTMLInputElement;
+    const notSureRadio = screen.getByRole('radio', { name: 'Not sure' }) as HTMLInputElement;
+    expect(confirmedRadio.checked).toBe(false);
+    expect(notSureRadio.checked).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Download official update' }));
+    await screen.findByText('Ready — click Next to continue.');
+
+    // Explicitly choosing "not sure" must never enable Next — this is the literal case a
+    // connected pen whose hardware version isn't actually known (e.g. a real hardware_rev='v2'
+    // pen, which this app cannot distinguish from 'v1' since there is no detection capability)
+    // must land in.
+    fireEvent.click(notSureRadio);
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
+    await screen.findByText(
+      "Confirm the hardware version above before continuing. If you're not sure, do not proceed — check the pen or contact support.",
+    );
+
+    // Confirming enables Next...
+    fireEvent.click(confirmedRadio);
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(false);
+
+    // ...but switching back to "not sure" disables it again — confirmation isn't a one-way,
+    // sticky flag once granted.
+    fireEvent.click(notSureRadio);
+    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('the hardware-applicability gate only applies to the official path — the local-folder (advanced/support) path is unaffected', async () => {
+    window.ponyabc.getOfficialFirmwareRelease = vi.fn(async () => ({ status: 'no-release' }));
+    renderScreen();
+    await advanceToConfirm();
+    // advanceToConfirm() (local-folder path) reaching Confirm at all proves this — no hardware
+    // radio exists for it to have blocked on, since the notice/gate only renders inside the
+    // official-release block.
+    expect(screen.queryByRole('radio', { name: /Confirmed — my pen is hardware version/ })).toBeNull();
   });
 
   it('no published release: shows "no update available" and does NOT fall back to the local-folder chooser — Next stays disabled until the user explicitly opens Advanced/support', async () => {
