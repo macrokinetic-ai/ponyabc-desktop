@@ -309,3 +309,51 @@ share a code path, check whether the verify step's cost scales with data the lis
 actually need yet (file size here) — if so, the list must return an honest "not yet known"
 status rather than block on it, even if every test fixture is small enough that inlining it
 never fails a test.
+
+## "Never block the list on hashing" isn't enough by itself — a deferred-but-still-automatic verification, re-triggered on every list call, silently turns into repeated full re-reads
+
+The previous fix (above) made `buildBookLibrary` hash-free and pushed verification into a
+"pending" list the *caller* resolved right after. That caller (`bookList`/`bookCatalogRefresh`)
+re-triggered that pending-verification pass on *every single call* — mount, manual refresh,
+and after every add/remove (each of which re-lists). `verifyInFlight` only deduped two
+*literally concurrent* requests for the same file; it never remembered an already-completed
+result, so a user who refreshed a few times, or added/removed one book, quietly re-hashed every
+other large matched AXB on the pen each time — "the busy spinner clears fast" hid that a
+detached background read was still churning through hundreds of MB repeatedly. A real
+consultant reading the code (not a user complaint) caught this.
+
+**Fix:** verification became a fully separate, explicit, user-triggered action ("Verify
+selected content") instead of anything list/refresh ever kicks off automatically, with its
+result persisted in a small capped index keyed to the pen's device-identity generation + the
+file's exact size/mtime + the catalog's current official hash — a cache hit skips re-hashing
+entirely, invalidated the instant any of those four things changes, never merely by volume
+label/path looking the same.
+
+**How to apply:** "never block the list" and "never repeat the same work automatically" are two
+different guarantees — fixing the first (deferring heavy work out of the hot path) doesn't
+fix the second (that deferred work silently re-running every time the hot path is hit again).
+When deferring expensive work out of a frequently-called function, ask separately: how often
+does the *caller* of that function actually run, and does deferred work get memoized/persisted,
+or just moved one frame later and repeated just as often as before?
+
+## Destroying a Node stream before its `'error'` listener is attached throws an uncaught exception — attach every listener first, branch on already-aborted state after
+
+`sha256FileWithProgress`'s already-aborted-signal path called `stream.destroy()` then
+`reject(...)` and `return`ed — *before* the function reached its `stream.on('error', fail)`
+line further down. `EventEmitter` throws synchronously (an uncaught exception, not just an
+unhandled rejection) when an `'error'` event fires with zero listeners attached, and
+`destroy()`ing a stream that hasn't finished opening does exactly that. Every test passed in
+isolation; only running the full suite surfaced it as a real uncaught exception (Vitest's
+`Unhandled Errors` section), triggered by the specific "signal already aborted before the call"
+test.
+
+**Fix:** attach all of the stream's listeners (`data`/`end`/`close`/`error`) unconditionally
+first; only after that, check `signal.aborted` and call the shared `fail()` helper (which now
+always has a live `'error'` listener to land on) instead of a separate ad hoc destroy+reject.
+
+**How to apply:** whenever a code path can call `.destroy()` (or otherwise force an `'error'`
+emission) on a Node stream/EventEmitter, verify by inspection that an `'error'` listener is
+already attached at that exact point in execution — not just "attached somewhere in the
+function" — and write the test for the *already in the terminal state before you start*
+case specifically (not just "abort while in progress"), since that's the one most likely to
+race ahead of setup code.

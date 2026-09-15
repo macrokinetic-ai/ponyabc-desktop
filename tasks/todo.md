@@ -130,3 +130,82 @@ but not data-unsafe.
       refresh always clears busy, diagnostics passcode gate + summary work,
       zero console errors, zero 820px overflow. Never wrote to a real
       physical pen.
+
+# v0.3.2 — refresh performance / verification-state cleanup
+
+A consultant read `bookReconcile.ts`/`ipc/book.ts` from v0.3.1 and found the
+real root cause of "refresh feels slow, ~9GB of reads observed": every
+`bookList()`/`bookCatalogRefresh()` call regenerated a fresh "pending
+verification" list and re-triggered hashing for every matched pen file —
+`verifyInFlight` only deduped truly *concurrent* re-hashes of the same file,
+it never remembered an already-completed result, so repeated UI actions
+(mount → refresh → any add/remove triggering a re-list) kept re-reading the
+same large AXBs from the pen over and over.
+
+- [x] **Refresh is now hash-free, unconditionally.** `buildBookLibrary` no
+      longer has any "pending verification"/auto-hash concept at all —
+      `bookList`/`bookCatalogRefresh` only ever stat pen files (filename +
+      size + mtime) and fetch catalog JSON metadata; they never read a pen
+      file's bytes. A matched-but-unverified file is `'present'`/
+      `'on-pen-present'` — filename+size match is explicitly never presented
+      as "bytes confirmed identical."
+- [x] **Verification is now a separate, explicit, user-triggered action** —
+      "Verify selected content" (reuses the left pane's existing selection),
+      with a matching Cancel. Download-hash verification and every
+      destructive-operation safety check (pre-delete re-hash, backup-before-
+      replace) are completely unchanged — this round only touched the
+      *display/listing* path, never the write-safety path.
+- [x] **Verification results are now persisted** in a small, capped
+      (300-record, update-in-place-per-file) App-managed index
+      (`bookVerifyIndex.json`, in userData — never written to the pen's own
+      SD card this round), keyed by pen volume label + filename, valid only
+      when the pen's device-identity generation, the file's exact size/
+      mtime, and the catalog's current official hash all still match
+      exactly — a mismatch on any of those (remount, file change, catalog
+      update) falls back to unverified, never a stale guess. Confirmed live:
+      a second refresh after an explicit verify shows the result *instantly*
+      (108ms, matching the network-only refresh time) with zero re-hashing.
+- [x] **Real, cancellable, byte-level verify progress** — new
+      `sha256FileWithProgress` (in `transferService.ts`, separate from the
+      unchanged `sha256File` used on safety-critical paths) reports
+      cumulative bytes read and honors an `AbortSignal` that actually
+      destroys the read stream (releasing the OS handle immediately, not
+      just abandoning the promise — a real bug in the first version of this
+      function, caught by wiring the actual EventEmitter 'error' path
+      *before* any `destroy()` could fire, not by reasoning about it).
+      Verify batches serialize through a batch-id guard so cancelling or
+      starting a new batch can never let a stale one's results land late.
+- [x] **Status wording is now unambiguous** on both panes: left = present /
+      verifying / last-verified-matches / last-verified-differs / cannot-
+      verify / awaiting-catalog / unknown; right = its own on-pen state
+      *plus* a separate, independent cache-status line (not
+      downloaded/cached/downloading) — an old download cache entry is never
+      presented as "the latest version is confirmed on the pen."
+- [x] Each catalog item now shows "Official update: <date>" using the
+      server's own `updatedAt` (same field driving the NEW badge); the left
+      pane's matching line is labeled the same way, never implying an
+      install/update time the app doesn't actually track.
+- [x] Diagnostics: new `pen-verify`/`pen-verify-batch` entries record the
+      declared size, actual SD bytes read, read duration, and outcome
+      (current/differs/cancelled/read-error) per file — separate from
+      `catalog-fetch` (network JSON, tiny) and `book-download` (network AXB
+      bytes) — confirmed live that a real 150MB explicit verify logs
+      `sdBytesRead: 157286400` distinctly from the ~250-600ms `catalog-fetch`
+      entries, so a real "why was there so much I/O" question is answerable
+      from the log rather than defaulting to "must be the network."
+- [x] Tests: 296 total (was 271), both typechecks clean. Rewrote
+      `bookReconcile.test.ts` for the hash-free model; new
+      `bookVerificationIndex.test.ts`, and `transferService.test.ts` gained
+      `sha256FileWithProgress` coverage (including the cancellation-releases-
+      the-handle proof and the real bug caught by the pre-aborted-signal
+      test). `bookIpc.test.ts` gained full real-filesystem coverage of
+      `bookVerifyContent`/`bookVerifyCancel` (persists a real record, refuses
+      unmatched/stale-generation/no-pen, cancel-before-read-starts never
+      touches the file).
+- [x] Live end-to-end re-verification via CDP against a rebuilt binary with
+      a fresh profile and the same real 150MB pen file: catalog load never
+      auto-verifies, manual refresh completes in ~300ms regardless of the
+      large file present, explicit verify resolves correctly to "differs"
+      (content is random bytes, doesn't match the real official hash),
+      second refresh reflects it instantly from the persisted index, zero
+      console errors. Never wrote to a real physical pen.

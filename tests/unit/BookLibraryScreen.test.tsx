@@ -30,7 +30,7 @@ function penItem(overrides: Partial<BookPenItem> = {}): BookPenItem {
     contentId: 'b1',
     friendlyName: 'Book One',
     friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
-    status: 'matched-current',
+    status: 'verified-current',
     removable: true,
     updatedAtMs: null,
     ...overrides,
@@ -51,6 +51,7 @@ function listResult(overrides: Partial<BookListResult> = {}): BookListResult {
 
 let progressListener: ((event: unknown) => void) | null = null;
 let verifyListener: ((event: unknown) => void) | null = null;
+let verifyProgressListener: ((event: unknown) => void) | null = null;
 
 function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
@@ -92,6 +93,14 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         verifyListener = null;
       };
     }),
+    bookVerifyContent: vi.fn(async () => ({ status: 'started' })),
+    bookVerifyCancel: vi.fn(async () => ({ ok: true })),
+    onBookVerifyProgress: vi.fn((listener) => {
+      verifyProgressListener = listener as (event: unknown) => void;
+      return () => {
+        verifyProgressListener = null;
+      };
+    }),
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     getAppInfo: vi.fn(async () => ({ version: '0.0.0', variant: 'mac-arm64' })),
@@ -108,6 +117,7 @@ beforeAll(async () => {
 beforeEach(() => {
   progressListener = null;
   verifyListener = null;
+  verifyProgressListener = null;
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
 });
@@ -284,12 +294,12 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
   it('a "verifying" catalog item resolves in place once a bookVerifyUpdate event arrives, no re-list call', async () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-verifying', actionable: false })] }));
-    await screen.findByText(/Verifying content/);
+    await screen.findByText(/Verifying pen content/);
     const listCallsBefore = (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
 
-    verifyListener?.({ fileName: '0451.axb', contentId: 'b1', result: { penStatus: 'matched-differs', catalogStatus: 'on-pen-differs' } });
+    verifyListener?.({ fileName: '0451.axb', contentId: 'b1', result: { penStatus: 'verified-differs', catalogStatus: 'on-pen-differs' } });
 
-    await screen.findByText(/On pen, differs from this version/);
+    await screen.findByText(/On pen — verified, differs/);
     expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
   });
 });

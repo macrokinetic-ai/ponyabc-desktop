@@ -39,17 +39,25 @@
   "replaceOption": "Replace",
   "skipOption": "Skip",
   "confirmAddAction": "Confirm",
+  "officialUpdated": "Official update: {{date}}",
+  "cacheStatus": {
+    "notDownloaded": "Not downloaded",
+    "cached": "Cached",
+    "downloading": "Downloading…"
+  },
   "status": {
-    "matchedCurrent": "Matches official version",
-    "matchedDiffers": "Differs from the current official version",
+    "present": "On pen — not yet verified",
+    "verifying": "Verifying pen content…",
+    "verifiedCurrent": "Last verified: matches official version",
+    "verifiedDiffers": "Last verified: differs from official version",
     "matchedHashUnknown": "Cannot verify against the catalog",
-    "matchedVerifying": "Verifying content…",
     "awaitingCatalog": "Waiting for catalog match",
     "unknown": "Unknown",
     "notOnPen": "Not on pen",
-    "onPenCurrent": "Already on pen",
-    "onPenDiffers": "On pen, differs from this version",
-    "onPenVerifying": "Verifying content…",
+    "onPenPresent": "On pen — not yet verified",
+    "onPenCurrent": "On pen — verified, matches",
+    "onPenDiffers": "On pen — verified, differs",
+    "onPenVerifying": "Verifying pen content…",
     "metadataIncomplete": "Catalog information incomplete",
     "ambiguous": "Ambiguous catalog entry"
   },
@@ -57,6 +65,8 @@
     "add": "Add to pen",
     "remove": "Remove from pen",
     "reinstall": "Re-download",
-    "cancelDownload": "Cancel"
+    "cancelDownload": "Cancel",
+    "verifySelected": "Verify selected content",
+    "cancelVerify": "Cancel verification"
   }
 }

@@ -39,17 +39,25 @@
   "replaceOption": "替换",
   "skipOption": "跳过",
   "confirmAddAction": "确认",
+  "officialUpdated": "官方更新：{{date}}",
+  "cacheStatus": {
+    "notDownloaded": "尚未下载",
+    "cached": "已缓存",
+    "downloading": "正在下载…"
+  },
   "status": {
-    "matchedCurrent": "与官方版本一致",
-    "matchedDiffers": "与当前官方版本不同",
+    "present": "笔内已有——未校验",
+    "verifying": "正在校验笔内内容…",
+    "verifiedCurrent": "上次校验：与官方版本相符",
+    "verifiedDiffers": "上次校验：与官方版本不同",
     "matchedHashUnknown": "无法与目录核对",
-    "matchedVerifying": "正在验证内容…",
     "awaitingCatalog": "等待目录匹配",
     "unknown": "未知内容",
     "notOnPen": "未在点读笔",
-    "onPenCurrent": "已在点读笔",
-    "onPenDiffers": "已在点读笔，与此版本不同",
-    "onPenVerifying": "正在验证内容…",
+    "onPenPresent": "笔内已有——未校验",
+    "onPenCurrent": "笔内已有——已校验，相符",
+    "onPenDiffers": "笔内已有——已校验，不同",
+    "onPenVerifying": "正在校验笔内内容…",
     "metadataIncomplete": "目录信息不完整",
     "ambiguous": "目录项存在歧义"
   },
@@ -57,6 +65,8 @@
     "add": "添加到点读笔",
     "remove": "从点读笔移除",
     "reinstall": "重新下载",
-    "cancelDownload": "取消"
+    "cancelDownload": "取消",
+    "verifySelected": "验证所选内容",
+    "cancelVerify": "取消验证"
   }
 }

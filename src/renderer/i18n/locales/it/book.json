@@ -39,17 +39,25 @@
   "replaceOption": "Sostituisci",
   "skipOption": "Salta",
   "confirmAddAction": "Conferma",
+  "officialUpdated": "Aggiornamento ufficiale: {{date}}",
+  "cacheStatus": {
+    "notDownloaded": "Non scaricato",
+    "cached": "In cache",
+    "downloading": "Download in corso…"
+  },
   "status": {
-    "matchedCurrent": "Corrisponde alla versione ufficiale",
-    "matchedDiffers": "Differisce dalla versione ufficiale attuale",
+    "present": "Sulla penna — non ancora verificato",
+    "verifying": "Verifica del contenuto della penna…",
+    "verifiedCurrent": "Ultima verifica: corrisponde alla versione ufficiale",
+    "verifiedDiffers": "Ultima verifica: differisce dalla versione ufficiale",
     "matchedHashUnknown": "Impossibile verificare rispetto al catalogo",
-    "matchedVerifying": "Verifica del contenuto…",
     "awaitingCatalog": "In attesa di corrispondenza col catalogo",
     "unknown": "Sconosciuto",
     "notOnPen": "Non sulla penna",
-    "onPenCurrent": "Già sulla penna",
-    "onPenDiffers": "Sulla penna, differisce da questa versione",
-    "onPenVerifying": "Verifica del contenuto…",
+    "onPenPresent": "Sulla penna — non ancora verificato",
+    "onPenCurrent": "Sulla penna — verificato, corrisponde",
+    "onPenDiffers": "Sulla penna — verificato, differisce",
+    "onPenVerifying": "Verifica del contenuto della penna…",
     "metadataIncomplete": "Informazioni di catalogo incomplete",
     "ambiguous": "Voce di catalogo ambigua"
   },
@@ -57,6 +65,8 @@
     "add": "Aggiungi alla penna",
     "remove": "Rimuovi dalla penna",
     "reinstall": "Riscarica",
-    "cancelDownload": "Annulla"
+    "cancelDownload": "Annulla",
+    "verifySelected": "Verifica il contenuto selezionato",
+    "cancelVerify": "Annulla verifica"
   }
 }

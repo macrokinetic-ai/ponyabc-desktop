@@ -39,17 +39,25 @@
   "replaceOption": "Substituir",
   "skipOption": "Ignorar",
   "confirmAddAction": "Confirmar",
+  "officialUpdated": "Atualização oficial: {{date}}",
+  "cacheStatus": {
+    "notDownloaded": "Não transferido",
+    "cached": "Em cache",
+    "downloading": "A descarregar…"
+  },
   "status": {
-    "matchedCurrent": "Corresponde à versão oficial",
-    "matchedDiffers": "Difere da versão oficial atual",
+    "present": "Na caneta — ainda não verificado",
+    "verifying": "A verificar o conteúdo da caneta…",
+    "verifiedCurrent": "Última verificação: corresponde à versão oficial",
+    "verifiedDiffers": "Última verificação: difere da versão oficial",
     "matchedHashUnknown": "Não é possível verificar com o catálogo",
-    "matchedVerifying": "A verificar o conteúdo…",
     "awaitingCatalog": "A aguardar correspondência com o catálogo",
     "unknown": "Desconhecido",
     "notOnPen": "Não está na caneta",
-    "onPenCurrent": "Já está na caneta",
-    "onPenDiffers": "Na caneta, difere desta versão",
-    "onPenVerifying": "A verificar o conteúdo…",
+    "onPenPresent": "Na caneta — ainda não verificado",
+    "onPenCurrent": "Na caneta — verificado, corresponde",
+    "onPenDiffers": "Na caneta — verificado, difere",
+    "onPenVerifying": "A verificar o conteúdo da caneta…",
     "metadataIncomplete": "Informações de catálogo incompletas",
     "ambiguous": "Entrada de catálogo ambígua"
   },
@@ -57,6 +65,8 @@
     "add": "Adicionar à caneta",
     "remove": "Remover da caneta",
     "reinstall": "Descarregar novamente",
-    "cancelDownload": "Cancelar"
+    "cancelDownload": "Cancelar",
+    "verifySelected": "Verificar conteúdo selecionado",
+    "cancelVerify": "Cancelar verificação"
   }
 }

@@ -39,17 +39,25 @@
   "replaceOption": "Remplacer",
   "skipOption": "Ignorer",
   "confirmAddAction": "Confirmer",
+  "officialUpdated": "Mise à jour officielle : {{date}}",
+  "cacheStatus": {
+    "notDownloaded": "Non téléchargé",
+    "cached": "En cache",
+    "downloading": "Téléchargement…"
+  },
   "status": {
-    "matchedCurrent": "Correspond à la version officielle",
-    "matchedDiffers": "Diffère de la version officielle actuelle",
+    "present": "Sur le stylo — non vérifié",
+    "verifying": "Vérification du contenu du stylo…",
+    "verifiedCurrent": "Dernière vérification : correspond à la version officielle",
+    "verifiedDiffers": "Dernière vérification : diffère de la version officielle",
     "matchedHashUnknown": "Impossible de vérifier par rapport au catalogue",
-    "matchedVerifying": "Vérification du contenu…",
     "awaitingCatalog": "En attente de correspondance avec le catalogue",
     "unknown": "Inconnu",
     "notOnPen": "Pas sur le stylo",
-    "onPenCurrent": "Déjà sur le stylo",
-    "onPenDiffers": "Sur le stylo, diffère de cette version",
-    "onPenVerifying": "Vérification du contenu…",
+    "onPenPresent": "Sur le stylo — non vérifié",
+    "onPenCurrent": "Sur le stylo — vérifié, correspond",
+    "onPenDiffers": "Sur le stylo — vérifié, diffère",
+    "onPenVerifying": "Vérification du contenu du stylo…",
     "metadataIncomplete": "Informations du catalogue incomplètes",
     "ambiguous": "Entrée de catalogue ambiguë"
   },
@@ -57,6 +65,8 @@
     "add": "Ajouter au stylo",
     "remove": "Supprimer du stylo",
     "reinstall": "Retélécharger",
-    "cancelDownload": "Annuler"
+    "cancelDownload": "Annuler",
+    "verifySelected": "Vérifier le contenu sélectionné",
+    "cancelVerify": "Annuler la vérification"
   }
 }

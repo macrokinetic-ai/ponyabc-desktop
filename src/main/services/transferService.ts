@@ -62,6 +62,65 @@ export function sha256File(filePath: string): Promise<string> {
   });
 }
 
+/**
+ * Same core contract as sha256File (digest computed at 'end', promise gated on 'close'), but
+ * for an explicit, user-triggered, cancellable verification of a potentially very large file:
+ * reports real bytes-read progress as data arrives, and a caller can abort mid-read via
+ * `signal` — which destroys the read stream immediately, actually releasing the OS file
+ * handle rather than just abandoning the promise. Never used on the safety-critical paths
+ * (download verification, the immediately-before-delete re-hash) — those keep using the
+ * plain, always-runs-to-completion sha256File above unchanged.
+ */
+export function sha256FileWithProgress(filePath: string, opts: { onProgress?: (bytesRead: number) => void; signal?: AbortSignal } = {}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    let digest: string | null = null;
+    let bytesRead = 0;
+    let settled = false;
+
+    function fail(err: unknown) {
+      if (settled) return;
+      settled = true;
+      opts.signal?.removeEventListener('abort', onAbort);
+      stream.destroy();
+      reject(err);
+    }
+    function onAbort() {
+      fail(new Error('cancelled'));
+    }
+
+    // Attach every listener — 'error' included — before any destroy() can possibly happen.
+    // Node's EventEmitter throws an uncaught exception for an 'error' event with zero
+    // listeners, so destroying the stream (e.g. an already-aborted signal, below) before this
+    // point would crash the process instead of rejecting the promise.
+    stream.on('data', (chunk) => {
+      hash.update(chunk);
+      bytesRead += chunk.length;
+      opts.onProgress?.(bytesRead);
+    });
+    stream.on('end', () => {
+      digest = hash.digest('hex');
+    });
+    stream.on('close', () => {
+      if (settled) return;
+      if (digest === null) return; // destroyed before 'end' — fail() already settled the promise
+      settled = true;
+      opts.signal?.removeEventListener('abort', onAbort);
+      resolve(digest);
+    });
+    stream.on('error', fail);
+
+    if (opts.signal) {
+      if (opts.signal.aborted) {
+        fail(new Error('cancelled'));
+        return;
+      }
+      opts.signal.addEventListener('abort', onAbort, { once: true });
+    }
+  });
+}
+
 async function unlinkQuiet(p: string): Promise<void> {
   await fs.promises.unlink(p).catch(() => {});
 }

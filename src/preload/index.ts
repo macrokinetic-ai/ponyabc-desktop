@@ -9,6 +9,8 @@ import type {
   BookDownloadProgressEvent,
   BookListResult,
   BookRemoveResult,
+  BookVerifyContentResult,
+  BookVerifyProgressEvent,
   BookVerifyUpdateEvent,
   ComputerFolderListResult,
   DiagnosticsExportResult,
@@ -75,6 +77,10 @@ const api: PonyAbcApi = {
   bookRestore: (params: { backupId: string; penGeneration: number }) => ipcRenderer.invoke(IPC.bookRestore, params) as Promise<BookActionResult>,
   bookDownloadCancel: (contentId: string) => ipcRenderer.invoke(IPC.bookDownloadCancel, contentId) as Promise<{ ok: boolean }>,
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => subscribe(IPC.bookDownloadProgress, listener),
+
+  bookVerifyContent: (params: { fileNames: string[]; penGeneration: number }) => ipcRenderer.invoke(IPC.bookVerifyContent, params) as Promise<BookVerifyContentResult>,
+  bookVerifyCancel: () => ipcRenderer.invoke(IPC.bookVerifyCancel) as Promise<{ ok: boolean }>,
+  onBookVerifyProgress: (listener: (event: BookVerifyProgressEvent) => void) => subscribe(IPC.bookVerifyProgress, listener),
   onBookVerifyUpdate: (listener: (event: BookVerifyUpdateEvent) => void) => subscribe(IPC.bookVerifyUpdate, listener),
 
   getDiagnosticsSummary: () => ipcRenderer.invoke(IPC.diagnosticsSummary) as Promise<DiagnosticsSummary>,

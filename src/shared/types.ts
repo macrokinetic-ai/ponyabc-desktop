@@ -307,13 +307,20 @@ export interface BookBackupEntry {
 // ---------------------------------------------------------------------------------------
 
 export type BookPenMatchStatus =
-  | 'matched-current'
-  | 'matched-differs'
+  /** Matched by filename — present on the pen, but its content has NOT been verified against
+   *  the official hash (this session, or ever, or the prior verification is now stale). This
+   *  is the ordinary resting state after a plain refresh — refreshing/listing never reads a
+   *  pen file's bytes, so "present" must never be read as "confirmed identical to official." */
+  | 'present'
+  /** An explicit "verify selected content" action is actively hashing this file right now. */
+  | 'verifying'
+  /** The last explicit verification (this session, still valid — see BookVerifyRecord) found
+   *  this file's content matches the official hash. */
+  | 'verified-current'
+  /** The last explicit verification found this file's content differs from the official hash. */
+  | 'verified-differs'
+  /** The catalog has no official hash for this entry at all — can never be verified. */
   | 'matched-hash-unknown'
-  /** Matched by filename, content verification not finished yet — never blocks the initial
-   *  listing on hashing a (possibly very large) file; resolves to matched-current/-differs
-   *  shortly after via a bookVerifyUpdate push. */
-  | 'matched-verifying'
   /** No catalog has ever been successfully fetched, so this file has genuinely never been
    *  checked against anything — distinct from 'unknown', which means a real catalog exists
    *  and this file specifically isn't in it. Always non-removable, exactly like 'unknown'. */
@@ -338,11 +345,14 @@ export interface BookPenItem {
 
 export type BookCatalogItemStatus =
   | 'not-on-pen'
+  /** Matched by filename, present on the pen, content not verified — see BookPenMatchStatus's
+   *  'present'. This is a PEN-presence fact, independent of `cached` (App's own local
+   *  download cache) — a catalog item can be on-pen-present with cached=false, or not-on-pen
+   *  with cached=true, and the UI must show both facts separately, never merge them. */
+  | 'on-pen-present'
+  | 'on-pen-verifying'
   | 'on-pen-current'
   | 'on-pen-differs'
-  /** Matched by filename, content verification not finished yet — see BookPenMatchStatus's
-   *  'matched-verifying'. Never actionable (no "Add"/"Replace" prompt) until resolved. */
-  | 'on-pen-verifying'
   | 'metadata-incomplete'
   | 'ambiguous';
 
@@ -353,10 +363,14 @@ export interface BookCatalogItem {
   friendlyNameI18n: Record<string, string> | null;
   sizeBytes: number;
   status: BookCatalogItemStatus;
+  /** Whether a verified-good copy sits in the App's own local download cache — entirely about
+   *  the LOCAL CACHE, never about what's on the pen. Independent of `status`. */
   cached: boolean;
-  /** true only for 'not-on-pen' and 'on-pen-differs' — declared filename + trustworthy hash,
-   *  and not ambiguous. Gates both "Add to pen" and "Re-download" in the UI; bookInstall.ts
-   *  enforces the same eligibility rule independently via isInstallEligible(). */
+  /** true for 'not-on-pen', 'on-pen-present', and 'on-pen-differs' — declared filename +
+   *  trustworthy hash, not ambiguous, and not already confirmed current. Gates "Add"/"Replace"
+   *  in the UI; bookInstall.ts enforces the same eligibility rule independently via
+   *  isInstallEligible(). Never true while 'on-pen-verifying' (avoid racing a write against an
+   *  in-flight read) or 'on-pen-current' (nothing to do). */
   actionable: boolean;
   updatedAtMs: number | null;
 }
@@ -401,16 +415,64 @@ export interface BookListResult {
   meta: BookLibraryMeta;
 }
 
-/** Pushed once a pending 'matched-verifying'/'on-pen-verifying' item's content hash finishes
- *  computing, so the two panes can resolve it without a full re-list round trip. `result` is
- *  null when the file could no longer be read (vanished, permission error, etc.) in the brief
- *  window between listing and hashing — the renderer leaves the item in its "verifying" state
- *  rather than guessing a current/differs outcome; the next explicit refresh tries again. */
+// ---------------------------------------------------------------------------------------
+// Explicit on-pen content verification — a user-triggered action (never automatic on a plain
+// refresh/list), so hashing a large AXB never happens without the user asking for it. Results
+// are cached in a small, capped, App-managed index (never written to the pen's own SD card)
+// keyed to the exact pen generation + file size/mtime + official hash, so re-verifying an
+// unchanged file within the same connected session is a cache hit, not a re-read.
+// ---------------------------------------------------------------------------------------
+
+/** One remembered verification outcome. Acceleration/display only — never treated as a
+ *  standing integrity guarantee; every safety-critical path (download-hash check, the
+ *  immediately-before-delete re-hash in bookRemove.ts) re-verifies independently regardless of
+ *  what's cached here. Invalidated (via findValidVerifyRecord) the moment the pen's device
+ *  identity, the file's size/mtime, or the catalog's official hash no longer match exactly —
+ *  never trusted merely because the volume label or path looks the same. */
+export interface BookVerifyRecord {
+  penVolumeLabel: string;
+  /** session.getGeneration() at verify time — changes on every real connect/disconnect/swap,
+   *  never on a no-op re-scan of the same still-mounted card. */
+  penGenerationAtVerify: number;
+  fileName: string;
+  sizeBytes: number;
+  mtimeMs: number;
+  observedSha256: string;
+  officialSha256: string;
+  contentId: string;
+  verifiedAtMs: number;
+}
+
+/** Pushed once an explicit verification finishes computing one file's hash, so both panes
+ *  resolve without a full re-list round trip. `result` is null when the file could no longer
+ *  be read (vanished, permission error, etc.) partway through — the renderer falls back to
+ *  'present' (unverified) rather than guessing a current/differs outcome. */
 export interface BookVerifyUpdateEvent {
   fileName: string;
   contentId: string;
-  result: { penStatus: 'matched-current' | 'matched-differs'; catalogStatus: 'on-pen-current' | 'on-pen-differs' } | null;
+  result: { penStatus: 'verified-current' | 'verified-differs'; catalogStatus: 'on-pen-current' | 'on-pen-differs' } | null;
 }
+
+export type BookVerifyProgressPhase = 'reading' | 'done' | 'failed' | 'cancelled';
+
+/** Real byte-level progress for an in-flight explicit verification — never a fake/animated
+ *  percentage. `completedCount`/`totalCount` track progress through the whole selected batch,
+ *  not just the current file. */
+export interface BookVerifyProgressEvent {
+  fileName: string;
+  contentId: string;
+  bytesRead: number;
+  totalBytes: number;
+  completedCount: number;
+  totalCount: number;
+  phase: BookVerifyProgressPhase;
+}
+
+export type BookVerifyContentResult =
+  | { status: 'started' }
+  | { status: 'no-pen-selected' }
+  | { status: 'device-disconnected' }
+  | { status: 'stale-plan' };
 
 export type BookDownloadPhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled';
 
@@ -487,7 +549,7 @@ export interface BookBackupSummary {
 // in Settings; export goes through a native save dialog the user drives, never auto-uploaded.
 // ---------------------------------------------------------------------------------------
 
-export type DiagnosticEntryKind = 'app-start' | 'catalog-fetch' | 'pen-reconcile' | 'book-download';
+export type DiagnosticEntryKind = 'app-start' | 'catalog-fetch' | 'pen-reconcile' | 'book-download' | 'pen-verify' | 'pen-verify-batch';
 
 export interface DiagnosticEntry {
   atMs: number;
@@ -558,6 +620,11 @@ export interface PonyAbcApi {
   bookRestore: (params: { backupId: string; penGeneration: number }) => Promise<BookActionResult>;
   bookDownloadCancel: (contentId: string) => Promise<{ ok: boolean }>;
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
+
+  // Explicit on-pen content verification — never triggered automatically by list/refresh.
+  bookVerifyContent: (params: { fileNames: string[]; penGeneration: number }) => Promise<BookVerifyContentResult>;
+  bookVerifyCancel: () => Promise<{ ok: boolean }>;
+  onBookVerifyProgress: (listener: (event: BookVerifyProgressEvent) => void) => () => void;
   onBookVerifyUpdate: (listener: (event: BookVerifyUpdateEvent) => void) => () => void;
 
   // Diagnostics — see the block comment above these types.

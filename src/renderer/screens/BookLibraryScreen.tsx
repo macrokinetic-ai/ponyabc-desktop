@@ -4,7 +4,9 @@ import type {
   BookActionResult,
   BookCatalogItem,
   BookPenItem,
+  BookPenMatchStatus,
   BookRemoveResult,
+  BookVerifyContentResult,
 } from '@shared/types';
 import { resolveBookDisplayName } from '@shared/bookDisplay';
 import { isRecentlyUpdated } from '@shared/bookNewBadge';
@@ -58,6 +60,29 @@ function resultMessage(t: (key: string, opts?: Record<string, unknown>) => strin
     default:
       return result.message ?? t('genericError');
   }
+}
+
+function verifyResultMessage(t: (key: string) => string, result: BookVerifyContentResult): string | null {
+  switch (result.status) {
+    case 'started':
+      return null;
+    case 'no-pen-selected':
+    case 'device-disconnected':
+      return t('penRequiredForWrite');
+    case 'stale-plan':
+      return t('stalePlan');
+  }
+}
+
+function formatDate(ms: number): string {
+  return new Date(ms).toLocaleDateString();
+}
+
+/** True for every "something is already on the pen under this filename" state — the confirm+
+ *  backup flow applies the same way whether or not it's been explicitly verified to differ,
+ *  since an unverified match is never assumed safe to silently overwrite. */
+function isOnPen(status: BookCatalogItem['status']): boolean {
+  return status === 'on-pen-present' || status === 'on-pen-verifying' || status === 'on-pen-current' || status === 'on-pen-differs';
 }
 
 export function BookLibraryScreen() {
@@ -126,7 +151,7 @@ export function BookLibraryScreen() {
   function startAdd() {
     const targets = lib.catalogItems.filter((i) => catalogSelected.has(i.contentId));
     if (targets.length === 0) return;
-    const conflicts = targets.filter((i) => i.status === 'on-pen-differs');
+    const conflicts = targets.filter((i) => isOnPen(i.status));
     if (conflicts.length > 0) {
       setAddConflicts(conflicts);
       setAddDecisions({});
@@ -151,11 +176,11 @@ export function BookLibraryScreen() {
       const resolved = new Set<string>();
       let lastMessage: string | null = null;
       for (const item of targets) {
-        if (item.status === 'on-pen-differs' && decisions[item.contentId] === 'skip') {
+        if (isOnPen(item.status) && decisions[item.contentId] === 'skip') {
           resolved.add(item.contentId);
           continue;
         }
-        const result = item.status === 'on-pen-differs' ? await lib.replaceWithOfficial(item.contentId) : await lib.add(item.contentId);
+        const result = isOnPen(item.status) ? await lib.replaceWithOfficial(item.contentId) : await lib.add(item.contentId);
         if (result.status === 'completed') resolved.add(item.contentId);
         else lastMessage = resultMessage(t, result);
       }
@@ -178,21 +203,42 @@ export function BookLibraryScreen() {
     }
   }
 
-  const penStatusKey: Record<BookPenItem['status'], string> = {
-    'matched-current': 'status.matchedCurrent',
-    'matched-differs': 'status.matchedDiffers',
+  async function handleVerify() {
+    if (penSelected.size === 0) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await lib.verifyContent([...penSelected]);
+      const msg = verifyResultMessage(t, result);
+      if (msg) setMessage(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const verifyingNow = Object.keys(lib.verifyProgress).length > 0;
+
+  const penStatusKey: Record<BookPenMatchStatus, string> = {
+    present: 'status.present',
+    verifying: 'status.verifying',
+    'verified-current': 'status.verifiedCurrent',
+    'verified-differs': 'status.verifiedDiffers',
     'matched-hash-unknown': 'status.matchedHashUnknown',
-    'matched-verifying': 'status.matchedVerifying',
     'awaiting-catalog': 'status.awaitingCatalog',
     unknown: 'status.unknown',
   };
   const catalogStatusKey: Record<BookCatalogItem['status'], string> = {
     'not-on-pen': 'status.notOnPen',
+    'on-pen-present': 'status.onPenPresent',
     'on-pen-current': 'status.onPenCurrent',
     'on-pen-differs': 'status.onPenDiffers',
     'on-pen-verifying': 'status.onPenVerifying',
     'metadata-incomplete': 'status.metadataIncomplete',
     ambiguous: 'status.ambiguous',
+  };
+  const cacheStatusText = (item: BookCatalogItem, hasProgress: boolean): string => {
+    if (hasProgress) return t('cacheStatus.downloading');
+    return item.cached ? t('cacheStatus.cached') : t('cacheStatus.notDownloaded');
   };
 
   const now = Date.now();
@@ -235,26 +281,37 @@ export function BookLibraryScreen() {
             {penConnected && penItems.length === 0 && <p className="hint">{t('emptyState')}</p>}
             {penConnected && penItems.length > 0 && (
               <ul className="recordings-list">
-                {penItems.map((item) => (
-                  <li key={item.fileName} className="recordings-list__row">
-                    {!item.removable ? (
-                      <span className="recordings-list__label">
-                        <span className="recordings-list__name">
-                          {item.fileName} — {t(penStatusKey[item.status])}
+                {penItems.map((item) => {
+                  const progress = item.contentId ? lib.verifyProgress[item.contentId] : undefined;
+                  const displayStatus: BookPenMatchStatus = progress ? 'verifying' : item.status;
+                  return (
+                    <li key={item.fileName} className="recordings-list__row">
+                      {!item.removable ? (
+                        <span className="recordings-list__label">
+                          <span className="recordings-list__name">
+                            {item.fileName} — {t(penStatusKey[item.status])}
+                          </span>
                         </span>
-                      </span>
-                    ) : (
-                      <label className="recordings-list__label">
-                        <input type="checkbox" checked={penSelected.has(item.fileName)} onChange={() => togglePen(item.fileName)} />
-                        <span className="recordings-list__name">{displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}</span>
-                        <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                        <span className="hint">({item.fileName})</span>
-                      </label>
-                    )}
-                    <span className="recordings-list__size">{formatBytes(item.sizeBytes)}</span>
-                    {item.removable && item.status !== 'matched-current' && <span className="hint">{t(penStatusKey[item.status])}</span>}
-                  </li>
-                ))}
+                      ) : (
+                        <label className="recordings-list__label">
+                          <input type="checkbox" checked={penSelected.has(item.fileName)} onChange={() => togglePen(item.fileName)} />
+                          <span className="recordings-list__name">{displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}</span>
+                          <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
+                          <span className="hint">({item.fileName})</span>
+                        </label>
+                      )}
+                      <span className="recordings-list__size">{formatBytes(item.sizeBytes)}</span>
+                      {item.removable && (
+                        <span className="hint">
+                          {t(penStatusKey[displayStatus])}
+                          {progress && ` (${Math.round((progress.bytesRead / Math.max(progress.totalBytes, 1)) * 100)}%)`}
+                        </span>
+                      )}
+                      {item.removable && item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
+                      {progress && <progress className="book-progress" value={progress.bytesRead} max={Math.max(progress.totalBytes, 1)} />}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -264,6 +321,15 @@ export function BookLibraryScreen() {
           <button type="button" className="button button--primary" disabled={!penConnected || penSelected.size === 0 || busy} onClick={startRemove}>
             {t('action.remove')}
           </button>
+          {verifyingNow ? (
+            <button type="button" className="button" onClick={() => void lib.cancelVerify()}>
+              {t('action.cancelVerify')}
+            </button>
+          ) : (
+            <button type="button" className="button" disabled={!penConnected || penSelected.size === 0 || busy} onClick={() => void handleVerify()}>
+              {t('action.verifySelected')}
+            </button>
+          )}
           <button
             type="button"
             className="button button--primary"
@@ -301,6 +367,8 @@ export function BookLibraryScreen() {
               <ul className="recordings-list">
                 {lib.catalogItems.map((item) => {
                   const progress = lib.downloadProgress[item.contentId];
+                  const verifyProg = lib.verifyProgress[item.contentId];
+                  const catalogDisplayStatus: BookCatalogItem['status'] = verifyProg ? 'on-pen-verifying' : item.status;
                   return (
                     <li key={item.contentId} className="recordings-list__row">
                       <div>
@@ -317,15 +385,16 @@ export function BookLibraryScreen() {
                           </span>
                         )}
                         <div className="hint">
-                          {formatBytes(item.sizeBytes)} · {t(catalogStatusKey[item.status])}
+                          {formatBytes(item.sizeBytes)} · {cacheStatusText(item, !!progress)} · {t(catalogStatusKey[catalogDisplayStatus])}
+                          {verifyProg && ` (${Math.round((verifyProg.bytesRead / Math.max(verifyProg.totalBytes, 1)) * 100)}%)`}
                         </div>
+                        {item.updatedAtMs !== null && <div className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</div>}
                         {progress && <progress className="book-progress" value={progress.bytesReceived} max={Math.max(progress.totalBytes, 1)} />}
+                        {verifyProg && <progress className="book-progress" value={verifyProg.bytesRead} max={Math.max(verifyProg.totalBytes, 1)} />}
                       </div>
                       <div className="recordings-list__preview">
-                        {(item.cached || item.status === 'on-pen-current' || item.status === 'on-pen-differs' || item.status === 'on-pen-verifying') &&
-                          item.status !== 'ambiguous' &&
-                          item.status !== 'metadata-incomplete' && (
-                          <button type="button" className="button" disabled={busy || !penConnected} onClick={() => void handleReinstall(item.contentId)}>
+                        {(item.cached || isOnPen(item.status)) && item.status !== 'ambiguous' && item.status !== 'metadata-incomplete' && (
+                          <button type="button" className="button" disabled={busy || !penConnected || !!verifyProg} onClick={() => void handleReinstall(item.contentId)}>
                             {t('action.reinstall')}
                           </button>
                         )}

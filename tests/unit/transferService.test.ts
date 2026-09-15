@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { safeWriteFile } from '../../src/main/services/transferService';
+import { safeWriteFile, sha256FileWithProgress } from '../../src/main/services/transferService';
 
 let sourceDir: string;
 let targetDir: string;
@@ -253,5 +253,50 @@ describe('safeWriteFile — a failed rename never moves or deletes the original 
     expect(result.backupPath).toBeUndefined();
     expect(fs.existsSync(path.join(targetDir, 'new.mp3'))).toBe(false);
     expect(strayFiles(targetDir, [])).toEqual([]); // temp file cleaned up, same-device confirmed
+  });
+});
+
+describe('sha256FileWithProgress', () => {
+  it('computes the same digest as a plain hash, and reports real cumulative bytes-read progress', async () => {
+    const crypto = await import('node:crypto');
+    const content = 'x'.repeat(500_000); // large enough to span multiple stream chunks
+    const filePath = path.join(sourceDir, 'big.axb');
+    fs.writeFileSync(filePath, content);
+    const expected = crypto.createHash('sha256').update(content).digest('hex');
+
+    const progressCalls: number[] = [];
+    const digest = await sha256FileWithProgress(filePath, { onProgress: (n) => progressCalls.push(n) });
+
+    expect(digest).toBe(expected);
+    expect(progressCalls.length).toBeGreaterThan(0);
+    // Monotonically increasing, and the final call reports the whole file read.
+    for (let i = 1; i < progressCalls.length; i++) expect(progressCalls[i]).toBeGreaterThanOrEqual(progressCalls[i - 1]);
+    expect(progressCalls[progressCalls.length - 1]).toBe(content.length);
+  });
+
+  it('rejects on a nonexistent file rather than hanging', async () => {
+    await expect(sha256FileWithProgress(path.join(sourceDir, 'does-not-exist.axb'))).rejects.toThrow();
+  });
+
+  it('cancellation via AbortSignal rejects promptly and releases the read (no lingering handle blocking a delete)', async () => {
+    const filePath = path.join(sourceDir, 'cancel-me.axb');
+    fs.writeFileSync(filePath, 'x'.repeat(2_000_000));
+    const controller = new AbortController();
+    const promise = sha256FileWithProgress(filePath, {
+      signal: controller.signal,
+      onProgress: () => controller.abort(),
+    });
+    await expect(promise).rejects.toThrow();
+    // The file itself can still be deleted immediately after — proves the read stream's
+    // handle was actually released, not just the promise abandoned.
+    expect(() => fs.unlinkSync(filePath)).not.toThrow();
+  });
+
+  it('an already-aborted signal rejects immediately without reading anything', async () => {
+    const filePath = path.join(sourceDir, 'pre-aborted.axb');
+    fs.writeFileSync(filePath, 'hello');
+    const controller = new AbortController();
+    controller.abort();
+    await expect(sha256FileWithProgress(filePath, { signal: controller.signal })).rejects.toThrow();
   });
 });

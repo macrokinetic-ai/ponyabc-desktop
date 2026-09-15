@@ -6,6 +6,8 @@ import type {
   BookLibraryMeta,
   BookPenItem,
   BookRemoveResult,
+  BookVerifyContentResult,
+  BookVerifyProgressEvent,
 } from '@shared/types';
 import { usePenRoot } from './PenRootContext';
 
@@ -18,6 +20,11 @@ interface BookLibraryState {
   refreshing: boolean;
   /** Real byte-based progress for an in-flight download, keyed by contentId. */
   downloadProgress: Record<string, BookDownloadProgressEvent>;
+  /** Real byte-based progress for an in-flight explicit on-pen verification, keyed by
+   *  contentId (the identifier both panes can look this up by) — entirely separate from
+   *  downloadProgress (a different phase, a different source of bytes: local disk read, not
+   *  network). */
+  verifyProgress: Record<string, BookVerifyProgressEvent>;
   refreshCatalog: () => Promise<void>;
   /** Re-lists both panes from already-known local state — no network call. Useful as a
    *  manual "re-check the pen" action independent of a full catalog refresh. */
@@ -27,6 +34,9 @@ interface BookLibraryState {
   reinstall: (contentId: string) => Promise<BookActionResult>;
   remove: (fileName: string) => Promise<BookRemoveResult>;
   cancelDownload: (contentId: string) => Promise<void>;
+  /** Explicit "verify selected content" — never triggered automatically. */
+  verifyContent: (fileNames: string[]) => Promise<BookVerifyContentResult>;
+  cancelVerify: () => Promise<void>;
 }
 
 const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: null };
@@ -41,6 +51,7 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<Record<string, BookDownloadProgressEvent>>({});
+  const [verifyProgress, setVerifyProgress] = useState<Record<string, BookVerifyProgressEvent>>({});
   const penGenerationRef = useRef(-1);
   penGenerationRef.current = penRoot.result.status === 'ok' ? penRoot.result.generation : -1;
 
@@ -120,6 +131,19 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  useEffect(() => {
+    return window.ponyabc.onBookVerifyProgress((event) => {
+      setVerifyProgress((prev) => {
+        if (event.phase === 'done' || event.phase === 'failed' || event.phase === 'cancelled') {
+          const next = { ...prev };
+          delete next[event.contentId];
+          return next;
+        }
+        return { ...prev, [event.contentId]: event };
+      });
+    });
+  }, []);
+
   const add = useCallback(
     async (contentId: string) => {
       const result = await window.ponyabc.bookAdd({ contentId, penGeneration: penGenerationRef.current });
@@ -160,6 +184,14 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
     await window.ponyabc.bookDownloadCancel(contentId);
   }, []);
 
+  const verifyContent = useCallback(async (fileNames: string[]) => {
+    return window.ponyabc.bookVerifyContent({ fileNames, penGeneration: penGenerationRef.current });
+  }, []);
+
+  const cancelVerify = useCallback(async () => {
+    await window.ponyabc.bookVerifyCancel();
+  }, []);
+
   return (
     <BookLibraryContext.Provider
       value={{
@@ -169,6 +201,7 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
         loading,
         refreshing,
         downloadProgress,
+        verifyProgress,
         refreshCatalog,
         refreshPen: refreshList,
         add,
@@ -176,6 +209,8 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
         reinstall,
         remove,
         cancelDownload,
+        verifyContent,
+        cancelVerify,
       }}
     >
       {children}

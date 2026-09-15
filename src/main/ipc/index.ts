@@ -8,7 +8,19 @@ import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
-import { bookAdd, bookBackups, bookCatalogRefresh, bookDownloadCancel, bookList, bookReinstall, bookRemove, bookRestore, bookUpdate } from './book';
+import {
+  bookAdd,
+  bookBackups,
+  bookCatalogRefresh,
+  bookDownloadCancel,
+  bookList,
+  bookReinstall,
+  bookRemove,
+  bookRestore,
+  bookUpdate,
+  bookVerifyCancel,
+  bookVerifyContent,
+} from './book';
 import { exportDiagnostics, getDiagnosticsSummary, logAppStart } from './diagnostics';
 import { getSettings, setSettings } from './settings';
 import { getAppInfo } from './appInfo';
@@ -63,8 +75,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
 
   ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));
 
-  ipcMain.handle(IPC.bookList, () => bookList(getWindow()));
-  ipcMain.handle(IPC.bookCatalogRefresh, () => bookCatalogRefresh(getWindow()));
+  ipcMain.handle(IPC.bookList, () => bookList());
+  ipcMain.handle(IPC.bookCatalogRefresh, () => bookCatalogRefresh());
   ipcMain.handle(IPC.bookAdd, (_event, params) => bookAdd(getWindow(), params));
   ipcMain.handle(IPC.bookUpdate, (_event, params) => bookUpdate(getWindow(), params));
   ipcMain.handle(IPC.bookReinstall, (_event, params) => bookReinstall(getWindow(), params));
@@ -72,6 +84,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.bookBackups, () => bookBackups());
   ipcMain.handle(IPC.bookRestore, (_event, params) => bookRestore(params));
   ipcMain.handle(IPC.bookDownloadCancel, (_event, contentId: string) => bookDownloadCancel(contentId));
+  ipcMain.handle(IPC.bookVerifyContent, (_event, params) => bookVerifyContent(getWindow(), params));
+  ipcMain.handle(IPC.bookVerifyCancel, () => bookVerifyCancel());
 
   ipcMain.handle(IPC.diagnosticsSummary, () => getDiagnosticsSummary());
   ipcMain.handle(IPC.diagnosticsExport, () => exportDiagnostics(getWindow()));

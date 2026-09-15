@@ -39,17 +39,25 @@
   "replaceOption": "Ersetzen",
   "skipOption": "Überspringen",
   "confirmAddAction": "Bestätigen",
+  "officialUpdated": "Offizielle Aktualisierung: {{date}}",
+  "cacheStatus": {
+    "notDownloaded": "Nicht heruntergeladen",
+    "cached": "Zwischengespeichert",
+    "downloading": "Wird heruntergeladen…"
+  },
   "status": {
-    "matchedCurrent": "Entspricht der offiziellen Version",
-    "matchedDiffers": "Weicht von der aktuellen offiziellen Version ab",
+    "present": "Auf dem Stift — noch nicht überprüft",
+    "verifying": "Stiftinhalt wird überprüft…",
+    "verifiedCurrent": "Letzte Prüfung: entspricht der offiziellen Version",
+    "verifiedDiffers": "Letzte Prüfung: weicht von der offiziellen Version ab",
     "matchedHashUnknown": "Kann nicht mit dem Katalog abgeglichen werden",
-    "matchedVerifying": "Inhalt wird überprüft…",
     "awaitingCatalog": "Wartet auf Katalogabgleich",
     "unknown": "Unbekannt",
     "notOnPen": "Nicht auf dem Stift",
-    "onPenCurrent": "Bereits auf dem Stift",
-    "onPenDiffers": "Auf dem Stift, weicht von dieser Version ab",
-    "onPenVerifying": "Inhalt wird überprüft…",
+    "onPenPresent": "Auf dem Stift — noch nicht überprüft",
+    "onPenCurrent": "Auf dem Stift — geprüft, stimmt überein",
+    "onPenDiffers": "Auf dem Stift — geprüft, weicht ab",
+    "onPenVerifying": "Stiftinhalt wird überprüft…",
     "metadataIncomplete": "Katalogdaten unvollständig",
     "ambiguous": "Mehrdeutiger Katalogeintrag"
   },
@@ -57,6 +65,8 @@
     "add": "Zum Stift hinzufügen",
     "remove": "Vom Stift entfernen",
     "reinstall": "Erneut herunterladen",
-    "cancelDownload": "Abbrechen"
+    "cancelDownload": "Abbrechen",
+    "verifySelected": "Ausgewählte Inhalte überprüfen",
+    "cancelVerify": "Überprüfung abbrechen"
   }
 }
