@@ -7,7 +7,7 @@ import type { BookCacheEntry, BookCatalogEntry } from '../../src/shared/types';
 import { resolvePenRoot } from '../../src/main/services/pathSecurity';
 import * as session from '../../src/main/services/session';
 import { cacheFilePath } from '../../src/main/services/bookDownload';
-import { addToPen, reinstall, replaceWithOfficial, type BookInstallDeps } from '../../src/main/services/bookInstall';
+import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial, type BookInstallDeps } from '../../src/main/services/bookInstall';
 
 const tempDirs: string[] = [];
 function mkTempDir(prefix: string): string {
@@ -169,6 +169,45 @@ describe('reinstall', () => {
     const result = await reinstall(e, session.getGeneration(), makeDeps({ fetchFn }));
     expect(result.status).toBe('completed');
     expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('downloadToCacheOnly', () => {
+  it('downloads into the cache but never writes to the pen', async () => {
+    const fetchFn = vi.fn(immediateFetch('official content'));
+    const result = await downloadToCacheOnly(entry(), makeDeps({ fetchFn }));
+    expect(result).toEqual({ status: 'completed', cacheHit: false });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(fs.existsSync(path.join(penRoot, 'BOOK', '0451.axb'))).toBe(false); // never written to the pen
+    expect(cacheEntries).toHaveLength(1);
+  });
+
+  it('a fully-matching existing cache entry is reused with zero network activity, reported as cacheHit: true', async () => {
+    const e = entry();
+    const p = cacheFilePath(cacheDir, e.contentId, e.sha256 as string);
+    fs.mkdirSync(cacheDir, { recursive: true });
+    fs.writeFileSync(p, 'official content');
+    cacheEntries.push({ contentId: e.contentId, sha256: e.sha256 as string, sizeBytes: 17, filename: e.filename, cachedAtMs: 1 });
+
+    const fetchFn = vi.fn();
+    const result = await downloadToCacheOnly(e, makeDeps({ fetchFn: fetchFn as unknown as typeof fetch }));
+    expect(result).toEqual({ status: 'completed', cacheHit: true });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('refuses a metadata-incomplete entry without touching the network', async () => {
+    const fetchFn = vi.fn();
+    const result = await downloadToCacheOnly(entry({ filenameSource: 'fallback-storage-key' }), makeDeps({ fetchFn: fetchFn as unknown as typeof fetch }));
+    expect(result).toEqual({ status: 'metadata-incomplete' });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('a network failure with no usable cache reports network-error', async () => {
+    const failingFetch = vi.fn(async () => {
+      throw new Error('no network');
+    });
+    const result = await downloadToCacheOnly(entry(), makeDeps({ fetchFn: failingFetch as unknown as typeof fetch }));
+    expect(result).toEqual({ status: 'network-error', message: 'no network' });
   });
 });
 

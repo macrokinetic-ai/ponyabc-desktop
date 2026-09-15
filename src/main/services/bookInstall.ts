@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import type { BookActionResult, BookCacheEntry, BookCatalogEntry, BookDownloadProgressEvent } from '@shared/types';
+import type { BookActionResult, BookCacheEntry, BookCatalogEntry, BookDownloadOnlyResult, BookDownloadProgressEvent } from '@shared/types';
 import { resolvePenRoot } from './pathSecurity';
 import { safeWriteFile } from './transferService';
 import { cacheFilePath, downloadToCache } from './bookDownload';
@@ -23,12 +23,12 @@ async function resolveCacheFile(
   entry: BookCatalogEntry,
   deps: BookInstallDeps,
   forceFresh: boolean,
-): Promise<{ ok: true; path: string } | { ok: false; result: BookActionResult }> {
+): Promise<{ ok: true; path: string; cacheHit: boolean } | { ok: false; result: BookActionResult }> {
   if (!forceFresh && entry.sha256 !== null) {
     const existing = deps.getCacheEntries().find((c) => c.contentId === entry.contentId && c.sha256 === entry.sha256);
     if (existing) {
       const cachedPath = cacheFilePath(deps.cacheDir, existing.contentId, existing.sha256);
-      if (fs.existsSync(cachedPath)) return { ok: true, path: cachedPath };
+      if (fs.existsSync(cachedPath)) return { ok: true, path: cachedPath, cacheHit: true };
     }
   }
 
@@ -42,7 +42,7 @@ async function resolveCacheFile(
   });
   if (outcome.status === 'ok') {
     deps.saveCacheEntry(outcome.cacheEntry);
-    return { ok: true, path: cacheFilePath(deps.cacheDir, outcome.cacheEntry.contentId, outcome.cacheEntry.sha256) };
+    return { ok: true, path: cacheFilePath(deps.cacheDir, outcome.cacheEntry.contentId, outcome.cacheEntry.sha256), cacheHit: false };
   }
   if (outcome.status === 'no-space') return { ok: false, result: { status: 'no-space' } };
   if (outcome.status === 'cancelled') return { ok: false, result: { status: 'cancelled' } };
@@ -113,6 +113,17 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
   } finally {
     release();
   }
+}
+
+/** Downloads (or reuses an already-valid cache hit for) one catalog entry into the App's own
+ *  local cache ONLY — this never touches the pen, unlike addToPen/replaceWithOfficial/
+ *  reinstall below. Used by both a single "download to App" request and the batch download
+ *  orchestrator in ipc/book.ts, which is what actually decides which entries to target and
+ *  reports the aggregate skipped/downloaded/failed counts. */
+export async function downloadToCacheOnly(entry: BookCatalogEntry, deps: BookInstallDeps): Promise<BookDownloadOnlyResult> {
+  const cache = await resolveCacheFile(entry, deps, false);
+  if (!cache.ok) return cache.result as BookDownloadOnlyResult;
+  return { status: 'completed', cacheHit: cache.cacheHit };
 }
 
 /** "Add to pen": uses a hash-matching cache file directly if one exists, otherwise

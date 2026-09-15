@@ -40,6 +40,9 @@
   "skipOption": "Ignorer",
   "confirmAddAction": "Confirmer",
   "officialUpdated": "Mise à jour officielle : {{date}}",
+  "downloadBatchProgress": "Téléchargement {{completed}} sur {{total}}…",
+  "downloadBatchSummary": "{{downloaded}} téléchargé(s) · {{skipped}} ignoré(s) (déjà en cache) · {{failed}} échec(s)",
+  "downloadBatchCancelledSuffix": "(annulé)",
   "cacheStatus": {
     "notDownloaded": "Non téléchargé",
     "cached": "En cache",
@@ -63,12 +66,34 @@
     "metadataIncomplete": "Informations du catalogue incomplètes",
     "ambiguous": "Entrée de catalogue ambiguë"
   },
+  "statusShort": {
+    "present": "Sur le stylo",
+    "verifying": "Vérification…",
+    "verifiedCurrent": "Vérifié",
+    "verifiedDiffers": "Diffère",
+    "sizeDiffers": "Taille différente",
+    "matchedHashUnknown": "Sur le stylo",
+    "awaitingCatalog": "En attente…",
+    "unknown": "Inconnu",
+    "notOnPen": "Pas sur le stylo",
+    "onPenPresent": "Sur le stylo",
+    "onPenVerifying": "Vérification…",
+    "onPenCurrent": "Vérifié",
+    "onPenDiffers": "Diffère",
+    "onPenSizeDiffers": "Taille différente",
+    "metadataIncomplete": "Incomplet",
+    "ambiguous": "Ambigu"
+  },
   "action": {
     "add": "Ajouter au stylo",
     "remove": "Supprimer du stylo",
     "reinstall": "Retélécharger",
     "cancelDownload": "Annuler",
     "verifySelected": "Vérifier le contenu sélectionné",
-    "cancelVerify": "Annuler la vérification"
+    "cancelVerify": "Annuler la vérification",
+    "verifyThis": "Vérifier ce fichier",
+    "downloadSelected": "Télécharger la sélection vers l'App",
+    "downloadAll": "Tout télécharger vers l'App",
+    "cancelDownloadBatch": "Annuler le téléchargement"
   }
 }

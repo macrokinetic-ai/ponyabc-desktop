@@ -483,13 +483,47 @@ export type BookVerifyContentResult =
   | { status: 'device-disconnected' }
   | { status: 'stale-plan' };
 
-export type BookDownloadPhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled';
+/** 'skipped' is only ever emitted by a BATCH download when a fully-matching cache entry is
+ *  reused with zero network activity — a single add/replace/reinstall action never emits it
+ *  (it just resolves immediately with no progress events at all in that case). */
+export type BookDownloadPhase = 'downloading' | 'verifying' | 'done' | 'failed' | 'cancelled' | 'skipped';
 
 export interface BookDownloadProgressEvent {
   contentId: string;
   bytesReceived: number;
   totalBytes: number;
   phase: BookDownloadPhase;
+  /** Only populated during a batch download ("Download selected/all to App") — absent for a
+   *  single add/replace/reinstall action, which has no overall batch to report against. */
+  completedCount?: number;
+  totalCount?: number;
+}
+
+/** A batch download only ever writes into the App's own local cache — it never touches the
+ *  pen. "Add to pen" / "Replace with official version" remain separate, explicit actions. */
+export type BookDownloadBatchStartResult = { status: 'started' } | { status: 'no-items' };
+
+/** Result of downloading ONE catalog entry into the App's local cache only — never writes to
+ *  the pen. `cacheHit: true` means an already-valid cache entry was reused with zero network
+ *  activity, distinct from an actual fresh network download, so a batch summary can report
+ *  "skipped (already cached)" separately from "downloaded." */
+export type BookDownloadOnlyResult =
+  | { status: 'completed'; cacheHit: boolean }
+  | { status: 'no-space' }
+  | { status: 'cancelled' }
+  | { status: 'metadata-incomplete' }
+  | { status: 'network-error'; message: string }
+  | { status: 'error'; message: string };
+
+export interface BookDownloadBatchSummaryEvent {
+  requestedCount: number;
+  /** Actually fetched over the network this batch. */
+  downloadedCount: number;
+  /** Already had a fully-matching cache entry — zero network activity for these. */
+  skippedCount: number;
+  failedCount: number;
+  /** true when the batch was cancelled before every requested item was processed. */
+  cancelled: boolean;
 }
 
 export type BookActionStatus =
@@ -629,6 +663,11 @@ export interface PonyAbcApi {
   bookRestore: (params: { backupId: string; penGeneration: number }) => Promise<BookActionResult>;
   bookDownloadCancel: (contentId: string) => Promise<{ ok: boolean }>;
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
+
+  // Batch "download to App" — cache-only, one file at a time, never writes to the pen.
+  bookDownloadBatch: (params: { contentIds: string[] }) => Promise<BookDownloadBatchStartResult>;
+  bookDownloadBatchCancel: () => Promise<{ ok: boolean }>;
+  onBookDownloadBatchSummary: (listener: (event: BookDownloadBatchSummaryEvent) => void) => () => void;
 
   // Explicit on-pen content verification — never triggered automatically by list/refresh.
   bookVerifyContent: (params: { fileNames: string[]; penGeneration: number }) => Promise<BookVerifyContentResult>;

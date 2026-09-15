@@ -6,6 +6,8 @@ import type {
   AudioSource,
   BookActionResult,
   BookBackupSummary,
+  BookDownloadBatchStartResult,
+  BookDownloadBatchSummaryEvent,
   BookDownloadProgressEvent,
   BookListResult,
   BookRemoveResult,
@@ -77,6 +79,10 @@ const api: PonyAbcApi = {
   bookRestore: (params: { backupId: string; penGeneration: number }) => ipcRenderer.invoke(IPC.bookRestore, params) as Promise<BookActionResult>,
   bookDownloadCancel: (contentId: string) => ipcRenderer.invoke(IPC.bookDownloadCancel, contentId) as Promise<{ ok: boolean }>,
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => subscribe(IPC.bookDownloadProgress, listener),
+
+  bookDownloadBatch: (params: { contentIds: string[] }) => ipcRenderer.invoke(IPC.bookDownloadBatch, params) as Promise<BookDownloadBatchStartResult>,
+  bookDownloadBatchCancel: () => ipcRenderer.invoke(IPC.bookDownloadBatchCancel) as Promise<{ ok: boolean }>,
+  onBookDownloadBatchSummary: (listener: (event: BookDownloadBatchSummaryEvent) => void) => subscribe(IPC.bookDownloadBatchSummary, listener),
 
   bookVerifyContent: (params: { fileNames: string[]; penGeneration: number }) => ipcRenderer.invoke(IPC.bookVerifyContent, params) as Promise<BookVerifyContentResult>,
   bookVerifyCancel: () => ipcRenderer.invoke(IPC.bookVerifyCancel) as Promise<{ ok: boolean }>,

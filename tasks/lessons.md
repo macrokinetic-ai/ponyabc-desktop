@@ -376,3 +376,18 @@ whether OTHER already-known-for-free fields (size, mtime — anything from a
 plain `stat`) can further distinguish "matched and this looks right" from
 "matched but something is already suspicious," and surface that distinction
 immediately rather than lumping it into "not yet checked."
+
+## A status string doing double duty as both "list label" and "detail label" eventually satisfies neither well
+
+`status.present` ("On pen — not yet verified") was used for BOTH the
+default collapsed row AND would-be detail text — there was only one string
+per status, so making the default list "necessarily short" and the detail
+view "fully explicit" pulled in opposite directions on the same key. Fix:
+split into two parallel key sets (`status.*` for full/long wording,
+`statusShort.*` for the collapsed default) rather than trying to find one
+string that reads well in both contexts. General rule: when a UI grows an
+explicit "brief by default, detailed on demand" requirement, check whether
+an existing single-purpose string is being asked to serve both purposes —
+if the two contexts have different accuracy/verbosity requirements (here:
+default must never overclaim "verified", detail should say the full state
+plainly), split the string, don't compromise on one shared version.

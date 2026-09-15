@@ -52,6 +52,7 @@ function listResult(overrides: Partial<BookListResult> = {}): BookListResult {
 let progressListener: ((event: unknown) => void) | null = null;
 let verifyListener: ((event: unknown) => void) | null = null;
 let verifyProgressListener: ((event: unknown) => void) | null = null;
+let downloadBatchSummaryListener: ((event: unknown) => void) | null = null;
 
 function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
   return {
@@ -87,6 +88,14 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         progressListener = null;
       };
     }),
+    bookDownloadBatch: vi.fn(async () => ({ status: 'started' })),
+    bookDownloadBatchCancel: vi.fn(async () => ({ ok: true })),
+    onBookDownloadBatchSummary: vi.fn((listener) => {
+      downloadBatchSummaryListener = listener as (event: unknown) => void;
+      return () => {
+        downloadBatchSummaryListener = null;
+      };
+    }),
     onBookVerifyUpdate: vi.fn((listener) => {
       verifyListener = listener as (event: unknown) => void;
       return () => {
@@ -118,6 +127,7 @@ beforeEach(() => {
   progressListener = null;
   verifyListener = null;
   verifyProgressListener = null;
+  downloadBatchSummaryListener = null;
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
 });
@@ -223,11 +233,16 @@ describe('BookLibraryScreen — left pane (pen)', () => {
     expect((checkbox as HTMLInputElement).checked).toBe(true);
   });
 
-  it('a pen file matched by name but with a differing size shows "Size differs from official version", stays selectable/removable (never auto-flagged as corrupted)', async () => {
+  it('a pen file matched by name but with a differing size shows the short "Size differs" status by default, and the full wording only once expanded — stays selectable/removable (never auto-flagged as corrupted)', async () => {
     await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
-    await screen.findByText(/Size differs from official version/);
+    await screen.findByText('Size differs'); // short form in the default (collapsed) row
+    expect(screen.queryByText(/Size differs from official version/)).toBeNull(); // long form not shown yet
     const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
     expect(checkbox).not.toBeNull(); // still selectable — not treated like Unknown
+
+    const nameToggle = document.querySelectorAll('.pane')[0].querySelector('.recordings-list__name-toggle') as HTMLElement;
+    fireEvent.click(nameToggle); // expand
+    await screen.findByText(/Size differs from official version/);
   });
 
   it('selecting a matched pen file and clicking Remove shows an explicit confirm panel with filename and size', async () => {
@@ -271,9 +286,9 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
     await waitFor(() => expect(window.ponyabc.bookUpdate).toHaveBeenCalledWith({ contentId: 'b1', penGeneration: 1 }));
   });
 
-  it('an on-pen-size-differs catalog item is actionable and shows the size-mismatch status text, requiring the same Replace/Skip confirm as a hash-differs item', async () => {
+  it('an on-pen-size-differs catalog item is actionable and shows the short size-mismatch status by default, requiring the same Replace/Skip confirm as a hash-differs item', async () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-size-differs' })] }));
-    await screen.findByText(/size differs from official/i);
+    await screen.findByText('Size differs'); // short form in the default (collapsed) row
     const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
     fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
@@ -311,12 +326,72 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
   it('a "verifying" catalog item resolves in place once a bookVerifyUpdate event arrives, no re-list call', async () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-verifying', actionable: false })] }));
-    await screen.findByText(/Verifying pen content/);
+    await screen.findByText('Verifying…');
     const listCallsBefore = (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
 
     verifyListener?.({ fileName: '0451.axb', contentId: 'b1', result: { penStatus: 'verified-differs', catalogStatus: 'on-pen-differs' } });
 
-    await screen.findByText(/On pen — verified, differs/);
+    await screen.findByText('Differs');
     expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
+  });
+
+  it('a catalog row is collapsed by default (no filename/size/official-update-date visible) and reveals them once its name is clicked', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ updatedAtMs: Date.now(), sizeBytes: 2048 })] }));
+    expect(screen.queryByText('2 KB')).toBeNull();
+    expect(screen.queryByText(/Official update:/)).toBeNull();
+
+    const nameToggle = document.querySelectorAll('.pane')[1].querySelector('.recordings-list__name-toggle') as HTMLElement;
+    fireEvent.click(nameToggle);
+
+    await screen.findByText('0451.axb'); // raw filename only shown once expanded
+    await screen.findByText('2 KB');
+    await screen.findByText(/Official update:/);
+  });
+
+  it('"Download selected to App" calls bookDownloadBatch with the checked contentIds and never touches the pen', async () => {
+    await renderScreen();
+    const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Download selected to App' }));
+    await waitFor(() => expect(window.ponyabc.bookDownloadBatch).toHaveBeenCalledWith({ contentIds: ['b1'] }));
+    expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();
+  });
+
+  it('"Download all to App" targets every non-ambiguous/non-metadata-incomplete catalog item, regardless of selection', async () => {
+    await renderScreen(
+      listResult({
+        catalogItems: [
+          catalogItem({ contentId: 'b1' }),
+          catalogItem({ contentId: 'b2', status: 'metadata-incomplete', actionable: false }),
+          catalogItem({ contentId: 'b3', status: 'on-pen-current', actionable: false }),
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Download all to App' }));
+    await waitFor(() => expect(window.ponyabc.bookDownloadBatch).toHaveBeenCalledWith({ contentIds: ['b1', 'b3'] }));
+  });
+
+  it('while a download batch is active, the trigger buttons swap for a Cancel button showing real "X of Y" progress', async () => {
+    await renderScreen();
+    fireEvent.click(screen.getByRole('button', { name: 'Download all to App' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Download all to App' })).toBeNull());
+    screen.getByRole('button', { name: 'Cancel download' });
+
+    progressListener?.({ contentId: 'b1', bytesReceived: 5, totalBytes: 10, phase: 'downloading', completedCount: 2, totalCount: 5 });
+    await screen.findByText('Downloading 2 of 5…');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel download' }));
+    await waitFor(() => expect(window.ponyabc.bookDownloadBatchCancel).toHaveBeenCalled());
+  });
+
+  it('a batch download summary event restores the trigger buttons and shows a completion message distinguishing downloaded/skipped/failed', async () => {
+    await renderScreen();
+    fireEvent.click(screen.getByRole('button', { name: 'Download all to App' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Download all to App' })).toBeNull());
+
+    downloadBatchSummaryListener?.({ requestedCount: 3, downloadedCount: 1, skippedCount: 1, failedCount: 1, cancelled: false });
+
+    await screen.findByRole('button', { name: 'Download all to App' }); // buttons restored
+    await screen.findByText('Downloaded 1 · Skipped 1 (already cached) · Failed 1');
   });
 });

@@ -40,6 +40,9 @@
   "skipOption": "跳过",
   "confirmAddAction": "确认",
   "officialUpdated": "官方更新：{{date}}",
+  "downloadBatchProgress": "正在下载第 {{completed}} / {{total}} 个…",
+  "downloadBatchSummary": "已下载 {{downloaded}} 个 · 跳过 {{skipped}} 个（缓存已匹配） · 失败 {{failed}} 个",
+  "downloadBatchCancelledSuffix": "（已取消）",
   "cacheStatus": {
     "notDownloaded": "尚未下载",
     "cached": "已缓存",
@@ -63,12 +66,34 @@
     "metadataIncomplete": "目录信息不完整",
     "ambiguous": "目录项存在歧义"
   },
+  "statusShort": {
+    "present": "笔内已有",
+    "verifying": "校验中…",
+    "verifiedCurrent": "已校验",
+    "verifiedDiffers": "不同",
+    "sizeDiffers": "大小不同",
+    "matchedHashUnknown": "笔内已有",
+    "awaitingCatalog": "等待匹配",
+    "unknown": "未知",
+    "notOnPen": "未在笔",
+    "onPenPresent": "笔内已有",
+    "onPenVerifying": "校验中…",
+    "onPenCurrent": "已校验",
+    "onPenDiffers": "不同",
+    "onPenSizeDiffers": "大小不同",
+    "metadataIncomplete": "信息不完整",
+    "ambiguous": "存在歧义"
+  },
   "action": {
     "add": "添加到点读笔",
     "remove": "从点读笔移除",
     "reinstall": "重新下载",
     "cancelDownload": "取消",
     "verifySelected": "验证所选内容",
-    "cancelVerify": "取消验证"
+    "cancelVerify": "取消验证",
+    "verifyThis": "校验此文件",
+    "downloadSelected": "下载所选到 App",
+    "downloadAll": "下载全部到 App",
+    "cancelDownloadBatch": "取消下载"
   }
 }

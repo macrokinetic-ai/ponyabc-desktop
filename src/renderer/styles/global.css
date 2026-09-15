@@ -359,6 +359,47 @@ body {
   margin-top: 4px;
 }
 
+/* Collapsed-by-default row: a plain-text-looking button toggles the detail block below it. */
+.recordings-list__name-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.recordings-list__detail {
+  flex-basis: 100%;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.recordings-list__detail-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pane__footer {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
 /* Connection status dot — never the only signal (always paired with a text label), just a
  * quick at-a-glance cue alongside it. */
 .status-dot {

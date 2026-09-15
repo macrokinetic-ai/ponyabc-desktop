@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type {
   BookActionResult,
   BookCatalogItem,
+  BookDownloadBatchStartResult,
+  BookDownloadBatchSummaryEvent,
   BookDownloadProgressEvent,
   BookLibraryMeta,
   BookPenItem,
@@ -37,6 +39,18 @@ interface BookLibraryState {
   /** Explicit "verify selected content" — never triggered automatically. */
   verifyContent: (fileNames: string[]) => Promise<BookVerifyContentResult>;
   cancelVerify: () => Promise<void>;
+
+  /** True while a "Download selected/all to App" batch is running — cache only, never writes
+   *  to the pen. Distinct from downloadProgress above, which tracks per-item byte progress;
+   *  this tracks the batch as a whole so an overall "X of Y" counter survives between items
+   *  (an individual item's downloadProgress entry disappears once that item finishes). */
+  batchDownloadActive: boolean;
+  batchDownloadCounter: { completedCount: number; totalCount: number } | null;
+  /** The most recently received batch completion summary — cleared when a new batch starts.
+   *  The screen watches this (by reference) to show a one-time completion message. */
+  batchDownloadSummary: BookDownloadBatchSummaryEvent | null;
+  downloadBatch: (contentIds: string[]) => Promise<BookDownloadBatchStartResult>;
+  cancelDownloadBatch: () => Promise<void>;
 }
 
 const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: null };
@@ -52,6 +66,9 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<Record<string, BookDownloadProgressEvent>>({});
   const [verifyProgress, setVerifyProgress] = useState<Record<string, BookVerifyProgressEvent>>({});
+  const [batchDownloadActive, setBatchDownloadActive] = useState(false);
+  const [batchDownloadCounter, setBatchDownloadCounter] = useState<{ completedCount: number; totalCount: number } | null>(null);
+  const [batchDownloadSummary, setBatchDownloadSummary] = useState<BookDownloadBatchSummaryEvent | null>(null);
   const penGenerationRef = useRef(-1);
   penGenerationRef.current = penRoot.result.status === 'ok' ? penRoot.result.generation : -1;
 
@@ -120,8 +137,11 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return window.ponyabc.onBookDownloadProgress((event) => {
+      if (event.completedCount !== undefined && event.totalCount !== undefined) {
+        setBatchDownloadCounter({ completedCount: event.completedCount, totalCount: event.totalCount });
+      }
       setDownloadProgress((prev) => {
-        if (event.phase === 'done' || event.phase === 'failed' || event.phase === 'cancelled') {
+        if (event.phase === 'done' || event.phase === 'failed' || event.phase === 'cancelled' || event.phase === 'skipped') {
           const next = { ...prev };
           delete next[event.contentId];
           return next;
@@ -129,6 +149,16 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
         return { ...prev, [event.contentId]: event };
       });
     });
+  }, []);
+
+  useEffect(() => {
+    return window.ponyabc.onBookDownloadBatchSummary((event) => {
+      setBatchDownloadActive(false);
+      setBatchDownloadCounter(null);
+      setBatchDownloadSummary(event);
+      void refreshList(); // pick up newly-cached items' `cached` flags
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -192,6 +222,17 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
     await window.ponyabc.bookVerifyCancel();
   }, []);
 
+  const downloadBatch = useCallback(async (contentIds: string[]) => {
+    setBatchDownloadSummary(null);
+    const result = await window.ponyabc.bookDownloadBatch({ contentIds });
+    if (result.status === 'started') setBatchDownloadActive(true);
+    return result;
+  }, []);
+
+  const cancelDownloadBatch = useCallback(async () => {
+    await window.ponyabc.bookDownloadBatchCancel();
+  }, []);
+
   return (
     <BookLibraryContext.Provider
       value={{
@@ -211,6 +252,11 @@ export function BookLibraryProvider({ children }: { children: ReactNode }) {
         cancelDownload,
         verifyContent,
         cancelVerify,
+        batchDownloadActive,
+        batchDownloadCounter,
+        batchDownloadSummary,
+        downloadBatch,
+        cancelDownloadBatch,
       }}
     >
       {children}

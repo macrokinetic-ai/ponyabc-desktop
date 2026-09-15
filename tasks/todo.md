@@ -266,3 +266,76 @@ content."
       resolves it to a confirmed "differs"; 820px minimum width has no
       horizontal overflow; zero console errors across the whole session.
       Never wrote to a real physical pen.
+
+# v0.3.4 — collapsed-by-default rows; batch "download to App" (cache-only)
+
+Follow-up after v0.3.3. The user flagged a real contradiction in the v0.3.3
+report itself: the default list still showed the long "On pen — not yet
+verified" wording, when the intent was a concise default list with full
+detail only on demand. Also requested a genuinely new capability: a bottom-
+of-right-pane batch download ("Download selected/all to App") that fetches
+into the App's local cache only, one file at a time, with real per-file and
+overall progress, cancel, and a completion summary — entirely separate from
+"Add to pen".
+
+- [x] **Collapsed-by-default rows.** Both panes now show only checkbox +
+      name + NEW badge + a short status word/phrase by default (new
+      `status.short*` i18n key set, e.g. "On pen" instead of "On pen — not
+      yet verified", "Differs" instead of "On pen — verified, differs").
+      Clicking the name (a plain-styled toggle button, not a real link)
+      expands a detail block showing the raw filename, size, "Official
+      update: <date>", the full/long status wording, and the per-item
+      actions ("Verify this file" on the pen side, "Re-download" on the
+      catalog side) — previously always visible, now detail-only.
+      Non-removable pen rows (Unknown/awaiting-catalog) are unchanged: they
+      had nothing to hide.
+- [x] **Batch "download to App"** (`bookDownloadBatch`/
+      `bookDownloadBatchCancel` IPC, `downloadToCacheOnly()` in
+      `bookInstall.ts` reusing the existing cache-hit-skip logic from
+      `addToPen`'s `resolveCacheFile`) — sequential, one file at a time,
+      writes ONLY into the App's local cache directory, never the pen;
+      "Add to pen" / "Replace with official version" remain wholly separate
+      actions. A fully-matching cache entry is skipped with zero network
+      activity and reported distinctly from an actual download in the
+      completion summary (`Downloaded N · Skipped N (already cached) ·
+      Failed N`). Real per-file byte progress (reuses the existing
+      `bookDownloadProgress` channel/progress bar) plus a real batch-level
+      "Downloading X of Y…" counter (new optional `completedCount`/
+      `totalCount` fields on `BookDownloadProgressEvent`, populated only
+      during a batch). A working Cancel button aborts whatever is currently
+      mid-download and stops the rest of the batch from starting (mirrors
+      the existing verify-batch's batch-id-supersedes-and-
+      `bookDownloadBatchCancel()`-sets-the-authoritative-"not running"-flag-
+      directly pattern from v0.3.2, applied to a second, independent batch
+      kind). "Download selected to App" targets the existing catalog
+      checkbox selection; "Download all to App" targets every catalog item
+      that isn't `metadata-incomplete`/`ambiguous`, regardless of selection.
+- [x] Tests: 314 total (was 300). New `downloadToCacheOnly` coverage in
+      `bookInstall.test.ts` (real download, cache-hit skip, metadata-
+      incomplete refusal, network-error); new batch describe block in
+      `bookIpc.test.ts` (cache-hit-skip with zero network calls, a real
+      download via a stubbed `fetch` with the batch position on its
+      progress events, a cancel-mid-download race proven via a controllable
+      never-resolving `fetch` mock that only settles on abort, a harmless
+      no-op cancel, `no-items` for an empty/unknown target list — every one
+      of these also asserts the pen's BOOK folder was never written to);
+      `BookLibraryScreen.test.tsx` gained expand/collapse coverage and five
+      new batch-download UI tests (trigger wiring, target-set selection,
+      active-state button swap with a real counter, and a completion-
+      summary render).
+- [x] Live CDP verification against a rebuilt dev binary, a fresh user-data
+      profile, and the real production catalog (37 books) with the same
+      two simulated pen AXBs from v0.3.3 (one size-matched, one size-
+      mismatched): confirmed the collapsed default list shows neither "not
+      yet verified" nor "Official update:" text anywhere, only short status
+      words; expanding a pen row reveals the official-update date and a
+      "Verify this file" button; expanding a catalog row reveals the raw
+      `.axb` filename and cache status; "Download selected to App" on the
+      smallest real catalog item completes with a real completion summary
+      and restores the trigger buttons; "Download all to App" against all
+      37 real books shows a real "Downloading X of Y" counter and a working
+      Cancel that stops it early with a `cancelled: true` summary; the
+      simulated pen's BOOK folder held exactly the same 2 files before and
+      after every download action (nothing was ever written to it); 820px
+      minimum width has no horizontal overflow; zero console errors
+      throughout. Never wrote to a real physical pen.

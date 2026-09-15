@@ -40,6 +40,9 @@
   "skipOption": "略過",
   "confirmAddAction": "確認",
   "officialUpdated": "官方更新：{{date}}",
+  "downloadBatchProgress": "正在下載第 {{completed}} / {{total}} 個…",
+  "downloadBatchSummary": "已下載 {{downloaded}} 個 · 略過 {{skipped}} 個（快取已相符） · 失敗 {{failed}} 個",
+  "downloadBatchCancelledSuffix": "（已取消）",
   "cacheStatus": {
     "notDownloaded": "尚未下載",
     "cached": "已快取",
@@ -63,12 +66,34 @@
     "metadataIncomplete": "目錄資料不完整",
     "ambiguous": "目錄項目有歧義"
   },
+  "statusShort": {
+    "present": "筆內已有",
+    "verifying": "校驗中…",
+    "verifiedCurrent": "已校驗",
+    "verifiedDiffers": "不同",
+    "sizeDiffers": "大小不同",
+    "matchedHashUnknown": "筆內已有",
+    "awaitingCatalog": "等待配對",
+    "unknown": "未知",
+    "notOnPen": "未在筆",
+    "onPenPresent": "筆內已有",
+    "onPenVerifying": "校驗中…",
+    "onPenCurrent": "已校驗",
+    "onPenDiffers": "不同",
+    "onPenSizeDiffers": "大小不同",
+    "metadataIncomplete": "資料不完整",
+    "ambiguous": "有歧義"
+  },
   "action": {
     "add": "加入點讀筆",
     "remove": "從點讀筆移除",
     "reinstall": "重新下載",
     "cancelDownload": "取消",
     "verifySelected": "驗證所選內容",
-    "cancelVerify": "取消驗證"
+    "cancelVerify": "取消驗證",
+    "verifyThis": "校驗此檔案",
+    "downloadSelected": "下載所選到 App",
+    "downloadAll": "下載全部到 App",
+    "cancelDownloadBatch": "取消下載"
   }
 }

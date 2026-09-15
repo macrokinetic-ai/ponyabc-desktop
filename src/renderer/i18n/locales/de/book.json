@@ -40,6 +40,9 @@
   "skipOption": "Überspringen",
   "confirmAddAction": "Bestätigen",
   "officialUpdated": "Offizielle Aktualisierung: {{date}}",
+  "downloadBatchProgress": "Lädt {{completed}} von {{total}}…",
+  "downloadBatchSummary": "{{downloaded}} geladen · {{skipped}} übersprungen (bereits zwischengespeichert) · {{failed}} fehlgeschlagen",
+  "downloadBatchCancelledSuffix": "(abgebrochen)",
   "cacheStatus": {
     "notDownloaded": "Nicht heruntergeladen",
     "cached": "Zwischengespeichert",
@@ -63,12 +66,34 @@
     "metadataIncomplete": "Katalogdaten unvollständig",
     "ambiguous": "Mehrdeutiger Katalogeintrag"
   },
+  "statusShort": {
+    "present": "Auf dem Stift",
+    "verifying": "Wird geprüft…",
+    "verifiedCurrent": "Geprüft",
+    "verifiedDiffers": "Abweichend",
+    "sizeDiffers": "Größe abweichend",
+    "matchedHashUnknown": "Auf dem Stift",
+    "awaitingCatalog": "Wartet…",
+    "unknown": "Unbekannt",
+    "notOnPen": "Nicht auf dem Stift",
+    "onPenPresent": "Auf dem Stift",
+    "onPenVerifying": "Wird geprüft…",
+    "onPenCurrent": "Geprüft",
+    "onPenDiffers": "Abweichend",
+    "onPenSizeDiffers": "Größe abweichend",
+    "metadataIncomplete": "Unvollständig",
+    "ambiguous": "Mehrdeutig"
+  },
   "action": {
     "add": "Zum Stift hinzufügen",
     "remove": "Vom Stift entfernen",
     "reinstall": "Erneut herunterladen",
     "cancelDownload": "Abbrechen",
     "verifySelected": "Ausgewählte Inhalte überprüfen",
-    "cancelVerify": "Überprüfung abbrechen"
+    "cancelVerify": "Überprüfung abbrechen",
+    "verifyThis": "Diese Datei prüfen",
+    "downloadSelected": "Auswahl in die App laden",
+    "downloadAll": "Alles in die App laden",
+    "cancelDownloadBatch": "Download abbrechen"
   }
 }

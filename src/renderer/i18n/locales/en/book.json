@@ -40,6 +40,9 @@
   "skipOption": "Skip",
   "confirmAddAction": "Confirm",
   "officialUpdated": "Official update: {{date}}",
+  "downloadBatchProgress": "Downloading {{completed}} of {{total}}…",
+  "downloadBatchSummary": "Downloaded {{downloaded}} · Skipped {{skipped}} (already cached) · Failed {{failed}}",
+  "downloadBatchCancelledSuffix": "(cancelled)",
   "cacheStatus": {
     "notDownloaded": "Not downloaded",
     "cached": "Cached",
@@ -63,12 +66,34 @@
     "metadataIncomplete": "Catalog information incomplete",
     "ambiguous": "Ambiguous catalog entry"
   },
+  "statusShort": {
+    "present": "On pen",
+    "verifying": "Verifying…",
+    "verifiedCurrent": "Verified",
+    "verifiedDiffers": "Differs",
+    "sizeDiffers": "Size differs",
+    "matchedHashUnknown": "On pen",
+    "awaitingCatalog": "Waiting…",
+    "unknown": "Unknown",
+    "notOnPen": "Not on pen",
+    "onPenPresent": "On pen",
+    "onPenVerifying": "Verifying…",
+    "onPenCurrent": "Verified",
+    "onPenDiffers": "Differs",
+    "onPenSizeDiffers": "Size differs",
+    "metadataIncomplete": "Incomplete",
+    "ambiguous": "Ambiguous"
+  },
   "action": {
     "add": "Add to pen",
     "remove": "Remove from pen",
     "reinstall": "Re-download",
     "cancelDownload": "Cancel",
     "verifySelected": "Verify selected content",
-    "cancelVerify": "Cancel verification"
+    "cancelVerify": "Cancel verification",
+    "verifyThis": "Verify this file",
+    "downloadSelected": "Download selected to App",
+    "downloadAll": "Download all to App",
+    "cancelDownloadBatch": "Cancel download"
   }
 }

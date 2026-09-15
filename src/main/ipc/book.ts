@@ -10,6 +10,8 @@ import type {
   BookCatalogCheck,
   BookCatalogEntry,
   BookCatalogSnapshot,
+  BookDownloadBatchStartResult,
+  BookDownloadBatchSummaryEvent,
   BookListResult,
   BookRemoveResult,
   BookVerifyContentResult,
@@ -24,7 +26,7 @@ import { createJsonStore } from '../services/bookStore';
 import { buildBookLibrary, listPenBookFiles, type PenBookFile } from '../services/bookReconcile';
 import { validateCatalogEntries } from '../services/bookCatalogValidate';
 import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient';
-import { addToPen, reinstall, replaceWithOfficial } from '../services/bookInstall';
+import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial } from '../services/bookInstall';
 import { removeFromPen } from '../services/bookRemove';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
@@ -223,6 +225,125 @@ export const bookUpdate = (window: BrowserWindow, params: { contentId: string; p
   runInstallAction(replaceWithOfficial, window, params);
 export const bookReinstall = (window: BrowserWindow, params: { contentId: string; penGeneration: number }) =>
   runInstallAction(reinstall, window, params);
+
+// ---------------------------------------------------------------------------------------
+// Batch "download to App" — user-triggered ("Download selected/all to App"), one file at a
+// time, cache ONLY — never writes to the pen ("Add to pen" stays a wholly separate action).
+// A fully-matching cache entry is skipped with zero network activity. Mirrors the
+// currentVerifyBatchId/currentVerifyAbort pattern below: starting a new batch (or an
+// explicit cancel) supersedes whatever is currently running, so a stale batch can never push
+// results after a newer one started.
+// ---------------------------------------------------------------------------------------
+
+let currentDownloadBatchId = 0;
+let downloadBatchRunning = false;
+let currentDownloadBatchActiveContentId: string | null = null;
+
+export async function bookDownloadBatch(window: BrowserWindow, params: { contentIds: string[] }): Promise<BookDownloadBatchStartResult> {
+  const targets = params.contentIds.map((id) => findEntry(id)).filter((e): e is BookCatalogEntry => e !== null);
+  if (targets.length === 0) return { status: 'no-items' };
+
+  const myBatchId = ++currentDownloadBatchId;
+  const totalCount = targets.length;
+  let completedCount = 0;
+  let downloadedCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+
+  void (async () => {
+    downloadBatchRunning = true;
+    try {
+      for (const entry of targets) {
+        if (myBatchId !== currentDownloadBatchId) break; // superseded by a newer batch/cancel
+        currentDownloadBatchActiveContentId = entry.contentId;
+
+        const result = await downloadToCacheOnly(entry, {
+          ...installDeps(window),
+          onProgress: (e) => {
+            if (myBatchId !== currentDownloadBatchId) return;
+            try {
+              window.webContents.send(IPC.bookDownloadProgress, { ...e, completedCount, totalCount });
+            } catch {
+              // window already gone — nothing left to notify
+            }
+          },
+        });
+
+        if (myBatchId !== currentDownloadBatchId) break; // cancelled mid-download
+        currentDownloadBatchActiveContentId = null;
+        completedCount += 1;
+
+        appendDiagnostic(diagnosticsStore(), 'book-download', {
+          contentId: entry.contentId,
+          filename: entry.filename,
+          expectedSizeBytes: entry.sizeBytes,
+          expectedSha256: entry.sha256 ?? 'null',
+          outcome: result.status,
+          message:
+            result.status === 'completed'
+              ? result.cacheHit
+                ? 'cache-hit'
+                : 'downloaded'
+              : ('message' in result ? result.message : null) ?? 'null',
+        });
+
+        if (result.status === 'completed') {
+          if (result.cacheHit) {
+            skippedCount += 1;
+            try {
+              window.webContents.send(IPC.bookDownloadProgress, {
+                contentId: entry.contentId,
+                bytesReceived: entry.sizeBytes,
+                totalBytes: entry.sizeBytes,
+                phase: 'skipped',
+                completedCount,
+                totalCount,
+              });
+            } catch {
+              // window already gone
+            }
+          } else {
+            downloadedCount += 1;
+          }
+        } else {
+          failedCount += 1;
+        }
+      }
+
+      const cancelled = myBatchId !== currentDownloadBatchId;
+      try {
+        window.webContents.send(IPC.bookDownloadBatchSummary, {
+          requestedCount: totalCount,
+          downloadedCount,
+          skippedCount,
+          failedCount,
+          cancelled,
+        } satisfies BookDownloadBatchSummaryEvent);
+      } catch {
+        // window already gone
+      }
+    } finally {
+      currentDownloadBatchActiveContentId = null;
+      // Never clobber a NEWER batch's running=true state that started after this one was
+      // cancelled — mirrors why bookVerifyCancel() below sets its own state directly rather
+      // than relying solely on this cleanup.
+      if (myBatchId === currentDownloadBatchId) downloadBatchRunning = false;
+    }
+  })();
+
+  return { status: 'started' };
+}
+
+export function bookDownloadBatchCancel(): { ok: boolean } {
+  const wasRunning = downloadBatchRunning;
+  currentDownloadBatchId += 1; // supersede — the loop above stops before its next iteration
+  if (currentDownloadBatchActiveContentId) {
+    cancelDownload(currentDownloadBatchActiveContentId); // abort whatever is mid-download right now
+    currentDownloadBatchActiveContentId = null;
+  }
+  downloadBatchRunning = false; // authoritative "nothing running now"
+  return { ok: wasRunning };
+}
 
 // ---------------------------------------------------------------------------------------
 // Explicit on-pen content verification — a user-triggered batch action, never kicked off

@@ -12,6 +12,8 @@ import {
   bookAdd,
   bookBackups,
   bookCatalogRefresh,
+  bookDownloadBatch,
+  bookDownloadBatchCancel,
   bookDownloadCancel,
   bookList,
   bookReinstall,
@@ -84,6 +86,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.bookBackups, () => bookBackups());
   ipcMain.handle(IPC.bookRestore, (_event, params) => bookRestore(params));
   ipcMain.handle(IPC.bookDownloadCancel, (_event, contentId: string) => bookDownloadCancel(contentId));
+  ipcMain.handle(IPC.bookDownloadBatch, (_event, params) => bookDownloadBatch(getWindow(), params));
+  ipcMain.handle(IPC.bookDownloadBatchCancel, () => bookDownloadBatchCancel());
   ipcMain.handle(IPC.bookVerifyContent, (_event, params) => bookVerifyContent(getWindow(), params));
   ipcMain.handle(IPC.bookVerifyCancel, () => bookVerifyCancel());
 
