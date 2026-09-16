@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "A atualizar",
-    "phasePreparing": "A preparar a ferramenta de atualização…",
+    "phasePreparing": "A preparar a atualização…",
     "phaseAwaitingAuth": "A aguardar autorização do Windows, ou a iniciar…",
-    "phaseToolRunning": "A escrever na caneta — não a desligue…",
-    "phaseFinishing": "A finalizar…",
+    "phaseToolRunning": "A atualizar a caneta — mantenha a ligação USB.",
+    "phaseFinishing": "A confirmar o resultado…",
     "noCancelNotice": "A atualização não pode ser cancelada à força depois de iniciada.",
     "noOutputYet": "Ainda sem resultado."
   },

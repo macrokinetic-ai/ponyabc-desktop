@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "升级中",
-    "phasePreparing": "正在准备升级工具…",
+    "phasePreparing": "正在准备升级…",
     "phaseAwaitingAuth": "等待 Windows 授权，或正在启动中…",
-    "phaseToolRunning": "正在写入点读笔——请勿断开连接…",
-    "phaseFinishing": "正在完成…",
+    "phaseToolRunning": "正在更新点读笔，请保持 USB 连接。",
+    "phaseFinishing": "正在确认结果…",
     "noCancelNotice": "升级开始后无法强行取消。",
     "noOutputYet": "暂时没有输出。"
   },

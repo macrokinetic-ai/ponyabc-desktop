@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "Actualizando",
-    "phasePreparing": "Preparando la herramienta de actualización…",
+    "phasePreparing": "Preparando la actualización…",
     "phaseAwaitingAuth": "Esperando autorización de Windows, o iniciando…",
-    "phaseToolRunning": "Escribiendo en el lápiz — no lo desconecte…",
-    "phaseFinishing": "Finalizando…",
+    "phaseToolRunning": "Actualizando el lápiz — mantenga la conexión USB.",
+    "phaseFinishing": "Confirmando el resultado…",
     "noCancelNotice": "La actualización no se puede cancelar a la fuerza una vez iniciada.",
     "noOutputYet": "Aún no hay salida."
   },

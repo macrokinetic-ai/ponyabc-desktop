@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "Mise à jour en cours",
-    "phasePreparing": "Préparation de l'outil de mise à jour…",
+    "phasePreparing": "Préparation de la mise à jour…",
     "phaseAwaitingAuth": "En attente d'autorisation Windows, ou démarrage…",
-    "phaseToolRunning": "Écriture sur le stylo — ne le débranchez pas…",
-    "phaseFinishing": "Finalisation…",
+    "phaseToolRunning": "Mise à jour du stylo — maintenez la connexion USB.",
+    "phaseFinishing": "Confirmation du résultat…",
     "noCancelNotice": "La mise à jour ne peut pas être annulée de force une fois commencée.",
     "noOutputYet": "Aucune sortie pour le moment."
   },

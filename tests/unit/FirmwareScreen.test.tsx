@@ -171,7 +171,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     await screen.findByRole('heading', { name: 'Upgrading' });
 
     progressListener?.({ phase: 'tool-running', logTailText: 'start downloading......\nWrite sector:147 146 145' });
-    await screen.findByText('Writing to the pen — do not disconnect it…');
+    await screen.findByText('Updating the pen — keep it connected via USB.');
     // The raw log lives behind the collapsed "Technical details" disclosure, not on the main
     // screen — never shown to a teacher unprompted.
     expect(screen.queryByText(/Write sector:147/)).toBeNull();

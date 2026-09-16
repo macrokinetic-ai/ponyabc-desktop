@@ -124,30 +124,66 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     expect(fullLog).toContain('after-pause');
   }, 60_000);
 
-  it('real codepage detection + real Chinese console output: chcp capture is never assumed, and decoding the raw captured bytes with the REAL detected codepage recovers the exact original text', async () => {
+  it('real codepage detection: chcp capture (via buildFlashBatchScript) produces a real, positive number on an actual Windows machine — never silently absent', async () => {
     const dir = mkTempDir();
-    const targetPath = path.join(dir, 'chinese-output-target.bat');
-    // Dynamically encodes a known Chinese string using WHATEVER this console's real active
-    // OEM/output codepage actually is (never hardcoded as GBK/936 or any other assumption) —
-    // exactly mirroring how a real console tool (the vendor's isd_download.exe included) writes
-    // its own text: using its process's real active codepage, whatever that happens to be on
-    // this specific machine. This is the same codepage buildFlashBatchScript's own `chcp`
-    // capture line observes, since nothing changes it in between.
+    const targetPath = path.join(dir, 'ascii-target.bat');
+    fs.writeFileSync(targetPath, ['@echo off', 'echo ascii-only-output', 'exit /b 0', ''].join('\r\n'));
+
+    let detectedCodepage: number | null | undefined; // undefined = onCodepageDetected never fired at all
+    const result = await runElevated({
+      exePath: targetPath,
+      args: [],
+      cwd: dir,
+      workDir: path.join(dir, 'work'),
+      onCodepageDetected: (cp) => {
+        detectedCodepage = cp;
+      },
+      logPollIntervalMs: 200,
+      timeoutMs: 60_000,
+    });
+
+    console.log('codepage-detection smoke result:', JSON.stringify(result), 'detected codepage:', detectedCodepage);
+    if (result.status === 'timeout') {
+      console.warn('No interactive desktop on this runner to approve elevation — see the other smoke test for that caveat.');
+      return;
+    }
+
+    expect(result.status).toBe('completed');
+    expect(detectedCodepage).not.toBeNull();
+    expect(detectedCodepage).not.toBeUndefined();
+    expect(typeof detectedCodepage).toBe('number');
+    expect(detectedCodepage as number).toBeGreaterThan(0);
+  }, 90_000);
+
+  it('a real GBK-encoded byte stream, captured through the FULL real pipeline (elevation, cmd.exe redirect-to-file, log polling, buffer accumulation), is preserved byte-for-byte and decodes back to the exact original Chinese text', async () => {
+    // Numeric byte literals ONLY — deliberately never a literal Chinese string passed through
+    // any command-line argument. An earlier version of this test embedded Chinese characters
+    // directly in a `-Command "..."` string; on this runner (English-locale, codepage 437) that
+    // string got mangled by cmd.exe's own ANSI command-line argument marshaling BEFORE
+    // PowerShell ever saw it — a bug in the TEST's injection technique, not in the app. Writing
+    // the exact byte VALUES (computed via iconv-lite ahead of time: `下载完成。` in GBK) sidesteps
+    // that entirely, and tests the thing that actually matters here: does arbitrary high-byte
+    // binary data survive the real elevation + file-redirect + polling pipeline intact?
+    const gbkBytesForDownloadComplete = [0xcf, 0xc2, 0xd4, 0xd8, 0xcd, 0xea, 0xb3, 0xc9, 0xa1, 0xa3]; // "下载完成。" in GBK
+    const dir = mkTempDir();
+    const targetPath = path.join(dir, 'gbk-bytes-target.bat');
     const psSnippet = [
-      '$cp = [Console]::OutputEncoding.CodePage',
-      '$enc = [System.Text.Encoding]::GetEncoding($cp)',
-      '$bytes = $enc.GetBytes("REAL_TEXT_MARKER 下载完成。 END_MARKER")',
+      '$before = [byte[]](82,69,65,76,95,66,69,70,79,82,69,32)', // "REAL_BEFORE "
+      `$gbk = [byte[]](${gbkBytesForDownloadComplete.join(',')})`,
+      '$after = [byte[]](32,82,69,65,76,95,65,70,84,69,82)', // " REAL_AFTER"
       '$stdout = [Console]::OpenStandardOutput()',
-      '$stdout.Write($bytes, 0, $bytes.Length)',
+      '$stdout.Write($before, 0, $before.Length)',
+      '$stdout.Write($gbk, 0, $gbk.Length)',
+      '$stdout.Write($after, 0, $after.Length)',
       '$stdout.Flush()',
     ].join('; ');
     fs.writeFileSync(
       targetPath,
-      ['@echo off', `powershell -NoProfile -Command "${psSnippet.replace(/"/g, '\\"')}"`, 'exit /b 0', ''].join('\r\n'),
+      ['@echo off', `powershell -NoProfile -Command "${psSnippet}"`, 'exit /b 0', ''].join('\r\n'),
     );
 
     const deltas: Buffer[] = [];
-    let detectedCodepage: number | null | undefined; // undefined = onCodepageDetected never fired at all
+    let detectedCodepage: number | null | undefined;
     const result = await runElevated({
       exePath: targetPath,
       args: [],
@@ -161,40 +197,25 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
       timeoutMs: 60_000,
     });
 
-    console.log('chinese-output smoke result:', JSON.stringify(result));
-    console.log('detected codepage:', detectedCodepage);
-
+    console.log('gbk-bytes smoke result:', JSON.stringify(result), '— this runner\'s own real codepage (for reference only, not asserted on):', detectedCodepage);
     if (result.status === 'timeout') {
       console.warn('No interactive desktop on this runner to approve elevation — see the other smoke test for that caveat.');
       return;
     }
-
     expect(result.status).toBe('completed');
-    // The chcp-capture mechanism must have produced SOME real number — never silently absent.
-    expect(detectedCodepage).not.toBeNull();
-    expect(detectedCodepage).not.toBeUndefined();
-    expect(typeof detectedCodepage).toBe('number');
 
     const raw = Buffer.concat(deltas);
-    const { text, encodingUsed } = decodeLogBytes(raw, detectedCodepage ?? null);
-    console.log('decoded text:', text, 'encodingUsed:', encodingUsed);
-
-    // The ASCII markers must survive regardless of which codepage this runner uses (ASCII is
-    // byte-identical across every relevant encoding) — proves the raw bytes themselves were
-    // captured intact even before considering the Chinese portion.
-    expect(text).toContain('REAL_TEXT_MARKER');
-    expect(text).toContain('END_MARKER');
-
-    if (encodingUsed !== null) {
-      // This runner's real codepage is one this app recognizes — the Chinese text must decode
-      // back to the exact original, proving the full real chain (chcp capture -> our codepage
-      // table -> iconv-lite decode) works end to end, not just in isolated unit tests.
-      expect(text).toContain('下载完成。');
-    } else {
-      console.warn(
-        `This runner's real codepage (${detectedCodepage}) is not in this app's recognized table — expected on an English-locale CI runner (likely 437/850), and exactly why encodingKnown exists: the app correctly declines to guess rather than mis-decode. Real Chinese Windows machines (the actual deployment target) use 936 (GBK), which IS recognized — see logEncoding.ts.`,
-      );
-    }
+    console.log('raw captured bytes (hex):', raw.toString('hex'));
+    // Explicitly decode as 936 (GBK) — NOT this runner's own auto-detected codepage, since this
+    // English-locale CI machine is very unlikely to itself report 936. This test's claim is
+    // narrower and still real: IF a machine's detected codepage is 936 (a genuine Chinese
+    // Windows install, the actual deployment target), decoding bytes that survived this exact
+    // real pipeline produces the correct text — proving the pipeline itself doesn't corrupt
+    // high-byte binary data, independent of what this particular runner's own codepage is.
+    const { text, encodingUsed } = decodeLogBytes(raw, 936);
+    console.log('decoded (forced cp936):', text, 'encodingUsed:', encodingUsed);
+    expect(encodingUsed).toBe('gbk');
+    expect(text).toBe('REAL_BEFORE 下载完成。 REAL_AFTER');
   }, 90_000);
 });
 

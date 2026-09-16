@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "Aktualisierung läuft",
-    "phasePreparing": "Update-Tool wird vorbereitet…",
+    "phasePreparing": "Upgrade wird vorbereitet…",
     "phaseAwaitingAuth": "Warten auf Windows-Autorisierung oder Start…",
-    "phaseToolRunning": "Schreibe auf den Stift — nicht trennen…",
-    "phaseFinishing": "Wird abgeschlossen…",
+    "phaseToolRunning": "Der Stift wird aktualisiert — bitte USB-Verbindung aufrechterhalten.",
+    "phaseFinishing": "Ergebnis wird bestätigt…",
     "noCancelNotice": "Das Update kann nach dem Start nicht erzwungen abgebrochen werden.",
     "noOutputYet": "Noch keine Ausgabe."
   },

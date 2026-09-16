@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "Upgrading",
-    "phasePreparing": "Preparing the upgrade tool…",
+    "phasePreparing": "Preparing to upgrade…",
     "phaseAwaitingAuth": "Waiting for Windows authorization, or starting…",
-    "phaseToolRunning": "Writing to the pen — do not disconnect it…",
-    "phaseFinishing": "Finishing up…",
+    "phaseToolRunning": "Updating the pen — keep it connected via USB.",
+    "phaseFinishing": "Confirming the result…",
     "noCancelNotice": "The upgrade cannot be force-cancelled once it has started.",
     "noOutputYet": "No output yet."
   },

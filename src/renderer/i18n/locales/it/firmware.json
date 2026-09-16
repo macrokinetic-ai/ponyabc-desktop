@@ -70,10 +70,10 @@
   },
   "upgrading": {
     "title": "Aggiornamento in corso",
-    "phasePreparing": "Preparazione dello strumento di aggiornamento…",
+    "phasePreparing": "Preparazione dell'aggiornamento…",
     "phaseAwaitingAuth": "In attesa dell'autorizzazione di Windows, o avvio…",
-    "phaseToolRunning": "Scrittura sulla penna — non scollegarla…",
-    "phaseFinishing": "Completamento…",
+    "phaseToolRunning": "Aggiornamento della penna in corso — mantieni la connessione USB.",
+    "phaseFinishing": "Conferma del risultato…",
     "noCancelNotice": "L'aggiornamento non può essere annullato forzatamente una volta avviato.",
     "noOutputYet": "Nessun output ancora."
   },
