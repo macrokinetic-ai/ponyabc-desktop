@@ -19,7 +19,11 @@ const REAL_PLATFORM = process.platform;
 
 const h = vi.hoisted(() => ({ userDataDir: '' }));
 vi.mock('electron', () => ({
-  app: { getPath: (name: string) => (name === 'userData' ? h.userDataDir : '') },
+  app: {
+    getPath: (name: string) => (name === 'userData' ? h.userDataDir : ''),
+    getVersion: () => '0.0.0-test',
+    quit: vi.fn(),
+  },
   dialog: { showOpenDialog: vi.fn() },
 }));
 vi.mock('../../src/main/services/elevatedRun', () => ({ runElevated: vi.fn() }));
@@ -349,5 +353,86 @@ describe('cross-restart recovery — simulates "app closed/reopened while an ext
     await firmwareIpc.checkPendingFirmwareRecoveryOnStartup(); // nothing pending → 'none'
     expect(await firmwareIpc.recheckFirmwareRecovery()).toEqual({ status: 'none' });
     expect(checkStillRunning).not.toHaveBeenCalled();
+  });
+});
+
+describe('exportFirmwareDiagnostics — Settings -> Support export, driven by a real startFirmwareUpgrade session', () => {
+  it('exports the just-completed session as a redacted JSON file, a decoded text log, and the raw vendor-output sidecar', async () => {
+    const { dialog } = await import('electron');
+    const { runElevated, firmwareIpc } = await freshImports();
+    runElevated.mockImplementationOnce(async (params) => {
+      params.onCodepageDetected?.(65001);
+      params.onLogUpdate?.(Buffer.from(`C:\\Users\\teacher\\Desktop\\tools> download success\n`, 'utf-8'));
+      return { status: 'completed', exitCode: 0 };
+    });
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    await waitForOutcome(send);
+
+    const destDir = mkTempDir('ponyabc-export-dest-');
+    vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: false, filePaths: [destDir] });
+
+    const result = await firmwareIpc.exportFirmwareDiagnostics(win);
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') throw new Error('expected ok');
+
+    const files = fs.readdirSync(result.path);
+    const jsonFile = files.find((f) => f.endsWith('.json'));
+    const decodedFile = files.find((f) => f.endsWith('.decoded.txt'));
+    const rawFile = files.find((f) => f.endsWith('.raw.bin'));
+    expect(jsonFile).toBeTruthy();
+    expect(decodedFile).toBeTruthy();
+    expect(rawFile).toBeTruthy();
+
+    const record = JSON.parse(fs.readFileSync(path.join(result.path, jsonFile!), 'utf-8'));
+    expect(record.outcomeStatus).toBe('success');
+
+    const decoded = fs.readFileSync(path.join(result.path, decodedFile!), 'utf-8');
+    expect(decoded).toContain('download success');
+    expect(decoded).not.toContain('teacher'); // redaction applies to the decoded export too
+
+    // Raw bytes are kept deliberately close to untouched for encoding troubleshooting — the
+    // redaction there is only a best-effort scrub of the real OS account username (see
+    // redactRawLogBytesForExport's own doc), never a general text-content scrub like redactText.
+    // "teacher" is fixture text here, not this machine's real username, so it correctly survives
+    // in the raw file even though it was stripped from the JSON/decoded exports above.
+    const raw = fs.readFileSync(path.join(result.path, rawFile!));
+    expect(raw.toString('utf-8')).toBe('C:\\Users\\teacher\\Desktop\\tools> download success\n');
+  });
+
+  it('a cancelled folder-picker dialog exports nothing and reports "cancelled"', async () => {
+    const { dialog } = await import('electron');
+    const { firmwareIpc } = await freshImports();
+    vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: true, filePaths: [] });
+    const { win } = makeWindow();
+    expect(await firmwareIpc.exportFirmwareDiagnostics(win)).toEqual({ status: 'cancelled' });
+  });
+
+  it('includes the most recent interrupted session even when it falls outside the normal recent-N window', async () => {
+    const { runElevated, firmwareIpc } = await freshImports();
+    // A session that never resolves runElevated — simulates an app crash mid-upgrade, leaving a
+    // permanently-interrupted (endedAtMs: null) session on disk.
+    let resolveNever: (() => void) | null = null;
+    runElevated.mockImplementationOnce(
+      () =>
+        new Promise(() => {
+          resolveNever = () => {}; // deliberately never resolved within this test
+        }),
+    );
+    const { win: win1 } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win1, { packageDir });
+    await new Promise((r) => setTimeout(r, 20)); // let the session-creation microtask run
+    void resolveNever;
+
+    const { dialog } = await import('electron');
+    const destDir = mkTempDir('ponyabc-export-dest-');
+    vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({ canceled: false, filePaths: [destDir] });
+    const result = await firmwareIpc.exportFirmwareDiagnostics(win1);
+    expect(result.status).toBe('ok');
+    if (result.status !== 'ok') throw new Error('expected ok');
+    const files = fs.readdirSync(result.path).filter((f) => f.endsWith('.json'));
+    expect(files.length).toBeGreaterThanOrEqual(1);
+    const record = JSON.parse(fs.readFileSync(path.join(result.path, files[0]), 'utf-8'));
+    expect(record.endedAtMs).toBeNull();
   });
 });

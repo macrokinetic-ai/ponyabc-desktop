@@ -47,6 +47,7 @@ export const IPC = {
 
   diagnosticsSummary: 'ponyabc:diagnostics:summary',
   diagnosticsExport: 'ponyabc:diagnostics:export',
+  firmwareDiagnosticsExport: 'ponyabc:firmware:diagnosticsExport',
 
   firmwareSelectPackage: 'ponyabc:firmware:selectPackage',
   firmwareStart: 'ponyabc:firmware:start',
@@ -61,8 +62,7 @@ export const IPC = {
   firmwarePrepareOfficialPackage: 'ponyabc:firmware:prepareOfficialPackage',
   firmwareDownloadProgress: 'ponyabc:firmware:downloadProgress',
   firmwareCancelDownload: 'ponyabc:firmware:cancelDownload',
-  firmwareRecordPlaybackFeedback: 'ponyabc:firmware:recordPlaybackFeedback',
-  firmwareExportLog: 'ponyabc:firmware:exportLog',
+  firmwareFinish: 'ponyabc:firmware:finish',
 
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',

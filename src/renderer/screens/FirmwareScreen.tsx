@@ -43,10 +43,9 @@ export function FirmwareScreen() {
   const [restartNoticeShown, setRestartNoticeShown] = useState(false);
   const [recovery, setRecovery] = useState<FirmwareRecoveryStatus | null>(null);
   const [rechecking, setRechecking] = useState(false);
-  // Purely a diagnostic record ("the user tried the pen and it works") — never touches
-  // acknowledgeFirmwareOutcome/the pen lock, and never treated as confirming a firmware version.
-  const [playbackFeedbackGiven, setPlaybackFeedbackGiven] = useState(false);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  // "Finish" (the only action on a confirmed-terminated result) releases any pending lock (if
+  // one is held) then quits the app — see handleFinish and firmware.ts's finishFirmwareUpgrade.
+  const [finishing, setFinishing] = useState(false);
   const logRef = useRef<HTMLPreElement | null>(null);
 
   // Official firmware download flow (Windows only) — see the block comment in shared/types.ts.
@@ -201,30 +200,34 @@ export function FirmwareScreen() {
     }
   }
 
-  /** Only for an outcome with `processTerminationConfirmed: true` — see the branch in the
-   *  render below. Resets the wizard because the backend has genuinely released the lock. */
-  async function handleAcknowledge() {
-    setAcknowledging(true);
+  /**
+   * Only reachable when `outcome.processTerminationConfirmed` is true and status !== 'failed'
+   * (the render below never shows this button otherwise) — i.e. the upgrade tool is confirmed to
+   * have actually stopped, whether or not a recognized success signal was seen. Releases any
+   * pending lock (a no-op if there wasn't one — e.g. a real 'success' outcome already released it
+   * synchronously server-side) and then quits the app. Deliberately never reachable, and never
+   * force-terminates anything, when termination could NOT be confirmed (timeout/unparseable) —
+   * that case keeps its own separate, still-locked flow via handleAcknowledgeUnconfirmed.
+   */
+  async function handleFinish() {
+    setFinishing(true);
     try {
       await window.ponyabc.acknowledgeFirmwareOutcome();
     } finally {
-      setAcknowledging(false);
-      setStep('prepare');
-      setPackageInfo(null);
-      setProgress(null);
-      setOutcome(null);
-      setPlaybackFeedbackGiven(false);
-      setExportMessage(null);
+      await window.ponyabc.finishFirmwareUpgrade();
+      // No `finally`-reached UI state update expected past this point — finishFirmwareUpgrade
+      // quits the app. setFinishing(false) is intentionally omitted: if quitting is ever
+      // slow/blocked, staying disabled is the safe default, not a stuck-then-reset button.
     }
   }
 
   /**
    * Only for an outcome with `processTerminationConfirmed: false` — the real device's status is
-   * genuinely unknown, so unlike handleAcknowledge this deliberately does NOT reset the wizard
-   * or clear the outcome: the backend keeps the pen lock and the firmware in-progress guard held
-   * with no in-app release path (acknowledgeFirmwareOutcome() is a no-op for this case — see
-   * src/main/ipc/firmware.ts). This only records that the user has seen the warning and shows a
-   * persistent notice; the only real recovery is fully quitting and reopening the app.
+   * genuinely unknown, so this deliberately does NOT reset the wizard or clear the outcome: the
+   * backend keeps the pen lock and the firmware in-progress guard held with no in-app release
+   * path (acknowledgeFirmwareOutcome() is a no-op for this case — see src/main/ipc/firmware.ts).
+   * This only records that the user has seen the warning and shows a persistent notice; the only
+   * real recovery is fully quitting and reopening the app.
    */
   async function handleAcknowledgeUnconfirmed() {
     setAcknowledging(true);
@@ -234,23 +237,6 @@ export function FirmwareScreen() {
       setAcknowledging(false);
       setRestartNoticeShown(true);
     }
-  }
-
-  /** Records feedback only — deliberately does NOT call acknowledgeFirmwareOutcome or touch any
-   *  lock state. See the button's own i18n copy and src/main/ipc/firmware.ts's
-   *  recordFirmwarePlaybackFeedback doc comment for why these must stay fully separate. */
-  async function handlePlaybackFeedback() {
-    await window.ponyabc.recordFirmwarePlaybackFeedback();
-    setPlaybackFeedbackGiven(true);
-  }
-
-  async function handleExportLog() {
-    if (!outcome) return;
-    setExportMessage(null);
-    const result = await window.ponyabc.exportFirmwareLog(outcome.logExcerpt);
-    if (result.status === 'ok') setExportMessage(t('technicalDetails.exportSaved', { path: result.path }));
-    else if (result.status === 'error') setExportMessage(t('technicalDetails.exportFailed', { message: result.message }));
-    // 'cancelled': no message — the user just closed the save dialog.
   }
 
   function startOver() {
@@ -264,8 +250,6 @@ export function FirmwareScreen() {
     setPrepareResult(null);
     setDownloadProgress(null);
     setHardwareConfirmation('unconfirmed');
-    setPlaybackFeedbackGiven(false);
-    setExportMessage(null);
   }
 
   if (isMac) {
@@ -541,69 +525,51 @@ export function FirmwareScreen() {
       {step === 'result' && outcome && (
         <section>
           <h2>{t('result.title')}</h2>
-          {outcome.status === 'success' && (
+
+          {/* "Normal completion": the process is confirmed to have actually finished, whether or
+           *  not a recognized success signal was seen. Deliberately ONE calm message + ONE
+           *  Finish button — no red title, no "is this really unclear?" re-confirmation, no
+           *  extra buttons, no inline technical details (still fully captured for Settings ->
+           *  Support -> Export firmware diagnostic logs). The internal outcome.status/reason
+           *  distinction is preserved in that log even though the displayed message is
+           *  intentionally the same calm tone for both. */}
+          {outcome.processTerminationConfirmed && outcome.status !== 'failed' && (
             <div className="note-box">
-              <p>{t('result.successTitle')}</p>
+              <p>{outcome.status === 'success' ? t('result.successMessage') : t('result.processFinishedMessage')}</p>
             </div>
           )}
+
           {outcome.status === 'failed' && (
             <div className="note-box">
               <p className="error-text">{t('result.failedTitle')}</p>
             </div>
           )}
-          {outcome.status === 'unclear' && (
+
+          {outcome.status === 'unclear' && !outcome.processTerminationConfirmed && (
             <div className="note-box">
               <p className="error-text">{t('result.unclearTitle')}</p>
-              <p className="hint">{outcome.processTerminationConfirmed ? t('result.unclearBody') : t('result.unclearBodyUnconfirmed')}</p>
+              <p className="hint">{t('result.unclearBodyUnconfirmed')}</p>
             </div>
           )}
 
-          <CollapsibleSection
-            title={t('technicalDetails.title')}
-            readLabel={t('technicalDetails.readButton')}
-            collapseLabel={t('technicalDetails.collapseButton')}
-            defaultOpen={false}
-          >
-            <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
-            {!outcome.encodingKnown && <p className="hint">{t('technicalDetails.encodingUnknown')}</p>}
-            {outcome.sawNoLicenseWarning && <p className="hint">{t('technicalDetails.sawNoLicense')}</p>}
-            {outcome.otaTableHadFailures && <p className="hint">{t('technicalDetails.otaTableHadFailures')}</p>}
-            {outcome.sawUfwGenerated && <p className="hint">{t('technicalDetails.sawUfwGenerated')}</p>}
-            <pre className="firmware-wizard__log">{outcome.logExcerpt || t('upgrading.noOutputYet')}</pre>
-            <button type="button" className="button" onClick={() => void handleExportLog()}>
-              {t('technicalDetails.exportButton')}
+          {outcome.processTerminationConfirmed && outcome.status !== 'failed' ? (
+            <button type="button" className="button button--primary" disabled={finishing} onClick={() => void handleFinish()}>
+              {t('result.finishButton')}
             </button>
-            {exportMessage && <p className="hint">{exportMessage}</p>}
-          </CollapsibleSection>
-
-          {outcome.status === 'unclear' && outcome.processTerminationConfirmed && (
-            <div className="firmware-wizard__actions">
-              <button type="button" className="button" disabled={playbackFeedbackGiven} onClick={() => void handlePlaybackFeedback()}>
-                {playbackFeedbackGiven ? t('result.playbackFeedbackRecorded') : t('result.playbackFeedbackButton')}
-              </button>
-            </div>
-          )}
-
-          {outcome.status === 'unclear' ? (
-            outcome.processTerminationConfirmed ? (
-              <button type="button" className="button button--primary" disabled={acknowledging} onClick={() => void handleAcknowledge()}>
-                {t('result.acknowledgeButton')}
-              </button>
-            ) : restartNoticeShown ? (
-              <p className="hint">{t('result.restartNoticeAcknowledged')}</p>
-            ) : (
-              <button
-                type="button"
-                className="button button--primary"
-                disabled={acknowledging}
-                onClick={() => void handleAcknowledgeUnconfirmed()}
-              >
-                {t('result.acknowledgeButtonUnconfirmed')}
-              </button>
-            )
-          ) : (
+          ) : outcome.status === 'failed' ? (
             <button type="button" className="button button--primary" onClick={startOver}>
               {t('result.startOverButton')}
+            </button>
+          ) : restartNoticeShown ? (
+            <p className="hint">{t('result.restartNoticeAcknowledged')}</p>
+          ) : (
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={acknowledging}
+              onClick={() => void handleAcknowledgeUnconfirmed()}
+            >
+              {t('result.acknowledgeButtonUnconfirmed')}
             </button>
           )}
         </section>

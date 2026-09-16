@@ -79,30 +79,20 @@
   },
   "result": {
     "title": "结果",
-    "successTitle": "升级成功完成。",
+    "successMessage": "固件升级已完成。请重新启动点读笔并试播。",
+    "processFinishedMessage": "固件升级流程已结束。请重新启动点读笔并试播。",
     "failedTitle": "升级未能启动或未能完成。",
     "unclearTitle": "无法确认结果。",
-    "unclearBody": "升级工具已结束，请重新启动点读笔并试播确认。",
     "unclearBodyUnconfirmed": "无法确认升级工具是否已经真正执行完毕。为安全起见，在此问题解决之前，将不允许进行新的固件升级或 BOOK/DIY 写入点读笔。请在你自行确认（例如通过 Windows 任务管理器，或直接检查点读笔本身）该进程已经停止后，才完全关闭并重新打开本应用程序。",
-    "reason": "详情：{{reason}}",
-    "acknowledgeButton": "我明白——结果无法确认",
+    "finishButton": "完成",
     "acknowledgeButtonUnconfirmed": "我明白——我会重新启动应用程序",
     "restartNoticeAcknowledged": "已记录。在你完全关闭并重新打开本应用程序之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
-    "startOverButton": "重新开始",
-    "playbackFeedbackButton": "我已试播点读笔——播放正常",
-    "playbackFeedbackRecorded": "已记录——谢谢。"
+    "startOverButton": "重新开始"
   },
   "technicalDetails": {
     "title": "技术详情",
     "readButton": "显示",
-    "collapseButton": "隐藏",
-    "encodingUnknown": "本应用程序未能确定工具实际使用的文字编码，因此上方部分文字可能无法正确显示。内容并未被更改——这是显示上的限制，并非资料遗失。",
-    "sawNoLicense": "工具的输出内容中出现「no license」讯息，其在此供应商工具中的确实含义目前尚未确认。",
-    "otaTableHadFailures": "上方能力表列出部分升级传送方式不适用于此韧体大小——这属正常情况，并不代表本次执行失败。",
-    "sawUfwGenerated": "工具回报已成功生成其封装文件——这是烧录后的后处理步骤，本身并不能证明点读笔已被成功烧录。",
-    "exportButton": "汇出记录……",
-    "exportSaved": "已储存至 {{path}}",
-    "exportFailed": "无法储存记录：{{message}}"
+    "collapseButton": "隐藏"
   },
   "recovery": {
     "title": "先前的升级尚未确认结束",

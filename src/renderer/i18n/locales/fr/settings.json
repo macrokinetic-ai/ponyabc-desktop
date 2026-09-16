@@ -26,6 +26,9 @@
     "passcodeLabel": "Code d'assistance",
     "summaryLine": "Version {{version}} · {{platform}}/{{arch}} · {{count}} événement(s) enregistré(s)",
     "exportButton": "Exporter le diagnostic…",
+    "firmwareExportHint": "Journaux détaillés de la mise à jour du micrologiciel pour le dépannage (conservés localement, jamais envoyés).",
+    "firmwareExportButton": "Exporter les journaux de diagnostic du micrologiciel…",
+    "firmwareExportSaved": "Enregistré dans {{path}}",
     "exportSaved": "Enregistré dans {{path}}",
     "exportFailed": "Impossible d'enregistrer le fichier."
   },

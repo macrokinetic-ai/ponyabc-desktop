@@ -20,6 +20,7 @@ export function SupportTab({ appInfo }: { appInfo: AppInfo | null }) {
   const [diagCode, setDiagCode] = useState('');
   const [diagSummary, setDiagSummary] = useState<DiagnosticsSummary | null>(null);
   const [diagMessage, setDiagMessage] = useState<string | null>(null);
+  const [firmwareDiagMessage, setFirmwareDiagMessage] = useState<string | null>(null);
   const diagUnlocked = diagCode === DIAGNOSTICS_PASSCODE;
 
   useEffect(() => {
@@ -38,6 +39,13 @@ export function SupportTab({ appInfo }: { appInfo: AppInfo | null }) {
     if (result.status === 'ok') setDiagMessage(t('diagnostics.exportSaved', { path: result.path }));
     else if (result.status === 'error') setDiagMessage(t('diagnostics.exportFailed'));
     else setDiagMessage(null);
+  }
+
+  async function handleExportFirmwareDiagnostics() {
+    const result = await window.ponyabc.exportFirmwareDiagnostics();
+    if (result.status === 'ok') setFirmwareDiagMessage(t('diagnostics.firmwareExportSaved', { path: result.path }));
+    else if (result.status === 'error') setFirmwareDiagMessage(t('diagnostics.exportFailed'));
+    else setFirmwareDiagMessage(null);
   }
 
   async function handleCopySupportEmail() {
@@ -107,6 +115,12 @@ export function SupportTab({ appInfo }: { appInfo: AppInfo | null }) {
               {t('diagnostics.exportButton')}
             </button>
             {diagMessage && <p className="hint">{diagMessage}</p>}
+
+            <p className="hint">{t('diagnostics.firmwareExportHint')}</p>
+            <button type="button" className="button" onClick={() => void handleExportFirmwareDiagnostics()}>
+              {t('diagnostics.firmwareExportButton')}
+            </button>
+            {firmwareDiagMessage && <p className="hint">{firmwareDiagMessage}</p>}
           </div>
         )}
       </div>

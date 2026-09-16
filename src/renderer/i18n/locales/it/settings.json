@@ -26,6 +26,9 @@
     "passcodeLabel": "Codice di assistenza",
     "summaryLine": "Versione {{version}} · {{platform}}/{{arch}} · {{count}} evento/i registrato/i",
     "exportButton": "Esporta diagnostica…",
+    "firmwareExportHint": "Log dettagliati dell'aggiornamento del firmware per la risoluzione dei problemi (conservati solo localmente, mai caricati).",
+    "firmwareExportButton": "Esporta i log di diagnostica del firmware…",
+    "firmwareExportSaved": "Salvato in {{path}}",
     "exportSaved": "Salvato in {{path}}",
     "exportFailed": "Impossibile salvare il file."
   },

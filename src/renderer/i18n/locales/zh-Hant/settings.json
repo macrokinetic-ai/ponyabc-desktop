@@ -26,6 +26,9 @@
     "passcodeLabel": "支援代碼",
     "summaryLine": "版本 {{version}} · {{platform}}/{{arch}} · 已記錄 {{count}} 項事件",
     "exportButton": "匯出診斷紀錄…",
+    "firmwareExportHint": "用於排查韌體升級問題的詳細紀錄（僅保存在本機，不會上傳）。",
+    "firmwareExportButton": "匯出韌體診斷紀錄…",
+    "firmwareExportSaved": "已儲存至 {{path}}",
     "exportSaved": "已儲存至 {{path}}",
     "exportFailed": "無法儲存檔案。"
   },

@@ -26,6 +26,9 @@
     "passcodeLabel": "Support code",
     "summaryLine": "Version {{version}} · {{platform}}/{{arch}} · {{count}} logged event(s)",
     "exportButton": "Export diagnostics…",
+    "firmwareExportHint": "Detailed firmware upgrade logs for troubleshooting (kept locally, never uploaded).",
+    "firmwareExportButton": "Export firmware diagnostic logs…",
+    "firmwareExportSaved": "Saved to {{path}}",
     "exportSaved": "Saved to {{path}}",
     "exportFailed": "Couldn't save the file."
   },

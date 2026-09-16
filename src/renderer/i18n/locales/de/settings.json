@@ -26,6 +26,9 @@
     "passcodeLabel": "Support-Code",
     "summaryLine": "Version {{version}} · {{platform}}/{{arch}} · {{count}} protokollierte(s) Ereignis(se)",
     "exportButton": "Diagnose exportieren…",
+    "firmwareExportHint": "Detaillierte Firmware-Update-Protokolle zur Fehlersuche (nur lokal gespeichert, nie hochgeladen).",
+    "firmwareExportButton": "Firmware-Diagnoseprotokolle exportieren…",
+    "firmwareExportSaved": "Gespeichert unter {{path}}",
     "exportSaved": "Gespeichert unter {{path}}",
     "exportFailed": "Datei konnte nicht gespeichert werden."
   },

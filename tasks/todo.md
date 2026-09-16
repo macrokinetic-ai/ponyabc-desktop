@@ -852,3 +852,101 @@ root-level copy, so the real package failed validation.
       and the still-open `remove_tailing_zeros.exe` regeneration question from the v0.3.7 round.
       Resolving either requires running the vendor tool against real hardware, which remains out
       of scope unless the user explicitly asks for it.
+
+# Result-screen simplification + structured firmware diagnostic logging
+
+User request (bilingual, single turn): (A) simplify the "normal completion" result screen down to
+exactly one calm message + one "Finish" button (removes the old playback-feedback button, the
+"I understand — result unclear" acknowledge button, and the red "result could not be confirmed"
+title whenever the outcome is a normal completion), where "Finish" ends the wizard and quits the
+app but is only ever reachable/enabled once the upgrade is confirmed to have ended; and (B) a
+separate, detailed, local-only, per-attempt firmware diagnostic logging system feeding a new
+Settings → Support → "Export firmware diagnostic logs" button, entirely independent of the now-
+simple UI.
+
+- [x] **Part A — FirmwareScreen.tsx result step rewritten.** Exactly one `<p>` message (the
+      calm success or neutral "process has finished" text) + one "Finish" button whenever
+      `outcome.processTerminationConfirmed && outcome.status !== 'failed'` (covers BOTH a real
+      success signal AND a confirmed-terminated-but-ambiguous outcome — both get the same calm
+      UI, differing only in which of the two i18n strings is shown). `failed` and
+      not-yet-confirmed-terminated states keep their own distinct, truthful messages/buttons
+      (`Start over` / the existing "I understand — I will restart the app" persistent-lock
+      notice) — never uniformly shown as "completed". The internal `status`/`reason` distinction
+      is preserved (now durably, in the new session log below) even though the two "normal
+      completion" cases render identically calm text.
+- [x] `handleFinish()` (`FirmwareScreen.tsx`) calls `acknowledgeFirmwareOutcome()` then
+      `finishFirmwareUpgrade()` (new IPC, `src/main/ipc/firmware.ts`) — releases any pending lock
+      (no-op if already released, e.g. a real 'success') and calls `app.quit()`. Never reachable
+      from a not-yet-confirmed-terminated state (no button renders there) and never force-kills
+      the vendor process — quitting the Electron app has no effect on an already-confirmed-gone
+      elevated process, and the pre-existing persisted pending-run marker
+      (`firmwareRecovery.ts`) already protects the one case that matters (termination NOT yet
+      confirmed) across ANY app exit, clean or not — unchanged by this round.
+- [x] Removed entirely (button, IPC, i18n keys, and the result-screen "Technical details"
+      block that only ever showed on the outcome screen): "I tested the pen — it plays
+      normally" (`recordFirmwarePlaybackFeedback`), the old "I understand — result unclear"
+      acknowledge-and-reset flow, and the inline "Export log…" button. Raw/decoded logs are
+      still fully captured — just via the new structured session log (Part B) instead of an
+      inline result-screen widget. The `upgrading` step's own "Technical details" disclosure
+      (live log tail while running) is unchanged.
+- [x] i18n: `result.successMessage` / `result.processFinishedMessage` / `result.finishButton`
+      added, `result.successTitle` / `unclearBody` / `reason` / `acknowledgeButton` /
+      `playbackFeedbackButton` / `playbackFeedbackRecorded` removed, across all 8 locales
+      (`en de es fr it pt zh-Hans zh-Hant`) — key-set diffed identical across all 8 after
+      editing. Exact required strings (EN): "The firmware upgrade is completed. Please restart
+      the pen and test playback." / "The firmware upgrade process has finished. Please restart
+      the pen and test playback."
+- [x] **Targeted real-log parsing regression already existed from the prior round**
+      (`firmwareUpgrade.test.ts`'s real, redacted P5 log fixture) and was re-checked against
+      this round's exact spec: classification combines the actual write-stage evidence + a
+      recognized completion signal + `elevation.status === 'completed'` (never a bare "success"
+      substring, "block 0", or a `?`-containing fuzzy match alone) — no changes needed here,
+      confirmed still passing.
+- [x] **Part B — new `src/main/services/firmwareSessionLog.ts`** (pure, no `electron` import,
+      fully unit-testable): one JSON file + one raw-bytes sidecar per upgrade attempt under
+      `userData/firmwareDiagnostics/sessions/`, written incrementally (write-temp-then-rename,
+      every `update()`/`recordStage()`/`finish()` call) so a crash/power-loss loses at most the
+      events since the last write, never the whole session — a still-open (`endedAtMs: null`)
+      session on disk IS the "interrupted session" record, no separate crash-detection needed.
+      All public functions swallow their own errors (logging must never interrupt flashing).
+      Bounded: 20-session retention (`pruneOldSessions`, deletes both files of the oldest), 2MB
+      raw-log cap per session. Deliberately separate, explicitly-named fields for the three
+      claims the user's spec required kept distinct: `toolProcessConfirmedFinished` (=
+      `outcome.processTerminationConfirmed`), `successSignalDetected` (= `status === 'success'`),
+      and `penFirmwareVersionVerified` (typed as the literal `false` — no read-back mechanism
+      exists, so a future accidental `= true` is a compile error, not a silent behavior change).
+- [x] Wired into `startFirmwareUpgrade()` (`src/main/ipc/firmware.ts`): a session starts the
+      moment `tryBeginFirmwareUpgrade()` succeeds; `onLogUpdate`/`onCodepageDetected` feed the
+      raw-byte accumulator and codepage field live (no per-chunk decoding — matches the existing
+      "decode the whole accumulated buffer fresh" rule); `recordStage()` calls at
+      launch/uac-outcome/first-flashing-output/process-termination/result-classification/
+      lock-state-change/recovery-marker-write-or-clear; `finish()` (or, on an exception, the
+      catch block's own `finish()`) records the final decoder/fallback/completion-signal/
+      exit-code/termination/classification/message-key fields. This also naturally consumed the
+      previously get-orphaned `DiagnosticsExportResult`/`redactText` imports flagged after the
+      Part A edits — no more unused-import errors.
+- [x] **Export**: `exportFirmwareDiagnostics()` (`src/main/ipc/firmware.ts`) — folder-picker
+      dialog, then writes the most recent 5 sessions plus the most-recent-interrupted session
+      (if not already among them) as `<id>.json` (redacted via the existing `redactText`),
+      `<id>.decoded.txt` (decoded via the existing `decodeLogBytes`, then `redactText`'d), and
+      `<id>.raw.bin` (kept close to untouched — `redactRawLogBytesForExport` only does a
+      best-effort ASCII-OS-username byte scrub, explicitly documented as NOT a general redaction,
+      specifically so real encoding problems stay investigable from the true original bytes).
+      New IPC channel `firmwareDiagnosticsExport`, preload method
+      `exportFirmwareDiagnostics()`, wired into `SupportTab.tsx` inside the SAME existing hidden
+      `00000000`-passcode-gated panel as the general diagnostics export (no new access gate) —
+      new i18n keys (`diagnostics.firmwareExport{Hint,Button,Saved}`) added to all 8 `settings.json`
+      locales, key-set diffed identical.
+- [x] **New tests**: `tests/unit/firmwareSessionLog.test.ts` (19 tests — incremental
+      persistence, interrupted sessions, raw-byte/encoding preservation across chunked/split
+      multi-byte input, the 2MB cap, redaction of both the structured record and best-effort raw
+      bytes, the 20-session retention prune, and an end-to-end session→list→read→redact
+      snapshot); 3 new tests appended to `firmwareIpc.test.ts` for the real `exportFirmwareDiagnostics`
+      IPC handler (driven by a real, simulated `startFirmwareUpgrade` run — never a real vendor
+      tool or pen) covering the happy path, a cancelled folder picker, and an interrupted session
+      being included in the export. `FirmwareScreen.test.tsx` rewritten for the new result-step
+      structure (old playback-feedback/old-acknowledge/inline-export tests removed; new tests for
+      the unified success/confirmed-unclear Finish-button UI and the still-distinct failed/
+      not-yet-confirmed-terminated states).
+- [x] **471 tests pass, 6 skipped, across 44 files**; `typecheck` and `build` both clean.
+- [ ] Not yet done as of this entry: commit, version bump, tag, and 3-platform release.

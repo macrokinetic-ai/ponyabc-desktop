@@ -79,30 +79,20 @@
   },
   "result": {
     "title": "Result",
-    "successTitle": "Upgrade completed successfully.",
+    "successMessage": "The firmware upgrade is completed. Please restart the pen and test playback.",
+    "processFinishedMessage": "The firmware upgrade process has finished. Please restart the pen and test playback.",
     "failedTitle": "The upgrade did not start or did not complete.",
     "unclearTitle": "The result could not be confirmed.",
-    "unclearBody": "The upgrade tool has finished. Please restart the pen and test playback to confirm it's working.",
     "unclearBodyUnconfirmed": "We could not confirm whether the upgrade tool has actually finished running. For safety, no new firmware upgrade or BOOK/DIY pen write is allowed while this is unresolved. Please fully quit and reopen this app only after you have independently confirmed (for example in Windows Task Manager, or by checking the pen itself) that the process has stopped.",
-    "reason": "Details: {{reason}}",
-    "acknowledgeButton": "I understand — result unclear",
+    "finishButton": "Finish",
     "acknowledgeButtonUnconfirmed": "I understand — I will restart the app",
     "restartNoticeAcknowledged": "Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.",
-    "startOverButton": "Start over",
-    "playbackFeedbackButton": "I tested the pen — it plays normally",
-    "playbackFeedbackRecorded": "Noted — thank you."
+    "startOverButton": "Start over"
   },
   "technicalDetails": {
     "title": "Technical details",
     "readButton": "Show",
-    "collapseButton": "Hide",
-    "encodingUnknown": "This app could not determine the tool's real text encoding, so some of the text above may not display correctly. It has not been altered — this is a display limitation, not data loss.",
-    "sawNoLicense": "The tool's output included the message \"no license\". Its exact meaning in this vendor tool is not yet confirmed.",
-    "otaTableHadFailures": "The capability table above lists some upgrade delivery methods as unavailable for this firmware size — this is expected and does not indicate a failure of this run.",
-    "sawUfwGenerated": "The tool reported generating its packaging file successfully — this is a post-processing step and does not by itself confirm the pen was flashed.",
-    "exportButton": "Export log…",
-    "exportSaved": "Saved to {{path}}",
-    "exportFailed": "Could not save the log: {{message}}"
+    "collapseButton": "Hide"
   },
   "recovery": {
     "title": "Previous upgrade not confirmed finished",

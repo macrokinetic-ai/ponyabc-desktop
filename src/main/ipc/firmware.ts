@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { app, dialog, type BrowserWindow } from 'electron';
 import { IPC } from '@shared/ipcChannels';
@@ -26,6 +27,14 @@ import { appendDiagnostic, redactText } from '../services/diagnostics';
 import { diagnosticsStore } from './book';
 import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
 import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
+import {
+  listFirmwareSessions,
+  readFullFirmwareSession,
+  redactRawLogBytesForExport,
+  redactSessionRecordForExport,
+  startFirmwareSession,
+  type FirmwareSessionHandle,
+} from '../services/firmwareSessionLog';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
   const result = await dialog.showOpenDialog(window, {
@@ -150,6 +159,36 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
   if (!tryBeginFirmwareUpgrade()) return { status: 'already-in-progress' };
 
   const startedAtMs = Date.now();
+  // Created the moment a real attempt begins, independent of the try/catch below — an app
+  // crash/power-loss anywhere after this line still leaves a session file on disk marked
+  // "interrupted" (endedAtMs stays null) rather than losing the attempt entirely. See
+  // firmwareSessionLog.ts's own doc for why this is a separate, richer system from the generic
+  // capped diagnostics.json appendDiagnostic() calls elsewhere in this file.
+  const sessionLog: FirmwareSessionHandle = startFirmwareSession(app.getPath('userData'), {
+    appVersion: app.getVersion(),
+    platform: process.platform,
+    osVersion: os.release(),
+    source: params.packageDir.startsWith(firmwareDownloadsRootDir()) ? 'official-download' : 'local-folder',
+    firmwareVersion: null,
+    packageDate: null,
+    expectedSha256: null,
+    packageHashVerified: null,
+    packageValidation: { looksValid: info.looksValid, missingFiles: info.missingFiles },
+    workDir: null,
+    entryBatPath: info.entryBatPath,
+    detectedCodepage: null,
+    decoderUsed: null,
+    decodingFallbackApplied: null,
+    completionSignal: null,
+    exitCode: null,
+    processTerminationConfirmed: null,
+    outcomeStatus: null,
+    outcomeReason: null,
+    userMessageKey: null,
+    toolProcessConfirmedFinished: null,
+    successSignalDetected: null,
+    penFirmwareVersionVerified: false,
+  });
   void (async () => {
     // Held for the ENTIRE upgrade — this is what actually blocks a concurrent BOOK/DIY pen
     // write; the firmwareLock module-level flag above is a separate, coarser guard that also
@@ -186,7 +225,9 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     try {
       const workDir = path.join(app.getPath('userData'), 'firmwareRun');
       fs.rmSync(workDir, { recursive: true, force: true }); // never reuse a stale prior run's .bat/.ps1/.log
+      sessionLog.update({ workDir });
       sendProgress('preparing-launcher');
+      sessionLog.recordStage('launch', { workDir, entryBatPath: info.entryBatPath });
       sendProgress('awaiting-authorization-or-starting');
 
       let sawFirstLog = false;
@@ -194,6 +235,7 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
       // Persisted BEFORE the launch, not after — must survive a crash or a plain quit while the
       // real device might still be mid-write. Cleared below only once termination is confirmed.
       writePendingRun({ startedAtMs, workDir, packageDir: params.packageDir, entryBatPath: info.entryBatPath });
+      sessionLog.recordStage('recovery-marker', { action: 'written' });
       const elevation = await runElevated({
         exePath: info.entryBatPath,
         args: [],
@@ -201,17 +243,26 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
         workDir,
         onLogUpdate: (delta) => {
           rawLogChunks.push(delta);
-          if (!sawFirstLog) sawFirstLog = true; // first real evidence the tool actually started
+          sessionLog.appendRawLogBytes(delta);
+          if (!sawFirstLog) {
+            sawFirstLog = true; // first real evidence the tool actually started
+            sessionLog.recordStage('flashing-output', { firstBytesAtMs: Date.now() });
+          }
           sendProgress('tool-running');
         },
         onCodepageDetected: (cp) => {
           detectedCodepage = cp;
+          sessionLog.update({ detectedCodepage: cp });
         },
         logPollIntervalMs: 400,
         // No timeoutMs: giving up watching must be a human decision made in the wizard UI, not
         // a silent internal cutoff — see the module doc comment on why 'unclear' keeps the lock.
       });
       elevationResult = elevation; // positive record that runElevated resolved, and with what
+      sessionLog.recordStage('uac-outcome', {
+        elevationStatus: elevation.status,
+        exitCode: elevation.status === 'completed' ? elevation.exitCode : null,
+      });
 
       sendProgress('finishing');
       const { text: decodedLog, encodingUsed } = decodeAccumulatedLog();
@@ -222,20 +273,57 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
         exitCode: outcome.exitCode ?? 'null',
         durationMs: Date.now() - startedAtMs,
       });
+      sessionLog.recordStage('process-termination', {
+        exitCode: outcome.exitCode ?? null,
+        processTerminationConfirmed: outcome.processTerminationConfirmed,
+      });
+      sessionLog.recordStage('result-classification', { status: outcome.status, reason: outcome.reason });
+      // These three are deliberately kept distinct — see the doc on FirmwareSessionRecord's
+      // toolProcessConfirmedFinished/successSignalDetected/penFirmwareVersionVerified fields.
+      // "The tool's process stopped" is exactly outcome.processTerminationConfirmed;
+      // "a recognized completion string was seen" is true only for outcome.status === 'success';
+      // an actual on-pen version read-back is never performed, so the third stays permanently
+      // false regardless of the other two.
+      sessionLog.finish({
+        decoderUsed: encodingUsed,
+        decodingFallbackApplied: encodingUsed === null,
+        completionSignal: {
+          kind: outcome.status === 'success' ? (outcome.reason === 'log-contains-download-complete-zh' ? 'zh' : 'en') : 'none',
+          matchedText: outcome.status === 'success' ? outcome.reason : null,
+          contextLines: outcome.status === 'success' ? outcome.logExcerpt.slice(-500) : null,
+        },
+        exitCode: outcome.exitCode ?? null,
+        processTerminationConfirmed: outcome.processTerminationConfirmed,
+        outcomeStatus: outcome.status,
+        outcomeReason: outcome.reason,
+        userMessageKey:
+          outcome.status === 'success'
+            ? 'result.successMessage'
+            : outcome.status === 'failed'
+              ? 'result.failedTitle'
+              : outcome.processTerminationConfirmed
+                ? 'result.processFinishedMessage'
+                : 'result.unclearTitle',
+        toolProcessConfirmedFinished: outcome.processTerminationConfirmed,
+        successSignalDetected: outcome.status === 'success',
+      });
 
       if (outcome.processTerminationConfirmed) {
         // Termination is confirmed either way now — the persisted marker exists ONLY to protect
         // a future app restart against "we don't know if it's still running," so it's cleared
         // the moment we DO know, independent of whether the user has acknowledged anything yet.
         clearPendingRun();
+        sessionLog.recordStage('recovery-marker', { action: 'cleared' });
         if (outcome.status === 'unclear') {
           // The process is confirmed gone, but we don't know if it succeeded — require the user
           // to look at the log and explicitly acknowledge before a new attempt or a BOOK/DIY
           // write can run. acknowledgeFirmwareOutcome() is the only thing that calls this.
           pendingRelease = release;
+          sessionLog.recordStage('lock', { action: 'pending-release-stashed' });
         } else {
           release();
           endFirmwareUpgrade();
+          sessionLog.recordStage('lock', { action: 'released' });
         }
       }
       // else: processTerminationConfirmed is false ('timeout' or 'unparseable-wrapper-output') —
@@ -256,6 +344,18 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
       // on ANY caught error, which would have wrongly unlocked even if the error happened after
       // an elevated process may already have been spawned.
       const terminationConfirmed = !calledRunElevated || elevationResult?.status === 'completed';
+      sessionLog.recordStage('exception', {
+        message: err instanceof Error ? err.message : String(err),
+        terminationConfirmed,
+      });
+      sessionLog.finish({
+        processTerminationConfirmed: terminationConfirmed,
+        outcomeStatus: 'unclear',
+        outcomeReason: terminationConfirmed ? 'internal-error-before-launch' : 'internal-error-uncertain',
+        userMessageKey: 'result.unclearTitle',
+        toolProcessConfirmedFinished: terminationConfirmed,
+        successSignalDetected: false,
+      });
       if (terminationConfirmed) {
         clearPendingRun();
         release();
@@ -345,35 +445,74 @@ export function cancelFirmwareDownload(): { ok: boolean } {
 }
 
 /**
- * Records "the user tried the pen after an upgrade and it works" as a plain diagnostic entry —
- * nothing more. This is deliberately NOT wired to acknowledgeFirmwareOutcome, pendingRelease, or
- * any lock/guard state: a teacher clicking this button is real evidence about the PEN (it powers
- * on, plays audio, etc.), never evidence about whether the elevated flashing PROCESS has
- * actually terminated — those are two separate facts, and only the latter is allowed to release
- * the pen lock / firmware in-progress guard (see the module doc comment on pendingRelease).
- * Also never treated as confirming which firmware version is now on the pen — the app still has
- * no reliable way to read that.
+ * The ONLY action on a "normal completion" result screen (success, or confirmed-terminated
+ * unclear) — releases any pending lock (reusing the exact same release path
+ * acknowledgeFirmwareOutcome already uses; a no-op if there's nothing pending, e.g. a real
+ * 'success' outcome already released everything synchronously) and then quits the app. Never
+ * reachable from a "termination not confirmed" state (timeout/unparseable) — the renderer never
+ * shows/enables this action there, and this function does not attempt to distinguish or block
+ * that case itself since quitting the app is not what would be unsafe there (the persisted
+ * pending-run marker, see firmwareRecovery.ts, already protects the real invariant across any
+ * app exit, clean or not) — what's actually disallowed is the app silently CLAIMING resolution
+ * it doesn't have, which is a UI-layer concern, not this function's.
  */
-export function recordFirmwarePlaybackFeedback(): { ok: boolean } {
-  appendDiagnostic(diagnosticsStore(), 'firmware-playback-feedback', { reportedAtMs: Date.now() });
+export function finishFirmwareUpgrade(): { ok: boolean } {
+  if (pendingRelease) {
+    pendingRelease();
+    pendingRelease = null;
+    endFirmwareUpgrade();
+  }
+  app.quit();
   return { ok: true };
 }
 
-/** Exports the full decoded firmware log to a user-chosen file. Reuses the exact same
- *  `redactText` pass already applied to diagnostics exports (src/main/services/diagnostics.ts)
- *  so a shared file/path never leaks the user's own Windows username from a path like
- *  `C:\Users\<name>\...` — nothing new invented for this one export path. */
-export async function exportFirmwareLog(window: BrowserWindow, logText: string): Promise<DiagnosticsExportResult> {
-  const { canceled, filePath } = await dialog.showSaveDialog(window, {
-    title: 'Export Firmware Upgrade Log',
-    defaultPath: `ponyabc-firmware-log-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`,
-    filters: [{ name: 'Text', extensions: ['txt'] }],
+// ---------------------------------------------------------------------------------------
+// Firmware diagnostic session export (Settings → Support → "Export firmware diagnostic
+// logs"). Reads the structured session records written incrementally by firmwareSessionLog.ts
+// during startFirmwareUpgrade above, redacts personal path info, and writes them plus their raw
+// vendor-output sidecars to a user-chosen folder. Local-only: this never uploads anything, and
+// is a completely separate export from exportDiagnostics() in diagnostics.ts (the general,
+// capped app-wide diagnostics log) — a user may want either or both.
+// ---------------------------------------------------------------------------------------
+
+const MAX_SESSIONS_TO_EXPORT = 5;
+
+export async function exportFirmwareDiagnostics(window: BrowserWindow): Promise<DiagnosticsExportResult> {
+  const result = await dialog.showOpenDialog(window, {
+    properties: ['openDirectory'],
+    title: 'Choose a folder to save firmware diagnostic logs',
   });
-  if (canceled || !filePath) return { status: 'cancelled' };
+  if (result.canceled || result.filePaths.length === 0) return { status: 'cancelled' };
 
   try {
-    fs.writeFileSync(filePath, redactText(logText), 'utf-8');
-    return { status: 'ok', path: filePath };
+    const userDataPath = app.getPath('userData');
+    const allSessions = listFirmwareSessions(userDataPath);
+    const mostRecentInterrupted = allSessions.find((s) => s.interrupted);
+    const toExport = allSessions.slice(0, MAX_SESSIONS_TO_EXPORT);
+    if (mostRecentInterrupted && !toExport.some((s) => s.sessionId === mostRecentInterrupted.sessionId)) {
+      toExport.push(mostRecentInterrupted);
+    }
+
+    const destDir = path.join(result.filePaths[0], `ponyabc-firmware-diagnostics-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+    fs.mkdirSync(destDir, { recursive: true });
+
+    const username = os.userInfo().username;
+    for (const summary of toExport) {
+      const full = readFullFirmwareSession(userDataPath, summary.sessionId);
+      if (!full) continue; // corrupt/unreadable session file — skip rather than fail the whole export
+      const redactedRecord = redactSessionRecordForExport(full.record, redactText);
+      fs.writeFileSync(path.join(destDir, `${summary.sessionId}.json`), JSON.stringify(redactedRecord, null, 2), 'utf-8');
+      if (full.rawLogBytes.length > 0) {
+        const { text } = decodeLogBytes(full.rawLogBytes, redactedRecord.detectedCodepage);
+        fs.writeFileSync(path.join(destDir, `${summary.sessionId}.decoded.txt`), redactText(text), 'utf-8');
+        // Raw bytes are kept as close to untouched as possible (only a best-effort ASCII
+        // username scrub — see redactRawLogBytesForExport's own doc) specifically so encoding
+        // problems remain investigable from the real original bytes.
+        fs.writeFileSync(path.join(destDir, `${summary.sessionId}.raw.bin`), redactRawLogBytesForExport(full.rawLogBytes, username));
+      }
+    }
+
+    return { status: 'ok', path: destDir };
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }

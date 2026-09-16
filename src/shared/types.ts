@@ -600,8 +600,7 @@ export type DiagnosticEntryKind =
   | 'pen-verify'
   | 'pen-verify-batch'
   | 'firmware-upgrade'
-  | 'firmware-recovery'
-  | 'firmware-playback-feedback';
+  | 'firmware-recovery';
 
 export interface DiagnosticEntry {
   atMs: number;
@@ -898,13 +897,13 @@ export interface PonyAbcApi {
   prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
   cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
-  /** Records "the user tried the pen after an upgrade and it works" as a diagnostic entry ONLY —
-   *  never treated as automatic verification that the firmware version is confirmed, and never
-   *  used to release the pen lock / firmware in-progress guard (see acknowledgeFirmwareOutcome,
-   *  the only thing that can do that, gated strictly on processTerminationConfirmed). */
-  recordFirmwarePlaybackFeedback: () => Promise<{ ok: boolean }>;
-  /** Exports the full decoded firmware upgrade log to a user-chosen file, with the same personal
-   *  path redaction already applied to diagnostics exports (see redactText in
-   *  src/main/services/diagnostics.ts) — reused, not reinvented. */
-  exportFirmwareLog: (logText: string) => Promise<DiagnosticsExportResult>;
+  /** Only ever reachable from a "normal completion" result (success, or confirmed-terminated
+   *  unclear) — releases any pending lock (a no-op if there is none) and quits the app. See
+   *  src/main/ipc/firmware.ts's finishFirmwareUpgrade doc comment. */
+  finishFirmwareUpgrade: () => Promise<{ ok: boolean }>;
+  /** Settings → Support → "Export firmware diagnostic logs". Exports the recent structured
+   *  per-attempt session logs (see src/main/services/firmwareSessionLog.ts) — separate from
+   *  exportDiagnostics() above, which exports the general, capped app-wide diagnostics log.
+   *  Local-only; never uploads anything. */
+  exportFirmwareDiagnostics: () => Promise<DiagnosticsExportResult>;
 }

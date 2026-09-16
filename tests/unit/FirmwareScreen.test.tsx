@@ -67,8 +67,8 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     prepareOfficialFirmwarePackage: vi.fn(async () => ({ status: 'no-network', message: 'offline' }) as const),
     onFirmwareDownloadProgress: vi.fn(() => () => {}),
     cancelFirmwareDownload: vi.fn(async () => ({ ok: false })),
-    recordFirmwarePlaybackFeedback: vi.fn(async () => ({ ok: true })),
-    exportFirmwareLog: vi.fn(async () => ({ status: 'cancelled' }) as const),
+    finishFirmwareUpgrade: vi.fn(async () => ({ ok: true })),
+    exportFirmwareDiagnostics: vi.fn(async () => ({ status: 'cancelled' }) as const),
     onFirmwareProgress: vi.fn((listener) => {
       progressListener = listener;
       return () => {
@@ -183,7 +183,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
   });
 
-  it('a real "success" outcome (log contains the confirmed signal) shows the success screen, distinctly from failure/unclear', async () => {
+  it('a real "success" outcome (log contains the confirmed signal) shows exactly one calm message and one Finish button — no red title, no extra buttons', async () => {
     renderScreen();
     await advanceToConfirm();
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
@@ -195,12 +195,47 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       exitCode: 0,
       logExcerpt: 'download success',
       processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
     });
-    await screen.findByText('Upgrade completed successfully.');
-    expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
+    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+    // No removed elements: no red "result could not be confirmed" title, no old buttons.
+    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /I tested the pen/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /I understand/ })).toBeNull();
   });
 
-  it('a "failed" outcome (e.g. declined UAC) shows the failed screen, not success', async () => {
+  it('a confirmed-terminated "unclear" outcome (no recognized signal) shows the SAME calm single-message/Finish-button UI as success — the neutral "process has finished" text, never the red unclear title', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'unclear',
+      reason: 'no-recognized-signal',
+      exitCode: 0,
+      logExcerpt: 'finished, no signal seen',
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
+    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    expect(screen.queryByText('Upgrade completed successfully.')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
+    await waitFor(() => expect(window.ponyabc.finishFirmwareUpgrade).toHaveBeenCalled());
+  });
+
+  it('a "failed" outcome (e.g. declined UAC) shows its own distinct, truthful message and a "Start over" button — never claims completion', async () => {
     renderScreen();
     await advanceToConfirm();
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
@@ -218,139 +253,10 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawNoLicenseWarning: false,
     });
     await screen.findByText('The upgrade did not start or did not complete.');
-    // The machine-readable reason lives behind "Technical details", not on the main screen.
-    expect(screen.queryByText('Details: declined')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
-    await screen.findByText('Details: declined');
-  });
-
-  it('an "unclear" outcome (no recognized signal) never claims success, and requires explicit acknowledgement before starting over', async () => {
-    renderScreen();
-    await advanceToConfirm();
-    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
-    await screen.findByRole('heading', { name: 'Upgrading' });
-
-    outcomeListener?.({
-      status: 'unclear',
-      reason: 'no-recognized-signal',
-      exitCode: 0,
-      logExcerpt: 'finished, no signal seen',
-      processTerminationConfirmed: true,
-    });
-    await screen.findByText('The result could not be confirmed.');
-    expect(screen.queryByText('Upgrade completed successfully.')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull(); // only the explicit acknowledge path is offered
-
-    const ackButton = screen.getByRole('button', { name: 'I understand — result unclear' });
-    fireEvent.click(ackButton);
-    await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
-    await screen.findByText('Prepare your pen'); // wizard resets to step 1 only after acknowledgement
-  });
-
-  it('"I tested the pen" button (unclear + confirmed termination only): records feedback via its OWN separate IPC call, never calls acknowledgeFirmwareOutcome, and does not appear when termination is unconfirmed', async () => {
-    renderScreen();
-    await advanceToConfirm();
-    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
-    await screen.findByRole('heading', { name: 'Upgrading' });
-    outcomeListener?.({
-      status: 'unclear',
-      reason: 'no-recognized-signal',
-      exitCode: 0,
-      logExcerpt: 'finished, no signal seen',
-      processTerminationConfirmed: true,
-      encodingKnown: true,
-      otaTableHadFailures: false,
-      sawUfwGenerated: false,
-      sawNoLicenseWarning: false,
-    });
-    await screen.findByText('The result could not be confirmed.');
-
-    const feedbackButton = screen.getByRole('button', { name: 'I tested the pen — it plays normally' });
-    fireEvent.click(feedbackButton);
-    await waitFor(() => expect(window.ponyabc.recordFirmwarePlaybackFeedback).toHaveBeenCalled());
-    await screen.findByText('Noted — thank you.');
-    // Never touches the real lock-release path — only the explicit acknowledge button does.
-    expect(window.ponyabc.acknowledgeFirmwareOutcome).not.toHaveBeenCalled();
-  });
-
-  it('"I tested the pen" button does NOT appear when termination is unconfirmed (e.g. timeout) — testing the pen is not evidence the elevated tool has actually stopped', async () => {
-    renderScreen();
-    await advanceToConfirm();
-    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
-    await screen.findByRole('heading', { name: 'Upgrading' });
-    outcomeListener?.({
-      status: 'unclear',
-      reason: 'timeout',
-      exitCode: null,
-      logExcerpt: 'partial output, then nothing',
-      processTerminationConfirmed: false,
-      encodingKnown: true,
-      otaTableHadFailures: false,
-      sawUfwGenerated: false,
-      sawNoLicenseWarning: false,
-    });
-    await screen.findByText('The result could not be confirmed.');
-    expect(screen.queryByRole('button', { name: 'I tested the pen — it plays normally' })).toBeNull();
-  });
-
-  it('Technical details surfaces the non-fatal diagnostics (OTA table FAILs, UFW generated, "no license", unknown encoding) without any of them appearing on the main screen', async () => {
-    renderScreen();
-    await advanceToConfirm();
-    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
-    await screen.findByRole('heading', { name: 'Upgrading' });
-    outcomeListener?.({
-      status: 'success',
-      reason: 'log-contains-download-complete-zh',
-      exitCode: 0,
-      logExcerpt: '下载完成。',
-      processTerminationConfirmed: true,
-      encodingKnown: false,
-      otaTableHadFailures: true,
-      sawUfwGenerated: true,
-      sawNoLicenseWarning: true,
-    });
-    await screen.findByText('Upgrade completed successfully.');
-    for (const text of [
-      "This app could not determine the tool's real text encoding, so some of the text above may not display correctly. It has not been altered — this is a display limitation, not data loss.",
-      'The tool\'s output included the message "no license". Its exact meaning in this vendor tool is not yet confirmed.',
-      'The capability table above lists some upgrade delivery methods as unavailable for this firmware size — this is expected and does not indicate a failure of this run.',
-      'The tool reported generating its packaging file successfully — this is a post-processing step and does not by itself confirm the pen was flashed.',
-    ]) {
-      expect(screen.queryByText(text)).toBeNull(); // collapsed by default
-    }
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
-    for (const text of [
-      "This app could not determine the tool's real text encoding, so some of the text above may not display correctly. It has not been altered — this is a display limitation, not data loss.",
-      'The tool\'s output included the message "no license". Its exact meaning in this vendor tool is not yet confirmed.',
-      'The capability table above lists some upgrade delivery methods as unavailable for this firmware size — this is expected and does not indicate a failure of this run.',
-      'The tool reported generating its packaging file successfully — this is a post-processing step and does not by itself confirm the pen was flashed.',
-    ]) {
-      await screen.findByText(text);
-    }
-  });
-
-  it('the "Export log" button saves the log via IPC (with personal-path redaction handled main-process-side, not re-implemented here) and shows the result', async () => {
-    window.ponyabc.exportFirmwareLog = vi.fn(async () => ({ status: 'ok', path: 'C:\\Users\\teacher\\Desktop\\log.txt' }));
-    renderScreen();
-    await advanceToConfirm();
-    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
-    await screen.findByRole('heading', { name: 'Upgrading' });
-    outcomeListener?.({
-      status: 'success',
-      reason: 'log-contains-download-success',
-      exitCode: 0,
-      logExcerpt: 'download success',
-      processTerminationConfirmed: true,
-      encodingKnown: true,
-      otaTableHadFailures: false,
-      sawUfwGenerated: false,
-      sawNoLicenseWarning: false,
-    });
-    await screen.findByText('Upgrade completed successfully.');
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Export log…' }));
-    await waitFor(() => expect(window.ponyabc.exportFirmwareLog).toHaveBeenCalledWith('download success'));
-    await screen.findByText('Saved to C:\\Users\\teacher\\Desktop\\log.txt');
+    expect(screen.queryByText('The firmware upgrade is completed. Please restart the pen and test playback.')).toBeNull();
+    expect(screen.queryByText('The firmware upgrade process has finished. Please restart the pen and test playback.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
 
   it('an "unclear" outcome whose termination could NOT be confirmed (e.g. a timeout) never offers the normal acknowledge path, never resets the wizard, and stays locked even after the user clicks through', async () => {
@@ -368,9 +274,9 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       processTerminationConfirmed: false,
     });
     await screen.findByText('The result could not be confirmed.');
-    // The normal "I understand — result unclear" acknowledge button (which resets the wizard)
-    // must NOT be offered here — that path is only for a confirmed-terminated outcome.
-    expect(screen.queryByRole('button', { name: 'I understand — result unclear' })).toBeNull();
+    // Neither the normal-completion "Finish" button nor "Start over" is offered here — those
+    // paths are only for a confirmed-terminated outcome.
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
 
     const restartButton = screen.getByRole('button', { name: 'I understand — I will restart the app' });

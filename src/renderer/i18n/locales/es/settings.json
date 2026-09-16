@@ -26,6 +26,9 @@
     "passcodeLabel": "Código de soporte",
     "summaryLine": "Versión {{version}} · {{platform}}/{{arch}} · {{count}} evento(s) registrado(s)",
     "exportButton": "Exportar diagnóstico…",
+    "firmwareExportHint": "Registros detallados de la actualización de firmware para solucionar problemas (se guardan localmente, nunca se suben).",
+    "firmwareExportButton": "Exportar registros de diagnóstico de firmware…",
+    "firmwareExportSaved": "Guardado en {{path}}",
     "exportSaved": "Guardado en {{path}}",
     "exportFailed": "No se pudo guardar el archivo."
   },

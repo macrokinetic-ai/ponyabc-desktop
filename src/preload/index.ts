@@ -124,8 +124,8 @@ const api: PonyAbcApi = {
     ipcRenderer.invoke(IPC.firmwarePrepareOfficialPackage, { release }) as Promise<FirmwarePrepareResult>,
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => subscribe(IPC.firmwareDownloadProgress, listener),
   cancelFirmwareDownload: () => ipcRenderer.invoke(IPC.firmwareCancelDownload) as Promise<{ ok: boolean }>,
-  recordFirmwarePlaybackFeedback: () => ipcRenderer.invoke(IPC.firmwareRecordPlaybackFeedback) as Promise<{ ok: boolean }>,
-  exportFirmwareLog: (logText: string) => ipcRenderer.invoke(IPC.firmwareExportLog, logText) as Promise<DiagnosticsExportResult>,
+  finishFirmwareUpgrade: () => ipcRenderer.invoke(IPC.firmwareFinish) as Promise<{ ok: boolean }>,
+  exportFirmwareDiagnostics: () => ipcRenderer.invoke(IPC.firmwareDiagnosticsExport) as Promise<DiagnosticsExportResult>,
 };
 
 contextBridge.exposeInMainWorld('ponyabc', api);

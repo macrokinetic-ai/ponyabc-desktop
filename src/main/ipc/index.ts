@@ -31,13 +31,13 @@ import { checkForUpdates, openLatestReleasePage } from './updates';
 import {
   acknowledgeFirmwareOutcome,
   cancelFirmwareDownload,
-  exportFirmwareLog,
+  exportFirmwareDiagnostics,
+  finishFirmwareUpgrade,
   getFirmwareRecoveryStatus,
   getOfficialFirmwareRelease,
   isFirmwareInProgress,
   prepareOfficialFirmwarePackage,
   recheckFirmwareRecovery,
-  recordFirmwarePlaybackFeedback,
   selectFirmwarePackage,
   startFirmwareUpgrade,
 } from './firmware';
@@ -127,8 +127,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.firmwareGetOfficialRelease, () => getOfficialFirmwareRelease());
   ipcMain.handle(IPC.firmwarePrepareOfficialPackage, (_event, params) => prepareOfficialFirmwarePackage(getWindow(), params));
   ipcMain.handle(IPC.firmwareCancelDownload, () => cancelFirmwareDownload());
-  ipcMain.handle(IPC.firmwareRecordPlaybackFeedback, () => recordFirmwarePlaybackFeedback());
-  ipcMain.handle(IPC.firmwareExportLog, (_event, logText: string) => exportFirmwareLog(getWindow(), logText));
+  ipcMain.handle(IPC.firmwareFinish, () => finishFirmwareUpgrade());
+  ipcMain.handle(IPC.firmwareDiagnosticsExport, () => exportFirmwareDiagnostics(getWindow()));
 
   logAppStart();
   startVolumeWatcher(getWindow);
