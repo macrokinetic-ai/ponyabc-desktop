@@ -85,6 +85,7 @@
     "unclearTitle": "Le résultat n'a pas pu être confirmé.",
     "unclearBodyUnconfirmed": "Impossible de confirmer si l'outil de mise à jour a réellement terminé son exécution. Par sécurité, aucune nouvelle mise à jour du micrologiciel ni écriture BOOK/DIY sur le stylo ne sera autorisée tant que ce point n'est pas résolu. Quittez complètement cette application et rouvrez-la seulement après avoir confirmé vous-même (par exemple dans le Gestionnaire des tâches de Windows, ou en vérifiant le stylo lui-même) que le processus est arrêté.",
     "finishButton": "Terminer",
+    "returnHomeButton": "Retour à l'accueil",
     "acknowledgeButtonUnconfirmed": "Je comprends — je vais redémarrer l'application",
     "restartNoticeAcknowledged": "Noté. Cette application restera verrouillée pour toute nouvelle mise à jour du micrologiciel et toute écriture BOOK/DIY tant que vous ne l'aurez pas complètement quittée puis rouverte.",
     "startOverButton": "Recommencer"

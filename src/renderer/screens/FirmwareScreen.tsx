@@ -12,6 +12,7 @@ import type {
 import { usePenRoot } from '../state/PenRootContext';
 import { compareOfficialToOnPen } from './firmwareVersionCompare';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import type { Section } from '../components/NavSidebar';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
 
@@ -22,7 +23,7 @@ const PHASE_KEY: Record<FirmwareProgressEvent['phase'], string> = {
   finishing: 'upgrading.phaseFinishing',
 };
 
-export function FirmwareScreen() {
+export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) => void }) {
   const { t } = useTranslation('firmware');
   const penRoot = usePenRoot();
   const isMac = window.ponyabc.platform === 'darwin';
@@ -202,17 +203,17 @@ export function FirmwareScreen() {
   }
 
   /**
-   * Only reachable when `outcome.processTerminationConfirmed` is true and status !== 'failed'
-   * (the render below never shows this button otherwise) — i.e. the upgrade tool is confirmed to
-   * have actually stopped, whether or not a recognized success signal was seen. Releases any
-   * pending lock (a no-op if there wasn't one — e.g. a real 'success' outcome already released it
-   * synchronously server-side), then ends this wizard run and returns to the Prepare step —
-   * clearing this run's temporary wizard UI state (packageInfo, progress, outcome, etc.) so the
-   * screen is ready for a new attempt. Never quits the app: the user reaches the app's home via
-   * Home navigation, not via this button. Deliberately never reachable, and never force-
-   * terminates anything, when termination could NOT be confirmed (timeout/unparseable) — that
-   * case keeps its own separate, still-locked flow via handleAcknowledgeUnconfirmed, which does
-   * NOT reset the wizard (the lock stays held with no in-app release path there).
+   * Both handleFinish and handleReturnHome below are only reachable when
+   * `outcome.processTerminationConfirmed` is true and status !== 'failed' (the render further
+   * down never shows either button otherwise) — i.e. the upgrade tool is confirmed to have
+   * actually stopped, whether or not a recognized success signal was seen. Both release any
+   * pending lock the exact same way (a no-op if there wasn't one — e.g. a real 'success' outcome
+   * already released it synchronously server-side) and reset this run's temporary wizard UI
+   * state (packageInfo, progress, outcome, etc.) via the existing startOver(); they differ only
+   * in where the user ends up afterwards. Neither ever quits the app, and neither is reachable —
+   * or does anything at all — when termination could NOT be confirmed (timeout/unparseable):
+   * that case keeps its own separate, still-locked flow via handleAcknowledgeUnconfirmed, which
+   * does NOT reset the wizard (the lock stays held with no in-app release path there).
    */
   async function handleFinish() {
     setFinishing(true);
@@ -220,7 +221,20 @@ export function FirmwareScreen() {
       await window.ponyabc.acknowledgeFirmwareOutcome();
     } finally {
       setFinishing(false);
+      startOver(); // back to this wizard's own Prepare step
+    }
+  }
+
+  /** Same safety action as handleFinish (release any pending lock, reset the wizard state), but
+   *  navigates to the app's Home tab afterwards instead of staying on the Firmware screen. */
+  async function handleReturnHome() {
+    setFinishing(true);
+    try {
+      await window.ponyabc.acknowledgeFirmwareOutcome();
+    } finally {
+      setFinishing(false);
       startOver();
+      onNavigate('home');
     }
   }
 
@@ -556,9 +570,14 @@ export function FirmwareScreen() {
           )}
 
           {outcome.processTerminationConfirmed && outcome.status !== 'failed' ? (
-            <button type="button" className="button button--primary" disabled={finishing} onClick={() => void handleFinish()}>
-              {t('result.finishButton')}
-            </button>
+            <div className="firmware-wizard__actions">
+              <button type="button" className="button button--primary" disabled={finishing} onClick={() => void handleFinish()}>
+                {t('result.finishButton')}
+              </button>
+              <button type="button" className="button" disabled={finishing} onClick={() => void handleReturnHome()}>
+                {t('result.returnHomeButton')}
+              </button>
+            </div>
           ) : outcome.status === 'failed' ? (
             <button type="button" className="button button--primary" onClick={startOver}>
               {t('result.startOverButton')}

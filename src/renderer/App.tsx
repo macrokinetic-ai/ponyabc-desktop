@@ -22,7 +22,7 @@ export default function App() {
               {section === 'home' && <HomeScreen onNavigate={setSection} />}
               {section === 'recordings' && <MyRecordingsScreen />}
               {section === 'book' && <BookLibraryScreen />}
-              {section === 'firmware' && <FirmwareScreen />}
+              {section === 'firmware' && <FirmwareScreen onNavigate={setSection} />}
               {section === 'settings' && <SettingsScreen />}
             </main>
           </div>

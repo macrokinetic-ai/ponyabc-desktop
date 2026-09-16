@@ -8,6 +8,7 @@ import type { FirmwarePackageInfo, FirmwareProgressEvent, FirmwareUpgradeOutcome
 
 let progressListener: ((event: FirmwareProgressEvent) => void) | null = null;
 let outcomeListener: ((event: FirmwareUpgradeOutcome) => void) | null = null;
+let navigateMock: ReturnType<typeof vi.fn>;
 
 const validPackage: FirmwarePackageInfo = {
   rootDir: 'C:\\Users\\teacher\\Desktop\\tools',
@@ -95,6 +96,7 @@ beforeAll(async () => {
 beforeEach(() => {
   progressListener = null;
   outcomeListener = null;
+  navigateMock = vi.fn();
   // @ts-expect-error — test-only global shim for the preload bridge
   window.ponyabc = mockPonyAbc();
 });
@@ -106,7 +108,7 @@ afterEach(() => {
 function renderScreen() {
   render(
     <PenRootProvider>
-      <FirmwareScreen />
+      <FirmwareScreen onNavigate={navigateMock} />
     </PenRootProvider>,
   );
 }
@@ -182,7 +184,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
   });
 
-  it('a real "success" outcome (log contains the confirmed signal) shows exactly one calm message and one Finish button — no red title, no extra buttons', async () => {
+  it('a real "success" outcome (log contains the confirmed signal) shows exactly one calm message, a Finish button, and a Return to Home button — no red title, no other old buttons', async () => {
     renderScreen();
     await advanceToConfirm();
     fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
@@ -201,6 +203,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     });
     await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
     expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Return to Home' })).toBeTruthy();
     // No removed elements: no red "result could not be confirmed" title, no old buttons.
     expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
@@ -231,8 +234,57 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
-    // Finish returns to the wizard's Prepare step — it never quits the app.
+    // Finish returns to the wizard's Prepare step — it never quits the app, and never navigates
+    // away from the Firmware screen.
     await screen.findByText('Prepare your pen');
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('"Return to Home" releases the pending lock the same way Finish does, resets the wizard, and navigates to the Home tab', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'unclear',
+      reason: 'no-recognized-signal',
+      exitCode: 0,
+      logExcerpt: 'finished, no signal seen',
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Return to Home' }));
+    await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('home'));
+    // The wizard itself is reset behind the scenes too (not just navigated away from) — a later
+    // re-entry into the Firmware screen must not land back on this stale result.
+    await screen.findByText('Prepare your pen');
+  });
+
+  it('"Return to Home" does NOT appear for a failed outcome or for a not-yet-confirmed-terminated outcome', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+    outcomeListener?.({
+      status: 'failed',
+      reason: 'declined',
+      exitCode: null,
+      logExcerpt: '',
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+    await screen.findByText('The upgrade did not start or did not complete.');
+    expect(screen.queryByRole('button', { name: 'Return to Home' })).toBeNull();
   });
 
   it('Finish (from a real "success" outcome) also returns to Prepare, and this run\'s temporary wizard state is cleared so a new attempt starts clean', async () => {

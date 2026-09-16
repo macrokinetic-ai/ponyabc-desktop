@@ -85,6 +85,7 @@
     "unclearTitle": "Das Ergebnis konnte nicht bestätigt werden.",
     "unclearBodyUnconfirmed": "Es konnte nicht bestätigt werden, ob das Update-Tool tatsächlich fertig ausgeführt wurde. Aus Sicherheitsgründen wird kein neues Firmware-Update und kein BOOK/DIY-Schreibvorgang auf den Stift zugelassen, solange dies ungeklärt ist. Beenden Sie diese App erst vollständig und öffnen Sie sie erst dann neu, wenn Sie selbst bestätigt haben (z. B. im Windows-Task-Manager oder durch Prüfen des Stifts selbst), dass der Vorgang beendet ist.",
     "finishButton": "Fertig",
+    "returnHomeButton": "Zur Startseite zurückkehren",
     "acknowledgeButtonUnconfirmed": "Verstanden — ich starte die App neu",
     "restartNoticeAcknowledged": "Notiert. Diese App bleibt für neue Firmware-Updates und BOOK/DIY-Schreibvorgänge gesperrt, bis Sie sie vollständig beenden und neu öffnen.",
     "startOverButton": "Neu starten"

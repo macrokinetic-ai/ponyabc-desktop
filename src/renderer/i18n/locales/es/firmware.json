@@ -85,6 +85,7 @@
     "unclearTitle": "No se pudo confirmar el resultado.",
     "unclearBodyUnconfirmed": "No se pudo confirmar si la herramienta de actualización realmente terminó de ejecutarse. Por seguridad, no se permitirá ninguna nueva actualización de firmware ni escritura BOOK/DIY en el lápiz mientras esto no se resuelva. Cierre completamente esta aplicación y vuelva a abrirla solo después de haber confirmado usted mismo (por ejemplo, en el Administrador de tareas de Windows, o revisando el propio lápiz) que el proceso se ha detenido.",
     "finishButton": "Finalizar",
+    "returnHomeButton": "Volver al inicio",
     "acknowledgeButtonUnconfirmed": "Entiendo — reiniciaré la aplicación",
     "restartNoticeAcknowledged": "Anotado. Esta aplicación permanecerá bloqueada para nuevas actualizaciones de firmware y escrituras BOOK/DIY hasta que la cierre por completo y la vuelva a abrir.",
     "startOverButton": "Empezar de nuevo"

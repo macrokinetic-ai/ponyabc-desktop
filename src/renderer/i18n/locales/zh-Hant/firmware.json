@@ -85,6 +85,7 @@
     "unclearTitle": "無法確認結果。",
     "unclearBodyUnconfirmed": "無法確認升級工具是否已經真正執行完畢。為安全起見，在此問題解決之前，將不允許進行新的韌體升級或 BOOK/DIY 寫入點讀筆。請在你自行確認（例如透過 Windows 工作管理員，或直接檢查點讀筆本身）該程序已經停止後，才完全關閉並重新開啟本應用程式。",
     "finishButton": "完成",
+    "returnHomeButton": "返回主頁",
     "acknowledgeButtonUnconfirmed": "我明白——我會重新啟動應用程式",
     "restartNoticeAcknowledged": "已記錄。在你完全關閉並重新開啟本應用程式之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
     "startOverButton": "重新開始"

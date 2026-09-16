@@ -85,6 +85,7 @@
     "unclearTitle": "Impossibile confermare il risultato.",
     "unclearBodyUnconfirmed": "Non è stato possibile confermare se lo strumento di aggiornamento abbia effettivamente terminato l'esecuzione. Per sicurezza, non sarà consentito alcun nuovo aggiornamento del firmware né alcuna scrittura BOOK/DIY sulla penna finché questo non sarà risolto. Chiudi completamente questa app e riaprila solo dopo aver confermato tu stesso (ad esempio nel Task Manager di Windows, o controllando la penna stessa) che il processo si è arrestato.",
     "finishButton": "Fine",
+    "returnHomeButton": "Torna alla schermata iniziale",
     "acknowledgeButtonUnconfirmed": "Ho capito — riavvierò l'app",
     "restartNoticeAcknowledged": "Annotato. Questa app resterà bloccata per nuovi aggiornamenti del firmware e scritture BOOK/DIY finché non la chiuderai completamente e la riaprirai.",
     "startOverButton": "Ricomincia"
