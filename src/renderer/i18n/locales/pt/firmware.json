@@ -82,13 +82,27 @@
     "successTitle": "Atualização concluída com sucesso.",
     "failedTitle": "A atualização não foi iniciada ou não foi concluída.",
     "unclearTitle": "Não foi possível confirmar o resultado.",
-    "unclearBody": "A ferramenta terminou sem mostrar a mensagem de sucesso esperada. A caneta pode ou não ter sido atualizada com sucesso — verifique manualmente antes de a usar, ou tente novamente.",
+    "unclearBody": "A ferramenta de atualização terminou. Reinicie a caneta e teste a reprodução para confirmar que está a funcionar.",
     "unclearBodyUnconfirmed": "Não foi possível confirmar se a ferramenta de atualização realmente terminou de ser executada. Por segurança, nenhuma nova atualização de firmware ou gravação BOOK/DIY na caneta será permitida enquanto isso não for resolvido. Feche completamente este aplicativo e reabra-o somente depois de confirmar por conta própria (por exemplo, no Gerenciador de Tarefas do Windows, ou verificando a própria caneta) que o processo foi interrompido.",
     "reason": "Detalhes: {{reason}}",
     "acknowledgeButton": "Compreendo — resultado não confirmado",
     "acknowledgeButtonUnconfirmed": "Compreendo — vou reiniciar o aplicativo",
     "restartNoticeAcknowledged": "Registrado. Este aplicativo permanecerá bloqueado para novas atualizações de firmware e gravações BOOK/DIY até que você o feche completamente e o reabra.",
-    "startOverButton": "Recomeçar"
+    "startOverButton": "Recomeçar",
+    "playbackFeedbackButton": "Testei a caneta — reproduz normalmente",
+    "playbackFeedbackRecorded": "Registado — obrigado."
+  },
+  "technicalDetails": {
+    "title": "Detalhes técnicos",
+    "readButton": "Mostrar",
+    "collapseButton": "Ocultar",
+    "encodingUnknown": "Esta app não conseguiu determinar a codificação de texto real da ferramenta, pelo que parte do texto acima pode não ser apresentada corretamente. Não foi alterado — trata-se de uma limitação de apresentação, não de perda de dados.",
+    "sawNoLicense": "A saída da ferramenta incluía a mensagem \"no license\". O seu significado exato nesta ferramenta do fornecedor ainda não está confirmado.",
+    "otaTableHadFailures": "A tabela de capacidades acima indica que alguns métodos de atualização não estão disponíveis para este tamanho de firmware — isto é esperado e não indica uma falha desta execução.",
+    "sawUfwGenerated": "A ferramenta reportou ter gerado o seu ficheiro de empacotamento com sucesso — este é um passo de pós-processamento e não confirma por si só que a caneta foi gravada.",
+    "exportButton": "Exportar registo…",
+    "exportSaved": "Guardado em {{path}}",
+    "exportFailed": "Não foi possível guardar o registo: {{message}}"
   },
   "recovery": {
     "title": "Atualização anterior não confirmada como concluída",

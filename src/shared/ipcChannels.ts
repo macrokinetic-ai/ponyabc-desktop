@@ -61,6 +61,8 @@ export const IPC = {
   firmwarePrepareOfficialPackage: 'ponyabc:firmware:prepareOfficialPackage',
   firmwareDownloadProgress: 'ponyabc:firmware:downloadProgress',
   firmwareCancelDownload: 'ponyabc:firmware:cancelDownload',
+  firmwareRecordPlaybackFeedback: 'ponyabc:firmware:recordPlaybackFeedback',
+  firmwareExportLog: 'ponyabc:firmware:exportLog',
 
   settingsGet: 'ponyabc:settings:get',
   settingsSet: 'ponyabc:settings:set',

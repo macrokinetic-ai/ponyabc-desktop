@@ -43,6 +43,10 @@ export function FirmwareScreen() {
   const [restartNoticeShown, setRestartNoticeShown] = useState(false);
   const [recovery, setRecovery] = useState<FirmwareRecoveryStatus | null>(null);
   const [rechecking, setRechecking] = useState(false);
+  // Purely a diagnostic record ("the user tried the pen and it works") — never touches
+  // acknowledgeFirmwareOutcome/the pen lock, and never treated as confirming a firmware version.
+  const [playbackFeedbackGiven, setPlaybackFeedbackGiven] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
   const logRef = useRef<HTMLPreElement | null>(null);
 
   // Official firmware download flow (Windows only) — see the block comment in shared/types.ts.
@@ -209,6 +213,8 @@ export function FirmwareScreen() {
       setPackageInfo(null);
       setProgress(null);
       setOutcome(null);
+      setPlaybackFeedbackGiven(false);
+      setExportMessage(null);
     }
   }
 
@@ -230,6 +236,23 @@ export function FirmwareScreen() {
     }
   }
 
+  /** Records feedback only — deliberately does NOT call acknowledgeFirmwareOutcome or touch any
+   *  lock state. See the button's own i18n copy and src/main/ipc/firmware.ts's
+   *  recordFirmwarePlaybackFeedback doc comment for why these must stay fully separate. */
+  async function handlePlaybackFeedback() {
+    await window.ponyabc.recordFirmwarePlaybackFeedback();
+    setPlaybackFeedbackGiven(true);
+  }
+
+  async function handleExportLog() {
+    if (!outcome) return;
+    setExportMessage(null);
+    const result = await window.ponyabc.exportFirmwareLog(outcome.logExcerpt);
+    if (result.status === 'ok') setExportMessage(t('technicalDetails.exportSaved', { path: result.path }));
+    else if (result.status === 'error') setExportMessage(t('technicalDetails.exportFailed', { message: result.message }));
+    // 'cancelled': no message — the user just closed the save dialog.
+  }
+
   function startOver() {
     setStep('prepare');
     setPackageInfo(null);
@@ -241,6 +264,8 @@ export function FirmwareScreen() {
     setPrepareResult(null);
     setDownloadProgress(null);
     setHardwareConfirmation('unconfirmed');
+    setPlaybackFeedbackGiven(false);
+    setExportMessage(null);
   }
 
   if (isMac) {
@@ -500,9 +525,16 @@ export function FirmwareScreen() {
             {t(progress ? PHASE_KEY[progress.phase] : 'upgrading.phasePreparing')}
           </p>
           <p className="hint">{t('upgrading.noCancelNotice')}</p>
-          <pre ref={logRef} className="firmware-wizard__log">
-            {progress?.logTailText || t('upgrading.noOutputYet')}
-          </pre>
+          <CollapsibleSection
+            title={t('technicalDetails.title')}
+            readLabel={t('technicalDetails.readButton')}
+            collapseLabel={t('technicalDetails.collapseButton')}
+            defaultOpen={false}
+          >
+            <pre ref={logRef} className="firmware-wizard__log">
+              {progress?.logTailText || t('upgrading.noOutputYet')}
+            </pre>
+          </CollapsibleSection>
         </section>
       )}
 
@@ -512,23 +544,46 @@ export function FirmwareScreen() {
           {outcome.status === 'success' && (
             <div className="note-box">
               <p>{t('result.successTitle')}</p>
-              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
             </div>
           )}
           {outcome.status === 'failed' && (
             <div className="note-box">
               <p className="error-text">{t('result.failedTitle')}</p>
-              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
             </div>
           )}
           {outcome.status === 'unclear' && (
             <div className="note-box">
               <p className="error-text">{t('result.unclearTitle')}</p>
               <p className="hint">{outcome.processTerminationConfirmed ? t('result.unclearBody') : t('result.unclearBodyUnconfirmed')}</p>
-              <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
             </div>
           )}
-          <pre className="firmware-wizard__log">{outcome.logExcerpt || t('upgrading.noOutputYet')}</pre>
+
+          <CollapsibleSection
+            title={t('technicalDetails.title')}
+            readLabel={t('technicalDetails.readButton')}
+            collapseLabel={t('technicalDetails.collapseButton')}
+            defaultOpen={false}
+          >
+            <p className="hint">{t('result.reason', { reason: outcome.reason })}</p>
+            {!outcome.encodingKnown && <p className="hint">{t('technicalDetails.encodingUnknown')}</p>}
+            {outcome.sawNoLicenseWarning && <p className="hint">{t('technicalDetails.sawNoLicense')}</p>}
+            {outcome.otaTableHadFailures && <p className="hint">{t('technicalDetails.otaTableHadFailures')}</p>}
+            {outcome.sawUfwGenerated && <p className="hint">{t('technicalDetails.sawUfwGenerated')}</p>}
+            <pre className="firmware-wizard__log">{outcome.logExcerpt || t('upgrading.noOutputYet')}</pre>
+            <button type="button" className="button" onClick={() => void handleExportLog()}>
+              {t('technicalDetails.exportButton')}
+            </button>
+            {exportMessage && <p className="hint">{exportMessage}</p>}
+          </CollapsibleSection>
+
+          {outcome.status === 'unclear' && outcome.processTerminationConfirmed && (
+            <div className="firmware-wizard__actions">
+              <button type="button" className="button" disabled={playbackFeedbackGiven} onClick={() => void handlePlaybackFeedback()}>
+                {playbackFeedbackGiven ? t('result.playbackFeedbackRecorded') : t('result.playbackFeedbackButton')}
+              </button>
+            </div>
+          )}
+
           {outcome.status === 'unclear' ? (
             outcome.processTerminationConfirmed ? (
               <button type="button" className="button button--primary" disabled={acknowledging} onClick={() => void handleAcknowledge()}>

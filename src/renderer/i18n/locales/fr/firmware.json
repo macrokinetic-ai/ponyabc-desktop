@@ -82,13 +82,27 @@
     "successTitle": "Mise à jour terminée avec succès.",
     "failedTitle": "La mise à jour n'a pas démarré ou ne s'est pas terminée.",
     "unclearTitle": "Le résultat n'a pas pu être confirmé.",
-    "unclearBody": "L'outil s'est terminé sans afficher le message de succès attendu. Le stylo a peut-être été mis à jour avec succès, ou non — vérifiez-le manuellement avant de l'utiliser, ou réessayez.",
+    "unclearBody": "L'outil de mise à jour s'est terminé. Redémarrez le stylo et testez la lecture pour confirmer qu'il fonctionne.",
     "unclearBodyUnconfirmed": "Impossible de confirmer si l'outil de mise à jour a réellement terminé son exécution. Par sécurité, aucune nouvelle mise à jour du micrologiciel ni écriture BOOK/DIY sur le stylo ne sera autorisée tant que ce point n'est pas résolu. Quittez complètement cette application et rouvrez-la seulement après avoir confirmé vous-même (par exemple dans le Gestionnaire des tâches de Windows, ou en vérifiant le stylo lui-même) que le processus est arrêté.",
     "reason": "Détails : {{reason}}",
     "acknowledgeButton": "Je comprends — résultat non confirmé",
     "acknowledgeButtonUnconfirmed": "Je comprends — je vais redémarrer l'application",
     "restartNoticeAcknowledged": "Noté. Cette application restera verrouillée pour toute nouvelle mise à jour du micrologiciel et toute écriture BOOK/DIY tant que vous ne l'aurez pas complètement quittée puis rouverte.",
-    "startOverButton": "Recommencer"
+    "startOverButton": "Recommencer",
+    "playbackFeedbackButton": "J'ai testé le stylo — il lit normalement",
+    "playbackFeedbackRecorded": "Noté — merci."
+  },
+  "technicalDetails": {
+    "title": "Détails techniques",
+    "readButton": "Afficher",
+    "collapseButton": "Masquer",
+    "encodingUnknown": "Cette application n'a pas pu déterminer le véritable encodage de texte de l'outil ; une partie du texte ci-dessus peut donc ne pas s'afficher correctement. Il n'a pas été modifié — il s'agit d'une limite d'affichage, pas d'une perte de données.",
+    "sawNoLicense": "La sortie de l'outil comportait le message « no license ». Sa signification exacte dans cet outil du fournisseur n'est pas encore confirmée.",
+    "otaTableHadFailures": "Le tableau des capacités ci-dessus indique que certaines méthodes de mise à jour ne sont pas disponibles pour cette taille de micrologiciel — c'est normal et ne signifie pas un échec de cette exécution.",
+    "sawUfwGenerated": "L'outil a signalé avoir généré son fichier d'empaquetage avec succès — il s'agit d'une étape de post-traitement qui ne confirme pas à elle seule que le stylo a été flashé.",
+    "exportButton": "Exporter le journal…",
+    "exportSaved": "Enregistré dans {{path}}",
+    "exportFailed": "Impossible d'enregistrer le journal : {{message}}"
   },
   "recovery": {
     "title": "Mise à jour précédente non confirmée comme terminée",

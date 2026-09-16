@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runElevated } from '../../src/main/services/elevatedRun';
+import { decodeLogBytes } from '../../src/main/services/logEncoding';
 
 /**
  * Real-Windows validation of the elevation/log-capture mechanism against a completely harmless
@@ -52,7 +53,7 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
       ['@echo off', 'echo line-one', 'ping -n 2 127.0.0.1 >nul', 'echo line-two', 'exit /b 0', ''].join('\r\n'),
     );
 
-    const deltas: string[] = [];
+    const deltas: Buffer[] = [];
     const result = await runElevated({
       exePath: targetPath,
       args: [],
@@ -77,7 +78,7 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     if (result.status === 'completed') {
       expect(result.exitCode).toBe(0);
     }
-    const fullLog = deltas.join('');
+    const fullLog = Buffer.concat(deltas).toString('utf-8');
     expect(fullLog).toContain('line-one');
     expect(fullLog).toContain('line-two');
     // Proves genuine incremental delivery, not "read the whole file once at the end".
@@ -90,7 +91,7 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     fs.writeFileSync(targetPath, ['@echo off', 'echo before-pause', 'pause', 'echo after-pause', 'exit /b 0', ''].join('\r\n'));
 
     const startedAtMs = Date.now();
-    const deltas: string[] = [];
+    const deltas: Buffer[] = [];
     const result = await runElevated({
       exePath: targetPath,
       args: [],
@@ -114,11 +115,87 @@ describe.skipIf(!RUN)('runElevated — real Windows smoke test (harmless target,
     // The real point of this test: it must finish quickly, not sit at `pause` until the
     // 30s timeout gives up — a slow-but-eventually-"completed" result here would still mean
     // `< nul` isn't actually dismissing the prompt fast, which matters for a real upgrade flow.
+    // (Note: as of this round, the elevated window is also hidden via -WindowStyle Hidden — this
+    // test still passing on real Windows CI is itself the proof that hiding the window doesn't
+    // change any of this stdin/timing behavior; no separate dedicated test is needed for that.)
     expect(elapsedMs).toBeLessThan(15_000);
-    const fullLog = deltas.join('');
+    const fullLog = Buffer.concat(deltas).toString('utf-8');
     expect(fullLog).toContain('before-pause');
     expect(fullLog).toContain('after-pause');
   }, 60_000);
+
+  it('real codepage detection + real Chinese console output: chcp capture is never assumed, and decoding the raw captured bytes with the REAL detected codepage recovers the exact original text', async () => {
+    const dir = mkTempDir();
+    const targetPath = path.join(dir, 'chinese-output-target.bat');
+    // Dynamically encodes a known Chinese string using WHATEVER this console's real active
+    // OEM/output codepage actually is (never hardcoded as GBK/936 or any other assumption) —
+    // exactly mirroring how a real console tool (the vendor's isd_download.exe included) writes
+    // its own text: using its process's real active codepage, whatever that happens to be on
+    // this specific machine. This is the same codepage buildFlashBatchScript's own `chcp`
+    // capture line observes, since nothing changes it in between.
+    const psSnippet = [
+      '$cp = [Console]::OutputEncoding.CodePage',
+      '$enc = [System.Text.Encoding]::GetEncoding($cp)',
+      '$bytes = $enc.GetBytes("REAL_TEXT_MARKER 下载完成。 END_MARKER")',
+      '$stdout = [Console]::OpenStandardOutput()',
+      '$stdout.Write($bytes, 0, $bytes.Length)',
+      '$stdout.Flush()',
+    ].join('; ');
+    fs.writeFileSync(
+      targetPath,
+      ['@echo off', `powershell -NoProfile -Command "${psSnippet.replace(/"/g, '\\"')}"`, 'exit /b 0', ''].join('\r\n'),
+    );
+
+    const deltas: Buffer[] = [];
+    let detectedCodepage: number | null | undefined; // undefined = onCodepageDetected never fired at all
+    const result = await runElevated({
+      exePath: targetPath,
+      args: [],
+      cwd: dir,
+      workDir: path.join(dir, 'work'),
+      onLogUpdate: (d) => deltas.push(d),
+      onCodepageDetected: (cp) => {
+        detectedCodepage = cp;
+      },
+      logPollIntervalMs: 200,
+      timeoutMs: 60_000,
+    });
+
+    console.log('chinese-output smoke result:', JSON.stringify(result));
+    console.log('detected codepage:', detectedCodepage);
+
+    if (result.status === 'timeout') {
+      console.warn('No interactive desktop on this runner to approve elevation — see the other smoke test for that caveat.');
+      return;
+    }
+
+    expect(result.status).toBe('completed');
+    // The chcp-capture mechanism must have produced SOME real number — never silently absent.
+    expect(detectedCodepage).not.toBeNull();
+    expect(detectedCodepage).not.toBeUndefined();
+    expect(typeof detectedCodepage).toBe('number');
+
+    const raw = Buffer.concat(deltas);
+    const { text, encodingUsed } = decodeLogBytes(raw, detectedCodepage ?? null);
+    console.log('decoded text:', text, 'encodingUsed:', encodingUsed);
+
+    // The ASCII markers must survive regardless of which codepage this runner uses (ASCII is
+    // byte-identical across every relevant encoding) — proves the raw bytes themselves were
+    // captured intact even before considering the Chinese portion.
+    expect(text).toContain('REAL_TEXT_MARKER');
+    expect(text).toContain('END_MARKER');
+
+    if (encodingUsed !== null) {
+      // This runner's real codepage is one this app recognizes — the Chinese text must decode
+      // back to the exact original, proving the full real chain (chcp capture -> our codepage
+      // table -> iconv-lite decode) works end to end, not just in isolated unit tests.
+      expect(text).toContain('下载完成。');
+    } else {
+      console.warn(
+        `This runner's real codepage (${detectedCodepage}) is not in this app's recognized table — expected on an English-locale CI runner (likely 437/850), and exactly why encodingKnown exists: the app correctly declines to guess rather than mis-decode. Real Chinese Windows machines (the actual deployment target) use 936 (GBK), which IS recognized — see logEncoding.ts.`,
+      );
+    }
+  }, 90_000);
 });
 
 describe.skipIf(RUN)('runElevated — real Windows smoke test (skipped)', () => {

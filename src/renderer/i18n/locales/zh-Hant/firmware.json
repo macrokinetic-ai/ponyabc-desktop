@@ -82,13 +82,27 @@
     "successTitle": "升級成功完成。",
     "failedTitle": "升級未能啟動或未能完成。",
     "unclearTitle": "無法確認結果。",
-    "unclearBody": "工具結束時沒有顯示預期的成功訊息。點讀筆可能已經升級成功，也可能未有——請先手動檢查，或重新嘗試。",
+    "unclearBody": "升級工具已結束，請重新啟動點讀筆並試播確認。",
     "unclearBodyUnconfirmed": "無法確認升級工具是否已經真正執行完畢。為安全起見，在此問題解決之前，將不允許進行新的韌體升級或 BOOK/DIY 寫入點讀筆。請在你自行確認（例如透過 Windows 工作管理員，或直接檢查點讀筆本身）該程序已經停止後，才完全關閉並重新開啟本應用程式。",
     "reason": "詳情：{{reason}}",
     "acknowledgeButton": "我明白——結果無法確認",
     "acknowledgeButtonUnconfirmed": "我明白——我會重新啟動應用程式",
     "restartNoticeAcknowledged": "已記錄。在你完全關閉並重新開啟本應用程式之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
-    "startOverButton": "重新開始"
+    "startOverButton": "重新開始",
+    "playbackFeedbackButton": "我已試播點讀筆——播放正常",
+    "playbackFeedbackRecorded": "已記錄——謝謝。"
+  },
+  "technicalDetails": {
+    "title": "技術詳情",
+    "readButton": "顯示",
+    "collapseButton": "隱藏",
+    "encodingUnknown": "本應用程式未能確定工具實際使用的文字編碼，因此上方部分文字可能無法正確顯示。內容並未被更改——這是顯示上的限制，並非資料遺失。",
+    "sawNoLicense": "工具的輸出內容中出現「no license」訊息，其在此供應商工具中的確實含義目前尚未確認。",
+    "otaTableHadFailures": "上方能力表列出部分升級傳送方式不適用於此韌體大小——這屬正常情況，並不代表本次執行失敗。",
+    "sawUfwGenerated": "工具回報已成功生成其封裝檔案——這是燒錄後的後處理步驟，本身並不能證明點讀筆已被成功燒錄。",
+    "exportButton": "匯出記錄……",
+    "exportSaved": "已儲存至 {{path}}",
+    "exportFailed": "無法儲存記錄：{{message}}"
   },
   "recovery": {
     "title": "先前的升級尚未確認結束",

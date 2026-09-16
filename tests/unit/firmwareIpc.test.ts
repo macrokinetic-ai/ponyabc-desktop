@@ -151,7 +151,8 @@ describe('startFirmwareUpgrade — lock only releases with confirmed process ter
   it('success (log contains the confirmed signal): lock released, a queued BOOK/DIY write proceeds', async () => {
     const { runElevated, firmwareIpc, penOperationLock } = await freshImports();
     runElevated.mockImplementationOnce(async (params) => {
-      params.onLogUpdate?.('start...\ndownload success\n');
+      params.onCodepageDetected?.(65001); // UTF-8 — irrelevant here since "download success" is plain ASCII either way
+      params.onLogUpdate?.(Buffer.from('start...\ndownload success\n', 'utf-8'));
       return { status: 'completed', exitCode: 0 };
     });
 

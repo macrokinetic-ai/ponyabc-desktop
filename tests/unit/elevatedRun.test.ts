@@ -27,10 +27,26 @@ describe('buildFlashBatchScript — pure script generation, no process/filesyste
       args: ['-dev', 'br23', '-app', 'app.bin'],
       cwd: 'C:\\tools\\soundbox\\standard',
       logFilePath: 'C:\\scratch\\run.log',
+      codepageFilePath: 'C:\\scratch\\codepage.txt',
     });
     expect(script).toContain('cd /d "C:\\tools\\soundbox\\standard"');
     expect(script).toContain('"C:\\tools\\isd_download.exe" "-dev" "br23" "-app" "app.bin" < nul > "C:\\scratch\\run.log" 2>&1');
     expect(script).toContain('exit /b %errorlevel%');
+  });
+
+  it('captures the real active codepage via chcp, BEFORE the target ever runs — never assumes an encoding', () => {
+    const script = buildFlashBatchScript({
+      exePath: 'C:\\a.exe',
+      args: [],
+      cwd: 'C:\\',
+      logFilePath: 'C:\\a.log',
+      codepageFilePath: 'C:\\codepage.txt',
+    });
+    const lines = script.split('\r\n').filter((l) => l.length > 0);
+    expect(lines[0]).toBe('@echo off');
+    expect(lines[1]).toBe('chcp > "C:\\codepage.txt"');
+    // Must run before `cd` and before the target — first real command after @echo off.
+    expect(lines.indexOf('chcp > "C:\\codepage.txt"')).toBeLessThan(lines.findIndex((l) => l.startsWith('cd /d')));
   });
 
   it('escapes an embedded double-quote in an argument as "" (the batch-file convention)', () => {
@@ -39,25 +55,42 @@ describe('buildFlashBatchScript — pure script generation, no process/filesyste
       args: ['weird"arg'],
       cwd: 'C:\\',
       logFilePath: 'C:\\a.log',
+      codepageFilePath: 'C:\\codepage.txt',
     });
     expect(script).toContain('"weird""arg"');
   });
 
   it('produces a valid line even with zero arguments', () => {
-    const script = buildFlashBatchScript({ exePath: 'C:\\a.exe', args: [], cwd: 'C:\\', logFilePath: 'C:\\a.log' });
+    const script = buildFlashBatchScript({
+      exePath: 'C:\\a.exe',
+      args: [],
+      cwd: 'C:\\',
+      logFilePath: 'C:\\a.log',
+      codepageFilePath: 'C:\\codepage.txt',
+    });
     expect(script).toContain('"C:\\a.exe" < nul > "C:\\a.log" 2>&1');
   });
 
   it('always redirects the target\'s stdin from nul — the confirmed real chain (tools\\download.bat) ends in a bare `pause`, which would otherwise hang forever waiting for a keypress that can never arrive', () => {
-    const script = buildFlashBatchScript({ exePath: 'C:\\tools\\download.bat', args: [], cwd: 'C:\\tools', logFilePath: 'C:\\scratch\\run.log' });
+    const script = buildFlashBatchScript({
+      exePath: 'C:\\tools\\download.bat',
+      args: [],
+      cwd: 'C:\\tools',
+      logFilePath: 'C:\\scratch\\run.log',
+      codepageFilePath: 'C:\\scratch\\codepage.txt',
+    });
     expect(script).toContain('< nul');
   });
 });
 
 describe('buildElevationPowerShellScript — pure', () => {
-  it('elevates exactly the given batch path via -Verb RunAs -Wait -PassThru', () => {
+  it('elevates exactly the given batch path via -Verb RunAs -WindowStyle Hidden -Wait -PassThru', () => {
     const script = buildElevationPowerShellScript('C:\\scratch\\run.bat');
-    expect(script).toContain("Start-Process -FilePath 'C:\\scratch\\run.bat' -Verb RunAs -Wait -PassThru");
+    // -WindowStyle Hidden hides the elevated console window from the user — a pure display
+    // property that does not affect -Wait/-PassThru's exit-code contract or stdin/stdout
+    // redirection at all (verified for real on Windows CI, not assumed — see
+    // .github/workflows/firmware-log-encoding-smoke.yml).
+    expect(script).toContain("Start-Process -FilePath 'C:\\scratch\\run.bat' -Verb RunAs -WindowStyle Hidden -Wait -PassThru");
     expect(script).toContain('Write-Output "EXITCODE:$($p.ExitCode)"');
   });
 
@@ -97,10 +130,10 @@ describe('parseElevationOutput — pure', () => {
 });
 
 describe('startLogPolling — real filesystem, no elevation/process involved', () => {
-  it('reports only the newly-appended text on each poll, never re-sending what was already read', async () => {
+  it('reports only the newly-appended RAW BYTES on each poll, never re-sending what was already read, never pre-decoded', async () => {
     const dir = mkTempDir();
     const logPath = path.join(dir, 'run.log');
-    const deltas: string[] = [];
+    const deltas: Buffer[] = [];
     const poller = startLogPolling(logPath, (d) => deltas.push(d), 30);
 
     await new Promise((r) => setTimeout(r, 60)); // let it poll once while the file doesn't exist yet
@@ -110,15 +143,16 @@ describe('startLogPolling — real filesystem, no elevation/process involved', (
     await new Promise((r) => setTimeout(r, 80));
     await poller.stop();
 
-    expect(deltas.join('')).toBe('line1\nline2\n');
+    expect(deltas.every((d) => Buffer.isBuffer(d))).toBe(true);
+    expect(Buffer.concat(deltas).toString('utf-8')).toBe('line1\nline2\n');
     // Confirms no re-delivery: each individual delta is a strict subset of the total, and the
-    // join above already proves nothing was duplicated or dropped.
+    // concat above already proves nothing was duplicated or dropped.
     expect(deltas.length).toBeGreaterThanOrEqual(2);
   });
 
   it('tolerates the log file never being created at all (target failed before writing anything)', async () => {
     const dir = mkTempDir();
-    const deltas: string[] = [];
+    const deltas: Buffer[] = [];
     const poller = startLogPolling(path.join(dir, 'never-created.log'), (d) => deltas.push(d), 20);
     await new Promise((r) => setTimeout(r, 60));
     await poller.stop();
@@ -129,11 +163,30 @@ describe('startLogPolling — real filesystem, no elevation/process involved', (
     const dir = mkTempDir();
     const logPath = path.join(dir, 'run.log');
     fs.writeFileSync(logPath, '');
-    const deltas: string[] = [];
+    const deltas: Buffer[] = [];
     const poller = startLogPolling(logPath, (d) => deltas.push(d), 10_000); // long interval — only stop()'s own final read should catch this
     fs.writeFileSync(logPath, 'final line\n');
     await poller.stop();
-    expect(deltas.join('')).toBe('final line\n');
+    expect(Buffer.concat(deltas).toString('utf-8')).toBe('final line\n');
+  });
+
+  it('a multi-byte character (e.g. GBK-encoded Chinese) split exactly across two separate poll reads is preserved intact once the full raw bytes are concatenated — never corrupted by decoding a partial chunk in isolation', async () => {
+    const iconv = await import('iconv-lite');
+    const fullBytes = iconv.encode('下载完成。', 'gbk'); // 10 bytes, 5 two-byte GBK characters
+    const splitPoint = 3; // lands mid-character (character boundaries are at even offsets)
+    const dir = mkTempDir();
+    const logPath = path.join(dir, 'run.log');
+    fs.writeFileSync(logPath, fullBytes.subarray(0, splitPoint));
+    const deltas: Buffer[] = [];
+    const poller = startLogPolling(logPath, (d) => deltas.push(d), 30);
+    await new Promise((r) => setTimeout(r, 60));
+    fs.appendFileSync(logPath, fullBytes.subarray(splitPoint));
+    await new Promise((r) => setTimeout(r, 60));
+    await poller.stop();
+
+    const { decodeLogBytes } = await import('../../src/main/services/logEncoding');
+    const { text } = decodeLogBytes(Buffer.concat(deltas), 936);
+    expect(text).toBe('下载完成。');
   });
 });
 

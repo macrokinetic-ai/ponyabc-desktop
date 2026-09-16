@@ -107,15 +107,60 @@ export function inspectFirmwarePackage(rootDir: string): FirmwarePackageInfo {
 const MAX_LOG_EXCERPT_CHARS = 4000;
 
 /**
- * Pure — no filesystem/process access. The ONLY thing that can ever produce 'success' is the
- * literal, case-insensitive string "download success" appearing in the tool's own real output
- * — the signal the vendor's own documentation (P5点读笔升级方法.pdf) describes as the actual
- * completion marker. A real exit code of 0 is carried through for diagnostics but is NEVER by
- * itself sufficient for 'success': the confirmed chain's own batch scripts never check
- * `errorlevel` after the actual flash step, so a "clean" exit code mostly just reflects the
- * trailing housekeeping commands (a dismissed `pause`, a `del`) succeeding — not that
- * isd_download.exe itself did. Anything that completed without the confirmed signal is
- * 'unclear', never guessed either way — including a real exit code of 0.
+ * Recognized completion signals, in the tool's own real output. The original English string
+ * (from the vendor's P5点读笔升级方法.pdf) is one confirmed vendor build's marker; a real,
+ * user-supplied successful run (2026-09-16, hardware_rev=v1) showed the SAME tool instead
+ * printing the Chinese phrase "下载完成" ("download complete") after the write-sector/write-block
+ * countdown reached 0 — a different build or locale of the same vendor tool, not a different
+ * signal in spirit. Both are treated as success. The Chinese match is ONLY trusted when
+ * `encodingKnown` is true (see decodeLogBytes) — matching against mis-decoded/`?`-substituted
+ * text would be coincidental, not a real signal, and must never loosen the success rule.
+ */
+const DOWNLOAD_SUCCESS_EN_RE = /download success/i;
+const DOWNLOAD_COMPLETE_ZH_RE = /下[载載]完成/;
+
+/** Diagnostic-only signals extracted from the log — NONE of these determine `status` on their
+ *  own; they exist so the caller (and the UI's "technical details") can show what was actually
+ *  observed without silently discarding it.
+ *  - `otaTableHadFailures`: the "OTA UPDATE INFO" capability/size table lists FAIL for some
+ *    delivery methods (e.g. Bluetooth OTA, BLE RCSP) alongside PASS for others (e.g. USB, SD
+ *    card, UART) — this table only reports which delivery METHODS fit in the available VM space,
+ *    not whether THIS run (over USB) succeeded. A FAIL here is normal and must never be treated
+ *    as an overall failure signal.
+ *  - `sawUfwGenerated`: "生成UFW文件 ... 成功" appears AFTER the actual flash step, packaging the
+ *    result into a .ufw container — this is a post-processing step, not proof the pen itself was
+ *    successfully flashed. Never sufficient for 'success' on its own.
+ *  - `sawNoLicenseWarning`: the literal (ASCII, encoding-independent) string "no license"
+ *    appeared. Its actual meaning/severity in this vendor tool is NOT confirmed — this is
+ *    surfaced as a standing diagnostic, never silently dropped, and never treated as fatal
+ *    either, purely because its real semantics are unknown.
+ */
+export interface LogDiagnostics {
+  otaTableHadFailures: boolean;
+  sawUfwGenerated: boolean;
+  sawNoLicenseWarning: boolean;
+}
+
+export function extractLogDiagnostics(logText: string, encodingKnown: boolean): LogDiagnostics {
+  return {
+    otaTableHadFailures: /OTA UPDATE INFO/i.test(logText) && /FAIL/i.test(logText),
+    sawUfwGenerated: encodingKnown && /生成.{0,10}UFW.{0,20}成功/.test(logText),
+    // Plain ASCII — matches correctly regardless of whether the surrounding Chinese text
+    // decoded correctly, so this is NOT gated on encodingKnown.
+    sawNoLicenseWarning: /no license/i.test(logText),
+  };
+}
+
+/**
+ * Pure — no filesystem/process access. `status: 'success'` requires one of the two recognized
+ * completion signals above (DOWNLOAD_SUCCESS_EN_RE or, when encodingKnown, DOWNLOAD_COMPLETE_ZH_RE)
+ * — never a bare exit code, never "OTA UPDATE INFO" table PASS entries, never `sawUfwGenerated`,
+ * and never a lenient/fuzzy match against `?`-substituted text. A real exit code of 0 is carried
+ * through for diagnostics but is NEVER by itself sufficient: the confirmed chain's own batch
+ * scripts never check `errorlevel` after the actual flash step, so a "clean" exit code mostly
+ * just reflects trailing housekeeping (a dismissed `pause`, a `del`) succeeding — not that
+ * isd_download.exe itself did. Anything that completed without a confirmed signal is 'unclear',
+ * never guessed either way.
  *
  * `processTerminationConfirmed` is a SEPARATE fact from `status` — see the field's own doc in
  * shared/types.ts. It answers "is it safe to let a new pen operation start", not "did the
@@ -126,36 +171,54 @@ const MAX_LOG_EXCERPT_CHARS = 4000;
  * positive evidence one way or the other: 'declined'/'launch-error'/'unsupported-platform' mean
  * the elevated process never launched at all, and `elevation.status === 'completed'` means
  * PowerShell's `-Wait` genuinely returned with a real exit code — the process is confirmed gone,
- * whether or not the log shows the success string.
+ * whether or not the log shows a success string.
  */
-export function determineOutcome(params: { logText: string; elevation: RunElevatedResult }): FirmwareUpgradeOutcome {
-  const { logText, elevation } = params;
+export function determineOutcome(params: {
+  logText: string;
+  elevation: RunElevatedResult;
+  encodingKnown: boolean;
+}): FirmwareUpgradeOutcome {
+  const { logText, elevation, encodingKnown } = params;
   const logExcerpt = logText.slice(-MAX_LOG_EXCERPT_CHARS);
+  const diagnostics = extractLogDiagnostics(logText, encodingKnown);
 
   if (elevation.status === 'declined') {
-    return { status: 'failed', reason: 'declined', exitCode: null, logExcerpt, processTerminationConfirmed: true };
+    return { status: 'failed', reason: 'declined', exitCode: null, logExcerpt, processTerminationConfirmed: true, encodingKnown, ...diagnostics };
   }
   if (elevation.status === 'launch-error') {
-    return { status: 'failed', reason: 'launch-error', exitCode: null, logExcerpt, processTerminationConfirmed: true };
+    return { status: 'failed', reason: 'launch-error', exitCode: null, logExcerpt, processTerminationConfirmed: true, encodingKnown, ...diagnostics };
   }
   if (elevation.status === 'timeout') {
-    return { status: 'unclear', reason: 'timeout', exitCode: null, logExcerpt, processTerminationConfirmed: false };
+    return { status: 'unclear', reason: 'timeout', exitCode: null, logExcerpt, processTerminationConfirmed: false, encodingKnown, ...diagnostics };
   }
   if (elevation.status === 'unsupported-platform') {
-    return { status: 'failed', reason: 'unsupported-platform', exitCode: null, logExcerpt, processTerminationConfirmed: true };
+    return { status: 'failed', reason: 'unsupported-platform', exitCode: null, logExcerpt, processTerminationConfirmed: true, encodingKnown, ...diagnostics };
   }
   if (elevation.status === 'unparseable') {
-    return { status: 'unclear', reason: 'unparseable-wrapper-output', exitCode: null, logExcerpt, processTerminationConfirmed: false };
+    return { status: 'unclear', reason: 'unparseable-wrapper-output', exitCode: null, logExcerpt, processTerminationConfirmed: false, encodingKnown, ...diagnostics };
   }
   // elevation.status === 'completed' — Start-Process -Wait genuinely returned; the elevated
   // process is confirmed gone either way.
-  if (/download success/i.test(logText)) {
+  if (DOWNLOAD_SUCCESS_EN_RE.test(logText)) {
     return {
       status: 'success',
       reason: 'log-contains-download-success',
       exitCode: elevation.exitCode,
       logExcerpt,
       processTerminationConfirmed: true,
+      encodingKnown,
+      ...diagnostics,
+    };
+  }
+  if (encodingKnown && DOWNLOAD_COMPLETE_ZH_RE.test(logText)) {
+    return {
+      status: 'success',
+      reason: 'log-contains-download-complete-zh',
+      exitCode: elevation.exitCode,
+      logExcerpt,
+      processTerminationConfirmed: true,
+      encodingKnown,
+      ...diagnostics,
     };
   }
   return {
@@ -164,5 +227,7 @@ export function determineOutcome(params: { logText: string; elevation: RunElevat
     exitCode: elevation.exitCode,
     logExcerpt,
     processTerminationConfirmed: true,
+    encodingKnown,
+    ...diagnostics,
   };
 }

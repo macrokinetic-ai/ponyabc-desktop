@@ -3,6 +3,7 @@ import path from 'node:path';
 import { app, dialog, type BrowserWindow } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type {
+  DiagnosticsExportResult,
   FirmwareDownloadProgressEvent,
   FirmwarePrepareResult,
   FirmwareRecoveryStatus,
@@ -18,9 +19,10 @@ import * as session from '../services/session';
 import { acquirePenLock } from '../services/penOperationLock';
 import { runElevated, type RunElevatedResult } from '../services/elevatedRun';
 import { determineOutcome, inspectFirmwarePackage } from '../services/firmwareUpgrade';
+import { decodeLogBytes } from '../services/logEncoding';
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
-import { appendDiagnostic } from '../services/diagnostics';
+import { appendDiagnostic, redactText } from '../services/diagnostics';
 import { diagnosticsStore } from './book';
 import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
 import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
@@ -154,7 +156,15 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     // blocks a second upgrade attempt outright, and (for an 'unclear' result) stays up until
     // the user explicitly acknowledges it.
     const release = await acquirePenLock();
-    let accumulatedLog = '';
+    // Raw bytes ONLY — never decoded incrementally. A multi-byte Chinese character split across
+    // two poll reads must never be corrupted by decoding it in isolation; see logEncoding.ts's
+    // decodeLogBytes, which is always called on the FULL accumulated buffer, fresh, every time
+    // text is actually needed (for the live progress tail or the final outcome).
+    let rawLogChunks: Buffer[] = [];
+    // Fires once, from runElevated's own codepage-detection poll (see elevatedRun.ts) — null
+    // until then, and possibly permanently null if it could never be determined (the elevated
+    // launch never actually started, or `chcp`'s own output didn't parse).
+    let detectedCodepage: number | null = null;
     // Set true only immediately before the elevated launch is attempted, and read in the catch
     // below to tell "nothing was ever launched" (safe to release) apart from "the launch was
     // attempted but we don't know what happened to it" (NOT safe to release) — see the catch
@@ -162,9 +172,12 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     let calledRunElevated = false;
     let elevationResult: RunElevatedResult | null = null;
 
+    const decodeAccumulatedLog = () => decodeLogBytes(Buffer.concat(rawLogChunks), detectedCodepage);
+
     const sendProgress = (phase: FirmwareUpgradePhase) => {
       try {
-        window.webContents.send(IPC.firmwareProgress, { phase, logTailText: accumulatedLog.slice(-4000) });
+        const { text } = decodeAccumulatedLog();
+        window.webContents.send(IPC.firmwareProgress, { phase, logTailText: text.slice(-4000) });
       } catch {
         // window already gone
       }
@@ -187,9 +200,12 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
         cwd: params.packageDir,
         workDir,
         onLogUpdate: (delta) => {
-          accumulatedLog += delta;
+          rawLogChunks.push(delta);
           if (!sawFirstLog) sawFirstLog = true; // first real evidence the tool actually started
           sendProgress('tool-running');
+        },
+        onCodepageDetected: (cp) => {
+          detectedCodepage = cp;
         },
         logPollIntervalMs: 400,
         // No timeoutMs: giving up watching must be a human decision made in the wizard UI, not
@@ -198,7 +214,8 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
       elevationResult = elevation; // positive record that runElevated resolved, and with what
 
       sendProgress('finishing');
-      const outcome = determineOutcome({ logText: accumulatedLog, elevation });
+      const { text: decodedLog, encodingUsed } = decodeAccumulatedLog();
+      const outcome = determineOutcome({ logText: decodedLog, elevation, encodingKnown: encodingUsed !== null });
       appendDiagnostic(diagnosticsStore(), 'firmware-upgrade', {
         outcome: outcome.status,
         reason: outcome.reason,
@@ -254,6 +271,12 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
           exitCode: null,
           logExcerpt: err instanceof Error ? err.message : String(err),
           processTerminationConfirmed: terminationConfirmed,
+          // Not a vendor-log parsing path — this is our own internal-error message (a plain JS
+          // string, always readable), and no vendor log diagnostics were ever extracted here.
+          encodingKnown: true,
+          otaTableHadFailures: false,
+          sawUfwGenerated: false,
+          sawNoLicenseWarning: false,
         } satisfies FirmwareUpgradeOutcome);
       } catch {
         // window already gone
@@ -319,4 +342,39 @@ export function cancelFirmwareDownload(): { ok: boolean } {
   const had = currentPrepareController !== null;
   currentPrepareController?.abort();
   return { ok: had };
+}
+
+/**
+ * Records "the user tried the pen after an upgrade and it works" as a plain diagnostic entry —
+ * nothing more. This is deliberately NOT wired to acknowledgeFirmwareOutcome, pendingRelease, or
+ * any lock/guard state: a teacher clicking this button is real evidence about the PEN (it powers
+ * on, plays audio, etc.), never evidence about whether the elevated flashing PROCESS has
+ * actually terminated — those are two separate facts, and only the latter is allowed to release
+ * the pen lock / firmware in-progress guard (see the module doc comment on pendingRelease).
+ * Also never treated as confirming which firmware version is now on the pen — the app still has
+ * no reliable way to read that.
+ */
+export function recordFirmwarePlaybackFeedback(): { ok: boolean } {
+  appendDiagnostic(diagnosticsStore(), 'firmware-playback-feedback', { reportedAtMs: Date.now() });
+  return { ok: true };
+}
+
+/** Exports the full decoded firmware log to a user-chosen file. Reuses the exact same
+ *  `redactText` pass already applied to diagnostics exports (src/main/services/diagnostics.ts)
+ *  so a shared file/path never leaks the user's own Windows username from a path like
+ *  `C:\Users\<name>\...` — nothing new invented for this one export path. */
+export async function exportFirmwareLog(window: BrowserWindow, logText: string): Promise<DiagnosticsExportResult> {
+  const { canceled, filePath } = await dialog.showSaveDialog(window, {
+    title: 'Export Firmware Upgrade Log',
+    defaultPath: `ponyabc-firmware-log-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`,
+    filters: [{ name: 'Text', extensions: ['txt'] }],
+  });
+  if (canceled || !filePath) return { status: 'cancelled' };
+
+  try {
+    fs.writeFileSync(filePath, redactText(logText), 'utf-8');
+    return { status: 'ok', path: filePath };
+  } catch (err) {
+    return { status: 'error', message: err instanceof Error ? err.message : String(err) };
+  }
 }

@@ -82,13 +82,27 @@
     "successTitle": "Aggiornamento completato con successo.",
     "failedTitle": "L'aggiornamento non è iniziato o non si è completato.",
     "unclearTitle": "Impossibile confermare il risultato.",
-    "unclearBody": "Lo strumento è terminato senza mostrare il messaggio di successo previsto. La penna potrebbe essere stata aggiornata con successo oppure no — controllala manualmente prima di usarla, oppure riprova.",
+    "unclearBody": "Lo strumento di aggiornamento è terminato. Riavvia la penna e prova la riproduzione per confermare che funzioni.",
     "unclearBodyUnconfirmed": "Non è stato possibile confermare se lo strumento di aggiornamento abbia effettivamente terminato l'esecuzione. Per sicurezza, non sarà consentito alcun nuovo aggiornamento del firmware né alcuna scrittura BOOK/DIY sulla penna finché questo non sarà risolto. Chiudi completamente questa app e riaprila solo dopo aver confermato tu stesso (ad esempio nel Task Manager di Windows, o controllando la penna stessa) che il processo si è arrestato.",
     "reason": "Dettagli: {{reason}}",
     "acknowledgeButton": "Ho capito — risultato non confermato",
     "acknowledgeButtonUnconfirmed": "Ho capito — riavvierò l'app",
     "restartNoticeAcknowledged": "Annotato. Questa app resterà bloccata per nuovi aggiornamenti del firmware e scritture BOOK/DIY finché non la chiuderai completamente e la riaprirai.",
-    "startOverButton": "Ricomincia"
+    "startOverButton": "Ricomincia",
+    "playbackFeedbackButton": "Ho provato la penna — riproduce normalmente",
+    "playbackFeedbackRecorded": "Annotato — grazie."
+  },
+  "technicalDetails": {
+    "title": "Dettagli tecnici",
+    "readButton": "Mostra",
+    "collapseButton": "Nascondi",
+    "encodingUnknown": "Questa app non è riuscita a determinare la reale codifica del testo dello strumento, quindi parte del testo sopra potrebbe non essere visualizzata correttamente. Non è stato alterato — è un limite di visualizzazione, non una perdita di dati.",
+    "sawNoLicense": "L'output dello strumento includeva il messaggio \"no license\". Il suo significato esatto in questo strumento del fornitore non è ancora confermato.",
+    "otaTableHadFailures": "La tabella delle capacità sopra elenca alcuni metodi di aggiornamento come non disponibili per questa dimensione del firmware — questo è previsto e non indica un errore di questa esecuzione.",
+    "sawUfwGenerated": "Lo strumento ha segnalato di aver generato correttamente il suo file di pacchettizzazione — questo è un passaggio di post-elaborazione e da solo non conferma che la penna sia stata flashata.",
+    "exportButton": "Esporta registro…",
+    "exportSaved": "Salvato in {{path}}",
+    "exportFailed": "Impossibile salvare il registro: {{message}}"
   },
   "recovery": {
     "title": "Aggiornamento precedente non confermato come terminato",

@@ -82,13 +82,27 @@
     "successTitle": "Actualización completada con éxito.",
     "failedTitle": "La actualización no se inició o no se completó.",
     "unclearTitle": "No se pudo confirmar el resultado.",
-    "unclearBody": "La herramienta terminó sin mostrar el mensaje de éxito esperado. Es posible que el lápiz se haya actualizado correctamente o no — compruébelo manualmente antes de usarlo, o vuelva a intentarlo.",
+    "unclearBody": "La herramienta de actualización ha terminado. Reinicie el lápiz y pruebe la reproducción para confirmar que funciona.",
     "unclearBodyUnconfirmed": "No se pudo confirmar si la herramienta de actualización realmente terminó de ejecutarse. Por seguridad, no se permitirá ninguna nueva actualización de firmware ni escritura BOOK/DIY en el lápiz mientras esto no se resuelva. Cierre completamente esta aplicación y vuelva a abrirla solo después de haber confirmado usted mismo (por ejemplo, en el Administrador de tareas de Windows, o revisando el propio lápiz) que el proceso se ha detenido.",
     "reason": "Detalles: {{reason}}",
     "acknowledgeButton": "Entiendo — resultado no confirmado",
     "acknowledgeButtonUnconfirmed": "Entiendo — reiniciaré la aplicación",
     "restartNoticeAcknowledged": "Anotado. Esta aplicación permanecerá bloqueada para nuevas actualizaciones de firmware y escrituras BOOK/DIY hasta que la cierre por completo y la vuelva a abrir.",
-    "startOverButton": "Empezar de nuevo"
+    "startOverButton": "Empezar de nuevo",
+    "playbackFeedbackButton": "Probé el lápiz — reproduce con normalidad",
+    "playbackFeedbackRecorded": "Anotado — gracias."
+  },
+  "technicalDetails": {
+    "title": "Detalles técnicos",
+    "readButton": "Mostrar",
+    "collapseButton": "Ocultar",
+    "encodingUnknown": "Esta aplicación no pudo determinar la codificación de texto real de la herramienta, por lo que parte del texto anterior puede no mostrarse correctamente. No se ha alterado — es una limitación de visualización, no una pérdida de datos.",
+    "sawNoLicense": "La salida de la herramienta incluyó el mensaje «no license». Su significado exacto en esta herramienta del proveedor aún no está confirmado.",
+    "otaTableHadFailures": "La tabla de capacidades anterior indica que algunos métodos de entrega de actualización no están disponibles para este tamaño de firmware — esto es normal y no indica un fallo de esta ejecución.",
+    "sawUfwGenerated": "La herramienta informó que generó su archivo de empaquetado correctamente — este es un paso de posprocesamiento y no confirma por sí solo que el lápiz se haya grabado.",
+    "exportButton": "Exportar registro…",
+    "exportSaved": "Guardado en {{path}}",
+    "exportFailed": "No se pudo guardar el registro: {{message}}"
   },
   "recovery": {
     "title": "Actualización anterior no confirmada como finalizada",

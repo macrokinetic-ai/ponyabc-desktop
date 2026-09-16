@@ -600,7 +600,8 @@ export type DiagnosticEntryKind =
   | 'pen-verify'
   | 'pen-verify-batch'
   | 'firmware-upgrade'
-  | 'firmware-recovery';
+  | 'firmware-recovery'
+  | 'firmware-playback-feedback';
 
 export interface DiagnosticEntry {
   atMs: number;
@@ -680,6 +681,24 @@ export interface FirmwareUpgradeOutcome {
    * `src/main/ipc/firmware.ts` and `tasks/lessons.md` (2026-09-15).
    */
   processTerminationConfirmed: boolean;
+  /** False when the log's real character encoding (the vendor tool's actual console codepage,
+   *  detected via `chcp` at run time — see logEncoding.ts) could not be determined/recognized.
+   *  When false, `logExcerpt` is a lossless latin1 fallback (every raw byte preserved, so still
+   *  exportable/recoverable) but must NOT be displayed as if it were readable text, and the
+   *  Chinese completion signal is never matched against it (see determineOutcome). */
+  encodingKnown: boolean;
+  /** The "OTA UPDATE INFO" capability/size table listed FAIL for at least one delivery method
+   *  (e.g. Bluetooth OTA, BLE RCSP) — informational only. This table reports which OTA delivery
+   *  METHODS fit the available VM space, not whether the run actually used (over USB/serial/etc)
+   *  succeeded; a FAIL here is normal and must never be treated as an overall failure. */
+  otaTableHadFailures: boolean;
+  /** "生成UFW文件 ... 成功" appeared — a post-flash packaging step, NOT proof the pen itself was
+   *  successfully flashed. Informational only; never sufficient for `status: 'success'`. */
+  sawUfwGenerated: boolean;
+  /** The literal string "no license" appeared in the tool's output. Its real meaning/severity in
+   *  this vendor tool is NOT confirmed — surfaced as a standing diagnostic rather than silently
+   *  dropped or treated as fatal. See tasks/todo.md for the open question. */
+  sawNoLicenseWarning: boolean;
 }
 
 export type FirmwareStartResult =
@@ -879,4 +898,13 @@ export interface PonyAbcApi {
   prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
   cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
+  /** Records "the user tried the pen after an upgrade and it works" as a diagnostic entry ONLY —
+   *  never treated as automatic verification that the firmware version is confirmed, and never
+   *  used to release the pen lock / firmware in-progress guard (see acknowledgeFirmwareOutcome,
+   *  the only thing that can do that, gated strictly on processTerminationConfirmed). */
+  recordFirmwarePlaybackFeedback: () => Promise<{ ok: boolean }>;
+  /** Exports the full decoded firmware upgrade log to a user-chosen file, with the same personal
+   *  path redaction already applied to diagnostics exports (see redactText in
+   *  src/main/services/diagnostics.ts) — reused, not reinvented. */
+  exportFirmwareLog: (logText: string) => Promise<DiagnosticsExportResult>;
 }
