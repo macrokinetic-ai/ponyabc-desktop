@@ -444,28 +444,6 @@ export function cancelFirmwareDownload(): { ok: boolean } {
   return { ok: had };
 }
 
-/**
- * The ONLY action on a "normal completion" result screen (success, or confirmed-terminated
- * unclear) — releases any pending lock (reusing the exact same release path
- * acknowledgeFirmwareOutcome already uses; a no-op if there's nothing pending, e.g. a real
- * 'success' outcome already released everything synchronously) and then quits the app. Never
- * reachable from a "termination not confirmed" state (timeout/unparseable) — the renderer never
- * shows/enables this action there, and this function does not attempt to distinguish or block
- * that case itself since quitting the app is not what would be unsafe there (the persisted
- * pending-run marker, see firmwareRecovery.ts, already protects the real invariant across any
- * app exit, clean or not) — what's actually disallowed is the app silently CLAIMING resolution
- * it doesn't have, which is a UI-layer concern, not this function's.
- */
-export function finishFirmwareUpgrade(): { ok: boolean } {
-  if (pendingRelease) {
-    pendingRelease();
-    pendingRelease = null;
-    endFirmwareUpgrade();
-  }
-  app.quit();
-  return { ok: true };
-}
-
 // ---------------------------------------------------------------------------------------
 // Firmware diagnostic session export (Settings → Support → "Export firmware diagnostic
 // logs"). Reads the structured session records written incrementally by firmwareSessionLog.ts

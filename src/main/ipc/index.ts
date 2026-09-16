@@ -32,7 +32,6 @@ import {
   acknowledgeFirmwareOutcome,
   cancelFirmwareDownload,
   exportFirmwareDiagnostics,
-  finishFirmwareUpgrade,
   getFirmwareRecoveryStatus,
   getOfficialFirmwareRelease,
   isFirmwareInProgress,
@@ -127,7 +126,6 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.firmwareGetOfficialRelease, () => getOfficialFirmwareRelease());
   ipcMain.handle(IPC.firmwarePrepareOfficialPackage, (_event, params) => prepareOfficialFirmwarePackage(getWindow(), params));
   ipcMain.handle(IPC.firmwareCancelDownload, () => cancelFirmwareDownload());
-  ipcMain.handle(IPC.firmwareFinish, () => finishFirmwareUpgrade());
   ipcMain.handle(IPC.firmwareDiagnosticsExport, () => exportFirmwareDiagnostics(getWindow()));
 
   logAppStart();

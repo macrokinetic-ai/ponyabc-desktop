@@ -949,4 +949,36 @@ simple UI.
       the unified success/confirmed-unclear Finish-button UI and the still-distinct failed/
       not-yet-confirmed-terminated states).
 - [x] **471 tests pass, 6 skipped, across 44 files**; `typecheck` and `build` both clean.
-- [ ] Not yet done as of this entry: commit, version bump, tag, and 3-platform release.
+- [x] Committed, version-bumped to v0.3.15, tagged, and released across all 3 platforms
+      (Windows x64, macOS arm64/x64) — all 3 installers + `.sha256` confirmed present.
+
+# Bug fix (post-v0.3.15): "Finish" was quitting the app instead of returning to the wizard
+
+User caught that the "Finish" button on the result screen (added this same round, above) called
+`app.quit()` — it should end the wizard run and return to the Prepare step, letting the user reach
+the app's actual home via the existing left-side Home navigation, never close the app outright.
+
+- [x] `handleFinish()` (`FirmwareScreen.tsx`): still calls `acknowledgeFirmwareOutcome()` first
+      (unchanged — this is the one safety-critical step, releasing any pending lock exactly as
+      before), then calls the existing `startOver()` (same reset already used by the "failed"
+      outcome's "Start over" button) instead of the removed `finishFirmwareUpgrade()` IPC call.
+      Resets this run's temporary wizard UI state (packageInfo/progress/outcome/etc.); never
+      touches the saved session diagnostic logs on disk (`firmwareSessionLog.ts` — untouched by
+      this file entirely).
+- [x] **Removed** the now-fully-redundant `finishFirmwareUpgrade` IPC end-to-end (main process
+      function in `firmware.ts`, channel in `ipcChannels.ts`, registration in `ipc/index.ts`,
+      preload method, `PonyAbcApi` type entry) — once `app.quit()` was gone, its only remaining
+      logic (release any pending lock) was byte-for-byte identical to the `acknowledgeFirmwareOutcome()`
+      call `handleFinish()` already makes first; keeping a second, same-effect function around
+      would just be dead/confusing code.
+- [x] Safety invariants unchanged and re-verified by inspection: Finish is still only rendered
+      when `outcome.processTerminationConfirmed && status !== 'failed'`, so it structurally can
+      never force-terminate a running tool or release a not-yet-confirmed-terminated lock — this
+      button-gating logic itself was not touched.
+- [x] No i18n changes needed — the "Finish"/"完成" button label text is unaffected; the diff is
+      entirely main-process plumbing removal + one renderer function body change.
+- [x] Tests: rewrote the confirmed-unclear Finish test to assert a return to "Prepare your pen"
+      instead of a quit-IPC call; added a new success-outcome Finish test asserting the same
+      return-to-Prepare behavior AND that a fresh "Next" click lands on a clean Package step
+      (no stale `packageInfo`/outcome carried over). **472 tests pass, 6 skipped, across 44
+      files**; `typecheck` and `build` both clean. No real firmware flash executed.

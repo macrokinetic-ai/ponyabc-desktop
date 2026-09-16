@@ -897,10 +897,6 @@ export interface PonyAbcApi {
   prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
   cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
-  /** Only ever reachable from a "normal completion" result (success, or confirmed-terminated
-   *  unclear) — releases any pending lock (a no-op if there is none) and quits the app. See
-   *  src/main/ipc/firmware.ts's finishFirmwareUpgrade doc comment. */
-  finishFirmwareUpgrade: () => Promise<{ ok: boolean }>;
   /** Settings → Support → "Export firmware diagnostic logs". Exports the recent structured
    *  per-attempt session logs (see src/main/services/firmwareSessionLog.ts) — separate from
    *  exportDiagnostics() above, which exports the general, capped app-wide diagnostics log.

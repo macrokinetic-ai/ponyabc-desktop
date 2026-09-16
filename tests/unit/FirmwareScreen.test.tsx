@@ -67,7 +67,6 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     prepareOfficialFirmwarePackage: vi.fn(async () => ({ status: 'no-network', message: 'offline' }) as const),
     onFirmwareDownloadProgress: vi.fn(() => () => {}),
     cancelFirmwareDownload: vi.fn(async () => ({ ok: false })),
-    finishFirmwareUpgrade: vi.fn(async () => ({ ok: true })),
     exportFirmwareDiagnostics: vi.fn(async () => ({ status: 'cancelled' }) as const),
     onFirmwareProgress: vi.fn((listener) => {
       progressListener = listener;
@@ -232,7 +231,37 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
-    await waitFor(() => expect(window.ponyabc.finishFirmwareUpgrade).toHaveBeenCalled());
+    // Finish returns to the wizard's Prepare step — it never quits the app.
+    await screen.findByText('Prepare your pen');
+  });
+
+  it('Finish (from a real "success" outcome) also returns to Prepare, and this run\'s temporary wizard state is cleared so a new attempt starts clean', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'success',
+      reason: 'log-contains-download-success',
+      exitCode: 0,
+      logExcerpt: 'download success',
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
+    await screen.findByText('Prepare your pen');
+    // A fresh "Next" click must not fall straight back into the just-finished package/outcome —
+    // this run's packageInfo/outcome/progress were cleared, exactly like "Start over".
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Firmware package' });
+    expect(screen.queryByText(/Selected:/)).toBeNull();
   });
 
   it('a "failed" outcome (e.g. declined UAC) shows its own distinct, truthful message and a "Start over" button — never claims completion', async () => {

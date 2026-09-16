@@ -44,7 +44,8 @@ export function FirmwareScreen() {
   const [recovery, setRecovery] = useState<FirmwareRecoveryStatus | null>(null);
   const [rechecking, setRechecking] = useState(false);
   // "Finish" (the only action on a confirmed-terminated result) releases any pending lock (if
-  // one is held) then quits the app — see handleFinish and firmware.ts's finishFirmwareUpgrade.
+  // one is held) then returns to the wizard's Prepare step — see handleFinish. It never quits
+  // the app; Home navigation (outside this screen) is the only way back to the app's home.
   const [finishing, setFinishing] = useState(false);
   const logRef = useRef<HTMLPreElement | null>(null);
 
@@ -205,19 +206,21 @@ export function FirmwareScreen() {
    * (the render below never shows this button otherwise) — i.e. the upgrade tool is confirmed to
    * have actually stopped, whether or not a recognized success signal was seen. Releases any
    * pending lock (a no-op if there wasn't one — e.g. a real 'success' outcome already released it
-   * synchronously server-side) and then quits the app. Deliberately never reachable, and never
-   * force-terminates anything, when termination could NOT be confirmed (timeout/unparseable) —
-   * that case keeps its own separate, still-locked flow via handleAcknowledgeUnconfirmed.
+   * synchronously server-side), then ends this wizard run and returns to the Prepare step —
+   * clearing this run's temporary wizard UI state (packageInfo, progress, outcome, etc.) so the
+   * screen is ready for a new attempt. Never quits the app: the user reaches the app's home via
+   * Home navigation, not via this button. Deliberately never reachable, and never force-
+   * terminates anything, when termination could NOT be confirmed (timeout/unparseable) — that
+   * case keeps its own separate, still-locked flow via handleAcknowledgeUnconfirmed, which does
+   * NOT reset the wizard (the lock stays held with no in-app release path there).
    */
   async function handleFinish() {
     setFinishing(true);
     try {
       await window.ponyabc.acknowledgeFirmwareOutcome();
     } finally {
-      await window.ponyabc.finishFirmwareUpgrade();
-      // No `finally`-reached UI state update expected past this point — finishFirmwareUpgrade
-      // quits the app. setFinishing(false) is intentionally omitted: if quitting is ever
-      // slow/blocked, staying disabled is the safe default, not a stuck-then-reset button.
+      setFinishing(false);
+      startOver();
     }
   }
 
