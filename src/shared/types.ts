@@ -6,7 +6,11 @@ export type { AppInfo };
 export type UpdateCheckResult =
   | { status: 'up-to-date'; currentVersion: string }
   | { status: 'update-available'; currentVersion: string; latestVersion: string }
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string }
+  // Store-distributed builds update via the Microsoft Store itself — never point these users
+  // at the GitHub release page. checkForUpdates() returns this immediately (no GitHub API
+  // call) whenever process.windowsStore is true.
+  | { status: 'store-managed' };
 
 export interface Settings {
   version: 1;

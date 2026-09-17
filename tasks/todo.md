@@ -982,3 +982,104 @@ the app's actual home via the existing left-side Home navigation, never close th
       return-to-Prepare behavior AND that a fresh "Next" click lands on a clean Package step
       (no stale `packageInfo`/outcome carried over). **472 tests pass, 6 skipped, across 44
       files**; `typecheck` and `build` both clean. No real firmware flash executed.
+
+# Microsoft Store (MSIX) packaging — v0.3.16 prep
+
+User-approved plan (see `/Users/aiagent/.claude/plans/reflective-jingling-allen.md` for the
+full write-up): add a Windows Store distribution channel alongside the existing GitHub
+EXE/DMG paths, using the exact Partner Center identity already reserved (`PonyABC.PonyABCDesktop`,
+publisher `CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5`, PublisherDisplayName `PonyABC`, Store ID
+`9P544XC6B609`). Grounded in official Microsoft Learn docs fetched live this session, not
+assumed from training data (Store Policy 7.20, MSIX app package requirements, MSIX desktop-app
+virtualization docs) — see the plan file for exact quotes/citations.
+
+- [x] **Build pipeline**: `electron-builder.win-msix.yml` (new, `extends: ./electron-builder.yml`,
+      overrides `win.target` to `appx` only — the existing NSIS `.exe` target is untouched).
+      Confirmed by reading the installed `electron-builder@25.1.8`'s actual
+      `node_modules/app-builder-lib/out/targets/AppxTarget.js` and its `appxmanifest.xml`
+      template directly (not just its docs site) that: the CLI target name is `appx`;
+      `applicationId` defaults cleanly to `identityName` and passes its validation regex;
+      `capabilities` in this installed version is **hardcoded to `runFullTrust` only** in the
+      template — there is no code path that could add `allowElevation` even by accident, which
+      settles that specific risk without needing a real device test. `package.json`: new
+      `dist:win:msix` / `pack:win:msix` scripts alongside the untouched `dist:win`.
+      `scripts/checksum.mjs`: now also checksums `.msix` files.
+- [x] **CI**: `.github/workflows/build-windows.yml` extended (same job, same `windows-latest`
+      runner, existing NSIS steps untouched) to: generate an ephemeral self-signed cert whose
+      Subject exactly matches the required `publisher` (never a secret, never committed, scoped
+      to `CSC_LINK`/`CSC_KEY_PASSWORD` env vars local to one step), build the MSIX, import that
+      same cert into `Cert:\LocalMachine\TrustedPeople`, then **actually run
+      `Add-AppxPackage`/`Get-AppxPackage`/`Remove-AppxPackage` against the real output** as a
+      build-time correctness gate — not just "packaging exited 0". Uploads `*.msix`+`.sha256`
+      as a separate `windows-msix` artifact and attaches both to tagged GitHub Releases, mirroring
+      the existing `.exe` pattern. **Not yet actually run** — these changes are local/committed
+      to a branch, not yet pushed, pending Benny's go-ahead to push (see final summary).
+- [x] **Variant identification**: `identifyAppVariant()` (`src/shared/appVariant.ts`) takes a
+      new optional `isWindowsStore` param → `'win-x64-msix'` identifier / new
+      `about.variantWinX64Msix` i18n key (added to all 8 locales, key-set parity verified via a
+      one-off Node script, not just eyeballed). Sourced from Electron's own `process.windowsStore`
+      runtime flag (`src/main/ipc/appInfo.ts`), not a build-time env var — it can't drift out of
+      sync with how the app actually launched, unlike a baked-in flag would.
+- [x] **Update flow**: Store builds must never be told to install the GitHub `.exe` over
+      themselves. `checkForUpdates()` (`src/main/ipc/updates.ts`) now short-circuits to a new
+      `{ status: 'store-managed' }` `UpdateCheckResult` variant *before* the GitHub API call
+      when `process.windowsStore` is true; `VersionUpdatesTab.tsx` renders a
+      "Store handles updates automatically" hint instead of the download button in that case.
+      New tests: `tests/unit/updates.test.ts` (mocks `electron`, asserts `fetch` is never called
+      in the store-managed branch), plus 3 new `appVariant.test.ts` cases for the new branch.
+      **480 tests pass, 6 skipped, across 45 files; typecheck clean** (baseline before this work:
+      474/44).
+- [x] **AppData-virtualization research finding (settings coexistence) — corrects an
+      over-cautious assumption in the approved plan.** The plan assumed a GitHub-EXE install's
+      settings wouldn't carry over to a Store install and proposed writing one-time migration
+      code. Re-reading Microsoft's own MSIX desktop-apps doc more carefully during implementation
+      surfaced a specific documented mechanic that likely makes that migration code unnecessary:
+      for `AppData` **file opens** (not directory enumeration), "if [the virtualized copy]
+      doesn't exist, the OS will attempt to open the file from the real AppData location... If
+      the file is opened from the real AppData location, then no virtualization for that file
+      occurs" (going forward). If this holds for `settings.json` specifically, a fresh MSIX
+      install's very first read of `<userData>/settings.json` would transparently see (and keep
+      using) the real, already-existing GitHub-EXE settings file, with zero app code needed.
+      **Deliberately did NOT write speculative migration code for this** — per this project's
+      own established standard (see the `copy /b` vs. `copy ..\..\script.ver` lesson above:
+      "we verified an adjacent case" is not evidence for a specific one), a documented general
+      mechanic is not the same as a verified fact about this exact file/app, and I have no
+      Windows host to test it on. Left as an explicit, named item for the real-machine
+      verification pass below, with the "write our own migration shim" fallback documented but
+      NOT implemented pre-emptively.
+- [ ] **OPEN, POTENTIALLY SEVERE RISK — not yet resolved, needs a real Windows machine before
+      trusting the firmware flow under MSIX at all.** `elevatedRun.ts` writes its scratch files
+      (`run.bat`/`run.ps1`/`run.log`/`codepage.txt`) under `app.getPath('userData')` (i.e.
+      `firmwareRun`, under Roaming AppData) from inside the PACKAGED process, then elevates them
+      via `Start-Process -Verb RunAs`, which spawns a NEW process with **no package identity**
+      (this is what lets it avoid needing the restricted `allowElevation` capability — see
+      above). But AppData write-virtualization is applied **per accessing process's package
+      identity**, not per-file: a non-packaged process reading the identical nominal path may
+      resolve to the real (unwritten) AppData location instead of the packaged process's private
+      virtualized copy — i.e. the elevated `cmd.exe`/vendor-exe chain could simply fail to find
+      `run.bat` at all, breaking the firmware flow outright rather than merely risking extra
+      Store review. I could not resolve this conclusively from Microsoft's docs (the exact
+      cross-process visibility rule for a file that only exists in the virtualized copy, accessed
+      by a process with no package identity, isn't spelled out), and did not want to design a
+      brittle, uncertain CI-only probe for it (launching a packaged app with an env var via
+      `shell:appsFolder` doesn't reliably inherit a calling PowerShell session's `$env:` vars —
+      it goes through shell activation, not direct process inheritance — so a CI "proof" here
+      would likely just be testing the CI hack's own reliability, not the real question).
+      **Next step (real machine, not CI)**: install the sideload MSIX, run the firmware wizard
+      against the existing `PONYABC_TEST_VOLUMES_ROOT`/simulated-pen test hook, and confirm the
+      elevated batch actually launches and its log file is readable back by the (packaged) app.
+      **If it fails**: the smallest fix is moving `firmwareRun`/`firmwareDownloads`/
+      `firmwareRecovery`'s base directory from `app.getPath('userData')` to
+      `app.getPath('documents')` (confirmed NOT in Microsoft's virtualized-paths list, unlike
+      `Local`/`Roaming`) plus a clearly-named subfolder — NOT implemented pre-emptively, because
+      it's an unverified guess at a fix for an unverified problem, and Documents-folder clutter
+      is a real UX cost only worth paying if the plain `userData` path is actually proven broken.
+- [ ] **UAC prompt itself** — also unverified for the reason stated in the approved plan: no
+      headless/CI way to confirm the real interactive UAC consent dialog fires correctly from a
+      packaged, non-`allowElevation` app. Real-machine test needed, same session as the item
+      above.
+- [ ] Push the local commit(s) for this work to a branch (not `main` — `main` already has 2
+      pre-existing unpushed commits from prior work, unrelated to this) so CI can actually run
+      and produce a real `.msix` artifact + real sideload-install CI result. Waiting on Benny
+      before pushing to the remote at all, per this session's own caution around actions visible
+      to others.

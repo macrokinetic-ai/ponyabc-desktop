@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build Windows EXE + MSIX
 
 on:
   push:
@@ -43,5 +43,75 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: gh release upload "${GITHUB_REF_NAME}" release/*.exe release/*.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Microsoft Store (MSIX) package — a SEPARATE artifact from the NSIS .exe above.
+      # None of the steps above are touched; this only adds a second Windows distribution path.
+      - name: Generate ephemeral self-signed cert + build MSIX
+        shell: pwsh
+        run: |
+          # Store submissions themselves need no CA-trusted certificate (Microsoft re-signs on
+          # ingestion — see electron-builder.win-msix.yml's comments), but electron-builder still
+          # needs SOME certificate whose Subject exactly matches the required Partner Center
+          # `publisher` value to produce a validly-signed .msix at all. This cert exists only for
+          # this CI job (never a secret, never committed, never reused) so the build step below
+          # produces an installable package, and so the sideload-verify step further down can
+          # prove the package really installs — not just that packaging didn't crash.
+          $certSubject = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $certSubject `
+            -KeyUsage DigitalSignature -FriendlyName 'PonyABC Desktop CI sideload-test cert (ephemeral)' `
+            -CertStoreLocation 'Cert:\CurrentUser\My' `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'ponyabc-msix-test-cert.pfx'
+          $cerPath = Join-Path $env:RUNNER_TEMP 'ponyabc-msix-test-cert.cer'
+          $certPassword = [System.Guid]::NewGuid().ToString()
+          $securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
+          Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
+
+          # electron-builder's Windows signing reads these two env vars (scoped to this step only
+          # — never written to $GITHUB_ENV, so they don't leak into later steps/jobs).
+          $env:CSC_LINK = $pfxPath
+          $env:CSC_KEY_PASSWORD = $certPassword
+          npm run dist:win:msix
+          if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:msix failed with exit code $LASTEXITCODE" }
+
+          # Trust the same ephemeral cert so the sideload-install check below reflects a real
+          # Add-AppxPackage acceptance, not just that the packaging step exited 0.
+          Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
+
+      - name: Verify the MSIX actually sideload-installs
+        shell: pwsh
+        run: |
+          $msix = Get-ChildItem -Path 'release' -Filter '*.msix' | Select-Object -First 1
+          if (-not $msix) { throw 'No .msix file found in release/ after dist:win:msix' }
+          Add-AppxPackage -Path $msix.FullName
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          if (-not $installed) { throw 'Add-AppxPackage reported success but Get-AppxPackage found no PonyABC.PonyABCDesktop package' }
+          Write-Host "Installed package: $($installed.PackageFullName)"
+          Remove-AppxPackage -Package $installed.PackageFullName
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-msix
+          # dist:win:msix's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar,
+          # same convention as the NSIS .exe artifact above. Scoped to *.msix.sha256 specifically
+          # (not the broader *.sha256) since by this point in the job release/ also contains the
+          # .exe's own checksum from the earlier dist:win step.
+          path: |
+            release/*.msix
+            release/*.msix.sha256
+          if-no-files-found: error
+
+      # Same rationale as the .exe's own release-upload step above: land the MSIX next to the
+      # .exe and .dmg installers on the tagged GitHub Release, not just as a login-gated
+      # workflow artifact. This is a GitHub Release asset for convenience/testing only — it is
+      # NOT the Microsoft Store listing itself, which is submitted separately via Partner Center.
+      - name: Attach MSIX to the matching GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: gh release upload "${GITHUB_REF_NAME}" release/*.msix release/*.msix.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

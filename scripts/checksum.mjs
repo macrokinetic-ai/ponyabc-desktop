@@ -22,7 +22,9 @@ function sha256(filePath) {
 async function main() {
   if (!existsSync(releaseDir)) return;
   const entries = await readdir(releaseDir);
-  const installers = entries.filter((name) => name.endsWith('.dmg') || name.endsWith('.exe'));
+  const installers = entries.filter(
+    (name) => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.msix'),
+  );
   for (const name of installers) {
     const filePath = path.join(releaseDir, name);
     const digest = await sha256(filePath);

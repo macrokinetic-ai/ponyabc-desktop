@@ -14,6 +14,18 @@ describe('identifyAppVariant', () => {
     expect(identifyAppVariant('win32', 'x64')).toEqual({ identifier: 'win-x64', labelKey: 'about.variantWinX64' });
   });
 
+  it('maps win32/x64 with isWindowsStore=false explicitly to plain win-x64, same as the default', () => {
+    expect(identifyAppVariant('win32', 'x64', false)).toEqual({ identifier: 'win-x64', labelKey: 'about.variantWinX64' });
+  });
+
+  it('maps win32/x64 with isWindowsStore=true to the distinct win-x64-msix variant', () => {
+    expect(identifyAppVariant('win32', 'x64', true)).toEqual({ identifier: 'win-x64-msix', labelKey: 'about.variantWinX64Msix' });
+  });
+
+  it('ignores isWindowsStore on non-Windows platforms — it is not a generic "packaged" flag', () => {
+    expect(identifyAppVariant('darwin', 'arm64', true)).toEqual({ identifier: 'mac-arm64', labelKey: 'about.variantMacArm64' });
+  });
+
   it('reflects the running BINARY architecture, not host hardware — an x64 build under Rosetta on Apple Silicon must read as mac-x64', () => {
     // The whole point: this function only ever sees process.arch, which Node/Electron
     // report as the architecture the binary was compiled for — under Rosetta, that value
