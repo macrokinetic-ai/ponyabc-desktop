@@ -1186,6 +1186,45 @@ marker code, and do not assume the elevated child lacks package identity — ver
       the actual probe JSON (or an honest "timed out — needs the interactive real-machine test"
       if the UAC prompt blocks non-interactively, which is itself expected and useful to confirm).
 
+## First real CI run: caught a self-inflicted bug before packaging ever ran
+
+Pushed `msix-store-packaging` (Benny explicitly authorized), checked the 2 pre-existing unpushed
+`main` commits' contents first as instructed (legitimate prior firmware-UI work, nothing
+unexpected), then dispatched the workflow manually via `gh workflow run build-windows.yml --ref
+msix-store-packaging` (a plain branch push does not trigger it — only `main`/tags do). Confirmed
+the dispatch genuinely used the branch's updated workflow content (new step names showed up in
+`gh run view`), not a stale `main` copy.
+
+- [x] **Run 1 (35496447966) failed at the ordinary `npm test` step** — before packaging ever
+      started. Root cause: `tests/unit/msixFirmwarePlumbingProbe.test.ts` called the real,
+      unmocked `runMsixFirmwarePlumbingProbe()` (hence the real `runElevated()`) unconditionally.
+      On this Mac dev sandbox that's harmless (`runElevated` short-circuits to
+      `unsupported-platform` instantly), but `npm test` also runs for real on `windows-latest` in
+      this very workflow — there, it genuinely attempted `Start-Process -Verb RunAs`, which
+      blocked past vitest's default 5000ms per-test timeout in a non-interactive session,
+      failing the whole job. This exact class of mistake already had a documented fix in this
+      repo (`elevatedRun.windows-smoke.test.ts`'s own header explains it) — I should have checked
+      for that convention before writing a new test that touches the same real mechanism, and
+      didn't.
+- [x] **Fix, matching the existing convention exactly**: split into two files.
+      `msixFirmwarePlumbingProbe.test.ts` now mocks `runElevated` (via `vi.mock` with
+      `importOriginal`, keeping every OTHER function — `writePendingRun`/`readPendingRun`/
+      `clearPendingRun`/`checkStillRunning` — real) so it stays fast and safe on every platform,
+      including real Windows CI; it simulates exactly what a real elevated run writes to
+      `run.log` so downstream assertions (marker content, error paths on a `declined`/non-
+      completed outcome) stay meaningful. The real, unmocked mechanism moved to a new
+      `msixFirmwarePlumbingProbe.windows-smoke.test.ts`, gated behind the SAME
+      `PONYABC_RUN_ELEVATION_SMOKE=1` + Windows-only guard as `elevatedRun.windows-smoke.test.ts`
+      (same underlying mechanism, reusing the same opt-in variable is correct, not just
+      convenient), added as a second step in `.github/workflows/firmware-elevation-smoke.yml`
+      (manual-dispatch-only, never runs on push/tag/the main build workflow), and bumped that
+      workflow's timeout from 8 to 15 minutes to cover both files' full budgets.
+- [x] **484 → 486 tests pass, 7 skipped (up from 6 — the new smoke file's skip placeholder),
+      across 47 files; typecheck clean; full local `npm test` run completes in ~2.7s** (confirms
+      the fast file no longer risks a real elevation attempt on any platform).
+- [x] Committed and pushed the fix to `msix-store-packaging`; re-dispatched the workflow. See
+      below for the real result once it completes.
+
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
 Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current

@@ -7,6 +7,10 @@ name: Firmware elevation smoke test (manual only)
 # real device. See tests/unit/elevatedRun.windows-smoke.test.ts for what this actually proves
 # (and what it can't: a headless runner has no interactive desktop to click "No" on a UAC
 # prompt, so the declined-elevation path still needs a human on a real Windows session).
+#
+# Also runs the equivalent smoke test for src/main/services/msixFirmwarePlumbingProbe.ts (the
+# same mechanism, exercised through the full firmware-plumbing probe used to investigate the
+# packaged/unpackaged process visibility question under MSIX — see tasks/todo.md).
 
 on:
   workflow_dispatch:
@@ -16,8 +20,8 @@ jobs:
     runs-on: windows-latest
     # If elevation blocks on a prompt that can never be answered here, fail fast and visibly
     # rather than silently burning CI minutes — that itself is useful evidence, not a hang to
-    # hide from.
-    timeout-minutes: 8
+    # hide from. Raised from the original 8 to cover both smoke test files' full timeout budgets.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +37,9 @@ jobs:
         env:
           PONYABC_RUN_ELEVATION_SMOKE: '1'
         run: npx vitest run tests/unit/elevatedRun.windows-smoke.test.ts --reporter=verbose
+
+      - name: Run the MSIX firmware-plumbing probe smoke test
+        shell: bash
+        env:
+          PONYABC_RUN_ELEVATION_SMOKE: '1'
+        run: npx vitest run tests/unit/msixFirmwarePlumbingProbe.windows-smoke.test.ts --reporter=verbose
