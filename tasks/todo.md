@@ -1273,6 +1273,33 @@ isn't working" (it clearly is, for 4/5 tests) and points at a one-time cold-star
       CI's slower first-touch cost, not a new baseline).
 - [x] Pushed, re-dispatched.
 
+## Run 4 (35497255632): npm test passed; packaging failed on a SECOND, different signtool issue
+
+Confirms the fs-timeout fix worked (`npm test` green). The `SIGNTOOL_PATH` fix from Run 2 also
+worked — the packaging step now genuinely uses the Windows SDK's own signtool.exe (log showed it
+resolving to `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe`) — but hit
+a NEW error signing the inner `PonyABC Desktop.exe` before appx wrapping:
+
+```
+SignTool Error: No file digest algorithm specified. Please specify the digest algorithm with the
+/fd flag.
+```
+
+- [x] **Real, verified cause**: read `windowsSignToolManager.js`'s `computeSignToolArgs()`
+      directly. electron-builder dual-signs each inner `.exe` with sha1 THEN sha256 by default
+      (`hashes = ["sha1", "sha256"]` when `signingHashAlgorithms` isn't set) — and for the sha1
+      pass specifically, its own code deliberately omits `/fd` (`if (!isWin || options.hash !==
+      "sha1") { args.push(isWin ? "/fd" : "-h", options.hash); ... }`), relying on signtool
+      historically defaulting to SHA1 when unspecified. The Windows SDK's current signtool.exe
+      (10.0.26100.0) no longer allows that omission at all — a second, independent incompatibility
+      from Run 2's vendored-binary one, this time in electron-builder's own default signing
+      behavior against a stricter modern signtool, not the tool location.
+- [x] **Fix**: `electron-builder.win-appx.yml`'s `win:` block now sets `signingHashAlgorithms:
+      [sha256]`, skipping the broken sha1 pass entirely — correct anyway, since this package only
+      ever targets Windows 10+, with no legacy-OS reason to keep sha1. Scoped to this file only —
+      the base `electron-builder.yml` (NSIS `.exe`) and both mac configs are untouched.
+- [x] Pushed, re-dispatched.
+
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
 Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current

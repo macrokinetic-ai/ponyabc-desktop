@@ -21,6 +21,15 @@ win:
     - target: appx
       arch:
         - x64
+  # Without this, electron-builder dual-signs each inner .exe with BOTH sha1 and sha256 by
+  # default (windowsSignToolManager.js) — for the sha1 pass specifically, it deliberately omits
+  # the `/fd` flag, relying on signtool defaulting to SHA1 when unspecified. The current Windows
+  # SDK signtool.exe (10.0.26100.0, confirmed via a real CI failure: "SignTool Error: No file
+  # digest algorithm specified") no longer allows that omission at all, sha1 or otherwise.
+  # sha256-only signing sidesteps the broken sha1 pass entirely and is the correct choice anyway
+  # — this package only ever targets Windows 10+, so there's no legacy-OS reason to keep sha1.
+  signingHashAlgorithms:
+    - sha256
 appx:
   # Exact Partner Center identity — must match verbatim, not the registered company name
   # (MACROKINETIC MEDIATECH LIMITED). applicationId is left at its default (= identityName).
