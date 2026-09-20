@@ -194,5 +194,8 @@ is submitted on anyone's behalf.
    Settings/About still need a genuine Windows-build recapture.
 
 See `tasks/todo.md` in the `ponyabc-desktop` repo ("Microsoft Store (MSIX) packaging" section)
-for the full technical build/verification log, including the open risks around the firmware
-wizard's elevation flow under MSIX packaging.
+for the full technical build/verification log — a real, fully-green CI run has now confirmed
+packaging, manifest identity, install, launch, and the firmware wizard's elevation/file-visibility
+mechanism all work correctly under MSIX packaging. The one remaining open question is the real,
+interactive UAC consent dialog a human would see (CI's own elevation succeeded silently, which
+isn't proof either way for a real end-user desktop) — see `store-assets/windows-test-notebook.md`.
