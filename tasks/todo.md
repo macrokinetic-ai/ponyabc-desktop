@@ -1250,7 +1250,28 @@ SignTool Error: A required function is not present.
       it before calling `npm run dist:win:appx`. This only affects local/CI test-signing (the
       real Store submission needs no certificate/signtool at all — Microsoft re-signs on
       ingestion).
-- [ ] Pushed, re-dispatched — result pending.
+- [x] Pushed, re-dispatched.
+
+## Run 3 (35497047418): npm test failed again — but a real fs/AV timing issue, not the same bug
+
+`typecheck`/`dist:win` etc. unaffected; `npm test` failed again, but tellingly only ONE test in
+`msixFirmwarePlumbingProbe.test.ts` (the fast, mocked file) timed out at vitest's 5000ms default,
+while the other 4 tests in that SAME file — calling the exact same mocked
+`runMsixFirmwarePlumbingProbe()` — passed in ~400-450ms each. That pattern rules out "the mock
+isn't working" (it clearly is, for 4/5 tests) and points at a one-time cold-start cost instead.
+
+- [x] **Real, verified cause**: this repo's own `elevatedRun.windows-smoke.test.ts` already
+      documents real, multi-second Windows filesystem latency around fresh `.bat` files on
+      `windows-latest` (an `EBUSY` on cleanup there, attributed to antivirus real-time scanning).
+      My probe module also writes a `.bat` file (`probe-tool.bat`) on every call; whichever test
+      happens to run first in the file pays that one-time cost and can exceed vitest's 5s
+      default, while the rest (same file, same mock, already "warmed up") comfortably don't.
+- [x] **Fix**: gave all 5 tests in the fast file an explicit 15s timeout (`WINDOWS_FS_TIMEOUT_MS`)
+      — the same kind of fix this repo's existing smoke test already uses for its own Windows
+      timing surprises, not a new pattern. Confirmed locally: still passes, still fast (~2.6s
+      total for the whole suite on this dev machine — the 15s ceiling is headroom for Windows
+      CI's slower first-touch cost, not a new baseline).
+- [x] Pushed, re-dispatched.
 
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
