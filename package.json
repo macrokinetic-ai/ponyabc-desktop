@@ -14,8 +14,8 @@
     "pack:mac:arm64": "electron-builder --mac --arm64 -c electron-builder.mac-arm64.yml && node scripts/checksum.mjs",
     "pack:mac:x64": "electron-builder --mac --x64 -c electron-builder.mac-x64.yml && node scripts/checksum.mjs",
     "dist:win": "npm run build && electron-builder --win && node scripts/checksum.mjs",
-    "dist:win:msix": "npm run build && npm run pack:win:msix",
-    "pack:win:msix": "electron-builder --win --config electron-builder.win-msix.yml && node scripts/checksum.mjs"
+    "dist:win:appx": "npm run build && npm run pack:win:appx",
+    "pack:win:appx": "electron-builder --win --config electron-builder.win-appx.yml && node scripts/checksum.mjs"
   },
   "dependencies": {
     "extract-zip": "^2.0.1",

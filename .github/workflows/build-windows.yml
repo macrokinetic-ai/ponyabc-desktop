@@ -1,4 +1,4 @@
-name: Build Windows EXE + MSIX
+name: Build Windows EXE + Store package
 
 on:
   push:
@@ -46,26 +46,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # --- Microsoft Store (MSIX) package — a SEPARATE artifact from the NSIS .exe above.
-      # None of the steps above are touched; this only adds a second Windows distribution path.
-      - name: Generate ephemeral self-signed cert + build MSIX
+      # ============================================================================================
+      # Microsoft Store package — a SEPARATE artifact from the NSIS .exe above. None of the steps
+      # above are touched; this only adds a second Windows distribution path. Split into clearly
+      # separate steps on purpose: packaging, installation, launch, and a functional probe are
+      # different questions and a failure in one must not be misread as proof about the others.
+      # ============================================================================================
+
+      # --- 1. PACKAGING ---------------------------------------------------------------------
+      - name: "Store package: generate ephemeral test cert + build (.appx)"
         shell: pwsh
         run: |
           # Store submissions themselves need no CA-trusted certificate (Microsoft re-signs on
-          # ingestion — see electron-builder.win-msix.yml's comments), but electron-builder still
+          # ingestion — see electron-builder.win-appx.yml's comments), but electron-builder still
           # needs SOME certificate whose Subject exactly matches the required Partner Center
-          # `publisher` value to produce a validly-signed .msix at all. This cert exists only for
-          # this CI job (never a secret, never committed, never reused) so the build step below
-          # produces an installable package, and so the sideload-verify step further down can
-          # prove the package really installs — not just that packaging didn't crash.
+          # `publisher` value to produce a validly-signed package at all. This cert exists only
+          # for this CI job (never a secret, never committed, never reused) so the steps below can
+          # actually install and run the package to verify it — not just that packaging exited 0.
           $certSubject = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
           $cert = New-SelfSignedCertificate -Type Custom -Subject $certSubject `
             -KeyUsage DigitalSignature -FriendlyName 'PonyABC Desktop CI sideload-test cert (ephemeral)' `
             -CertStoreLocation 'Cert:\CurrentUser\My' `
             -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
 
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'ponyabc-msix-test-cert.pfx'
-          $cerPath = Join-Path $env:RUNNER_TEMP 'ponyabc-msix-test-cert.cer'
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'ponyabc-appx-test-cert.pfx'
+          $cerPath = Join-Path $env:RUNNER_TEMP 'ponyabc-appx-test-cert.cer'
           $certPassword = [System.Guid]::NewGuid().ToString()
           $securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
           Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
@@ -75,43 +80,179 @@ jobs:
           # — never written to $GITHUB_ENV, so they don't leak into later steps/jobs).
           $env:CSC_LINK = $pfxPath
           $env:CSC_KEY_PASSWORD = $certPassword
-          npm run dist:win:msix
-          if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:msix failed with exit code $LASTEXITCODE" }
+          npm run dist:win:appx
+          if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:appx failed with exit code $LASTEXITCODE" }
 
-          # Trust the same ephemeral cert so the sideload-install check below reflects a real
+          # Trust the same ephemeral cert so the install step below reflects a real
           # Add-AppxPackage acceptance, not just that the packaging step exited 0.
           Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
 
-      - name: Verify the MSIX actually sideload-installs
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'PACKAGING FAILED: no .appx file found in release/ after dist:win:appx.' }
+          Write-Host "PACKAGING OK: $($appx.Name) ($([math]::Round($appx.Length / 1MB, 2)) MB)"
+
+      # --- 2. PACKAGING VERIFICATION: real manifest content, not an assumption ------------------
+      - name: "Store package: inspect AppxManifest.xml and verify Partner Center identity"
         shell: pwsh
         run: |
-          $msix = Get-ChildItem -Path 'release' -Filter '*.msix' | Select-Object -First 1
-          if (-not $msix) { throw 'No .msix file found in release/ after dist:win:msix' }
-          Add-AppxPackage -Path $msix.FullName
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'No .appx file found in release/' }
+
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($appx.FullName)
+          try {
+            $entry = $zip.Entries | Where-Object { $_.FullName -eq 'AppxManifest.xml' }
+            if (-not $entry) { throw 'AppxManifest.xml was not found inside the .appx package — this is not a valid Appx/MSIX container.' }
+            $reader = New-Object System.IO.StreamReader($entry.Open())
+            $manifestXml = $reader.ReadToEnd()
+            $reader.Close()
+          } finally {
+            $zip.Dispose()
+          }
+
+          Write-Host '----- Real AppxManifest.xml contents (from inside the built package, not a template) -----'
+          Write-Host $manifestXml
+
+          [xml]$manifest = $manifestXml
+          $ns = New-Object System.Xml.XmlNamespaceManager($manifest.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $identityNode = $manifest.SelectSingleNode('//a:Identity', $ns)
+          $propsNode = $manifest.SelectSingleNode('//a:Properties/a:PublisherDisplayName', $ns)
+
+          $expected = @{
+            IdentityName      = 'PonyABC.PonyABCDesktop'
+            IdentityPublisher = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+            PublisherDisplay  = 'PonyABC'
+          }
+          $actual = @{
+            IdentityName      = $identityNode.GetAttribute('Name')
+            IdentityPublisher = $identityNode.GetAttribute('Publisher')
+            PublisherDisplay  = $propsNode.InnerText
+          }
+
+          $mismatches = @()
+          foreach ($key in $expected.Keys) {
+            if ($actual[$key] -ne $expected[$key]) {
+              $mismatches += "  $key`: expected '$($expected[$key])', got '$($actual[$key])'"
+            }
+          }
+          if ($mismatches.Count -gt 0) {
+            $mismatches | ForEach-Object { Write-Host "::error::$_" }
+            throw 'IDENTITY VERIFICATION FAILED — the built package does NOT carry the required Partner Center identity. See mismatches above.'
+          }
+          Write-Host "IDENTITY VERIFIED: Name='$($actual.IdentityName)' Publisher='$($actual.IdentityPublisher)' PublisherDisplayName='$($actual.PublisherDisplay)' — all match Partner Center exactly."
+
+      # --- 3. INSTALLATION -----------------------------------------------------------------------
+      - name: "Store package: sideload-install and verify the real computed identity"
+        shell: pwsh
+        run: |
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          Add-AppxPackage -Path $appx.FullName
           $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          if (-not $installed) { throw 'Add-AppxPackage reported success but Get-AppxPackage found no PonyABC.PonyABCDesktop package' }
-          Write-Host "Installed package: $($installed.PackageFullName)"
-          Remove-AppxPackage -Package $installed.PackageFullName
+          if (-not $installed) { throw 'INSTALL FAILED: Add-AppxPackage reported success but Get-AppxPackage found no PonyABC.PonyABCDesktop package.' }
+
+          $expectedFamilyName = 'PonyABC.PonyABCDesktop_f1jemggxjsyxg'
+          Write-Host "INSTALL OK: PackageFullName=$($installed.PackageFullName)"
+          Write-Host "Real, Windows-computed PackageFamilyName: $($installed.PackageFamilyName)"
+          if ($installed.PackageFamilyName -ne $expectedFamilyName) {
+            throw "IDENTITY VERIFICATION FAILED — real PackageFamilyName '$($installed.PackageFamilyName)' does not match the Partner Center-registered '$expectedFamilyName'. This means the Identity Name/Publisher pair does not hash to the registered Package Family Name."
+          }
+          Write-Host "IDENTITY VERIFIED: PackageFamilyName matches the Partner Center-registered value exactly."
+
+      # --- 4. LAUNCH ------------------------------------------------------------------------------
+      - name: "Store package: verify the installed app actually launches"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          $exe = Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe' | Select-Object -First 1
+          if (-not $exe) { throw "LAUNCH FAILED: no .exe found under $($installed.InstallLocation)" }
+
+          $proc = Start-Process -FilePath $exe.FullName -PassThru
+          Start-Sleep -Seconds 8
+          $running = Get-Process -Id $proc.Id -ErrorAction SilentlyContinue
+          if (-not $running) {
+            throw "LAUNCH FAILED: process (PID $($proc.Id)) launched from the installed package is not running 8s later — it exited immediately or crashed on startup."
+          }
+          Write-Host "LAUNCH OK: '$($running.ProcessName)' (PID $($proc.Id)) is running from the installed MSIX package."
+          & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
+
+      # --- 5. FUNCTIONAL PROBE: firmware wizard plumbing (elevation / working dir / log / --------
+      #        recovery marker) — harmless stand-in tool, NEVER a real vendor binary or a pen. ----
+      - name: "Store package: firmware wizard plumbing probe (harmless stand-in, no vendor tool/pen)"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          $exe = Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe' | Select-Object -First 1
+          $probeOutput = Join-Path $env:RUNNER_TEMP 'msix-firmware-probe-result.json'
+          if (Test-Path $probeOutput) { Remove-Item $probeOutput -Force }
+
+          # These are inherited by the child process Start-Process below launches (default Win32
+          # CreateProcess behavior — no special flag needed) — this is the ONLY thing that tells
+          # the packaged app to run the probe instead of its normal startup.
+          $env:PONYABC_MSIX_FIRMWARE_PROBE = '1'
+          $env:PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT = $probeOutput
+
+          Write-Host 'Launching the installed package with the firmware plumbing probe enabled...'
+          Write-Host 'NOTE: this probe triggers a REAL UAC elevation prompt (for a harmless local stand-in script, never a vendor tool). In this non-interactive CI session nothing can click "Yes" — a timeout here is an expected, informative outcome, not a build failure.'
+          $proc = Start-Process -FilePath $exe.FullName -PassThru
+          $exited = $proc.WaitForExit(150000)
+
+          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE -ErrorAction SilentlyContinue
+          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT -ErrorAction SilentlyContinue
+
+          if (-not $exited) {
+            Write-Host '::warning::Probe process did not exit within 150s — most likely a blocked/hung interactive UAC consent prompt with no one able to click it in this CI session. Killing the process tree; this specific question (does the real UAC prompt work under MSIX) needs the real-machine test, not CI.'
+            & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
+          }
+
+          "## Firmware wizard plumbing probe" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if (Test-Path $probeOutput) {
+            $resultJson = Get-Content -Path $probeOutput -Raw
+            Write-Host '----- Probe result JSON -----'
+            Write-Host $resultJson
+            "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```json' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            $resultJson | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          } else {
+            Write-Host '::warning::No probe result file was produced.'
+            "`nNo result file was produced (process exited or was killed before writing output — see the warning above)." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+        # Deliberately not `if: always()`-guarded or fatal: a timeout/inconclusive result here is
+        # real, useful information to report, not a reason to fail the whole workflow run.
+        continue-on-error: true
+
+      # --- 6. CLEANUP -----------------------------------------------------------------------------
+      - name: "Store package: uninstall the sideload test install"
+        if: always()
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue
+          if ($installed) {
+            Remove-AppxPackage -Package $installed.PackageFullName
+            Write-Host "Uninstalled $($installed.PackageFullName)"
+          }
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-msix
-          # dist:win:msix's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar,
-          # same convention as the NSIS .exe artifact above. Scoped to *.msix.sha256 specifically
+          name: windows-appx
+          # dist:win:appx's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar,
+          # same convention as the NSIS .exe artifact above. Scoped to *.appx.sha256 specifically
           # (not the broader *.sha256) since by this point in the job release/ also contains the
           # .exe's own checksum from the earlier dist:win step.
           path: |
-            release/*.msix
-            release/*.msix.sha256
+            release/*.appx
+            release/*.appx.sha256
           if-no-files-found: error
 
-      # Same rationale as the .exe's own release-upload step above: land the MSIX next to the
-      # .exe and .dmg installers on the tagged GitHub Release, not just as a login-gated
-      # workflow artifact. This is a GitHub Release asset for convenience/testing only — it is
-      # NOT the Microsoft Store listing itself, which is submitted separately via Partner Center.
-      - name: Attach MSIX to the matching GitHub Release
+      # Same rationale as the .exe's own release-upload step above: land the Store package next
+      # to the .exe and .dmg installers on the tagged GitHub Release, not just as a login-gated
+      # workflow artifact. This is a GitHub Release asset for LOCAL SIDELOAD TESTING only — a
+      # test-certificate-signed package, never a normal customer installer, and NOT the Microsoft
+      # Store listing itself, which is submitted separately via Partner Center.
+      - name: Attach Store test package to the matching GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" release/*.msix release/*.msix.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

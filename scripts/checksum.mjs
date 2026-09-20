@@ -23,7 +23,7 @@ async function main() {
   if (!existsSync(releaseDir)) return;
   const entries = await readdir(releaseDir);
   const installers = entries.filter(
-    (name) => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.msix'),
+    (name) => name.endsWith('.dmg') || name.endsWith('.exe') || name.endsWith('.appx'),
   );
   for (const name of installers) {
     const filePath = path.join(releaseDir, name);

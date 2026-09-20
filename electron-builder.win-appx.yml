@@ -1,0 +1,39 @@
+# Loaded via `electron-builder --win --config electron-builder.win-appx.yml` (see package.json's
+# pack:win:appx script). Builds the Microsoft Store package as a SEPARATE target from the
+# existing NSIS .exe (electron-builder.yml's own win.target: nsis, unchanged) — this file only
+# overrides win.target to appx; files/directories/afterPack all still come from the base config.
+#
+# Real package format, verified by reading the installed electron-builder@25.1.8's own source
+# (node_modules/app-builder-lib/out/targets/AppxTarget.js), not assumed: the "appx" target here
+# invokes `makeappx.exe` (the classic Appx packaging tool) against a manifest using ONLY the base
+# `foundation/windows10` schema — no MSIX-exclusive manifest features (e.g. modification
+# packages) are used or available in this electron-builder version. The output is genuinely an
+# Appx-format package. `${ext}` in artifactName is hardcoded to the literal string "appx" by
+# AppxTarget.js itself (confirmed by reading the call site) — it is not a free-form "pick your
+# extension" placeholder, so this file is named `.appx` explicitly rather than relying on that
+# implementation detail, and NOT renamed to `.msix`: Partner Center's own "App package
+# requirements for MSIX app" docs list `.appx`/`.appxbundle`/`.appxupload` as directly, equally
+# accepted Store submission formats alongside `.msix` — submitting the real `.appx` this
+# toolchain produces is correct and honest, not a downgrade or a mislabel.
+extends: ./electron-builder.yml
+win:
+  target:
+    - target: appx
+      arch:
+        - x64
+appx:
+  # Exact Partner Center identity — must match verbatim, not the registered company name
+  # (MACROKINETIC MEDIATECH LIMITED). applicationId is left at its default (= identityName).
+  identityName: PonyABC.PonyABCDesktop
+  publisher: CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5
+  publisherDisplayName: PonyABC
+  displayName: PonyABC Desktop
+  artifactName: PonyABC-Desktop-v${version}-winx64.appx
+  # Deliberately NOT adding the restricted `allowElevation` capability, keeping electron-builder's
+  # default `capabilities: [runFullTrust]`. The firmware wizard's UAC prompt (see
+  # src/main/services/elevatedRun.ts) elevates an external, unpackaged process (an unelevated
+  # system powershell.exe running Start-Process -Verb RunAs against a generated .bat in app data),
+  # never a packaged/in-identity process — which per Microsoft's Desktop Bridge docs should not
+  # require allowElevation. allowElevation submissions face very strict, often-rejected Store
+  # review, so we keep the default capability set unless a real interactive test (tracked in
+  # tasks/todo.md) proves otherwise.

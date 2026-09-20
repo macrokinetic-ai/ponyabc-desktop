@@ -1078,8 +1078,119 @@ virtualization docs) — see the plan file for exact quotes/citations.
       headless/CI way to confirm the real interactive UAC consent dialog fires correctly from a
       packaged, non-`allowElevation` app. Real-machine test needed, same session as the item
       above.
-- [ ] Push the local commit(s) for this work to a branch (not `main` — `main` already has 2
-      pre-existing unpushed commits from prior work, unrelated to this) so CI can actually run
-      and produce a real `.msix` artifact + real sideload-install CI result. Waiting on Benny
-      before pushing to the remote at all, per this session's own caution around actions visible
-      to others.
+- [x] Pushed to a branch (`msix-store-packaging`, not `main`) once Benny explicitly authorized
+      it. The two pre-existing unpushed `main` commits (`2299524` fix + `8c40d24` feat, both
+      firmware result-screen work from 2026-09-16) were reviewed via `git show --stat` first per
+      Benny's explicit instruction — legitimate, already-tested, self-contained prior work,
+      nothing unexpected. They ride along as ancestors of this branch (unavoidable — any branch
+      push includes its own history) but `main` itself was never pushed to.
+
+## Correction: real package format is `.appx`, not `.msix` — verified by reading the toolchain's own code
+
+Benny explicitly asked: "state the actual package format produced; do not simply rename an APPX
+file to MSIX." Investigating this surfaced a real bug that would have broken the CI pipeline
+outright, caught before ever running it for real:
+
+- [x] Read `node_modules/app-builder-lib/out/targets/AppxTarget.js` directly (installed
+      `electron-builder@25.1.8`) — confirmed the CLI target name is `appx` (there is no separate
+      `msix` target registered in `winPackager.js`'s target-class switch at all in this version),
+      it invokes `makeappx.exe` (the classic Appx packaging tool), and the manifest template
+      (`appxmanifest.xml` inside the same package) uses only the base
+      `foundation/windows10`/`uap`/`desktop`/`rescap` schema namespaces — no MSIX-exclusive
+      manifest features (e.g. modification packages) are used or even available here. The real,
+      honest package format this toolchain produces is Appx, full stop — "MSIX" is Microsoft's
+      later branding for the same underlying format when used for a plain full-trust desktop app
+      like this one, not a different, newer container this tool actually builds.
+- [x] **Found the actual bug**: `AppxTarget.js`'s `build()` calls
+      `packager.expandArtifactBeautyNamePattern(this.options, "appx", arch)` — the second
+      positional argument is literally the string `"appx"`, and `${ext}` in any `artifactName`
+      template is substituted with EXACTLY that string, always. My original
+      `artifactName: ...winx64.${ext}` would have silently produced a file named `...winx64.appx`
+      — not `.msix` — meaning the original CI workflow's `Get-ChildItem -Filter '*.msix'` step
+      would have found nothing and failed on its very first real run. Caught by reading the
+      source before ever pushing, not by a failed CI run.
+- [x] **Fix, chosen deliberately over a rename**: renamed everything honestly to `.appx` —
+      `electron-builder.win-msix.yml` → `electron-builder.win-appx.yml`, artifactName hardcoded
+      to literal `.appx` (not relying on the `${ext}` implementation detail), npm scripts
+      `dist:win:appx`/`pack:win:appx`, `checksum.mjs`'s extension filter, the whole CI workflow's
+      step names/globs, and README wording. Partner Center's own "App package requirements for
+      MSIX app" doc explicitly lists `.appx`/`.appxbundle`/`.appxupload` as directly, equally
+      accepted Store submission formats alongside `.msix` — shipping the real `.appx` this
+      toolchain produces is correct and honest, not a downgrade, and avoids ever manufacturing a
+      `.msix`-named file whose content didn't actually come from MSIX-aware tooling.
+
+## Real CI verification, structured per Benny's request (packaging / installation / launch / functional — kept as separate, distinguishable steps, not one pass/fail blob)
+
+`.github/workflows/build-windows.yml` now has 6 distinct Store-package steps after the
+(untouched) NSIS `.exe` steps:
+
+1. **Packaging** — ephemeral self-signed test cert (Subject exactly matching the required
+   `publisher`, generated fresh per CI run, never a secret/committed/reused) + `dist:win:appx`.
+2. **Packaging verification** — unzips the real built `.appx` (via
+   `System.IO.Compression.ZipFile`, not `Expand-Archive`, which doesn't reliably handle every
+   Appx block-map layout), reads the REAL `AppxManifest.xml` bytes (prints them in full to the
+   log — not a template, not an assumption), and asserts Identity `Name`/`Publisher` and
+   `Properties/PublisherDisplayName` match the required Partner Center values **exactly**,
+   failing the build with a clear diff if not.
+3. **Installation** — real `Add-AppxPackage`, then asserts the *Windows-computed*
+   `PackageFamilyName` (a hash of Identity Name + Publisher that only Windows itself computes)
+   equals the Partner Center-registered `PonyABC.PonyABCDesktop_f1jemggxjsyxg` exactly — the
+   strongest possible proof the identity is really correct, since this isn't a value anything in
+   our own config controls or could get "accidentally right."
+4. **Launch** — starts the installed package's real `.exe` directly from its
+   `Get-AppxPackage`-reported `InstallLocation`, waits 8s, confirms the process is still running
+   (not just that `Start-Process` didn't throw), then tree-kills it.
+5. **Functional probe (firmware plumbing)** — see below. Deliberately `continue-on-error: true`:
+   an inconclusive/timeout result here is real, useful information, not a workflow failure.
+6. **Cleanup** — `Remove-AppxPackage`, `if: always()`.
+
+### Firmware wizard plumbing probe — exercises real production code, never a vendor tool or a pen
+
+Benny's instruction was explicit: investigate the packaged/unpackaged elevation path question
+with a harmless helper that exercises the ACTUAL elevation/working-dir/log-reading/recovery-
+marker code, and do not assume the elevated child lacks package identity — verify it.
+
+- [x] New `src/main/services/msixFirmwarePlumbingProbe.ts` — calls the REAL, unmodified
+      `runElevated()` (`elevatedRun.ts`) and `writePendingRun`/`readPendingRun`/`clearPendingRun`/
+      `checkStillRunning` (`firmwareRecovery.ts`) against the SAME real directories
+      `startFirmwareUpgrade` uses (`<userData>/firmwareRun`, `<userData>/firmwareDownloads/...`,
+      `<userData>/firmwareRecovery/pending.json`) — not test-convenient stand-in paths. The only
+      thing substituted is the target executable: a two-line generated `probe-tool.bat` (name
+      deliberately nothing like a vendor filename) that echoes a fixed marker string and exits 0.
+      Never touches `isd_download.exe`/`ufw_maker.exe`/any downloaded vendor content, never
+      requires a pen.
+- [x] Wired into `src/main/index.ts` behind `PONYABC_MSIX_FIRMWARE_PROBE=1` +
+      `PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT=<path>` — runs before any window/IPC handler, writes its
+      full JSON result (including the real `RunElevatedResult`, the actual `run.log` contents if
+      any, and every step's own success/failure) to the given path, then `app.quit()`s
+      immediately. Never runs unless both env vars are explicitly set.
+- [x] **This directly tests, rather than assumes, the load-bearing question**: `runElevated`'s own
+      generated `run.bat` literally does `"<probeToolPath>" ... > run.log 2>&1` — if the elevated
+      (package-identity-stripped-by-`Start-Process -Verb RunAs`, per the ORIGINAL hypothesis) child
+      process cannot actually see the packaged parent's `probeToolPath` (written under
+      `app.getPath('userData')`), that failure shows up directly and unambiguously in `run.log`
+      (a real "not recognized"/"cannot find the file" error) rather than needing a separate
+      package-identity-detection mechanism. If the marker string echoes back successfully, the
+      concern is empirically resolved regardless of the exact technical reason. Explicitly does
+      NOT assume the outcome either way going in — see CI results below once a real run completes.
+- [x] 4 new unit tests (`tests/unit/msixFirmwarePlumbingProbe.test.ts`) — real filesystem I/O
+      against a temp dir standing in for `userData` (only `electron.app.getPath` is mocked), real
+      (unmocked) `runElevated`/`writePendingRun`/etc. calls. On this non-Windows dev machine,
+      `runElevated` itself correctly short-circuits to `unsupported-platform` (its own existing,
+      already-tested platform check) — confirms the probe's plumbing (path construction, stale-run
+      cleanup, recovery-marker round trip) without needing Windows, while the actual elevation
+      question stays honestly deferred to the real Windows CI run. **484 tests pass, 6 skipped,
+      across 46 files; typecheck clean.**
+- [ ] **Real CI run results — pending**, this is the very next step after this commit is pushed.
+      Will report: whether packaging/manifest/identity/install/launch all pass as designed, and
+      the actual probe JSON (or an honest "timed out — needs the interactive real-machine test"
+      if the UAC prompt blocks non-interactively, which is itself expected and useful to confirm).
+
+## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
+
+Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current
+`userData`-based paths are shown to actually fail (via the probe above or the real-machine test),
+implement and test the smallest suitable fix THEN, accounting for permissions and recovery. No
+speculative path change has been made — `elevatedRun`/`firmwareRecovery`/`firmware.ts` are
+byte-for-byte unchanged from before this MSIX work except for what the probe module calls
+directly (which calls the same public functions, not modified copies).
