@@ -1047,8 +1047,34 @@ virtualization docs) — see the plan file for exact quotes/citations.
       Windows host to test it on. Left as an explicit, named item for the real-machine
       verification pass below, with the "write our own migration shim" fallback documented but
       NOT implemented pre-emptively.
-- [ ] **OPEN, POTENTIALLY SEVERE RISK — not yet resolved, needs a real Windows machine before
-      trusting the firmware flow under MSIX at all.** `elevatedRun.ts` writes its scratch files
+- [x] **RESOLVED WITH REAL EVIDENCE (Run 6, 35497737466) — the file-visibility concern does NOT
+      materialize.** The "Store package: firmware wizard plumbing probe" CI step's real result:
+      ```json
+      {
+        "userDataPath": "C:\\Users\\runneradmin\\AppData\\Roaming\\ponyabc-desktop",
+        "elevation": { "status": "completed", "exitCode": 0 },
+        "logFileExisted": true,
+        "logContents": "PONYABC_MSIX_PROBE_OK\r\n",
+        "logContainsExpectedMarker": true,
+        "recoveryMarkerReadBackImmediately": true,
+        "stillRunningAfterCompletion": "not-running",
+        "errors": []
+      }
+      ```
+      The elevated child process genuinely found and ran `probe-tool.bat` (written by the
+      PACKAGED process under `app.getPath('userData')`), and its output was captured back into
+      `run.log` and read successfully by the packaged app. This is the exact, real, empirical
+      answer to the load-bearing question below — not a guess, not a doc-reading inference.
+      **Important remaining nuance, not overclaimed**: this CI run's elevation status was
+      `'completed'` without any visible interactive consent step — the `runneradmin` CI service
+      account most likely already has silent/auto-approved elevation rights (a common CI-runner
+      configuration), which is NOT necessarily representative of a real end-user's UAC-enabled
+      desktop. This proves the underlying mechanism and file-visibility question conclusively; it
+      does **not** yet prove what a real end-user sees at the actual "Do you want to allow this
+      app..." consent dialog — that specific, separate question still needs the real-machine
+      notebook test (`store-assets/windows-test-notebook.md`).
+      Original open-risk description, for the record (what was investigated and now resolved):
+      `elevatedRun.ts` writes its scratch files
       (`run.bat`/`run.ps1`/`run.log`/`codepage.txt`) under `app.getPath('userData')` (i.e.
       `firmwareRun`, under Roaming AppData) from inside the PACKAGED process, then elevates them
       via `Start-Process -Verb RunAs`, which spawns a NEW process with **no package identity**
@@ -1074,10 +1100,11 @@ virtualization docs) — see the plan file for exact quotes/citations.
       `Local`/`Roaming`) plus a clearly-named subfolder — NOT implemented pre-emptively, because
       it's an unverified guess at a fix for an unverified problem, and Documents-folder clutter
       is a real UX cost only worth paying if the plain `userData` path is actually proven broken.
-- [ ] **UAC prompt itself** — also unverified for the reason stated in the approved plan: no
-      headless/CI way to confirm the real interactive UAC consent dialog fires correctly from a
-      packaged, non-`allowElevation` app. Real-machine test needed, same session as the item
-      above.
+- [ ] **The real, interactive UAC consent dialog itself — the one thing CI still cannot answer.**
+      Run 6's CI probe elevation `status: 'completed'` without any visible prompt, most likely
+      because the CI service account already has silent/auto-approved elevation — not evidence
+      either way for a real end-user's UAC-enabled desktop. `store-assets/
+      windows-test-notebook.md` walks through this exact check on a real machine.
 - [x] Pushed to a branch (`msix-store-packaging`, not `main`) once Benny explicitly authorized
       it. The two pre-existing unpushed `main` commits (`2299524` fix + `8c40d24` feat, both
       firmware result-screen work from 2026-09-16) were reviewed via `git show --stat` first per
@@ -1328,6 +1355,27 @@ known, documented Windows behavior, not a broken package.
       `AppxManifest.xml` (the same source of truth Windows itself uses to launch the app), instead
       of listing the directory. More robust than a filesystem guess either way.
 - [x] Pushed, re-dispatched.
+
+## Run 6 (35497737466): FULLY GREEN — packaging, identity, install, launch, and the firmware probe all passed
+
+The whole job passed for the first time. Summary of what's now real, verified evidence (not
+assumption) as of this run:
+
+- **Packaging**: `PonyABC-Desktop-v0.3.15-winx64.appx` built, 115.48 MB.
+- **Manifest identity**: `Name='PonyABC.PonyABCDesktop'`, `Publisher='CN=E476FCF5-1C63-4A56-85B1-
+  DA5D642911B5'`, `PublisherDisplayName='PonyABC'` — read from inside the real built package,
+  matches Partner Center exactly.
+- **Install + strongest identity proof**: real, Windows-computed `PackageFamilyName` =
+  `PonyABC.PonyABCDesktop_f1jemggxjsyxg` — matches the Partner Center-registered value exactly.
+- **Launch**: `PonyABC Desktop.exe` (PID 5696) confirmed running 8s after launch from the
+  installed package.
+- **Firmware plumbing probe**: elevation completed, the elevated child found and ran the
+  packaged parent's file under `app.getPath('userData')`, log captured and read back correctly,
+  recovery marker round-tripped correctly. See the resolved risk entry above for the full result
+  and the one remaining, separate, real-human-only question (the actual interactive UAC dialog).
+- **Artifacts produced**: `windows-installer` (NSIS `.exe`, unaffected throughout) and
+  `windows-appx` (the new Store package) — both downloadable from this run's Actions page.
+- Both macOS `.dmg` build workflows (`build-mac.yml`) were never touched by any of this work.
 
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
