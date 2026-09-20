@@ -76,10 +76,26 @@ jobs:
           Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
           Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
 
-          # electron-builder's Windows signing reads these two env vars (scoped to this step only
-          # — never written to $GITHUB_ENV, so they don't leak into later steps/jobs).
+          # electron-builder bundles its own signtool.exe (winCodeSign vendor package), which as
+          # of this runner image fails with "SignTool Error: A required function is not present."
+          # — a known incompatibility between that vendored binary and the current windows-latest
+          # image (confirmed by a real failed run, not assumed). Fix: point electron-builder at
+          # the real Windows SDK signtool.exe already on this runner (via Visual Studio Build
+          # Tools) using its own documented SIGNTOOL_PATH override
+          # (app-builder-lib/out/codeSign/windowsSignToolManager.js reads this env var first,
+          # before falling back to the vendored binary).
+          $sdkSigntool = Get-ChildItem -Path 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like '*\x64\*' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $sdkSigntool) { throw 'Could not find a Windows SDK signtool.exe on this runner (expected under C:\Program Files (x86)\Windows Kits\10\bin\*\x64\).' }
+          Write-Host "Using Windows SDK signtool.exe: $($sdkSigntool.FullName)"
+
+          # electron-builder's Windows signing reads these env vars (scoped to this step only —
+          # never written to $GITHUB_ENV, so they don't leak into later steps/jobs).
           $env:CSC_LINK = $pfxPath
           $env:CSC_KEY_PASSWORD = $certPassword
+          $env:SIGNTOOL_PATH = $sdkSigntool.FullName
           npm run dist:win:appx
           if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:appx failed with exit code $LASTEXITCODE" }
 

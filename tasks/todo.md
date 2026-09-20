@@ -1222,8 +1222,35 @@ the dispatch genuinely used the branch's updated workflow content (new step name
 - [x] **484 → 486 tests pass, 7 skipped (up from 6 — the new smoke file's skip placeholder),
       across 47 files; typecheck clean; full local `npm test` run completes in ~2.7s** (confirms
       the fast file no longer risks a real elevation attempt on any platform).
-- [x] Committed and pushed the fix to `msix-store-packaging`; re-dispatched the workflow. See
-      below for the real result once it completes.
+- [x] Committed and pushed the fix to `msix-store-packaging`; re-dispatched the workflow.
+
+## Run 2 (35496829480): npm test now passes; packaging itself failed on a runner/tooling issue
+
+Real progress — `typecheck`/`test`/`dist:win` (NSIS) all passed this time, confirming the test
+fix worked. The NEW Store-package packaging step failed with:
+
+```
+SignTool Error: A required function is not present.
+```
+
+- [x] **Real, verified cause**: electron-builder's own bundled `signtool.exe` (from its
+      `winCodeSign-2.6.0` vendor package, cached at
+      `AppData\Local\electron-builder\Cache\winCodeSign\...\windows-10\x64\signtool.exe`) is
+      incompatible with the current `windows-latest` runner image — a known class of issue
+      (GitHub periodically bumps the underlying Windows Server image; an old vendored signtool
+      binary can start failing against newer OS DLL export sets). This has nothing to do with the
+      appx target, the manifest, or the identity config — confirmed by reading the actual error
+      (a generic SignTool/CryptoAPI failure, thrown before any manifest/identity code runs at
+      all).
+- [x] **Fix**: read `node_modules/app-builder-lib/out/codeSign/windowsSignToolManager.js`
+      directly — `getToolPath()` checks `process.env.SIGNTOOL_PATH` FIRST, before falling back to
+      the vendored binary. `build-windows.yml`'s packaging step now locates the real Windows SDK
+      `signtool.exe` already present on the runner (via Visual Studio Build Tools, under
+      `C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe`) and sets `SIGNTOOL_PATH` to
+      it before calling `npm run dist:win:appx`. This only affects local/CI test-signing (the
+      real Store submission needs no certificate/signtool at all — Microsoft re-signs on
+      ingestion).
+- [ ] Pushed, re-dispatched — result pending.
 
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
