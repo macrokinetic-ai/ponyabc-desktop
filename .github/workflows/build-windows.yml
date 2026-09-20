@@ -180,10 +180,20 @@ jobs:
         shell: pwsh
         run: |
           $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          $exe = Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe' | Select-Object -First 1
-          if (-not $exe) { throw "LAUNCH FAILED: no .exe found under $($installed.InstallLocation)" }
+          # NOT `Get-ChildItem -Filter '*.exe'` — a real run showed it finds nothing under
+          # InstallLocation (WindowsApps' restrictive ACLs block a plain, non-`-Force` directory
+          # listing even for an admin). Read the executable's real relative path straight out of
+          # the installed AppxManifest.xml instead — the same source of truth Windows itself uses
+          # to launch the app, not a filesystem guess.
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns2 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns2.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns2).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
+          if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) { throw "LAUNCH FAILED: manifest names executable '$exeRelPath' but no such file exists at '$exePath'." }
+          Write-Host "Resolved real executable from the installed manifest: $exePath"
 
-          $proc = Start-Process -FilePath $exe.FullName -PassThru
+          $proc = Start-Process -FilePath $exePath -PassThru
           Start-Sleep -Seconds 8
           $running = Get-Process -Id $proc.Id -ErrorAction SilentlyContinue
           if (-not $running) {
@@ -198,7 +208,13 @@ jobs:
         shell: pwsh
         run: |
           $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          $exe = Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe' | Select-Object -First 1
+          # Same reasoning as the launch-verification step above: resolve the real executable from
+          # the installed manifest, not a directory listing (WindowsApps' ACLs block that).
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns3 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns3.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns3).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
           $probeOutput = Join-Path $env:RUNNER_TEMP 'msix-firmware-probe-result.json'
           if (Test-Path $probeOutput) { Remove-Item $probeOutput -Force }
 
@@ -210,7 +226,7 @@ jobs:
 
           Write-Host 'Launching the installed package with the firmware plumbing probe enabled...'
           Write-Host 'NOTE: this probe triggers a REAL UAC elevation prompt (for a harmless local stand-in script, never a vendor tool). In this non-interactive CI session nothing can click "Yes" — a timeout here is an expected, informative outcome, not a build failure.'
-          $proc = Start-Process -FilePath $exe.FullName -PassThru
+          $proc = Start-Process -FilePath $exePath -PassThru
           $exited = $proc.WaitForExit(150000)
 
           Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE -ErrorAction SilentlyContinue

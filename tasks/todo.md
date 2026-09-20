@@ -1300,6 +1300,35 @@ SignTool Error: No file digest algorithm specified. Please specify the digest al
       the base `electron-builder.yml` (NSIS `.exe`) and both mac configs are untouched.
 - [x] Pushed, re-dispatched.
 
+## Run 5 (35497465010): packaging, manifest identity, AND install/PackageFamilyName all passed for real
+
+Genuine milestone — the first three verification layers all passed on a real Windows runner:
+
+- [x] **Packaging**: `.appx` built successfully with both signtool fixes.
+- [x] **Manifest identity verification**: the REAL `AppxManifest.xml` inside the built package
+      carries `Identity Name='PonyABC.PonyABCDesktop'`, `Publisher='CN=E476FCF5-1C63-4A56-85B1-
+      DA5D642911B5'`, `PublisherDisplayName='PonyABC'` — all confirmed byte-for-byte against
+      Partner Center's required values, not assumed from the config file.
+- [x] **Installation + the strongest identity proof available**: `Add-AppxPackage` succeeded, and
+      Windows' own real, independently-computed `PackageFamilyName` came back as
+      `PonyABC.PonyABCDesktop_f1jemggxjsyxg` — an EXACT match to the Partner Center-registered
+      value. This is Windows itself confirming the identity is right, not our own config
+      reporting back what we told it.
+
+**Launch verification then failed** — but on a CI-script bug, not an app problem:
+`Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe'` found nothing (confirmed by the
+error message itself showing the correct install path,
+`...\WindowsApps\PonyABC.PonyABCDesktop_0.3.15.0_x64__f1jemggxjsyxg`, which also independently
+re-confirms the exact same PackageFamilyName suffix). Root cause: `WindowsApps`'s restrictive
+ACLs block a plain directory listing there, even for an admin account, without `-Force` — a
+known, documented Windows behavior, not a broken package.
+
+- [x] **Fix**: both the launch-verification and firmware-probe steps now resolve the real
+      executable path by reading the `Executable` attribute straight out of the INSTALLED
+      `AppxManifest.xml` (the same source of truth Windows itself uses to launch the app), instead
+      of listing the directory. More robust than a filesystem guess either way.
+- [x] Pushed, re-dispatched.
+
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
 Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current
