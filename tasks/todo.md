@@ -1569,3 +1569,46 @@ directly (which calls the same public functions, not modified copies).
       explicit "Suitable for all ages ≠ an official assigned rating" disclaimer, and a
       target-audience row) throughout `store-assets/submission-materials.md` and the Claude Docs
       artifact to reflect this consistently.
+
+## Complete privacy notice, real IARC mapping, and CI screenshot capture
+
+- [x] **Investigated real network/logging facts before writing the privacy notice** (not
+      assumed): grepped every hardcoded host the desktop app's main process ever contacts
+      (`register.ponyabc.uk`, `api.github.com`, `github.com` — exhaustive, confirmed via
+      `grep -rhoE 'https?://...' src/main`). Checked `ponyabc-web/wrangler.jsonc`
+      (`observability.enabled: true` — Cloudflare's own platform-level request logging is on for
+      the backend) and `ponyabc-web/src/lib/ip.ts` (confirms IP addresses are hashed with a salt,
+      never stored raw, and — checked via a repo-wide grep for callers — this hashing applies
+      ONLY to the website's warranty-registration endpoint, never the desktop app's own BOOK/
+      firmware/download requests, which carry no personal identifier at all). Looked up
+      Cloudflare's own documented default Workers Logs retention (3 days Free / 7 days Paid) but
+      explicitly did NOT state which applies to this deployment, since that's an account-level
+      fact I can't see from the codebase — flagged as an open item instead of guessed.
+- [x] **Full privacy notice saved as its own file**: `store-assets/privacy-notice-desktop.md` —
+      complete, not a chat summary. Distinguishes "what our application code sends" from "what
+      Cloudflare/GitHub infrastructure may separately retain," explains local recordings/file
+      paths/diagnostic logs/retention/opt-in support exports accurately, gives full rights/contact
+      info, and deliberately avoids the blanket "no personal information is collected" claim,
+      explaining exactly why. Intended URL `https://register.ponyabc.uk/privacy/desktop` recorded;
+      existing `/privacy` page explicitly not modified. Page itself NOT yet implemented in
+      `ponyabc-web` — that repo has substantial unrelated in-progress changes on disk, and Benny's
+      own instruction was to review wording first.
+- [x] **Age rating rewritten from "None for all" to real IARC category mapping** — Violence, Fear/
+      horror, Sexual content, Language, Controlled substances, Gambling, Users interact, Shares
+      user-generated content (explicitly split into the DIY-recordings-are-local case vs. the
+      BOOK-content-is-curated-not-user-generated case — never conflated), Shares personal info,
+      Shares location, Unrestricted internet access, Digital purchases — each with the real
+      question intent and case-specific reasoning, not a single blanket answer. Explicit note that
+      Partner Center's actual on-screen wording is interactive/adapts to category and couldn't be
+      quoted verbatim without live access — mapped to IARC's own public category structure instead
+      of inventing exact UI text.
+- [x] **CI now captures real Windows screenshots**: new step in `build-windows.yml`, right after
+      launch verification, runs the same platform-agnostic `scripts/capture-screenshots.mjs`
+      (already used for the macOS captures) against the installed package's real resolved exe,
+      uploads all 5 as a `windows-screenshots` artifact. This replaces the 2 remaining
+      macOS-placeholder gaps (Firmware, Settings/About) with genuine native Windows captures, and
+      refreshes the other 3 with real Windows chrome too.
+- [ ] Triggered a fresh CI run from the current HEAD (includes the companyLine fix and all
+      submission-content commits) — this run also serves as "build the final Store package from
+      the intended final commit" per Benny's request. Result, exact filename/version/commit/
+      checksum, and manifest identity re-confirmation pending below.

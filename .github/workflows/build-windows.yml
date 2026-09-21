@@ -247,6 +247,30 @@ jobs:
           Write-Host "LAUNCH OK: '$($running.ProcessName)' (PID $($proc.Id)) is running from the installed MSIX package."
           & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
 
+      # --- 4b. REAL WINDOWS SCREENSHOTS: genuine native captures for the Store listing, replacing
+      #         the macOS-dev-build placeholders for Firmware/Settings (and refreshing the rest
+      #         with real Windows chrome) — same platform-agnostic CDP tool used for the mac
+      #         captures, no separate implementation to maintain. ------------------------------------
+      - name: "Store package: capture real screenshots from the installed package"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns4 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns4.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns4).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
+          New-Item -ItemType Directory -Force -Path 'release\screenshots' | Out-Null
+          node scripts/capture-screenshots.mjs $exePath 'release\screenshots' --label=winx64-msix
+          if ($LASTEXITCODE -ne 0) { throw "capture-screenshots.mjs failed with exit code $LASTEXITCODE" }
+          Get-ChildItem 'release\screenshots' | ForEach-Object { Write-Host "Captured: $($_.Name) ($([math]::Round($_.Length / 1KB)) KB)" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-screenshots
+          path: release/screenshots/*.png
+          if-no-files-found: error
+
       # --- 5. FUNCTIONAL PROBE: firmware wizard plumbing (elevation / working dir / log / --------
       #        recovery marker) — harmless stand-in tool, NEVER a real vendor binary or a pen. ----
       - name: "Store package: firmware wizard plumbing probe (harmless stand-in, no vendor tool/pen)"
