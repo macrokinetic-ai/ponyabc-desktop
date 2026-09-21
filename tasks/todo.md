@@ -1544,3 +1544,28 @@ implement and test the smallest suitable fix THEN, accounting for permissions an
 speculative path change has been made — `elevatedRun`/`firmwareRecovery`/`firmware.ts` are
 byte-for-byte unchanged from before this MSIX work except for what the probe module calls
 directly (which calls the same public functions, not modified copies).
+
+## Business details finalized + audience framing corrected (Benny's final input)
+
+- [x] Benny provided the confirmed legal company details (MACROKINETIC MEDIATECH LIMITED, company
+      number 16420643, registered office at 128 City Road London EC1V 2NX, correspondence address
+      at 34 Redbourne Avenue London N3 2BS — explicitly NOT the registered office). Filled into
+      `src/renderer/i18n/locales/en/settings.json`'s `legal.privacy.companyLine` (previously "to be
+      confirmed"), the submission-materials privacy notice, and the Category/support table —
+      always keeping the two addresses distinctly labeled, never conflated. The two OTHER,
+      unrelated "to be confirmed" notices in that same file (website registration-data retention
+      period; Terms of Use publication) were left untouched — genuinely still missing, no facts
+      given for them. 488 tests pass (including the existing `SettingsScreen.test.tsx` case that
+      specifically checks "to be confirmed" still appears for the still-unconfirmed items),
+      typecheck clean. Store manifest identity (`PonyABC.PonyABCDesktop` / `PonyABC` display name)
+      deliberately untouched, per Benny's explicit instruction.
+- [x] **Corrected a real framing mistake from an earlier round**: Benny clarified the app's actual
+      audience — parents/teachers/school staff/business users managing pens, NOT children
+      operating the app directly, and NOT a game. My earlier category recommendation had literally
+      said "the app's target use case is a children's talking-pen companion," which is exactly the
+      wrong framing. Rewrote the Store description, short description/tagline, category
+      recommendation (now **Utilities & tools**, not Education — the app manages a device, it
+      doesn't deliver learning directly), certification notes, and age-rating section (added an
+      explicit "Suitable for all ages ≠ an official assigned rating" disclaimer, and a
+      target-audience row) throughout `store-assets/submission-materials.md` and the Claude Docs
+      artifact to reflect this consistently.
