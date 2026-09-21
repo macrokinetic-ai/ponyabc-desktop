@@ -142,3 +142,7 @@ Write-Host ""
 Write-Host "=== DONE ===" -ForegroundColor Green
 Write-Host "You can now launch 'PonyABC Desktop' from the Start menu to try the app normally."
 Write-Host "For the firmware/UAC probe test, use 2-run-firmware-probe.ps1 instead — from a NORMAL (non-administrator) PowerShell window, not this one."
+# Explicit on purpose: PowerShell cmdlets (unlike native .exe calls) never set $LASTEXITCODE
+# themselves, so a caller checking it after this script would otherwise see whatever stale value
+# happened to exist beforehand — never assume success is the implicit default.
+exit 0

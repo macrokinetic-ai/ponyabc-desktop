@@ -1428,7 +1428,30 @@ prompt). Built a proper, self-contained kit instead:
       scripts work end-to-end, not just that installation is possible in general via different
       inline CI code. The `windows-appx` artifact now bundles the appx/checksum/cert together
       with the 3 scripts and README in one download.
-- [ ] Pushed, re-dispatched — result pending.
+- [x] Pushed, re-dispatched.
+
+## Run 8 (35557075347): running the real scripts caught 2 more real bugs, before any tester saw them
+
+Exactly the value of "run the actual delivered scripts in CI" rather than trusting them by
+inspection: `1-install.ps1` printed every success message correctly (checksum OK, identity
+verified, "DONE") — and CI's wrapper still reported it as FAILED.
+
+- [x] **Bug 1 — `$LASTEXITCODE` gotcha**: PowerShell cmdlets (`Add-AppxPackage`,
+      `Import-Certificate`, `Get-FileHash`, ...) never set `$LASTEXITCODE` themselves — only
+      native `.exe` calls or an explicit `exit N` do. Neither script had an explicit `exit 0` on
+      its success path, so `$LASTEXITCODE` stayed `$null` afterward, and `$null -ne 0` evaluates
+      to `$true` in PowerShell — my own CI wrapper's `if ($LASTEXITCODE -ne 0) { throw ... }`
+      fired on a script that had done everything right. **Fix**: explicit `exit 0` added at the
+      end of both `1-install.ps1` and `3-cleanup.ps1`, matching the explicit `exit 1` already used
+      on every failure path.
+- [x] **Bug 2 — double cert trust masked the real scenario**: the packaging step's own leftover
+      `Import-Certificate` call (a holdover from before `1-install.ps1` existed) trusted the cert
+      BEFORE `1-install.ps1` ever ran, so its "already trusted?" check always found `true` —
+      meaning CI could never actually exercise or prove the fresh-machine `certImportedByUs=true`
+      import path a real tester hits. **Fix**: removed that now-redundant import from the
+      packaging step entirely — `1-install.ps1` is the only thing that imports/trusts the cert
+      now, in CI and for a real tester alike.
+- [x] Pushed, re-dispatched.
 
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 

@@ -71,3 +71,6 @@ if (Test-Path $probeOutput) {
 
 Write-Host ""
 Write-Host "=== DONE. No Windows security setting was changed by this kit at any point. ===" -ForegroundColor Green
+# Explicit on purpose — see 1-install.ps1's matching comment: PowerShell cmdlets never set
+# $LASTEXITCODE themselves, so a caller checking it would otherwise see a stale prior value.
+exit 0

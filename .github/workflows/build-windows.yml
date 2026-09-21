@@ -99,9 +99,11 @@ jobs:
           npm run dist:win:appx
           if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:appx failed with exit code $LASTEXITCODE" }
 
-          # Trust the same ephemeral cert so the install step below reflects a real
-          # Add-AppxPackage acceptance, not just that the packaging step exited 0.
-          Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
+          # Deliberately NOT importing/trusting the cert here — that's now 1-install.ps1's job
+          # (further down this job), and doing it here first would always make its "already
+          # trusted?" check report true, masking the real not-yet-trusted scenario a fresh tester
+          # machine actually has. Found by a real CI run — this cert stays untrusted until
+          # 1-install.ps1 itself decides whether to import it.
 
           # Publish the PUBLIC certificate (never the .pfx/private key) alongside the package so
           # someone downloading this run's artifact — not building it themselves — has a matching
