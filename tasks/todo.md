@@ -1608,7 +1608,27 @@ directly (which calls the same public functions, not modified copies).
       uploads all 5 as a `windows-screenshots` artifact. This replaces the 2 remaining
       macOS-placeholder gaps (Firmware, Settings/About) with genuine native Windows captures, and
       refreshes the other 3 with real Windows chrome too.
-- [ ] Triggered a fresh CI run from the current HEAD (includes the companyLine fix and all
+- [x] Triggered a fresh CI run from commit `ae30717` (includes the companyLine fix and all
       submission-content commits) — this run also serves as "build the final Store package from
-      the intended final commit" per Benny's request. Result, exact filename/version/commit/
-      checksum, and manifest identity re-confirmation pending below.
+      the intended final commit" per Benny's request. **Packaging, manifest identity, real
+      `1-install.ps1`, and launch all passed again** on this exact commit — confirms the final
+      build's identity is still correct after all the content changes. The new screenshot-capture
+      step failed, for a real, separate reason (below); the firmware probe and `3-cleanup.ps1`
+      steps never ran as a result (later steps in the same job).
+
+### New bug from this run: `ReferenceError: WebSocket is not defined` in the screenshot script
+
+- [x] **Real, verified cause**: `scripts/capture-screenshots.mjs` (and, latently, the older
+      `scripts/verify-packaged-app.mjs`, same pattern, not yet exercised in CI) uses the global
+      `WebSocket` constructor. That global is only unconditionally available from Node 22+ — this
+      repo's `build-windows.yml` pins `node-version: 20` (deliberately, for reasons unrelated to
+      this), where `WebSocket` is undefined. Worked fine on this dev machine (Node v25.9.0) and
+      was never caught until it ran for real on the pinned CI Node version.
+- [x] **Fix**: added `ws` (+ `@types/ws`) as a devDependency and changed both scripts to
+      `import WebSocket from 'ws'` instead of relying on the global — works identically on every
+      Node version this project actually runs, no CI Node-version bump needed. Verified locally:
+      rebuilt and re-ran the script end-to-end (all 5 screenshots captured correctly with the
+      explicit import). 488 tests pass, typecheck clean.
+- [ ] Re-triggering CI to get the real Windows screenshots and complete the final-build
+      verification (firmware probe + cleanup steps didn't get to run last time since the job
+      stopped at the screenshot step) — result pending below.

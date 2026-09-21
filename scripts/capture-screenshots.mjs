@@ -10,6 +10,11 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+// The global WebSocket is only unconditionally available from Node 22+ — this repo's CI pins
+// Node 20 (build-windows.yml), where it's undefined, confirmed by a real CI failure
+// ("ReferenceError: WebSocket is not defined"), not assumed. Importing the `ws` package directly
+// works identically on every Node version this project actually runs on.
+import WebSocket from 'ws';
 
 const [appPath, outDir, ...rest] = process.argv.slice(2);
 if (!appPath || !outDir) {
