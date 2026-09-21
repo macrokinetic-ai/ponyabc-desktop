@@ -1629,6 +1629,25 @@ directly (which calls the same public functions, not modified copies).
       Node version this project actually runs, no CI Node-version bump needed. Verified locally:
       rebuilt and re-ran the script end-to-end (all 5 screenshots captured correctly with the
       explicit import). 488 tests pass, typecheck clean.
-- [ ] Re-triggering CI to get the real Windows screenshots and complete the final-build
-      verification (firmware probe + cleanup steps didn't get to run last time since the job
-      stopped at the screenshot step) — result pending below.
+- [x] **Re-run (35582371173, commit `4a19da2`) went fully green** — this is the final build:
+      - **Filename**: `PonyABC-Desktop-v0.3.15-winx64.appx`
+      - **Version**: 0.3.15
+      - **Commit**: `4a19da2b5e47f4fa7485ed18c6d0a4241b64a851`
+      - **SHA-256**: `36278c0cbc5d1a600941aefd09867ae5dbe7a525f2ee97f512865df3ee82fcd6`
+        (independently recomputed locally after download — matches exactly)
+      - **Manifest identity re-confirmed on this exact build**: `Name='PonyABC.PonyABCDesktop'`,
+        `Publisher='CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'`, `PublisherDisplayName='PonyABC'`,
+        real Windows-computed `PackageFamilyName='PonyABC.PonyABCDesktop_f1jemggxjsyxg'` — all
+        exact matches, same as every prior green run.
+      - `1-install.ps1`/`3-cleanup.ps1` end-to-end, launch verification, and the firmware probe
+        all passed again on this build too.
+      - **All 5 screenshots captured for real** from the installed Store package on Windows (not
+        a macOS dev build): Home, My Recordings, BOOK Library, Firmware (genuine "Prepare your
+        pen" step — confirmed by viewing the actual PNG, not just a log line), and Settings/About
+        (confirmed reading "Windows · x64 (Microsoft Store)" and "Installed from Microsoft Store
+        — updates are handled automatically"). Downloaded, copied into `store-assets/
+        screenshots/` (replacing the old temporary macOS-mixed set entirely), and
+        `store-assets/README.md`/`submission-materials.md` updated to match.
+- [x] **Partner Center**: no MCP tool, credentials, or browser session available to this
+      environment — cannot prepare or update the actual Partner Center draft. Stated plainly
+      rather than fabricated; all content is ready to paste in once Benny has a session open.

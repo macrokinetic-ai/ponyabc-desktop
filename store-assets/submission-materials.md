@@ -129,21 +129,16 @@ launched as a separate, unpackaged process — the packaged app itself always ru
 
 ## Screenshots and image assets
 
-**Status: 3 of 5 captured for real, 2 still need a genuine Windows-build recapture.** All were
-taken with a new CDP-driven tool (`scripts/capture-screenshots.mjs`, click-through automation —
-never hand-drawn) against a real running build, saved in this repo under `store-assets/
-screenshots/` (see that folder's own README for exact usability notes).
+**Status: all 5 done, captured from the actual Microsoft Store package running on a real
+Windows CI machine** (not a macOS dev build) — Home, My Recordings, BOOK Library, Firmware
+wizard (genuine "Prepare your pen" step), and Settings/About (correctly reading "Windows · x64
+(Microsoft Store)"). Saved in this repo under `store-assets/screenshots/` (see that folder's own
+README for exact filenames and the CI run they came from).
 
-- **Ready to use**: Home, BOOK Library, My Recordings — generic content, no platform-specific
-  text visible.
-- **Needs a Windows recapture**: Firmware (the Mac capture just shows "not available on Mac" —
-  correct behavior, but would read as broken on a Windows listing) and Settings/About (visibly
-  shows "Mac · Apple Silicon"; needs to show "Windows · x64 (Microsoft Store)" instead).
 - **Logo/icon**: `build/icon.png` (1024×1024) is already large enough for every required Store
   tile size.
-- Straightforward to capture now that a working Windows test environment exists (see the test
-  kit at `store-assets/windows-test-kit/`) — the same script runs identically against the
-  installed package's .exe.
+- To recapture after a future UI change: same script, run against any installed build's .exe —
+  see `store-assets/README.md`.
 
 ## Privacy notice — complete text is a separate file, not summarized here
 
@@ -188,11 +183,11 @@ content-disclosure obligations — every answer below is given on its own merits
 
 ## Remaining requirements (everything already verified/confirmed is not repeated here)
 
-Packaging, manifest identity, install, launch, and the harmless elevation/logging mechanism
-(approved once, from a real non-administrator session on Benny's own Windows machine) are
-confirmed working with real evidence — see `tasks/todo.md`'s "Microsoft Store (MSIX) packaging"
-section. Legal company details, audience framing, and category are now resolved (this document).
-Only these remain before this draft is submission-ready:
+Packaging, manifest identity, install, launch, the harmless elevation/logging mechanism (approved
+once, from a real non-administrator session on Benny's own Windows machine), legal company
+details, audience framing, category, and all 5 Store screenshots (genuine Windows captures) are
+confirmed/complete with real evidence — see `tasks/todo.md`'s "Microsoft Store (MSIX) packaging"
+section. Only these remain before this draft is submission-ready:
 
 1. **Publish the privacy notice** at `https://register.ponyabc.uk/privacy/desktop` (hosting URL
    confirmed). Complete text is in `store-assets/privacy-notice-desktop.md`; that file's own
@@ -201,12 +196,13 @@ Only these remain before this draft is submission-ready:
    text first).
 2. **Age rating (IARC) answers.** Mapped to real IARC categories above — enter these (or your
    own) directly in Partner Center; the actual rating is computed there, not decided here.
-3. **Two remaining screenshots.** Firmware wizard and Settings/About — see `tasks/todo.md` for
-   current capture status and next action.
-4. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
+3. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
    in the test kit's README) — useful additional evidence, not required to finalize this draft.
-5. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
+4. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
    then.
+5. **Partner Center itself**: I have no access to Partner Center from this environment (no
+   credentials, no browser session, no API tool) — I cannot prepare or update the actual draft
+   there. Everything above is ready to paste in when you have a Partner Center session open.
 
 Full technical build/verification/testing log: `tasks/todo.md` in the `ponyabc-desktop` repo
 ("Microsoft Store (MSIX) packaging" section). The Windows test kit (package, checksum,
