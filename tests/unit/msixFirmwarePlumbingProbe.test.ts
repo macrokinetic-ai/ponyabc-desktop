@@ -49,9 +49,11 @@ function mkTempDir(prefix: string): string {
 beforeEach(() => {
   h.userDataDir = mkTempDir('ponyabc-userdata-');
   h.elevationResult = { status: 'completed', exitCode: 0 };
+  delete process.env.PONYABC_MSIX_PROBE_DELAY_SECONDS;
 });
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
+  delete process.env.PONYABC_MSIX_PROBE_DELAY_SECONDS;
 });
 
 // Real Windows CI evidence (not assumed): this repo's own elevatedRun.windows-smoke.test.ts
@@ -75,6 +77,34 @@ describe('runMsixFirmwarePlumbingProbe (fast, mocked elevation — see the .wind
       expect(result.packageDir).toBe(path.join(h.userDataDir, 'firmwareDownloads', 'msix-plumbing-probe'));
       expect(result.probeToolPath).toBe(path.join(result.packageDir, 'probe-tool.bat'));
       expect(path.basename(result.probeToolPath)).not.toMatch(/isd_download|ufw_maker|download\.bat/);
+    },
+    WINDOWS_FS_TIMEOUT_MS,
+  );
+
+  it(
+    'PONYABC_MSIX_PROBE_DELAY_SECONDS inserts a real, clamped ping-based delay into the harmless batch (for a human to interrupt mid-flight)',
+    async () => {
+      process.env.PONYABC_MSIX_PROBE_DELAY_SECONDS = '5';
+      const result = await runMsixFirmwarePlumbingProbe();
+      const batchContent = fs.readFileSync(result.probeToolPath, 'utf-8');
+      expect(batchContent).toContain('ping -n 6 127.0.0.1 >nul');
+
+      // Clamped to MAX_PROBE_DELAY_SECONDS (60), never an unbounded/absurd wait.
+      process.env.PONYABC_MSIX_PROBE_DELAY_SECONDS = '999';
+      const clamped = await runMsixFirmwarePlumbingProbe();
+      const clampedBatch = fs.readFileSync(clamped.probeToolPath, 'utf-8');
+      expect(clampedBatch).toContain('ping -n 61 127.0.0.1 >nul');
+      expect(clampedBatch).not.toContain('ping -n 1000');
+    },
+    WINDOWS_FS_TIMEOUT_MS,
+  );
+
+  it(
+    'no delay env var means no ping/pause line at all, same as before this feature existed',
+    async () => {
+      const result = await runMsixFirmwarePlumbingProbe();
+      const batchContent = fs.readFileSync(result.probeToolPath, 'utf-8');
+      expect(batchContent).not.toContain('ping');
     },
     WINDOWS_FS_TIMEOUT_MS,
   );

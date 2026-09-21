@@ -1377,6 +1377,59 @@ assumption) as of this run:
   `windows-appx` (the new Store package) — both downloadable from this run's Actions page.
 - Both macOS `.dmg` build workflows (`build-mac.yml`) were never touched by any of this work.
 
+## Complete Windows test kit (`store-assets/windows-test-kit/`) — per Benny's detailed review of the first draft
+
+Benny's follow-up review caught a real, important flaw in my first chat-only instructions: they
+had the tester run the firmware probe from the SAME Administrator PowerShell window used for
+install — which would make the UAC test meaningless (an already-elevated parent's child process
+elevation requests get silently auto-approved, exactly why CI's own probe run never showed a
+prompt). Built a proper, self-contained kit instead:
+
+- [x] `1-install.ps1` (run as Administrator): discovers the `.appx` by pattern (not a hardcoded
+      version string, so it keeps working across future releases), verifies its SHA-256, reads
+      the `.cer`'s exact certificate **thumbprint** (not just Subject — multiple certs can share
+      a Subject), checks whether that exact thumbprint is already trusted before importing
+      (never overwrites/duplicates), installs, verifies the real `PackageFamilyName`, and records
+      everything (including whether IT imported the cert vs. found it already trusted) to
+      `test-kit-state.json` for cleanup to use later.
+- [x] `2-run-firmware-probe.ps1` (must run from a NORMAL, non-administrator session — checks for
+      and refuses to run elevated, with a clear explanation why): resolves the real exe from the
+      installed `AppxManifest.xml`, launches it with the probe env vars wrapped in `try/finally`
+      so they're cleared even if something throws, and confirms the LAUNCHED PROCESS itself
+      carries real package identity via the documented Win32 `GetPackageFullName` API (succeeds
+      only for a process with package identity, fails with `APPMODEL_ERROR_NO_PACKAGE` otherwise)
+      — not just "it's installed under WindowsApps." Takes an optional `-DelaySeconds` param.
+- [x] **New, small, deliberate production-adjacent change**: `msixFirmwarePlumbingProbe.ts` gained
+      an optional `PONYABC_MSIX_PROBE_DELAY_SECONDS` (1-60, clamped) env var that inserts a real
+      `ping -n <n> 127.0.0.1 >nul` pause into the harmless stand-in script before it prints its
+      marker — the original script finished in well under a second, far too fast for a human to
+      deliberately interrupt mid-flight to test the crash-recovery behavior. 4 new unit tests
+      (delay present/absent/clamped) — 488 tests pass, 7 skipped, 47 files; typecheck clean.
+- [x] `3-cleanup.ps1` (Administrator): removes the package, and removes the certificate thumbprint
+      ONLY if `test-kit-state.json` says this kit imported it — never a pre-existing cert that
+      happened to share the same Subject, never touching trust that existed before.
+- [x] **Precise recovery-behavior guidance, not "does it reopen ok"**: read the actual
+      `FirmwareScreen.tsx`/`firmware.ts` recovery code and the real English UI text
+      (`recovery.title`/`stillRunningBody`/`unknownBody` in `en/firmware.json`) rather than
+      guessing. The kit's README documents two genuinely different, both-correct cases: (A)
+      interrupted before approving UAC → nothing ever ran → correctly auto-clears silently, new
+      attempt works immediately; (B) interrupted while the (now-delayable) stand-in script is
+      still genuinely running → must show the real blocking "Previous upgrade not confirmed
+      finished" screen and refuse a new firmware attempt or BOOK/DIY pen write until resolved —
+      and explicitly flags that an uncertain state getting silently cleared instead would be a
+      real bug, not a pass.
+- [x] **CI now runs the ACTUAL delivered scripts, not a parallel reimplementation**: the
+      packaging job copies `store-assets/windows-test-kit/*.ps1` + `README.md` into `release/`,
+      runs a real PowerShell AST parse (`[System.Management.Automation.Language.Parser]::ParseFile`)
+      on all 3 scripts as a syntax gate, then the installation step runs the real `1-install.ps1`
+      (asserting `certImportedByUs=true` and the correct `PackageFamilyName` in its own state
+      file) and the cleanup step runs the real `3-cleanup.ps1` (asserting the package is gone and
+      that exact thumbprint is removed) — so a green CI run is real evidence the tester's exact
+      scripts work end-to-end, not just that installation is possible in general via different
+      inline CI code. The `windows-appx` artifact now bundles the appx/checksum/cert together
+      with the 3 scripts and README in one download.
+- [ ] Pushed, re-dispatched — result pending.
+
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
 Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current

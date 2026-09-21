@@ -113,6 +113,28 @@ jobs:
           if (-not $appx) { throw 'PACKAGING FAILED: no .appx file found in release/ after dist:win:appx.' }
           Write-Host "PACKAGING OK: $($appx.Name) ($([math]::Round($appx.Length / 1MB, 2)) MB)"
 
+      # --- 1b. Bundle the tester-facing kit alongside the package, and validate the scripts for --
+      #         real before anyone downloads them — not just eyeballed. ---------------------------
+      - name: "Store package: bundle and syntax-check the Windows test kit"
+        shell: pwsh
+        run: |
+          Copy-Item -Path 'store-assets\windows-test-kit\*.ps1', 'store-assets\windows-test-kit\README.md' -Destination 'release\'
+
+          $hadErrors = $false
+          foreach ($script in Get-ChildItem -Path 'release' -Filter '*.ps1') {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $hadErrors = $true
+              Write-Host "::error::Syntax errors in $($script.Name):"
+              $errors | ForEach-Object { Write-Host "::error::  $_" }
+            } else {
+              Write-Host "Syntax OK: $($script.Name)"
+            }
+          }
+          if ($hadErrors) { throw 'One or more test-kit scripts have real PowerShell syntax errors — see above. Not safe to hand to a tester.' }
+
       # --- 2. PACKAGING VERIFICATION: real manifest content, not an assumption ------------------
       - name: "Store package: inspect AppxManifest.xml and verify Partner Center identity"
         shell: pwsh
@@ -164,22 +186,25 @@ jobs:
           }
           Write-Host "IDENTITY VERIFIED: Name='$($actual.IdentityName)' Publisher='$($actual.IdentityPublisher)' PublisherDisplayName='$($actual.PublisherDisplay)' — all match Partner Center exactly."
 
-      # --- 3. INSTALLATION -----------------------------------------------------------------------
-      - name: "Store package: sideload-install and verify the real computed identity"
+      # --- 3. INSTALLATION — runs the ACTUAL delivered 1-install.ps1, not a parallel CI-only ------
+      #        reimplementation, so a passing CI run is real evidence the tester's own script ----
+      #        works, not just that installation is possible in general. --------------------------
+      - name: "Store package: run the real 1-install.ps1 (same script the tester gets)"
         shell: pwsh
         run: |
-          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
-          Add-AppxPackage -Path $appx.FullName
-          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          if (-not $installed) { throw 'INSTALL FAILED: Add-AppxPackage reported success but Get-AppxPackage found no PonyABC.PonyABCDesktop package.' }
+          & '.\release\1-install.ps1'
+          if ($LASTEXITCODE -ne 0) { throw "1-install.ps1 exited with code $LASTEXITCODE" }
 
-          $expectedFamilyName = 'PonyABC.PonyABCDesktop_f1jemggxjsyxg'
-          Write-Host "INSTALL OK: PackageFullName=$($installed.PackageFullName)"
-          Write-Host "Real, Windows-computed PackageFamilyName: $($installed.PackageFamilyName)"
-          if ($installed.PackageFamilyName -ne $expectedFamilyName) {
-            throw "IDENTITY VERIFICATION FAILED — real PackageFamilyName '$($installed.PackageFamilyName)' does not match the Partner Center-registered '$expectedFamilyName'. This means the Identity Name/Publisher pair does not hash to the registered Package Family Name."
+          if (-not (Test-Path 'release\test-kit-state.json')) { throw '1-install.ps1 did not write test-kit-state.json.' }
+          $state = Get-Content 'release\test-kit-state.json' -Raw | ConvertFrom-Json
+          Write-Host "State file contents: $($state | ConvertTo-Json -Compress)"
+          if (-not $state.certImportedByUs) {
+            throw "Expected certImportedByUs=true on a clean runner (no prior trust for this run's fresh cert) — got false. The thumbprint-tracking logic may be broken."
           }
-          Write-Host "IDENTITY VERIFIED: PackageFamilyName matches the Partner Center-registered value exactly."
+          if ($state.packageFamilyName -ne 'PonyABC.PonyABCDesktop_f1jemggxjsyxg') {
+            throw "State file's recorded PackageFamilyName '$($state.packageFamilyName)' does not match the Partner Center-registered value."
+          }
+          Write-Host "1-install.ps1 verified end-to-end: checksum, certificate thumbprint tracking, install, and identity all correct."
 
       # --- 4. LAUNCH ------------------------------------------------------------------------------
       - name: "Store package: verify the installed app actually launches"
@@ -260,16 +285,31 @@ jobs:
         # real, useful information to report, not a reason to fail the whole workflow run.
         continue-on-error: true
 
-      # --- 6. CLEANUP -----------------------------------------------------------------------------
-      - name: "Store package: uninstall the sideload test install"
+      # --- 6. CLEANUP — runs the ACTUAL delivered 3-cleanup.ps1, validating its thumbprint-scoped
+      #        removal logic for real (this run's cert should show certImportedByUs=true and get
+      #        removed; a pre-existing cert never would). -------------------------------------------
+      - name: "Store package: run the real 3-cleanup.ps1 (same script the tester gets)"
         if: always()
         shell: pwsh
         run: |
-          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue
-          if ($installed) {
-            Remove-AppxPackage -Package $installed.PackageFullName
-            Write-Host "Uninstalled $($installed.PackageFullName)"
+          if (-not (Test-Path 'release\3-cleanup.ps1')) {
+            Write-Host '3-cleanup.ps1 not present (an earlier step likely failed before bundling) — falling back to a plain uninstall.'
+            $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue
+            if ($installed) { Remove-AppxPackage -Package $installed.PackageFullName }
+            exit 0
           }
+          $thumbprintBefore = if (Test-Path 'release\test-kit-state.json') { (Get-Content 'release\test-kit-state.json' -Raw | ConvertFrom-Json).certThumbprint } else { $null }
+
+          & '.\release\3-cleanup.ps1'
+          if ($LASTEXITCODE -ne 0) { throw "3-cleanup.ps1 exited with code $LASTEXITCODE" }
+
+          if (Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue) {
+            throw '3-cleanup.ps1 ran but the package is still installed.'
+          }
+          if ($thumbprintBefore -and (Get-ChildItem 'Cert:\LocalMachine\TrustedPeople' | Where-Object Thumbprint -eq $thumbprintBefore)) {
+            throw "3-cleanup.ps1 ran but certificate thumbprint $thumbprintBefore (which this run imported) is still present."
+          }
+          Write-Host '3-cleanup.ps1 verified end-to-end: package uninstalled, and this run''s own certificate thumbprint removed.'
 
       - uses: actions/upload-artifact@v4
         with:
@@ -280,11 +320,17 @@ jobs:
           # .exe's own checksum from the earlier dist:win step. The .cer is the PUBLIC half of
           # this run's ephemeral test-signing cert (see the packaging step) — published so anyone
           # downloading this artifact (not building it themselves) has a matching cert to
-          # sideload-trust it with. Never the .pfx/private key.
+          # sideload-trust it with. Never the .pfx/private key. The .ps1/.md files are the
+          # tester-facing kit (store-assets/windows-test-kit/), bundled and syntax-checked earlier
+          # in this job, and just exercised for real by steps 3 and 6 above using these EXACT
+          # files (not a parallel copy) — test-kit-state.json is deliberately excluded (removed by
+          # 3-cleanup.ps1 already; it's this CI run's own artifact, not something a tester needs).
           path: |
             release/*.appx
             release/*.appx.sha256
             release/*.cer
+            release/*.ps1
+            release/README.md
           if-no-files-found: error
 
       # Same rationale as the .exe's own release-upload step above: land the Store package next
