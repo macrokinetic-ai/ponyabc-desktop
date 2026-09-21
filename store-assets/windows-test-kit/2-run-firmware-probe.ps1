@@ -89,8 +89,15 @@ try {
   $packageFullName = $null
   $identityCheckError = $null
   try {
+    # CharSet = Unicode is required, not cosmetic: GetPackageFullName's packageFullName parameter
+    # is a PWSTR (UTF-16). Without an explicit CharSet, .NET P/Invoke defaults a StringBuilder
+    # parameter to CharSet.Ansi, which reinterprets the returned UTF-16 bytes as a narrow ANSI
+    # string — for a name starting with "P" (UTF-16LE bytes 0x50 0x00), that reads as "P"
+    # followed immediately by a null terminator, truncating everything after the first character.
+    # This was a real, confirmed bug (a notebook test showed exactly "...running process: P"),
+    # not a hypothetical.
     Add-Type -Namespace PonyAbcWin32 -Name AppModel -MemberDefinition @"
-[System.Runtime.InteropServices.DllImport("kernel32.dll")]
+[System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
 public static extern int GetPackageFullName(System.IntPtr hProcess, ref int packageFullNameLength, System.Text.StringBuilder packageFullName);
 "@ -ErrorAction SilentlyContinue
 
@@ -106,8 +113,13 @@ public static extern int GetPackageFullName(System.IntPtr hProcess, ref int pack
     $identityCheckError = $_.Exception.Message
   }
 
-  if ($packageFullName) {
+  # Compare against the FULL expected identity, not just "the API call returned success" — a
+  # nonempty string alone doesn't prove it's the right package, only that some package identity
+  # was returned.
+  if ($packageFullName -and $packageFullName -eq $installed.PackageFullName) {
     Write-Host "Package identity CONFIRMED for the running process: $packageFullName" -ForegroundColor Green
+  } elseif ($packageFullName) {
+    Write-Host "Package identity MISMATCH — the running process reports '$packageFullName', but the installed package is '$($installed.PackageFullName)'. Something is wrong; do not treat this run as a valid test." -ForegroundColor Red
   } else {
     Write-Host "Could not confirm package identity for the running process (it may have already exited, or the check itself failed: $identityCheckError)." -ForegroundColor Yellow
   }

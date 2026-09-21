@@ -7,13 +7,17 @@ Defender) — only a certificate trust entry and one app install, both removed b
 
 ## 1. Download
 
-Get **`windows-appx.zip`** from this GitHub Actions run:
+Get **`windows-appx.zip`** from the most recent successful run of *Build Windows EXE + Store
+package*:
 
-**https://github.com/macrokinetic-ai/ponyabc-desktop/actions/runs/35548857169**
+**https://github.com/macrokinetic-ai/ponyabc-desktop/actions/workflows/build-windows.yml**
 
-Scroll to the **Artifacts** section near the bottom of that page and click **windows-appx** to
-download it. (Requires being signed in to GitHub with access to this repo — that's a GitHub
-requirement for any workflow download, not specific to this file. Available until 2026-12-20.)
+Open that page, click the top (most recent) run with a green checkmark, scroll to the
+**Artifacts** section near the bottom, and click **windows-appx** to download it. (Requires being
+signed in to GitHub with access to this repo — that's a GitHub requirement for any workflow
+download, not specific to this file. Each run's artifacts are available for 90 days.)
+
+*Most recently verified against run [35557679933](https://github.com/macrokinetic-ai/ponyabc-desktop/actions/runs/35557679933) (2026-09-21) — if you were given that exact link directly, it still works, but always prefer the latest run from the link above once a newer one exists.*
 
 ## 2. Extract
 
@@ -21,15 +25,28 @@ Extract the zip into one folder. You should see 7 files together:
 
 | File | What it is |
 |---|---|
-| `PonyABC-Desktop-v0.3.15-winx64.appx` | The app package (121,088,377 bytes) |
-| `PonyABC-Desktop-v0.3.15-winx64.appx.sha256` | Its checksum (`a4d94debb0c05ab110f7fc1882036dd00596d3a3feadbb1b7815c22863f934a3`) |
+| `PonyABC-Desktop-v<version>-winx64.appx` | The app package |
+| `PonyABC-Desktop-v<version>-winx64.appx.sha256` | Its checksum — `1-install.ps1` checks this automatically; there's no fixed value to compare by hand here since it changes with every build |
 | `PonyABC-Desktop-test-cert.cer` | The matching test certificate (public part only) |
 | `1-install.ps1` | Installs everything, checking the checksum and certificate first |
-| `2-run-firmware-probe.ps1` | Runs the harmless UAC/firmware test (see step 5) |
+| `2-run-firmware-probe.ps1` | Runs the harmless UAC/firmware test (see step 6) |
 | `3-cleanup.ps1` | Removes everything this kit added when you're done |
 | `README.md` | This file |
 
-## 3. Install (one time)
+## 3. Unblock the scripts (one time)
+
+Windows marks every file extracted from a downloaded zip as "from the internet," and blocks
+unsigned scripts specifically — not because of anything wrong with these files, just because
+they came from a download. This unblocks only these 3 files, individually and by name; it does
+**not** change any system-wide script-execution setting. In the same folder, in an ordinary
+(non-administrator) PowerShell window:
+```
+Unblock-File -Path .\1-install.ps1
+Unblock-File -Path .\2-run-firmware-probe.ps1
+Unblock-File -Path .\3-cleanup.ps1
+```
+
+## 4. Install (one time)
 
 1. Right-click **Start** → **Windows PowerShell (Admin)** (or search "PowerShell", right-click,
    "Run as administrator").
@@ -43,7 +60,7 @@ Extract the zip into one folder. You should see 7 files together:
    says **FAILED** or **MISMATCH**, stop and let me know before continuing.
 5. Close this Administrator window — you won't need it again except for cleanup.
 
-## 4. Try the app normally
+## 5. Try the app normally
 
 Open **PonyABC Desktop** from the Start menu like any other app. Check:
 
@@ -55,7 +72,7 @@ Open **PonyABC Desktop** from the Start menu like any other app. Check:
 - **BOOK Library** shows a real list of books (not an error) and you can download one.
 - All three **Settings** tabs open, and the language dropdown works.
 
-## 5. The firmware/UAC test
+## 6. The firmware/UAC test
 
 This never runs any real vendor tool and never touches a real pen — just a two-line harmless
 script.
@@ -67,35 +84,53 @@ script.
    .\2-run-firmware-probe.ps1
    ```
 3. **A real Windows prompt should appear** asking to let the app make changes to your device.
-   - Run it once and click **Yes**.
-   - Run it again and click **No**.
+   - Run it once and click **Yes**. This alone confirms the harmless elevation/logging mechanism
+     works from a real, non-administrator launch — it is **not** a real firmware flash and not a
+     full functional test of the app.
+   - Run it again and click **No** — this is a separate, equally important check (does the app
+     handle a declined prompt cleanly) that a single "Yes" run does not cover.
    Both are useful, valid results — the script tells you what happened either way.
 
-## 6. When you're done
+## 7. When you're done
 
 Back in an **Administrator** PowerShell window, in the same folder:
 ```
 .\3-cleanup.ps1
 ```
 This removes the test app and (only if it added one) the test certificate. Send me the output
-from steps 3 and 5 — that's the evidence I need.
+from steps 4 and 6 — that's the evidence I need.
 
 ---
 
 ## Technical details
 
-### What CI already verified vs. what only this kit can check
+### Why `Unblock-File`, not a change to execution policy
 
-CI (GitHub Actions, a real Windows machine but with no interactive user) already confirmed, with
-real evidence: the package's manifest identity matches Partner Center exactly, Windows' own
-computed `PackageFamilyName` matches exactly, the process launches and stays running, and the
-elevation mechanism's file-visibility works end to end. What CI's own elevation attempt could
-**not** prove: what a real UAC consent dialog looks like and does, because the CI service
-account's elevation completed silently, with no prompt — likely because that account already had
-elevation rights, not because the prompt doesn't matter. **That is exactly what step 5 above
-tests**, and it's the one thing that genuinely needs your machine.
+Windows tags files extracted from a downloaded zip with a "Mark of the Web" (an NTFS alternate
+data stream, `Zone.Identifier`), and PowerShell's default `RemoteSigned` execution policy refuses
+to run an unsigned script carrying that mark — you'd see an error like "File ... cannot be loaded.
+... is not digitally signed." `Unblock-File` removes that mark from one specific file; running it
+on each of the 3 scripts by name (step 3) unblocks exactly those 3 files and nothing else on your
+system. The alternative some guides suggest — `Set-ExecutionPolicy` — changes what PowerShell will
+run **system-wide**, for every script, indefinitely, which is a much bigger and longer-lasting
+change than this task needs. This kit never asks you to touch execution policy at all.
 
-### Why step 5 must run from a non-administrator window
+### What's actually been verified so far, and what hasn't
+
+CI (GitHub Actions, a real Windows machine but with no interactive user) confirmed: the package's
+manifest identity matches Partner Center exactly, Windows' own computed `PackageFamilyName`
+matches exactly, and the process launches and stays running. A real notebook run of this kit then
+confirmed, from a genuinely non-administrator session: the harmless elevation mechanism completes
+successfully, its log is captured correctly, and the recovery marker file round-trips correctly.
+
+**That notebook run is real evidence for exactly one thing: the harmless elevation/logging
+mechanism, approved once, works end to end from a real non-admin launch.** It is not a real
+firmware flash (it never touches a vendor tool or a pen), and it is not a complete functional test
+of the app. Two things specifically remain undemonstrated by a single "click Yes and it worked"
+run: **declining** the UAC prompt (see step 6's second run), and the **interrupted-launch/recovery**
+behavior (see below) — both need their own separate pass.
+
+### Why step 6 must run from a non-administrator window
 
 If the PowerShell window running `2-run-firmware-probe.ps1` is itself elevated, the app it
 launches inherits that elevation. When the app then tries to elevate the harmless stand-in script
@@ -107,10 +142,14 @@ test.
 ### How package identity is confirmed, not assumed
 
 `2-run-firmware-probe.ps1` calls the documented Win32 function `GetPackageFullName` against the
-actual running process it just launched. This function only succeeds for a process that has real
-package identity; for an ordinary unpackaged process it fails with `APPMODEL_ERROR_NO_PACKAGE`.
-The script reports the real package full name it gets back, not just "the exe lives under
-WindowsApps."
+actual running process it just launched, and compares the FULL string it gets back against the
+installed package's own real `PackageFullName` — not just "the API call returned success," which
+would only prove *some* package identity was found, not that it's the right one. An earlier
+version of this script had a real, confirmed bug here: the P/Invoke declaration was missing
+`CharSet = Unicode`, so .NET defaulted to ANSI marshaling for a Win32 API that returns UTF-16 text
+— the returned name was silently truncated to its first character (a real notebook run showed
+"...running process: P" instead of the full package name). Fixed by declaring the P/Invoke call
+with explicit Unicode marshaling.
 
 ### Certificate handling: exact thumbprint, not Subject
 

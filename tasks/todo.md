@@ -1471,7 +1471,63 @@ still reported it missing.
       **Fix**: wrapped the invocation in `Push-Location 'release'` / `Pop-Location` so the
       wrapper's own working directory is restored regardless of what the called script does to
       it — the standard, correct PowerShell pattern for exactly this situation.
-- [x] Pushed, re-dispatched — this is expected to be the last fix; result pending.
+- [x] Pushed, re-dispatched — run 35557679933 went fully green: syntax check, packaging, manifest
+      identity, `1-install.ps1` end-to-end (checksum, thumbprint import, install, identity), real
+      launch, firmware probe, and `3-cleanup.ps1` end-to-end (uninstall + exact-thumbprint
+      removal) all passed for real on a Windows CI runner.
+
+## REAL notebook test result (Benny's own Windows machine) — scope precisely as reported, not overclaimed
+
+- [x] **What this run actually proves**: `1-install.ps1` matched checksum and `PackageFamilyName`
+      for real. `2-run-firmware-probe.ps1`, run from a **confirmed non-administrator session**,
+      returned `elevation.status: completed`, `exitCode: 0`, `logContainsExpectedMarker: true`,
+      `recoveryMarkerReadBackImmediately: true`, `stillRunningAfterCompletion: not-running`,
+      `errors: []`. `3-cleanup.ps1` removed the package and the exact certificate thumbprint this
+      kit itself imported.
+- [x] **What this run does NOT prove, and must not be conflated with**: this is a real test of the
+      harmless elevation/logging mechanism from a genuine non-admin launch — not a real firmware
+      flash, and not a complete functional test of the app. **UAC cancellation** (clicking "No")
+      and **interrupted-launch recovery behavior** were not exercised by this run and remain
+      separate, not-yet-demonstrated checks (both now have explicit steps in the kit's README).
+
+### Bug found from the real output: `GetPackageFullName` result was silently truncated to "P"
+
+Benny's own review of the actual printed output ("Package identity CONFIRMED for the running
+process: P") caught this — not something I'd have found from code inspection alone.
+
+- [x] **Real, verified root cause**: the `Add-Type`-declared P/Invoke signature for
+      `GetPackageFullName` had no explicit `CharSet`, so .NET defaulted the `StringBuilder`
+      parameter to `CharSet.Ansi`. The real Win32 function returns UTF-16 (`PWSTR`) text — for a
+      name starting with "P" (UTF-16LE bytes `0x50 0x00`), ANSI-reinterpreting those bytes reads
+      `'P'` then immediately hits the `0x00` as a string terminator, truncating everything after
+      the first character. This is exactly what the printed output showed.
+- [x] **Fix**: added `CharSet = System.Runtime.InteropServices.CharSet.Unicode` to the `DllImport`
+      declaration.
+- [x] **Also fixed, per Benny's explicit ask**: the script previously treated "API call returned
+      success" (a non-null string) as sufficient proof of identity. Now it compares the FULL
+      returned string against `$installed.PackageFullName` (already known from `Get-AppxPackage`
+      earlier in the script) and reports a clear MISMATCH in red if they differ, rather than
+      treating any nonempty result as confirmation.
+
+### README corrections
+
+- [x] **Unblock-File, not execution policy**: added an explicit step (individually unblocking
+      each of the 3 downloaded scripts by name via `Unblock-File`, before anything else runs) plus
+      a technical-details explanation of the Mark-of-the-Web/Zone.Identifier mechanism and why a
+      global `Set-ExecutionPolicy` change would be broader and more persistent than this task
+      needs. Never suggests touching execution policy at all.
+- [x] **Stale URL/checksum fixed structurally, not just for today**: the README previously
+      hardcoded one specific past run's URL and a specific checksum value — both go stale the
+      moment CI runs again (a fresh ephemeral build every time). Replaced with a link to the
+      *workflow's runs list* (always current) plus a dated reference to the run this exact kit
+      version was verified against; the checksum table entry now points to the accompanying
+      `.appx.sha256` file (which travels with the download and is checked automatically by
+      `1-install.ps1`) instead of a value that would immediately go stale.
+- [x] Not re-run through the full interactive notebook test for this round, per Benny's
+      instruction not to repeat already-passed testing — CI's syntax-check step is sufficient
+      verification for a P/Invoke marshaling fix and documentation-only changes; the human-only
+      parts (UAC decline, interrupted recovery) remain open items for whenever Benny next has
+      time, not blockers.
 
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
