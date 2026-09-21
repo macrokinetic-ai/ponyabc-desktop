@@ -1071,8 +1071,12 @@ virtualization docs) — see the plan file for exact quotes/citations.
       configuration), which is NOT necessarily representative of a real end-user's UAC-enabled
       desktop. This proves the underlying mechanism and file-visibility question conclusively; it
       does **not** yet prove what a real end-user sees at the actual "Do you want to allow this
-      app..." consent dialog — that specific, separate question still needs the real-machine
-      notebook test (`store-assets/windows-test-notebook.md`).
+      app..." consent dialog — that specific, separate question needed the real-machine notebook
+      test. **Update**: since resolved by a real notebook run using
+      `store-assets/windows-test-kit/` (the file originally referenced here,
+      `windows-test-notebook.md`, was superseded by that fuller kit and has been removed) — see
+      the "REAL notebook test result" section further down for what that run confirmed and what
+      it didn't (UAC decline specifically is still open).
       Original open-risk description, for the record (what was investigated and now resolved):
       `elevatedRun.ts` writes its scratch files
       (`run.bat`/`run.ps1`/`run.log`/`codepage.txt`) under `app.getPath('userData')` (i.e.
@@ -1100,11 +1104,14 @@ virtualization docs) — see the plan file for exact quotes/citations.
       `Local`/`Roaming`) plus a clearly-named subfolder — NOT implemented pre-emptively, because
       it's an unverified guess at a fix for an unverified problem, and Documents-folder clutter
       is a real UX cost only worth paying if the plain `userData` path is actually proven broken.
-- [ ] **The real, interactive UAC consent dialog itself — the one thing CI still cannot answer.**
-      Run 6's CI probe elevation `status: 'completed'` without any visible prompt, most likely
-      because the CI service account already has silent/auto-approved elevation — not evidence
-      either way for a real end-user's UAC-enabled desktop. `store-assets/
-      windows-test-notebook.md` walks through this exact check on a real machine.
+- [x] **The real, interactive UAC consent dialog — approval path confirmed; decline path still
+      open.** Run 6's CI probe elevation `status: 'completed'` without any visible prompt, most
+      likely because the CI service account already has silent/auto-approved elevation — not
+      evidence either way for a real end-user's UAC-enabled desktop. **Resolved (partially) by a
+      real notebook run** using `store-assets/windows-test-kit/` — approving the prompt once, from
+      a confirmed non-administrator session, is now real, demonstrated evidence. Declining the
+      prompt, and the interrupted-launch/recovery behavior, were NOT exercised by that run and
+      remain open — see the "REAL notebook test result" section further down.
 - [x] Pushed to a branch (`msix-store-packaging`, not `main`) once Benny explicitly authorized
       it. The two pre-existing unpushed `main` commits (`2299524` fix + `8c40d24` feat, both
       firmware result-screen work from 2026-09-16) were reviewed via `git show --stat` first per

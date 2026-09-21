@@ -177,25 +177,35 @@ is submitted on anyone's behalf.
 | Shares personal info with third parties | None | Confirmed by code review this session — see the privacy notice draft above. |
 | Digital purchases / in-app purchases | None | Confirmed by code review this session — no purchase, payment, or billing code anywhere in the app. |
 
-## Open items requiring Benny's factual input (not invented or guessed)
+## Remaining requirements (everything already verified is not repeated here)
 
-1. **Privacy policy scope.** `https://register.ponyabc.uk/privacy` is live and public, but its
+Packaging, manifest identity, install, launch, and the harmless elevation/logging mechanism
+(approved once, from a real non-administrator session on Benny's own Windows machine) are all
+confirmed working with real evidence — see `tasks/todo.md`'s "Microsoft Store (MSIX) packaging"
+section. Only these remain before this draft is submission-ready:
+
+1. **Privacy policy decision.** `https://register.ponyabc.uk/privacy` is live and public, but its
    own text is marked "placeholder text pending legal review" and only describes the
-   pen-registration website's data collection — it never mentions the desktop app. Store Policy
-   requires the linked policy to describe what the *submitted product* actually does with
-   personal data. A full draft is above — decide: publish that (or similar) as a new section/page,
-   and where it should live (extend the existing page, or host separately)?
-2. **Age rating (IARC) questionnaire.** Proposed answers are above for review — Benny gives the
-   real, final answers in Partner Center.
+   pen-registration website's data collection — it never mentions the desktop app. A full draft is
+   above, ready to use. Decide: publish that (or similar) now, or submit with the existing page as
+   a known gap to fix before real certification?
+2. **Age rating (IARC) answers.** Proposed answers are above, grounded in an actual code review
+   (no matching content/functionality exists for any flagged category). Enter these (or your own)
+   directly in Partner Center.
 3. **Business info.** Only the company registration number and registered address are genuinely
-   missing (see the Category/support/privacy section above) — the legal entity name
-   (MACROKINETIC MEDIATECH LIMITED) and Store identity (PonyABC) are already confirmed.
-4. **Real screenshots.** 3 of 5 captured for real (see Screenshots section above); Firmware and
-   Settings/About still need a genuine Windows-build recapture.
+   missing (needed for the in-app Settings → Privacy & Legal panel, currently "to be confirmed",
+   and possibly a Partner Center business-declaration field). Legal entity (MACROKINETIC
+   MEDIATECH LIMITED) and Store identity (PonyABC) are already confirmed and fixed.
+4. **Two remaining screenshots.** Firmware wizard and Settings/About still need a genuine
+   Windows-build capture (3 of 5 are already done and usable) — straightforward now that a
+   working Windows test environment exists.
+5. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
+   now in the test kit's README) — useful additional evidence, but not required to finalize this
+   draft.
+6. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
+   then.
 
-See `tasks/todo.md` in the `ponyabc-desktop` repo ("Microsoft Store (MSIX) packaging" section)
-for the full technical build/verification log — a real, fully-green CI run has now confirmed
-packaging, manifest identity, install, launch, and the firmware wizard's elevation/file-visibility
-mechanism all work correctly under MSIX packaging. The one remaining open question is the real,
-interactive UAC consent dialog a human would see (CI's own elevation succeeded silently, which
-isn't proof either way for a real end-user desktop) — see `store-assets/windows-test-notebook.md`.
+Full technical build/verification/testing log: `tasks/todo.md` in the `ponyabc-desktop` repo
+("Microsoft Store (MSIX) packaging" section). The Windows test kit (package, checksum,
+certificate, install/probe/cleanup scripts, and full instructions) is at
+`store-assets/windows-test-kit/` in that repo.
