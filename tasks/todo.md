@@ -1651,3 +1651,49 @@ directly (which calls the same public functions, not modified copies).
 - [x] **Partner Center**: no MCP tool, credentials, or browser session available to this
       environment — cannot prepare or update the actual Partner Center draft. Stated plainly
       rather than fabricated; all content is ready to paste in once Benny has a session open.
+
+## Desktop privacy page deployed live + final Store-submission folder assembled (2026-09-21)
+
+- [x] **Desktop privacy notice deployed to `https://register.ponyabc.uk/privacy/desktop`.**
+      Built in an isolated fresh `git clone` of `ponyabc-web` (origin/main, commit `c925fe7`) at a
+      scratch path — kept fully separate from the real working directory's unrelated uncommitted
+      admin-content-management changes and its diverged local `main`. New file:
+      `src/app/privacy/desktop/page.tsx`, converting the full reviewed
+      `store-assets/privacy-notice-desktop.md` text into JSX, matching the existing minimal
+      `/privacy/page.tsx` style, plus a new "What we haven't confirmed" section stating
+      Cloudflare's exact log-retention duration for this deployment is not confirmed (cites the
+      documented default range, 3 days Free / 7 days Paid, without claiming which applies).
+      Verified before pushing: `npm ci`, `npm run build` (new static route `/privacy/desktop`
+      alongside unmodified `/privacy`), `npm test` (358/358 passing), `git diff --stat` showing
+      only the one new file. Committed (`1e69fd0`) and pushed as a clean fast-forward to
+      `origin/main` (`c925fe7..1e69fd0`), then deployed via `npm run deploy`
+      (`opennextjs-cloudflare build && opennextjs-cloudflare deploy`) — live under Cloudflare
+      Worker `ponyabc-pen-registration`, version id `6f76a720-4a8b-45d8-af19-28a31f31f270`.
+      **Verified live and public** (`curl`, no auth): `/privacy/desktop` → HTTP 200, contains the
+      new page's heading; `/privacy` → HTTP 200, still shows its original placeholder text,
+      confirming it was untouched.
+      - Note: while confirming Cloudflare's retention config, I mistakenly `cat`+`grep`'d the raw
+        wrangler OAuth token file, printing part of a real token into my own tool output. Flagged
+        immediately to Benny; stopped that investigation path entirely and used only `wrangler`'s
+        own safe subcommands (e.g. `wrangler whoami`) from then on. This constraint carries
+        forward: never cat/grep/print raw credential files, only CLI tools' own subcommands.
+- [x] **Final Store-submission folder assembled**: `store-assets/FINAL-SUBMISSION/` in this repo
+      (local only — added to `.gitignore`, not committed, since it bundles a 121 MB binary).
+      Contains the verified `.appx` from commit `4a19da2b5e47f4fa7485ed18c6d0a4241b64a851`
+      (checksum re-verified after copying: `36278c0c...2fcd6`, matches exactly), its `.sha256`,
+      all 5 real Windows screenshots, and `store-listing.md`/`certification-notes.md`/
+      `age-rating-answers.md` extracted from `submission-materials.md` into standalone files (per
+      Benny's instruction that terminal transcripts were truncating these). `README.md` inside
+      that folder states the exact absolute path, the full untruncated SHA-256, and the origin CI
+      run URL. No stale "2 screenshots missing" language was found anywhere in the repo or the
+      synced Claude Docs artifact — both already correctly stated all 5 as complete; the one
+      genuinely stale item was the Claude Docs artifact's "Remaining requirements" list and
+      section heading still describing the privacy notice as an open item — corrected in place
+      (now reads "published and live").
+- [x] **`submission-materials.md` and the Claude Docs artifact re-synced**: privacy policy URL
+      fields now point to `https://register.ponyabc.uk/privacy/desktop`; "Remaining requirements"
+      trimmed to just age rating, the optional UAC-decline/interrupted-recovery test, final
+      review, and the standing Partner Center access statement.
+- [ ] Benny to enter the submission in Partner Center himself, using
+      `store-assets/FINAL-SUBMISSION/` — **not to be submitted for certification** per his
+      explicit instruction.

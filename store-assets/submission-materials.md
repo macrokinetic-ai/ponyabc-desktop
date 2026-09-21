@@ -82,7 +82,7 @@ benefits from the pen's content.)
 | Field | Value |
 | --- | --- |
 | Support contact | marketing@ponyabc.co.uk (already used in-app: Settings → Support) |
-| Privacy policy URL | https://register.ponyabc.uk/privacy (already linked in-app: Settings → Privacy & Legal) — see the privacy notice below and Remaining requirements |
+| Privacy policy URL | **https://register.ponyabc.uk/privacy/desktop** — the desktop-app-specific notice (live; use this one for the Store submission). The general https://register.ponyabc.uk/privacy page, linked in-app at Settings → Privacy & Legal, remains unchanged and covers the registration website only. |
 | Publisher display name | PonyABC (exact Partner Center value — unchanged, not the registered company name) |
 | Legal company name | MACROKINETIC MEDIATECH LIMITED |
 | Company number | 16420643 |
@@ -140,18 +140,18 @@ README for exact filenames and the CI run they came from).
 - To recapture after a future UI change: same script, run against any installed build's .exe —
   see `store-assets/README.md`.
 
-## Privacy notice — complete text is a separate file, not summarized here
+## Privacy notice — published and live
 
-**The full, complete, untruncated privacy notice is saved at
-[`store-assets/privacy-notice-desktop.md`](./privacy-notice-desktop.md) in this repo.** It is
-grounded in an actual investigation of what the app's own code sends, and separately what
+**Live at [`https://register.ponyabc.uk/privacy/desktop`](https://register.ponyabc.uk/privacy/desktop)**
+(deployed 2026-09-21; verified publicly accessible with no login required). The existing
+`https://register.ponyabc.uk/privacy` page is unchanged and still live. Full source text is also
+kept at [`store-assets/privacy-notice-desktop.md`](./privacy-notice-desktop.md) in this repo. It
+is grounded in an actual investigation of what the app's own code sends, and separately what
 Cloudflare/GitHub infrastructure may retain as ordinary connection metadata — not assumed, and
 not summarized as "no personal information is collected" (that file explains exactly why not).
-Intended public URL: `https://register.ponyabc.uk/privacy/desktop` (does not replace or modify
-the existing `https://register.ponyabc.uk/privacy` page). That file's own "Open items" section
-lists what's still needed before publishing (Cloudflare plan/retention confirmation, legal
-wording review, and the actual page implementation in `ponyabc-web` — not done yet, pending your
-review of the text).
+One fact is deliberately left unconfirmed rather than invented: Cloudflare's exact log-retention
+duration for this specific deployment — the page states the documented default range (3 days
+Free / 7 days Paid) without claiming which applies.
 
 ## Age rating (IARC) — mapped to real IARC categories, not a blanket "None"
 
@@ -189,20 +189,17 @@ details, audience framing, category, and all 5 Store screenshots (genuine Window
 confirmed/complete with real evidence — see `tasks/todo.md`'s "Microsoft Store (MSIX) packaging"
 section. Only these remain before this draft is submission-ready:
 
-1. **Publish the privacy notice** at `https://register.ponyabc.uk/privacy/desktop` (hosting URL
-   confirmed). Complete text is in `store-assets/privacy-notice-desktop.md`; that file's own
-   "Open items" lists what's left: Cloudflare plan/retention confirmation, your wording review,
-   and the actual `ponyabc-web` page implementation (not built yet — pending your review of the
-   text first).
-2. **Age rating (IARC) answers.** Mapped to real IARC categories above — enter these (or your
+1. **Age rating (IARC) answers.** Mapped to real IARC categories above — enter these (or your
    own) directly in Partner Center; the actual rating is computed there, not decided here.
-3. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
+2. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
    in the test kit's README) — useful additional evidence, not required to finalize this draft.
-4. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
+3. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
    then.
-5. **Partner Center itself**: I have no access to Partner Center from this environment (no
+4. **Partner Center itself**: I have no access to Partner Center from this environment (no
    credentials, no browser session, no API tool) — I cannot prepare or update the actual draft
-   there. Everything above is ready to paste in when you have a Partner Center session open.
+   there. Everything above is ready to paste in when you have a Partner Center session open. You've
+   confirmed you'll enter the submission there yourself with guidance, and this will not be
+   submitted for certification.
 
 Full technical build/verification/testing log: `tasks/todo.md` in the `ponyabc-desktop` repo
 ("Microsoft Store (MSIX) packaging" section). The Windows test kit (package, checksum,
