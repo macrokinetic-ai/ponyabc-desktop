@@ -145,73 +145,46 @@ screenshots/` (see that folder's own README for exact usability notes).
   kit at `store-assets/windows-test-kit/`) — the same script runs identically against the
   installed package's .exe.
 
-## Privacy notice (draft, ready for review — publication location still Benny's call)
+## Privacy notice — complete text is a separate file, not summarized here
 
-Grounded in the actual code (verified this session: no analytics/telemetry/tracking/purchase code
-anywhere in the app; the only network calls are to public, unauthenticated endpoints) and the
-confirmed company details above.
+**The full, complete, untruncated privacy notice is saved at
+[`store-assets/privacy-notice-desktop.md`](./privacy-notice-desktop.md) in this repo.** It is
+grounded in an actual investigation of what the app's own code sends, and separately what
+Cloudflare/GitHub infrastructure may retain as ordinary connection metadata — not assumed, and
+not summarized as "no personal information is collected" (that file explains exactly why not).
+Intended public URL: `https://register.ponyabc.uk/privacy/desktop` (does not replace or modify
+the existing `https://register.ponyabc.uk/privacy` page). That file's own "Open items" section
+lists what's still needed before publishing (Cloudflare plan/retention confirmation, legal
+wording review, and the actual page implementation in `ponyabc-web` — not done yet, pending your
+review of the text).
 
-**Supplements, does not replace,** the general policy at `https://register.ponyabc.uk/privacy`
-(which covers pen warranty registration and the PonyABC website — that page's own text is still
-marked "placeholder pending legal review", a separate, real gap — see Remaining requirements).
+## Age rating (IARC) — mapped to real IARC categories, not a blanket "None"
 
-> **PonyABC Desktop — Privacy Notice**
->
-> **Who is responsible for this app**
-> PonyABC Desktop is provided by PonyABC (trading name of **MACROKINETIC MEDIATECH LIMITED**,
-> company number **16420643**). Registered office: **128 City Road, London, United Kingdom, EC1V
-> 2NX**. For customer contact and correspondence, please use **34 Redbourne Avenue, London,
-> United Kingdom, N3 2BS** or marketing@ponyabc.co.uk — this correspondence address is separate
-> from, and should not be treated as, our registered office.
->
-> **What PonyABC Desktop stores on your computer**
-> Your selected interface language, and the most recently used pen/computer folder paths —
-> stored locally in a settings file, never transmitted anywhere. Diagnostic and firmware session
-> logs (app version, platform, and event timestamps) — stored locally, and only leave your
-> computer if you choose to export them and attach them to a support email yourself.
->
-> **What PonyABC Desktop sends over the network, and why**
-> - *BOOK library*: the app fetches the public list of available BOOK content and downloads
->   files you choose to install, from PonyABC's servers. These requests carry no name, email, or
->   other personal identifier — they're the same for every user.
-> - *Firmware updates (Windows only)*: the app checks for and downloads pen firmware files,
->   identified only by a hardware revision constant — not by any personal identifier.
-> - *Update checks*: the GitHub-distributed build checks GitHub's public release list for a newer
->   version; the Microsoft Store build skips this entirely (the Store manages its own updates).
-> - *Registration*: the "Register your pen" button opens PonyABC's warranty registration page in
->   your own web browser. Anything entered there is submitted directly to that website, not
->   through this app — see the general privacy policy above for how that page itself handles it.
->
-> **What PonyABC Desktop does not do**
-> No analytics, tracking, or advertising of any kind. Does not transmit files, recordings, or
-> local settings to PonyABC or anyone else. Does not collect or transmit personal information on
-> its own initiative. Being a device/content-management tool does not exempt it from these
-> obligations — this notice applies regardless of who is using the app or why.
->
-> **Contact**
-> Support and privacy queries: marketing@ponyabc.co.uk.
-
-## Age rating (IARC) — proposed answers for review, not submitted
-
-**"Suitable for all ages" below expresses our own intended suitability for the app's content and
+**"Suitable for all ages" expresses our own intended suitability for the app's content and
 functionality — it is not a preassigned or official age rating.** The real rating is computed by
-Microsoft/IARC from the actual questionnaire answers entered in Partner Center; nothing here is
-submitted on anyone's behalf. Being a management/utility tool for adults does not remove privacy
-or content-disclosure obligations — the answers below are given honestly regardless.
+Microsoft/IARC from the actual questionnaire answered in Partner Center, which is interactive and
+adapts to the app category selected — I do not have Partner Center access to quote its exact
+live on-screen wording. The categories and reasoning below are mapped to IARC's own
+publicly-documented content-descriptor and "Interactive Elements" categories (the same categories
+that appear on the resulting rating certificate), so the real, final answers can be entered
+accurately. Being a management/utility tool for adults does not remove privacy or
+content-disclosure obligations — every answer below is given on its own merits, not defaulted.
 
-| Category | Proposed answer | Basis |
-| --- | --- | --- |
-| Violence | None | No such content anywhere in the app. |
-| Sexual content / nudity | None | No such content anywhere in the app. |
-| Profanity / crude humor | None | No such content anywhere in the app. |
-| Controlled substances (alcohol/tobacco/drugs) | None | No such content anywhere in the app. |
-| Gambling | None | No such content anywhere in the app. |
-| User-generated content shared with others | None | DIY recordings are local pen⇄computer only, never uploaded or shared with other users; BOOK content is curated by PonyABC, not user-generated. |
-| Interaction with other users / social features | None | No chat, multiplayer, or social features of any kind. |
-| Location sharing | None | The app never reads or transmits location. |
-| Shares personal info with third parties | None | Confirmed by code review — see the privacy notice above. |
-| Digital purchases / in-app purchases | None | Confirmed by code review — no purchase, payment, or billing code anywhere in the app. |
-| Intended audience / target user | Parents, teachers, school staff, and business users managing PonyABC pens — not designed for a child to operate independently, and not a game. | Per the app's actual functionality (device/content management), not the age of learners who may use the physical pen. |
+| IARC category | What it actually asks about | Proposed answer | Reasoning |
+| --- | --- | --- | --- |
+| Violence | Depictions of harm to characters/people/animals | None | No such content anywhere in the app or its own UI. |
+| Fear / horror themes | Scary or horror content | None | No such content anywhere in the app's own UI. |
+| Sexual content / nudity | Sexual content or nudity | None | No such content anywhere in the app. |
+| Language / profanity | Strong language, slurs, crude humor | None | No such content anywhere in the app's own UI. |
+| Controlled substances | References to alcohol, tobacco, or drugs | None | No such content anywhere in the app. |
+| Gambling | Real-money or simulated gambling | None | No such content anywhere in the app. |
+| Users interact | Chat, messaging, multiplayer, or other direct interaction between users | None | No chat, messaging, multiplayer, comments, or any user-to-user interaction feature of any kind. |
+| Shares user-generated content with others | Content one user creates being visible/accessible to *other* users or the public | None — **but see the two distinct cases below, don't conflate them** | **DIY recordings**: 100% local — copied only between a user's own pen and their own computer; there is no mechanism for any other user to see, access, or receive them. **BOOK content**: flows the opposite direction (professionally curated content downloaded *from* PonyABC to the user); it is not user-generated at all. Neither matches what this descriptor is actually about (content visible to other users), so the honest answer is "no" for both, for different reasons. |
+| Shares personal information | The app sharing a user's personal info with other users or third parties | None | Confirmed by code review — see the privacy notice. No mechanism exists for a user to share personal info with another user or the public through the app. |
+| Shares location | The app sharing device/user location | None | The app never reads or transmits location. |
+| Unrestricted internet access | An embedded/unfiltered browser or web view inside the app | None | The app has no embedded browser; external links (registration, privacy policy, releases page) open in the operating system's own default browser, never inside the app itself. |
+| Digital purchases | Real-money or virtual in-app purchases | None | Confirmed by code review — no purchase, payment, or billing code anywhere in the app. |
+| Intended audience / target user (context, not an IARC content category itself) | — | Parents, teachers, school staff, and business users managing PonyABC pens — not designed for a child to operate independently, and not a game. | Per the app's actual functionality (device/content management), not the age of learners who may use the physical pen. |
 
 ## Remaining requirements (everything already verified/confirmed is not repeated here)
 
@@ -221,13 +194,15 @@ confirmed working with real evidence — see `tasks/todo.md`'s "Microsoft Store 
 section. Legal company details, audience framing, and category are now resolved (this document).
 Only these remain before this draft is submission-ready:
 
-1. **Privacy policy hosting decision.** The text above is ready to use. Decide: publish it (or
-   similar) as a new section on `register.ponyabc.uk/privacy` (or host it separately), and when —
-   the existing page is currently a placeholder marked "pending legal review."
-2. **Age rating (IARC) answers.** Proposed above — enter these (or your own) directly in Partner
-   Center; the actual rating is computed there, not decided here.
-3. **Two remaining screenshots.** Firmware wizard and Settings/About still need a genuine
-   Windows-build capture (3 of 5 are already done and usable).
+1. **Publish the privacy notice** at `https://register.ponyabc.uk/privacy/desktop` (hosting URL
+   confirmed). Complete text is in `store-assets/privacy-notice-desktop.md`; that file's own
+   "Open items" lists what's left: Cloudflare plan/retention confirmation, your wording review,
+   and the actual `ponyabc-web` page implementation (not built yet — pending your review of the
+   text first).
+2. **Age rating (IARC) answers.** Mapped to real IARC categories above — enter these (or your
+   own) directly in Partner Center; the actual rating is computed there, not decided here.
+3. **Two remaining screenshots.** Firmware wizard and Settings/About — see `tasks/todo.md` for
+   current capture status and next action.
 4. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
    in the test kit's README) — useful additional evidence, not required to finalize this draft.
 5. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
