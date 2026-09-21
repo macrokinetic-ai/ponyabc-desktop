@@ -103,6 +103,12 @@ jobs:
           # Add-AppxPackage acceptance, not just that the packaging step exited 0.
           Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
 
+          # Publish the PUBLIC certificate (never the .pfx/private key) alongside the package so
+          # someone downloading this run's artifact — not building it themselves — has a matching
+          # cert to sideload-trust it with. This cert is single-use/ephemeral: a fresh one is
+          # generated every run, tied only to this specific build's .appx.
+          Copy-Item -Path $cerPath -Destination (Join-Path 'release' 'PonyABC-Desktop-test-cert.cer')
+
           $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
           if (-not $appx) { throw 'PACKAGING FAILED: no .appx file found in release/ after dist:win:appx.' }
           Write-Host "PACKAGING OK: $($appx.Name) ($([math]::Round($appx.Length / 1MB, 2)) MB)"
@@ -271,10 +277,14 @@ jobs:
           # dist:win:appx's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar,
           # same convention as the NSIS .exe artifact above. Scoped to *.appx.sha256 specifically
           # (not the broader *.sha256) since by this point in the job release/ also contains the
-          # .exe's own checksum from the earlier dist:win step.
+          # .exe's own checksum from the earlier dist:win step. The .cer is the PUBLIC half of
+          # this run's ephemeral test-signing cert (see the packaging step) — published so anyone
+          # downloading this artifact (not building it themselves) has a matching cert to
+          # sideload-trust it with. Never the .pfx/private key.
           path: |
             release/*.appx
             release/*.appx.sha256
+            release/*.cer
           if-no-files-found: error
 
       # Same rationale as the .exe's own release-upload step above: land the Store package next
@@ -285,6 +295,6 @@ jobs:
       - name: Attach Store test package to the matching GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 release/*.cer --repo "${GITHUB_REPOSITORY}" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
