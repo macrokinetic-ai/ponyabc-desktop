@@ -1453,6 +1453,26 @@ verified, "DONE") — and CI's wrapper still reported it as FAILED.
       now, in CI and for a real tester alike.
 - [x] Pushed, re-dispatched.
 
+## Run 9 (35557379008): the exit-code fix worked; a third real bug surfaced right behind it
+
+`1-install.ps1`'s own log now showed every step succeeding, INCLUDING "State recorded to
+test-kit-state.json" — and the wrapper's very next line, `Test-Path 'release\test-kit-state.json'`,
+still reported it missing.
+
+- [x] **Bug 3 — a leaked working-directory change**: `1-install.ps1` deliberately does
+      `Set-Location $scriptDir` near the top (so it works correctly regardless of the caller's
+      current directory — harmless/a no-op for a real tester, who has already `cd`'d into the
+      extracted folder per the README before running it). But PowerShell's current directory is
+      **process-wide**, not scoped to the called script — calling it via `& '.\release\
+      1-install.ps1'` let that `Set-Location` change leak into the REST of the CI wrapper step,
+      so its own subsequent `release\...`-relative paths were now looking one `release\` too
+      deep. This only affects a CI wrapper calling the script from a different starting
+      directory than the script itself lives in — never a real tester following the README.
+      **Fix**: wrapped the invocation in `Push-Location 'release'` / `Pop-Location` so the
+      wrapper's own working directory is restored regardless of what the called script does to
+      it — the standard, correct PowerShell pattern for exactly this situation.
+- [x] Pushed, re-dispatched — this is expected to be the last fix; result pending.
+
 ## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
 
 Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current

@@ -194,8 +194,20 @@ jobs:
       - name: "Store package: run the real 1-install.ps1 (same script the tester gets)"
         shell: pwsh
         run: |
-          & '.\release\1-install.ps1'
-          if ($LASTEXITCODE -ne 0) { throw "1-install.ps1 exited with code $LASTEXITCODE" }
+          # 1-install.ps1 deliberately Set-Location's into its own folder (harmless/a no-op for a
+          # real tester, who has already cd'd there per the README before running it) — but
+          # PowerShell's current directory is process-wide, not scoped to the called script, so
+          # without Push-Location/Pop-Location that change would leak into every relative path
+          # below and silently point them at the wrong place (confirmed by a real CI run: the
+          # script's own log showed it wrote test-kit-state.json successfully, while this
+          # wrapper's own Test-Path for the same file, one line later, reported it missing).
+          Push-Location 'release'
+          try {
+            & '.\1-install.ps1'
+            if ($LASTEXITCODE -ne 0) { throw "1-install.ps1 exited with code $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
 
           if (-not (Test-Path 'release\test-kit-state.json')) { throw '1-install.ps1 did not write test-kit-state.json.' }
           $state = Get-Content 'release\test-kit-state.json' -Raw | ConvertFrom-Json
