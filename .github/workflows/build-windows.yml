@@ -188,6 +188,59 @@ jobs:
           }
           Write-Host "IDENTITY VERIFIED: Name='$($actual.IdentityName)' Publisher='$($actual.IdentityPublisher)' PublisherDisplayName='$($actual.PublisherDisplay)' — all match Partner Center exactly."
 
+      # --- 2b. TILE ASSET VERIFICATION (Store cert 10.1.1.11): every image the manifest ---------
+      #         references must exist in the package, and none may be electron-builder's -------
+      #         default sample art (identified by the SHA-256 of the v0.3.15 defaults). ---------
+      - name: "Store package: verify tile/logo assets are not the default Electron art"
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          Add-Type -AssemblyName System.Drawing
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          $extract = Join-Path $env:RUNNER_TEMP 'appx-assets-check'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($appx.FullName, $extract)
+
+          [xml]$m = Get-Content (Join-Path $extract 'AppxManifest.xml') -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($m.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $ns.AddNamespace('uap', 'http://schemas.microsoft.com/appx/manifest/uap/windows10')
+          $ve = $m.SelectSingleNode('//uap:VisualElements', $ns)
+          $refs = @($m.SelectSingleNode('//a:Properties/a:Logo', $ns).InnerText, $ve.GetAttribute('Square150x150Logo'), $ve.GetAttribute('Square44x44Logo'))
+          $tile = $m.SelectSingleNode('//uap:DefaultTile', $ns)
+          foreach ($attr in 'Wide310x150Logo', 'Square310x310Logo', 'Square71x71Logo') { $v = $tile.GetAttribute($attr); if ($v) { $refs += $v } }
+          Write-Host "Manifest references: $($refs -join ', ')"
+
+          # SHA-256 of electron-builder's bundled sample assets — the exact files the rejected
+          # v0.3.15 package shipped (extracted from that submitted .appx).
+          $defaultHashes = @{
+            'B6D709BA362DF5EB3FD7BB11616ECAEDE1A8C6228B366D06E8B1DA0DD3E63BDA' = 'SampleAppx.150x150.png'
+            '8BAC33B74A3C76F3E8EB04DE0F0BDB56C439398CCDC9C61811A12C62AC059327' = 'SampleAppx.44x44.png'
+            'EBDA946CECC7A2B3569BE328AB4B785091A2C7C48A28BB719E97AF22575AEB35' = 'SampleAppx.50x50.png'
+            'F93FBE8780CFE89A7AA8065D71765FDA49B48718E4AAE17BBB0E99DA4BAEDB23' = 'SampleAppx.310x150.png'
+          }
+
+          $problems = @()
+          $pkgAssets = Get-ChildItem (Join-Path $extract 'Assets') -Filter '*.png'
+          if (-not (Test-Path (Join-Path $extract 'resources.pri'))) { $problems += 'resources.pri missing (scaled assets not indexed)' }
+          foreach ($f in $pkgAssets) {
+            $h = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
+            if ($defaultHashes.ContainsKey($h)) { $problems += "$($f.Name) is electron-builder default art ($($defaultHashes[$h]))" }
+            $img = [System.Drawing.Image]::FromFile($f.FullName)
+            Write-Host ("  {0,-52} {1,5} x {2,-5}" -f $f.Name, $img.Width, $img.Height)
+            $img.Dispose()
+          }
+          foreach ($r in $refs) {
+            $base = [IO.Path]::GetFileNameWithoutExtension($r)
+            $hit = $pkgAssets | Where-Object { $_.Name -like "$base.*png" -or $_.Name -eq "$base.png" }
+            if (-not $hit) { $problems += "manifest references '$r' but no matching file is packaged" }
+          }
+          if ($problems.Count -gt 0) {
+            $problems | ForEach-Object { Write-Host "::error::$_" }
+            throw 'TILE ASSET VERIFICATION FAILED — see above.'
+          }
+          Write-Host "TILE ASSETS VERIFIED: $($pkgAssets.Count) packaged images, none default art, all manifest references resolve."
+
       # --- 3. INSTALLATION — runs the ACTUAL delivered 1-install.ps1, not a parallel CI-only ------
       #        reimplementation, so a passing CI run is real evidence the tester's own script ----
       #        works, not just that installation is possible in general. --------------------------

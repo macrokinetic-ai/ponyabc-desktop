@@ -37,6 +37,11 @@ appx:
   publisher: CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5
   publisherDisplayName: PonyABC
   displayName: PonyABC Desktop
+  # Tile/logo art lives in build/appx/ (generated from the PonyABC logo by
+  # scripts/generate-appx-assets.py). electron-builder only falls back to its own sample
+  # (Electron atom) art for a name it finds no file for — which is exactly what Microsoft
+  # certification 10.1.1.11 rejected in v0.3.15. Logo is transparent, so tiles show this colour.
+  backgroundColor: "#FFFFFF"
   artifactName: PonyABC-Desktop-v${version}-winx64.appx
   # Deliberately NOT adding the restricted `allowElevation` capability, keeping electron-builder's
   # default `capabilities: [runFullTrust]`. The firmware wizard's UAC prompt (see
