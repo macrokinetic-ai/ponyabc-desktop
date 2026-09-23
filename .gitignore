@@ -4,3 +4,4 @@ release/
 *.log
 .DS_Store
 store-assets/FINAL-SUBMISSION/
+store-assets/v0.3.16-tile-fix/*.appx
