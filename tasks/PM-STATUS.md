@@ -40,14 +40,23 @@ Tiles) for shipping default Electron tile art. Fixed in v0.3.16.
 
 ### 0.3.17 changes so far
 
-| Phase | What                                                                                                                                                                                                                                                                        | State                                                                                          |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 0     | `/source/` gitignored — vendor firmware zips and `.axb` content (48 MB + 288 MB) can never enter git history                                                                                                                                                                | ✅                                                                                             |
-| 1     | **Pre-flash cleanup**: `1.BIN` + `BOOKFILE.BIN` deleted from the pen's `BOOK` root before every firmware upgrade, before anything is launched. Vendor-confirmed; without it an upgrade reports success and does not take effect. Aborts safely if a file cannot be removed. | ✅ implemented, **not yet tested on a real pen** — `docs/test-plans/firmware-v126-real-pen.md` |
-| 2     | **BOOK status labels**: every status now has a plain-language explanation, shown in the expanded row, as a tooltip, and in a new on-screen legend. Three misleading labels reworded.                                                                                        | ✅                                                                                             |
-| 3     | **DIY recordings v2** — `docs/design/recordings-v2.md`. Design only; needs Benny's approval before any code.                                                                                                                                                                | ⏸ awaiting approval                                                                            |
+| Phase | What                                                                                                                                                                                                                                                                | State                                                                                          |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 0     | `/source/` gitignored — vendor firmware zips and `.axb` content (48 MB + 288 MB) can never enter git history                                                                                                                                                        | ✅                                                                                             |
+| 1     | **Pre-flash cleanup** before every firmware upgrade, plus **automatic restore** when the flash never starts (UAC declined, launch error). A file that cannot be backed up is not deleted.                                                                           | ✅ implemented, **not yet tested on a real pen** — `docs/test-plans/firmware-v126-real-pen.md` |
+| 2 + C | **Parent-facing BOOK screen**: six plain states replace sixteen technical ones, the technical detail moves under Advanced, and adding a book is one click from its row.                                                                                             | ✅                                                                                             |
+| 3 / B | **Recordings v2 built**: snapshot backups with a manifest and hard-link dedupe, restore under original filenames with a listen-to-both conflict dialog, per-side delete with a backup first, friendly labels, sticker reassign, and migration of old "(1)" backups. | ✅                                                                                             |
+| A3/C3 | Every technical term removed from customer-facing screens in all 8 locales — no index filenames, no vendor tool, no checksum, no Task Manager.                                                                                                                      | ✅                                                                                             |
 
-Gates: typecheck ✅, 512 unit tests ✅, build ✅.
+**Correction worth reading (A1).** The vendor's account of the firmware package is wrong on the
+mechanism. The V1.26 zip contains **no** `1.BIN` or `BOOKFILE.BIN`, and `download.bat` does not
+write them — it rebuilds `app.bin` and chains to a script that programs the pen's norflash over
+USB/serial, never touching the BOOK folder. The pen gets new index files because **its own
+firmware rebuilds them** (`app.bin` contains `storage/sd0/C/BOOK/1.bin` and the scan code). The
+outcome is as the vendor described; the timing is not — they reappear after the pen reboots, not
+when the PC tool finishes. Full evidence in `docs/vendor-notes.md`.
+
+Gates: typecheck ✅, 603 unit tests ✅, build ✅, Windows CI package verification ✅.
 
 ## 3. Expo readiness — 1–4 Oct
 

@@ -1,7 +1,9 @@
 # Design — DIY recordings v2
 
-**Status: design only. Nothing here is implemented, and nothing should be until this is
-approved.** Written for 0.3.18 or later; 0.3.17 is firmware + BOOK labels only.
+**Status: approved and built in 0.3.17** (2026-09-29), including the three amendments below.
+Kept as the record of what was decided and why. What shipped differs from this design in one
+respect, noted under "Reassign": the vendor question was answered by Benny — four digits today,
+five possible later, and never converted between the two.
 
 ## The problem, stated precisely
 
@@ -37,13 +39,12 @@ nobody has written down. Going only by what is in the repo:
 | Does the app know which numbers are valid? | **No, and it says so**: `transferPlan.toAddHint` — "This app can't confirm a new filename actually corresponds to a real sticker — check it against the sticker if you're unsure." |
 | What format is the audio?                  | MPEG-1 **Layer II** as often as Layer III, despite the `.mp3` name (`tasks/lessons.md`). Preview already handles this via `mpg123-decoder`.                                        |
 
-**Open question that blocks one feature only.** "Reassign to sticker number, limited to valid
-numbers" needs the valid range, and we do not have it. Ask the vendor for: the numeric format
-(is it always exactly four digits?), the valid range (`0001`–`????`), whether numbers are
-per-book or global, and what the pen does with a file whose number is outside the range —
-ignores it, or misbehaves. Until that answer exists, see "Reassign" below for what to build
-instead; **do not invent a range and enforce it**, because a wrong upper bound would block
-legitimate stickers and would be indistinguishable, to the user, from a broken app.
+**Answered, 2026-09-29.** The filename is the sticker number. Every sticker printed so far is
+four digits; future sheets may use five. **These are two different name spaces, not two
+spellings of one** — `0451` and `00451` may be different stickers — so the app accepts four or
+five digits and never converts between them, never pads and never trims. Anything it cannot
+confirm it warns about rather than blocking: we still do not hold the list of valid numbers, and
+a guessed upper bound would block a real sticker while looking, to the user, like a broken app.
 
 ## Evaluating the proposal
 

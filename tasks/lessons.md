@@ -713,3 +713,17 @@ the JSON files.
 key's existence. And when writing a doc sentence that claims the app tells the user something,
 that claim is a testable assertion — either point at the component that renders it or don't
 write the sentence.
+
+## The same stream-handle lesson applies to the FAILURE path, not just the success one
+
+`sha256FileWithProgress` waited for `'close'` before resolving — the fix written up above — but
+its `fail()` path called `stream.destroy()` and rejected on the next line. On macOS that always
+looked fine. On Windows CI it surfaced as `EPERM` when the test deleted the file immediately
+after cancelling, because `destroy()` only _requests_ teardown and the fd was still open.
+
+**How to apply:** when a lesson is about a resource being released asynchronously, check every
+exit from that code, not the one that prompted the lesson. A success path and an error path
+release the same handle and need the same wait. And when a test only ever runs on the developer's
+OS, the guarantee it claims is only tested on that OS — this one had been green on macOS for
+weeks while the production race existed for every Windows customer who cancelled a verification
+and then removed the book.

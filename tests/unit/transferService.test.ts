@@ -288,7 +288,9 @@ describe('sha256FileWithProgress', () => {
     });
     await expect(promise).rejects.toThrow();
     // The file itself can still be deleted immediately after — proves the read stream's
-    // handle was actually released, not just the promise abandoned.
+    // handle was actually released, not just the promise abandoned. On Windows this is the
+    // difference between rejecting after destroy() (handle may still be open -> EPERM) and
+    // rejecting on 'close'; it failed there before the promise was made to wait for 'close'.
     expect(() => fs.unlinkSync(filePath)).not.toThrow();
   });
 

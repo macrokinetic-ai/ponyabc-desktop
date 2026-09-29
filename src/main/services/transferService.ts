@@ -83,8 +83,17 @@ export function sha256FileWithProgress(filePath: string, opts: { onProgress?: (b
       if (settled) return;
       settled = true;
       opts.signal?.removeEventListener('abort', onAbort);
+      // Reject only once the fd is genuinely released. `destroy()` merely *requests* teardown;
+      // 'close' is the event that guarantees the handle is gone. Rejecting straight after
+      // destroy() left a window where a caller that cancels a verify and then deletes or
+      // replaces that file hits EPERM on Windows — which is exactly the mistake already written
+      // up in tasks/lessons.md for the success path, repeated here on the failure path.
+      if (stream.closed) {
+        reject(err);
+        return;
+      }
+      stream.once('close', () => reject(err));
       stream.destroy();
-      reject(err);
     }
     function onAbort() {
       fail(new Error('cancelled'));
