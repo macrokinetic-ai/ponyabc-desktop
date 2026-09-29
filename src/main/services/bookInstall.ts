@@ -109,7 +109,9 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
               : 'error';
       return { status, message: result.message, backupPath: result.backupPath };
     }
-    return { status: 'completed', backupPath: result.backupPath };
+    // `created` is what decides whether the pen's book index is now stale: an added file
+    // changes every later book's position, a same-name replacement changes nothing.
+    return { status: 'completed', backupPath: result.backupPath, createdNewFile: result.created === true };
   } finally {
     release();
   }

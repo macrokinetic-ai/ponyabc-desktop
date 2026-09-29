@@ -148,5 +148,19 @@
     "title": "Détails avancés",
     "hint": "Informations techniques pour le support. Vous n'en avez pas besoin pour utiliser votre stylo."
   },
-  "catalogIntro": "Vous avez acheté un nouveau livre ? Trouvez-le dans cette liste et choisissez Ajouter."
+  "catalogIntro": "Vous avez acheté un nouveau livre ? Trouvez-le dans cette liste et choisissez Ajouter.",
+  "done": {
+    "restartTitle": "Terminé !",
+    "restartBody": "Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long, le temps que le stylo prépare ses livres.",
+    "updatedOnly": "Terminé ! Votre livre a été mis à jour."
+  },
+  "fix": {
+    "title": "La liste des livres de votre stylo a besoin d’un instant",
+    "body": "Des livres ont été ajoutés ou retirés en dehors de cette application ; votre stylo risque de lire le mauvais. La remise en ordre prend quelques secondes.",
+    "button": "Remettre la liste des livres en ordre",
+    "working": "En cours…",
+    "doneBody": "C'est fait. Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long.",
+    "failed": "Cela n'a pas pu être terminé. Rien n'a été modifié sur votre stylo — rebranchez-le et réessayez.",
+    "sidecarNotice": "Des fichiers supplémentaires copiés par un Mac se trouvent aussi sur votre stylo. Ils sont inoffensifs ; vous pouvez les supprimer du dossier si vous le souhaitez."
+  }
 }

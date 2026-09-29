@@ -148,5 +148,19 @@
     "title": "Detalles avanzados",
     "hint": "Información técnica para soporte. No la necesita para usar su lápiz."
   },
-  "catalogIntro": "¿Ha comprado un libro nuevo? Búsquelo en esta lista y elija Añadir."
+  "catalogIntro": "¿Ha comprado un libro nuevo? Búsquelo en esta lista y elija Añadir.",
+  "done": {
+    "restartTitle": "¡Listo!",
+    "restartBody": "Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más mientras el lápiz prepara sus libros.",
+    "updatedOnly": "¡Listo! Su libro se ha actualizado."
+  },
+  "fix": {
+    "title": "La lista de libros de su lápiz necesita un momento",
+    "body": "Se añadieron o quitaron libros fuera de esta aplicación, así que su lápiz podría reproducir el que no es. Arreglarlo tarda unos segundos.",
+    "button": "Arreglar la lista de libros del lápiz",
+    "working": "Arreglando…",
+    "doneBody": "Hecho. Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más.",
+    "failed": "No se pudo terminar ahora. No se cambió nada en su lápiz: vuelva a conectarlo e inténtelo de nuevo.",
+    "sidecarNotice": "En su lápiz hay también archivos adicionales copiados por un Mac. Son inofensivos; puede borrarlos de la carpeta si lo desea."
+  }
 }

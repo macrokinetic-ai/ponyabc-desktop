@@ -89,6 +89,9 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         progressListener = null;
       };
     }),
+    bookIndexStatus: vi.fn(async () => ({ recordCount: 1, bookCount: 1, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'ok', resetPending: false })),
+    bookIndexCommit: vi.fn(async () => ({ status: 'not-needed' })),
+    bookIndexFix: vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false })),
     bookDownloadBatch: vi.fn(async () => ({ status: 'started' })),
     bookDownloadBatchCancel: vi.fn(async () => ({ ok: true })),
     onBookDownloadBatchSummary: vi.fn((listener) => {
@@ -218,6 +221,100 @@ async function settleBookListCalls(): Promise<void> {
     if (calls() === before) return;
   }
 }
+
+describe("BookLibraryScreen — the pen's book list", () => {
+  /**
+   * The pen finds a book by its POSITION in an index it builds itself. Adding or removing a book
+   * shifts those positions, so a stale index makes the pen read the wrong story aloud. Replacing
+   * a book under the same name changes no position at all.
+   */
+
+  it('tells the parent to restart the pen after adding a book', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'not-on-pen', actionable: true })] }));
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    await screen.findByText(/Please unplug your pen, then switch it off and on again/);
+    expect((window.ponyabc.bookIndexCommit as ReturnType<typeof vi.fn>).mock.calls[0][0]).toEqual({ writtenFileNames: ['0451.axb'] });
+  });
+
+  it('does NOT tell them to restart after replacing a book under the same name', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-differs', actionable: true })] }));
+    // Nothing moved, so the main process reports there was nothing to do.
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'not-needed' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    fireEvent.click((await screen.findAllByRole('radio', { name: 'Replace' }))[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    await screen.findByText('All done! Your book has been updated.');
+    expect(screen.queryByText(/switch it off and on again/)).toBeNull();
+  });
+
+  it('a failed add leaves the list alone and says why', async () => {
+    await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'not-on-pen', actionable: true })] }));
+    window.ponyabc.bookAdd = vi.fn(async () => ({ status: 'no-space' }));
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'not-needed' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    await screen.findByText('Not enough free space to complete this.');
+    // Nothing was added, so no position moved and the pen's list must not be touched.
+    expect(window.ponyabc.bookIndexCommit).not.toHaveBeenCalled();
+  });
+
+  it('offers to fix a list that no longer matches the pen, and never does it on its own', async () => {
+    window.ponyabc.bookIndexStatus = vi.fn(async () => ({
+      recordCount: 2,
+      bookCount: 3,
+      malformed: false,
+      appleDoubleFiles: [],
+      hasDsStore: false,
+      status: 'mismatch',
+      resetPending: false,
+    }));
+    await renderScreen();
+
+    await screen.findByText("Your pen's book list needs a moment");
+    await screen.findByText(/may play the wrong one/);
+    expect(window.ponyabc.bookIndexFix).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: "Fix my pen's book list" }));
+    await waitFor(() => expect(window.ponyabc.bookIndexFix).toHaveBeenCalled());
+    await screen.findByText(/All set\. Please unplug your pen/);
+  });
+
+  it('says nothing when the list still matches', async () => {
+    await renderScreen();
+    await screen.findByText('What do these words mean?');
+    expect(screen.queryByText("Your pen's book list needs a moment")).toBeNull();
+  });
+
+  it('mentions Mac leftovers only alongside a real problem', async () => {
+    window.ponyabc.bookIndexStatus = vi.fn(async () => ({
+      recordCount: 1,
+      bookCount: 2,
+      malformed: false,
+      appleDoubleFiles: ['._a.axb'],
+      hasDsStore: true,
+      status: 'mismatch',
+      resetPending: false,
+    }));
+    await renderScreen();
+    await screen.findByText(/extra files copied by a Mac/);
+  });
+
+  it('never shows a parent a filename or the word index', async () => {
+    window.ponyabc.bookIndexStatus = vi.fn(async () => ({
+      recordCount: 1, bookCount: 2, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'mismatch', resetPending: false,
+    }));
+    await renderScreen();
+    await screen.findByText("Your pen's book list needs a moment");
+    const box = document.querySelector('.note-box')?.textContent ?? '';
+    expect(box).not.toMatch(/1\.BIN|BOOKFILE|index|record/i);
+  });
+});
 
 describe('BookLibraryScreen — status legend', () => {
   it('is collapsed by default, so it never duplicates a row label in the DOM', async () => {

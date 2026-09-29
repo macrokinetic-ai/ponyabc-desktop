@@ -19,6 +19,10 @@ export interface SafeWriteResult {
   message?: string;
   /** Set when a pre-existing file at the target was backed up before being replaced. */
   backupPath?: string;
+  /** True when nothing of that name was there before, i.e. this write ADDED a file rather than
+   *  replacing one. The pen's book index is a positional array, so an addition invalidates it
+   *  and a same-name replacement does not — see bookIndexReset.ts. */
+  created?: boolean;
 }
 
 function classifyError(err: unknown): { reason: WriteFailureReason; message: string } {
@@ -331,7 +335,10 @@ export async function safeWriteFile(params: {
 }): Promise<SafeWriteResult> {
   const { sourcePath, targetDir, targetFileName, backupDir, verifyStillSameTarget } = params;
   const finalPath = path.join(targetDir, targetFileName);
-  const tmpPath = path.join(targetDir, `.ponyabc-tmp-${crypto.randomBytes(6).toString('hex')}-${targetFileName}.part`);
+  const tmpPath = path.join(
+    targetDir,
+    `.ponyabc-tmp-${crypto.randomBytes(6).toString('hex')}-${path.parse(targetFileName).name}.part`,
+  );
 
   if (!verifyStillSameTarget()) {
     return { ok: false, reason: 'device-changed', message: 'The pen changed before this file could be written; nothing was touched.' };
@@ -384,7 +391,7 @@ export async function safeWriteFile(params: {
 
     try {
       await fs.promises.rename(tmpPath, finalPath);
-      return { ok: true, backupPath };
+      return { ok: true, backupPath, created: !existedBefore };
     } catch (renameErr) {
       const { reason, message } = classifyError(renameErr);
       if (verifyStillSameTarget()) {

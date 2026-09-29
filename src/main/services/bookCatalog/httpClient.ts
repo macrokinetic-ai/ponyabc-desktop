@@ -11,6 +11,7 @@ interface RawPublicBook {
   sha256: unknown;
   sortOrder: unknown;
   updatedAt: unknown;
+  updateRequiresIndexReset: unknown;
   downloadUrl: unknown;
 }
 
@@ -37,6 +38,10 @@ function toEntry(b: RawPublicBook): BookCatalogEntry {
     contentLanguages: Array.isArray(b.contentLanguages) ? (b.contentLanguages as string[]) : [],
     sortOrder: typeof b.sortOrder === 'number' ? b.sortOrder : Number(b.sortOrder) || 0,
     updatedAtMs: parseUpdatedAtMs(b.updatedAt),
+    // Strictly `=== true`: a missing field, a string, or anything else means "no", because the
+    // consequence of a wrong `true` is a pointless restart and a wrong `false` is a book that
+    // plays the wrong audio. Only an explicit boolean true is allowed to mean yes.
+    updateRequiresIndexReset: b.updateRequiresIndexReset === true,
     downloadUrl: String(b.downloadUrl),
   };
 }

@@ -148,5 +148,19 @@
     "title": "Erweiterte Details",
     "hint": "Technische Angaben für den Support. Zum Benutzen Ihres Stifts brauchen Sie sie nicht."
   },
-  "catalogIntro": "Ein neues Buch gekauft? Suchen Sie es in dieser Liste und wählen Sie Hinzufügen."
+  "catalogIntro": "Ein neues Buch gekauft? Suchen Sie es in dieser Liste und wählen Sie Hinzufügen.",
+  "done": {
+    "restartTitle": "Fertig!",
+    "restartBody": "Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern, während der Stift seine Bücher vorbereitet.",
+    "updatedOnly": "Fertig! Ihr Buch wurde aktualisiert."
+  },
+  "fix": {
+    "title": "Die Bücherliste Ihres Stifts braucht einen Moment",
+    "body": "Bücher wurden außerhalb dieser App hinzugefügt oder entfernt, daher spielt Ihr Stift möglicherweise das falsche ab. Das Richten dauert ein paar Sekunden.",
+    "button": "Bücherliste des Stifts richten",
+    "working": "Wird gerichtet…",
+    "doneBody": "Erledigt. Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern.",
+    "failed": "Das ließ sich gerade nicht abschließen. An Ihrem Stift wurde nichts geändert — bitte neu verbinden und erneut versuchen.",
+    "sidecarNotice": "Auf Ihrem Stift liegen zusätzliche Dateien, die ein Mac beim Kopieren angelegt hat. Sie sind harmlos; Sie können sie bei Bedarf im Ordner löschen."
+  }
 }

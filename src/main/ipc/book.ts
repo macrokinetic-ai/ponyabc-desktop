@@ -28,6 +28,7 @@ import { validateCatalogEntries } from '../services/bookCatalogValidate';
 import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient';
 import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial } from '../services/bookInstall';
 import { removeFromPen } from '../services/bookRemove';
+import { markBookIndexStale } from './bookIndex';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { sha256FileWithProgress } from '../services/transferService';
@@ -209,6 +210,15 @@ async function runInstallAction(
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
   const result = await action(entry, params.penGeneration, installDeps(window));
+
+  // The pen's book index is a positional array with no filenames in it, so ADDING a book
+  // invalidates it and replacing one under the same name does not. `updateRequiresIndexReset`
+  // is the catalog's escape hatch for an edition whose OID range changed — it defaults to
+  // false and the server does not send it yet.
+  if (result.status === 'completed' && (result.createdNewFile === true || entry.updateRequiresIndexReset)) {
+    markBookIndexStale('added');
+  }
+
   appendDiagnostic(diagnosticsStore(), 'book-download', {
     contentId: entry.contentId,
     filename: entry.filename,
@@ -559,13 +569,17 @@ export async function bookRemove(params: { fileName: string; penGeneration: numb
   // treated the same, neutral way: it might differ, so it's always backed up the same.
   const reason = item.status === 'verified-current' ? ('pre-removal-current-version' as const) : ('differs-from-official' as const);
 
-  return removeFromPen({
+  const result = await removeFromPen({
     fileName: params.fileName,
     penGeneration: params.penGeneration,
     reason,
     matchedContentId: item.contentId,
     backupDeps: backupDeps(),
   });
+  // Every book after this one has just shifted down a position. Left unfixed, the pen plays the
+  // wrong book's audio — which looks like nothing being wrong at all.
+  if (result.status === 'completed') markBookIndexStale('removed');
+  return result;
 }
 
 export function bookBackups(): BookBackupSummary[] {

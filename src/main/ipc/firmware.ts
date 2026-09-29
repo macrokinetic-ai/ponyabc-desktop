@@ -21,6 +21,7 @@ import { acquirePenLock } from '../services/penOperationLock';
 import { runElevated, type RunElevatedResult } from '../services/elevatedRun';
 import { determineOutcome, inspectFirmwarePackage } from '../services/firmwareUpgrade';
 import type { PreflightDeletion } from '../services/firmwarePreflight';
+import { noteFirmwareClearedBookIndex } from './bookIndex';
 import {
   DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
   restorePreflightBackups,
@@ -413,6 +414,13 @@ export async function startFirmwareUpgrade(
           elevation.status === 'unsupported-platform' ||
           outcome.processTerminationConfirmed);
       if (flashDefinitelyNeverStarted) restorePreflightIfUnwritten(`not-started-${elevation.status}`);
+      else {
+        // The flash went ahead, so the index files stay deleted and the pen rebuilds them on its
+        // next power-on — which is exactly what an owed book-index reset was waiting for. Book
+        // writes cannot interleave with this: both paths hold the pen lock, and the firmware
+        // preflight runs after it is acquired, so books are always finished first.
+        noteFirmwareClearedBookIndex();
+      }
       // These three are deliberately kept distinct — see the doc on FirmwareSessionRecord's
       // toolProcessConfirmedFinished/successSignalDetected/penFirmwareVersionVerified fields.
       // "The tool's process stopped" is exactly outcome.processTerminationConfirmed;

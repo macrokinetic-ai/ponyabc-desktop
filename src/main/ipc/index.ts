@@ -9,6 +9,7 @@ import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
+import { commitBookIndexReset, completePendingBookIndexReset, fixBookIndex, getBookIndexStatus } from './bookIndex';
 import {
   createRecordingBackup,
   deleteRecordingsFromBackup,
@@ -86,9 +87,17 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.privacyPolicyOpen, () => openPrivacyPolicyPage());
   ipcMain.handle(IPC.supportEmailOpen, (_event, params: { subject: string }) => openSupportEmail(params));
 
-  ipcMain.handle(IPC.penRootScan, () => scanPenRoot(store));
-  ipcMain.handle(IPC.penRootChooseCandidate, (_event, index: number) => chooseCandidatePenRoot(store, index));
-  ipcMain.handle(IPC.penRootSelect, () => selectPenRoot(getWindow(), store));
+  // A reset we already owe this pen is finished the moment it reconnects. The customer decided
+  // to add or remove a book; being asked to confirm the consequence again would be asking them
+  // about something they have already done.
+  const afterPenResolved = <T extends { status: string }>(result: T): T => {
+    if (result.status === 'ok') completePendingBookIndexReset();
+    return result;
+  };
+
+  ipcMain.handle(IPC.penRootScan, async () => afterPenResolved(await scanPenRoot(store)));
+  ipcMain.handle(IPC.penRootChooseCandidate, async (_event, index: number) => afterPenResolved(await chooseCandidatePenRoot(store, index)));
+  ipcMain.handle(IPC.penRootSelect, async () => afterPenResolved(await selectPenRoot(getWindow(), store)));
   ipcMain.handle(IPC.recordingsList, () => listDiyRecordings());
 
   ipcMain.handle(IPC.computerFolderSelect, () => selectComputerFolder(getWindow(), store));
@@ -102,6 +111,10 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
 
   ipcMain.handle(IPC.replaceStickerPlan, (_event, params) => planReplaceSticker(params));
   ipcMain.handle(IPC.replaceStickerExecute, (_event, params) => executeReplaceSticker(getWindow(), params));
+
+  ipcMain.handle(IPC.bookIndexStatus, () => getBookIndexStatus());
+  ipcMain.handle(IPC.bookIndexCommit, (_event, params) => commitBookIndexReset(params ?? {}));
+  ipcMain.handle(IPC.bookIndexFix, () => fixBookIndex());
 
   ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));
 

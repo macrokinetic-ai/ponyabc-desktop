@@ -264,6 +264,17 @@ export interface BookCatalogEntry {
    *  guessed). Used only to compute the 14-day "NEW" badge; never implies new AXB bytes,
    *  and is never the local download/cache time. */
   updatedAtMs: number | null;
+  /**
+   * Set by the catalog when a same-name update to this book ALSO needs the pen's book index
+   * thrown away — because this edition changed its OID range or its record type, so the index
+   * built from the previous edition no longer describes it.
+   *
+   * Default **false**: an ordinary same-name replacement keeps the book's position and the
+   * index stays correct, which is the case Benny verified on a real pen. The server does not
+   * send this field yet (see docs/design/book-index-reset-catalog.md); the app reads it now so
+   * that publishing it later needs no new app release.
+   */
+  updateRequiresIndexReset: boolean;
   downloadUrl: string;
 }
 
@@ -555,6 +566,10 @@ export interface BookActionResult {
   message?: string;
   backupPath?: string;
   missing?: Array<'BOOK' | 'DIY'>;
+  /** True when this write ADDED a book rather than replacing one of the same name. The pen's
+   *  book index is positional, so an addition makes it stale and a same-name replacement does
+   *  not — see src/main/services/bookIndexReset.ts. */
+  createdNewFile?: boolean;
 }
 
 export type BookRemoveStatus =
@@ -610,6 +625,8 @@ export type DiagnosticEntryKind =
    *  it aborted. Kept as its own kind so a later "the upgrade didn't take" report can be
    *  answered from diagnostics alone. */
   | 'firmware-preflight'
+  /** The pen's book index being invalidated or rebuilt after books were added or removed. */
+  | 'book-index-reset'
   | 'firmware-recovery';
 
 export interface DiagnosticEntry {
@@ -886,6 +903,11 @@ export interface PonyAbcApi {
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
 
   // Batch "download to App" — cache-only, one file at a time, never writes to the pen.
+  /** The pen's book index: whether it still matches what is on the pen, finishing a batch, and
+   *  the explicit "Fix my pen's book list" action. */
+  bookIndexStatus: () => Promise<import('../main/ipc/bookIndex').BookIndexStatus | { status: 'no-pen-selected' }>;
+  bookIndexCommit: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
+  bookIndexFix: () => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookDownloadBatch: (params: { contentIds: string[] }) => Promise<BookDownloadBatchStartResult>;
   bookDownloadBatchCancel: () => Promise<{ ok: boolean }>;
   onBookDownloadBatchSummary: (listener: (event: BookDownloadBatchSummaryEvent) => void) => () => void;

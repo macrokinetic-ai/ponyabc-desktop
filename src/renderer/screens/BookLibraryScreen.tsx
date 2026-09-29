@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   BookActionResult,
@@ -259,6 +259,7 @@ export function BookLibraryScreen() {
       }
       setPenSelected((prev) => new Set([...prev].filter((n) => !resolved.has(n))));
       if (lastMessage) setMessage(lastMessage);
+      else if (resolved.size > 0) setMessage(await finishBookBatch([]));
     } finally {
       setBusy(false);
     }
@@ -270,6 +271,10 @@ export function BookLibraryScreen() {
     if (targets.length === 0) return;
     const conflicts = targets.filter((i) => isOnPen(i.status));
     if (conflicts.length > 0) {
+      // Remember exactly what this run is about. Re-deriving it from the checkbox selection when
+      // the dialog is confirmed loses a single book added straight from its own row, and the
+      // confirm then silently does nothing.
+      setPendingAdd(targets);
       setAddConflicts(conflicts);
       setAddDecisions({});
       return;
@@ -278,12 +283,38 @@ export function BookLibraryScreen() {
   }
 
   async function confirmAdd() {
-    if (!addConflicts) return;
-    const targets = lib.catalogItems.filter((i) => catalogSelected.has(i.contentId));
+    if (!addConflicts || !pendingAdd) return;
+    const targets = pendingAdd;
     const decisions = addDecisions;
     setAddConflicts(null);
+    setPendingAdd(null);
     setAddDecisions({});
     await executeAdd(targets, decisions);
+  }
+
+  /**
+   * Ends a batch of book changes.
+   *
+   * The pen's book list is rebuilt only when something was added or removed — the main process
+   * decides that, because it is the only side that knows whether a write created a file or
+   * replaced one. Replacing a book under the same name keeps its position, so nothing is needed
+   * and the parent is not told to restart for no reason.
+   */
+  async function finishBookBatch(writtenFileNames: string[]) {
+    try {
+      const result = await window.ponyabc.bookIndexCommit({ writtenFileNames });
+      await refreshIndexStatus();
+      // 'still-pending' gets the same message as a completed reset on purpose: the books on the
+      // pen are correct either way, and the list is finished on the next connection. Telling a
+      // parent that something failed when their next action — unplug and restart — is identical
+      // would be alarming them about our bookkeeping.
+      if (result.status === 'reset' || result.status === 'still-pending') return t('done.restartBody');
+      return t('done.updatedOnly');
+    } catch {
+      // The books were written and verified before we got here. A failure to tidy the list must
+      // not turn a successful batch into an error the parent cannot act on.
+      return t('done.restartBody');
+    }
   }
 
   async function executeAdd(targets: BookCatalogItem[], decisions: Record<string, 'replace' | 'skip'>) {
@@ -291,6 +322,7 @@ export function BookLibraryScreen() {
     setMessage(null);
     try {
       const resolved = new Set<string>();
+      const written: string[] = [];
       let lastMessage: string | null = null;
       for (const item of targets) {
         if (isOnPen(item.status) && decisions[item.contentId] === 'skip') {
@@ -298,11 +330,16 @@ export function BookLibraryScreen() {
           continue;
         }
         const result = isOnPen(item.status) ? await lib.replaceWithOfficial(item.contentId) : await lib.add(item.contentId);
-        if (result.status === 'completed') resolved.add(item.contentId);
-        else lastMessage = resultMessage(t, result);
+        if (result.status === 'completed') {
+          resolved.add(item.contentId);
+          written.push(item.filename);
+        } else lastMessage = resultMessage(t, result);
       }
       setCatalogSelected((prev) => new Set([...prev].filter((id) => !resolved.has(id))));
+      // A failure part-way leaves the pen's list alone: nothing was added, so no position moved.
+      // Only report it, and leave the index exactly as it was.
       if (lastMessage) setMessage(lastMessage);
+      else if (written.length > 0) setMessage(await finishBookBatch(written));
     } finally {
       setBusy(false);
     }
@@ -349,6 +386,50 @@ export function BookLibraryScreen() {
   }, [lib.batchDownloadSummary]);
 
   const verifyingNow = Object.keys(lib.verifyProgress).length > 0;
+
+  /**
+   * The pen's book list against what is actually on the pen. A mismatch means books were added
+   * or removed outside this app — a parent dragging files in Explorer or Finder — and the
+   * consequence is that the pen reads the WRONG book aloud, with nothing visibly broken.
+   *
+   * It is never fixed silently: we did not cause it, and the fix ends with "unplug and restart
+   * your pen", which is not something to do to someone without asking.
+   */
+  const [indexStatus, setIndexStatus] = useState<Awaited<ReturnType<typeof window.ponyabc.bookIndexStatus>> | null>(null);
+  const [fixingIndex, setFixingIndex] = useState(false);
+  /** The books a pending Add/Update dialog is about — see startAdd. */
+  const [pendingAdd, setPendingAdd] = useState<BookCatalogItem[] | null>(null);
+  const [fixMessage, setFixMessage] = useState<string | null>(null);
+
+  const refreshIndexStatus = useCallback(async () => {
+    try {
+      setIndexStatus(await window.ponyabc.bookIndexStatus());
+    } catch {
+      setIndexStatus(null); // never let a failed check break the screen
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshIndexStatus();
+  }, [refreshIndexStatus, penRoot.result]);
+
+  async function handleFixIndex() {
+    setFixingIndex(true);
+    setFixMessage(null);
+    try {
+      const result = await window.ponyabc.bookIndexFix();
+      setFixMessage(result.status === 'reset' ? t('fix.doneBody') : t('fix.failed'));
+    } catch {
+      setFixMessage(t('fix.failed'));
+    } finally {
+      setFixingIndex(false);
+      await refreshIndexStatus();
+    }
+  }
+
+  const showFixPrompt = indexStatus !== null && 'status' in indexStatus && indexStatus.status === 'mismatch';
+  const showSidecarNotice =
+    indexStatus !== null && 'appleDoubleFiles' in indexStatus && indexStatus.appleDoubleFiles.length > 0;
 
   // Short forms (`.short`) are the chip on the collapsed row; the full wording (e.g. "not yet
   // verified") appears only in the expanded detail, and `.help` — the condition that produced
@@ -621,6 +702,18 @@ export function BookLibraryScreen() {
           {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
         </section>
       </div>
+      {showFixPrompt && (
+        <div className="note-box">
+          <p>{t('fix.title')}</p>
+          <p className="hint">{t('fix.body')}</p>
+          {showSidecarNotice && <p className="hint">{t('fix.sidecarNotice')}</p>}
+          <button type="button" className="button button--primary" disabled={fixingIndex || busy} onClick={() => void handleFixIndex()}>
+            {fixingIndex ? t('fix.working') : t('fix.button')}
+          </button>
+        </div>
+      )}
+      {fixMessage && <p className="hint">{fixMessage}</p>}
+
       <StatusLegend t={t} showNewBadgeNote={anyNew} />
 
       {pendingRemove && (
@@ -682,6 +775,7 @@ export function BookLibraryScreen() {
               onClick={() => {
                 setAddConflicts(null);
                 setAddDecisions({});
+                setPendingAdd(null);
               }}
             >
               {t('cancel')}

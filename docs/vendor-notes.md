@@ -115,6 +115,67 @@ and first boot, and whether books installed before the upgrade still play afterw
 
 ---
 
+## The book index: `BOOKFILE.BIN` and `1.BIN`
+
+**Settled on real pens, 2026-09-29**, by comparing a pen's index before and after adding a book.
+
+`BOOK/BOOKFILE.BIN` is written **by the pen's own firmware, on power-on**, from the `.axb` files
+it finds in `BOOK/`. The PC-side upgrade never creates it: `download.bat` is a build script and
+`isd_download.exe -tonorflash` programs the NOR flash, never the card.
+
+### Format
+
+A flat array of **44-byte records, one per `.axb`** — measured: 1,628 bytes for 37 books, and
+adding `phonics card.axb` produced 38 records with the first 37 byte-identical and in the same
+order, the new book appended as #38.
+
+```
+01 01 02 01 | ff ×8      | 68 06 00 00 | 27 07 00 00 | ff ×24
+^^ ^^ ^^                    OID start     OID end
+|  |  record type: 0x02 for the 37 existing books, 0x03 for phonics card
+|  book index, 1-based, incrementing
+```
+
+**There are no filenames in it.** A book is identified purely by its **position**. Everything
+important follows from that:
+
+- **Remove a book** and every later book shifts down one position → the pen plays **the wrong
+  book's audio**. Nothing looks broken; it just reads the wrong story to a child.
+- **Add a book** and it sits past the end of the index → silent.
+- **Replace a book under the same filename** → same position, same order, index still correct.
+  Benny verified this on a real pen.
+
+`BOOK/1.BIN` is a **zero-byte marker**. While the pair exists the pen trusts the index; delete
+both and it rescans and rebuilds on the next power-on.
+
+The index counts `.axb` only — a card with 37 `.axb` **plus** `english.dic` has exactly 37
+records. The firmware scans `.axb .ax1 .smp .dic .bnf` (from `app.bin`), so `.dic` is read for
+its own purpose and is not a book.
+
+The record type byte differing (`0x03` for `phonics card`) may mean a newer book format that
+needs V1.26. **Not yet tested** — see `docs/test-plans/book-index-rebuild.md` section D.
+
+### The owner's rule (decided by Benny, 2026-09-29)
+
+```
+add a book        -> delete 1.BIN and BOOKFILE.BIN
+remove a book     -> delete 1.BIN and BOOKFILE.BIN
+same-name replace -> leave them alone
+a batch with any add or remove -> delete once, even if it also replaced books
+```
+
+Implemented in `src/main/services/bookIndexReset.ts` and `src/main/ipc/bookIndex.ts`, reusing the
+firmware preflight's guards. The deletion is the **last** step of a batch, after every book
+operation has succeeded — doing it first would leave the pen with neither a valid index nor the
+books the new one should describe. The "this pen owes a reset" flag is persisted the moment the
+first add or remove succeeds, so an interrupted batch still heals on the next connection.
+
+A future edition that keeps its filename but changes its OID range would defeat the same-name
+rule; `docs/design/book-index-reset-catalog.md` has the catalog flag for that, already read by
+the app and defaulting to false.
+
+---
+
 ## Firmware package layout changed between V1.18 and V1.26
 
 |                                  | V1.18 (`tools.zip`) | V1.26                                                                                                                                  |

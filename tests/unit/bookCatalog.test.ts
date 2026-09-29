@@ -16,6 +16,7 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     contentLanguages: ['en'],
     sortOrder: 0,
     updatedAtMs: null,
+    updateRequiresIndexReset: false,
     downloadUrl: 'https://register.ponyabc.uk/api/public/books/download?id=b1',
     ...overrides,
   };

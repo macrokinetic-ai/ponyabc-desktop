@@ -148,5 +148,19 @@
     "title": "Dettagli avanzati",
     "hint": "Informazioni tecniche per l'assistenza. Non servono per usare la penna."
   },
-  "catalogIntro": "Hai comprato un libro nuovo? Cercalo in questo elenco e scegli Aggiungi."
+  "catalogIntro": "Hai comprato un libro nuovo? Cercalo in questo elenco e scegli Aggiungi.",
+  "done": {
+    "restartTitle": "Fatto!",
+    "restartBody": "Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo mentre la penna prepara i libri.",
+    "updatedOnly": "Fatto! Il libro è stato aggiornato."
+  },
+  "fix": {
+    "title": "L’elenco dei libri della penna ha bisogno di un momento",
+    "body": "Alcuni libri sono stati aggiunti o rimossi fuori da questa app, quindi la penna potrebbe riprodurre quello sbagliato. Sistemarlo richiede pochi secondi.",
+    "button": "Sistema l’elenco dei libri della penna",
+    "working": "Sistemazione in corso…",
+    "doneBody": "Fatto. Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo.",
+    "failed": "Non è stato possibile completare l’operazione. Sulla penna non è cambiato nulla: ricollegala e riprova.",
+    "sidecarNotice": "Sulla penna ci sono anche file aggiuntivi creati da un Mac durante la copia. Sono innocui; puoi eliminarli dalla cartella se vuoi."
+  }
 }

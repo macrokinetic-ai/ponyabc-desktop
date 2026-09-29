@@ -148,5 +148,19 @@
     "title": "Advanced details",
     "hint": "Technical information for support. You do not need this to use your pen."
   },
-  "catalogIntro": "Bought a new book? Find it in this list and select Add."
+  "catalogIntro": "Bought a new book? Find it in this list and select Add.",
+  "done": {
+    "restartTitle": "All done!",
+    "restartBody": "Please unplug your pen, then switch it off and on again. The first start may take a little longer while your pen gets its books ready.",
+    "updatedOnly": "All done! Your book has been updated."
+  },
+  "fix": {
+    "title": "Your pen's book list needs a moment",
+    "body": "Some books were added or removed outside this app, so your pen may play the wrong one. This takes a few seconds to put right.",
+    "button": "Fix my pen's book list",
+    "working": "Fixing…",
+    "doneBody": "All set. Please unplug your pen, then switch it off and on again. The first start may take a little longer.",
+    "failed": "That could not be finished just now. Nothing on your pen was changed — please reconnect it and try again.",
+    "sidecarNotice": "Some extra files copied by a Mac are also on your pen. They are harmless, but you can delete them from the pen folder if you like."
+  }
 }

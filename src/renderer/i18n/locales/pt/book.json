@@ -148,5 +148,19 @@
     "title": "Detalhes avançados",
     "hint": "Informação técnica para o apoio. Não precisa dela para usar a caneta."
   },
-  "catalogIntro": "Comprou um livro novo? Encontre-o nesta lista e escolha Adicionar."
+  "catalogIntro": "Comprou um livro novo? Encontre-o nesta lista e escolha Adicionar.",
+  "done": {
+    "restartTitle": "Tudo pronto!",
+    "restartBody": "Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais enquanto a caneta prepara os livros.",
+    "updatedOnly": "Tudo pronto! O seu livro foi atualizado."
+  },
+  "fix": {
+    "title": "A lista de livros da sua caneta precisa de um momento",
+    "body": "Foram adicionados ou removidos livros fora desta aplicação, por isso a caneta pode reproduzir o livro errado. Corrigir demora alguns segundos.",
+    "button": "Corrigir a lista de livros da caneta",
+    "working": "A corrigir…",
+    "doneBody": "Pronto. Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais.",
+    "failed": "Não foi possível concluir agora. Nada foi alterado na sua caneta — volte a ligá-la e tente novamente.",
+    "sidecarNotice": "Na sua caneta há também ficheiros extra copiados por um Mac. São inofensivos; pode apagá-los da pasta se quiser."
+  }
 }
