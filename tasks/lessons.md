@@ -687,3 +687,29 @@ targeted test rather than reach for the existing evidence file.
 - **Vendor tool output is GBK/CP936.** Decode the full accumulated buffer, never
   incremental chunks — a multi-byte character split across two reads is corrupted, and
   the success signal is then missed.
+
+## "tsc passed" is not a gate result — run `npm run typecheck`
+
+I reported the firmware preflight wiring as typechecking clean. It did not. I had run a bare
+`npx tsc --noEmit`, which resolves the root `tsconfig.json`; the real gate is
+`tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json`, and it found three
+genuine errors in that code — a helper called with the wrong arity, three invented field names
+on a shared type, and an undeclared union member.
+
+**How to apply:** run the script from `package.json`, never a hand-rolled approximation of it.
+The scripts exist because the project has two TypeScript projects, and a command that only
+covers one of them fails silently by succeeding. The same goes for `npm test` over a single
+`vitest run <file>` — a change that passes its own new test can still break an existing one,
+which is exactly what the status-label rewording did to five screen tests.
+
+## A shipped string that nothing renders is not shipped
+
+Locale keys for the manual-upgrade warning and the preflight failure message existed in all
+eight locales, and I wrote in the vendor notes that the warning was "documented in the in-app
+FAQ". Nothing rendered either one. There is no FAQ screen; `grep -rn "faq" src` returned only
+the JSON files.
+
+**How to apply:** after adding an i18n key, grep the source for the key's usage, not for the
+key's existence. And when writing a doc sentence that claims the app tells the user something,
+that claim is a testable assertion — either point at the component that renders it or don't
+write the sentence.
