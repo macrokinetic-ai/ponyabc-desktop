@@ -23,6 +23,10 @@ if (!appPath || !outDir) {
 }
 const labelArg = rest.find((a) => a.startsWith('--label='));
 const label = labelArg ? labelArg.split('=')[1] : 'app';
+// Some states only exist after a press — "not enough space" is a refusal, not a resting state.
+// --press=<button text> clicks the first button whose text contains it, on every section.
+const pressArg = rest.find((a) => a.startsWith('--press='));
+const pressText = pressArg ? pressArg.split('=').slice(1).join('=') : null;
 
 const DEBUG_PORT = 9334;
 fs.mkdirSync(outDir, { recursive: true });
@@ -35,8 +39,12 @@ const spawnArgs = electronAppDir
   ? [electronAppDir, `--remote-debugging-port=${DEBUG_PORT}`, '--disable-gpu']
   : [`--remote-debugging-port=${DEBUG_PORT}`, '--disable-gpu'];
 
+// PONYABC_DEMO_DATA / PONYABC_LOCALE let the capture show the real screens with believable
+// content and in a chosen language — CI has no pen, so without them every BOOK screenshot says
+// "No pen detected" and shows none of the states a parent actually meets.
 const child = spawn(appPath, spawnArgs, {
   stdio: 'ignore',
+  env: { ...process.env },
 });
 
 function sleep(ms) {
@@ -116,6 +124,19 @@ async function main() {
       continue;
     }
     await sleep(700); // allow the section to render (async data fetches, transitions)
+
+    if (pressText) {
+      await sendCommand(ws, 'Runtime.evaluate', {
+        expression: `(() => {
+          const wanted = ${JSON.stringify(pressText)};
+          const btn = [...document.querySelectorAll('button')].find((b) => (b.textContent || '').includes(wanted));
+          if (btn) { btn.click(); return true; }
+          return false;
+        })()`,
+        returnByValue: true,
+      });
+      await sleep(900);
+    }
 
     const { data } = await sendCommand(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     const outPath = path.join(outDir, `${label}-${section.name}.png`);

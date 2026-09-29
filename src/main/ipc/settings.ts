@@ -3,7 +3,12 @@ import type { Settings } from '@shared/types';
 import type { SettingsStore } from '../services/settingsStore';
 
 export function getSettings(store: SettingsStore): Settings {
-  return store.get();
+  const settings = store.get();
+  // Screenshots only: lets the capture script photograph the same screens in each language
+  // without writing to the user's settings file. Never set in a shipped build.
+  const override = process.env.PONYABC_LOCALE;
+  if (override && isSupportedLocale(override)) return { ...settings, locale: override };
+  return settings;
 }
 
 export function setSettings(store: SettingsStore, partial: unknown): Settings {

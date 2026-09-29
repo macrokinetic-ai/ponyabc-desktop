@@ -173,7 +173,10 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
   // Default rows are collapsed to checkbox + name + NEW + a short status — clicking the name
   // expands filename/size/official-update-date/full status/per-item actions below it.
 
-  const penConnected = penRoot.result.status === 'ok';
+  // One source of truth: if we have the pen's book list, the pen is connected. Reading a
+  // separate pen-root status let the screen say "please connect your pen" directly above
+  // "your pen has 2 books", which is the kind of contradiction a parent stops trusting.
+  const penConnected = lib.penItems !== null;
   const penItems = lib.penItems ?? [];
 
   /**

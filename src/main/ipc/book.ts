@@ -33,6 +33,7 @@ import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { getFreeBytes } from '../services/transferPlanner';
+import { demoBookList, demoDataEnabled, demoVariant } from '../services/demoBookData';
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
@@ -115,6 +116,9 @@ async function currentPenFreeBytes(): Promise<number | null> {
  *  prior explicit verification already recorded — see bookReconcile.ts. Never blocks on, or
  *  triggers, hashing a pen file's content. */
 async function currentList(): Promise<BookListResult> {
+  // Screenshots and the manual only. Never set in a shipped build — see demoBookData.ts.
+  if (demoDataEnabled()) return demoBookList(demoVariant());
+
   const snapshot = catalogStore().get();
   const cacheEntries = cacheManifestStore().get();
   const { files, penVolumeLabel } = currentPenBookFiles();

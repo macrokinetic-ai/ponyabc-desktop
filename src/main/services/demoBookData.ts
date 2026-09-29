@@ -12,10 +12,12 @@ import type { BookListResult } from '@shared/types';
  * book that needs updating, a book we did not put there, and two books that can be added — one
  * of them new since the last check.
  */
-export function demoBookList(): BookListResult {
+export type DemoVariant = 'summary' | 'uptodate' | 'nospace' | 'syncing';
+
+export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
   const now = Date.now();
 
-  return {
+  const base: BookListResult = {
     status: 'ok',
     penItems: [
       {
@@ -105,9 +107,29 @@ export function demoBookList(): BookListResult {
       offline: false,
       conflicts: [],
       lastCheck: { state: 'ok', atMs: now - 5 * 60 * 1000, httpStatus: 200, itemCount: 4, message: null, durationMs: 210 },
-      penFreeBytes: 9_400_000_000,
+      // 'nospace' leaves far too little room for the 231 MB the plan would write, so the
+      // refusal and its "you need about N more" message can be photographed.
+      penFreeBytes: variant === 'nospace' ? 120_000_000 : 9_400_000_000,
     },
   };
+
+  if (variant === 'uptodate') {
+    // Everything matches: nothing to add, nothing to update.
+    return {
+      ...base,
+      penItems: (base.penItems ?? []).map((p) => (p.contentId === 'demo-art' ? { ...p, status: 'verified-current' as const } : p)),
+      catalogItems: base.catalogItems
+        .filter((i) => i.contentId === 'demo-phonics' || i.contentId === 'demo-art')
+        .map((i) => ({ ...i, status: 'on-pen-current' as const, actionable: false })),
+    };
+  }
+
+  return base;
 }
 
-export const demoDataEnabled = (): boolean => process.env.PONYABC_DEMO_DATA === '1';
+export const demoVariant = (): DemoVariant => {
+  const v = process.env.PONYABC_DEMO_DATA;
+  return v === 'uptodate' || v === 'nospace' || v === 'syncing' ? v : 'summary';
+};
+
+export const demoDataEnabled = (): boolean => (process.env.PONYABC_DEMO_DATA ?? '') !== '';
