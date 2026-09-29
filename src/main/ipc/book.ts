@@ -32,7 +32,7 @@ import { markBookIndexStale } from './bookIndex';
 import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
-import { getFreeBytes } from '../services/transferPlanner';
+import { getVolumeInfo } from '../services/transferPlanner';
 import { demoBookList, demoDataEnabled, demoVariant } from '../services/demoBookData';
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
@@ -98,17 +98,19 @@ function currentPenBookFiles(): { files: PenBookFile[] | null; bookDirReal: stri
   return { files: listPenBookFiles(fresh.bookDirReal), bookDirReal: fresh.bookDirReal, penVolumeLabel };
 }
 
-/** Free space on the pen, or null if there is no pen or the filesystem would not say. Never
- *  throws: a sync that cannot read the number proceeds rather than refusing on a failed stat. */
-async function currentPenFreeBytes(): Promise<number | null> {
+/** Size, free space and cluster size for the pen, or nulls if there is no pen or the filesystem
+ *  would not say. Never throws: a sync that cannot read these proceeds rather than refusing on a
+ *  failed stat. */
+async function currentPenVolume(): Promise<{ freeBytes: number | null; totalBytes: number | null; clusterBytes: number | null }> {
+  const none = { freeBytes: null, totalBytes: null, clusterBytes: null };
   const penRoot = session.getPenRoot();
-  if (!penRoot) return null;
+  if (!penRoot) return none;
   const fresh = resolvePenRoot(penRoot.realPath);
-  if (fresh.status !== 'ok') return null;
+  if (fresh.status !== 'ok') return none;
   try {
-    return await getFreeBytes(fresh.bookDirReal);
+    return await getVolumeInfo(fresh.bookDirReal);
   } catch {
-    return null;
+    return none;
   }
 }
 
@@ -140,7 +142,11 @@ async function currentList(): Promise<BookListResult> {
       offline: snapshot === null,
       conflicts: snapshot?.conflicts ?? [],
       lastCheck: lastCatalogCheck,
-      penFreeBytes: await currentPenFreeBytes(),
+      ...(await currentPenVolume().then((v) => ({
+        penFreeBytes: v.freeBytes,
+        penTotalBytes: v.totalBytes,
+        penClusterBytes: v.clusterBytes,
+      }))),
     },
   };
 }

@@ -110,6 +110,8 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
       // 'nospace' leaves far too little room for the 231 MB the plan would write, so the
       // refusal and its "you need about N more" message can be photographed.
       penFreeBytes: variant === 'nospace' ? 120_000_000 : 9_400_000_000,
+      penTotalBytes: 15_900_000_000,
+      penClusterBytes: 32_768,
     },
   };
 

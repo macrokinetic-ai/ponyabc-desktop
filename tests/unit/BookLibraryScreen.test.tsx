@@ -312,7 +312,9 @@ describe('BookLibraryScreen — not enough space', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
     await screen.findByText("Your pen doesn't have enough space");
-    await screen.findByText(/You need about .* more\. Please back up your recordings/);
+    // Rounded UP: a figure rounded down sends a parent to free exactly that much and be
+    // refused a second time.
+    await screen.findByText(/You need about \d+(\.\d)? (MB|GB) more\. Please back up your recordings/);
     expect(screen.getByRole('button', { name: 'Go to My Recordings' })).toBeTruthy();
     // Nothing was written.
     expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();

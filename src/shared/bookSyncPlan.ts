@@ -88,28 +88,86 @@ export function buildSyncPlan(params: {
 }
 
 /**
- * Headroom kept free on the pen, on top of what the sync writes.
+ * Headroom left free on the pen, on top of everything the sync needs.
  *
- * FAT needs somewhere to put directory entries and its own bookkeeping, a staged write briefly
- * holds a second copy of the file being written, and a pen with literally zero bytes free is a
- * pen a parent cannot record on. 200 MB is comfortably more than a staged write of the largest
- * book we ship needs beyond the book itself.
+ * FAT needs somewhere for its own bookkeeping, and a pen with literally zero bytes free is a pen
+ * a parent cannot record on. 1% of the card, or 50 MB, whichever is larger — on a 16 GB card
+ * that is about 160 MB.
  */
-export const SYNC_FREE_SPACE_MARGIN_BYTES = 200 * 1024 * 1024;
+export const SYNC_MARGIN_MIN_BYTES = 50 * 1024 * 1024;
+export const SYNC_MARGIN_FRACTION = 0.01;
+
+export function safetyMarginBytes(penTotalBytes: number | null): number {
+  if (penTotalBytes === null) return SYNC_MARGIN_MIN_BYTES;
+  return Math.max(SYNC_MARGIN_MIN_BYTES, Math.ceil(penTotalBytes * SYNC_MARGIN_FRACTION));
+}
+
+/** What a file of `bytes` actually occupies on a card with `clusterBytes` allocation units. */
+export function onDiskBytes(bytes: number, clusterBytes: number | null): number {
+  if (clusterBytes === null || clusterBytes <= 0) return bytes;
+  return Math.ceil(bytes / clusterBytes) * clusterBytes;
+}
 
 export interface SpaceCheck {
   ok: boolean;
-  /** How much more is needed, in bytes. 0 when it fits. */
+  /** How much more room is needed. 0 when it fits. */
   shortfallBytes: number;
+  /** The most the card is ever asked to hold during the sync, over what is on it now. */
+  peakBytes: number;
+  /** What the card holds extra once the sync has finished. Always ≤ peak. */
+  netBytes: number;
+  marginBytes: number;
 }
 
 /**
- * Whether the plan fits. Unknown free space is treated as **fits** rather than blocking a sync
- * on a number we could not read — the write itself still fails safely if it does not, and
- * refusing to sync because of a failed `statfs` would be worse than trying.
+ * Whether the whole sync fits — measured at its **peak**, not at its net result.
+ *
+ * This is the distinction that matters, and it is invisible from the totals. Updating a book
+ * writes the new copy to a temporary name **while the old copy is still there**, so for the
+ * duration of that one file the card holds both. A 1 GB book replacing a 1 GB book has a net
+ * cost of zero and a peak cost of 1 GB. Checking the net would let a sync start and then fail
+ * twenty minutes in, which is exactly the experience this exists to prevent.
+ *
+ * So: walk the sequence in the order it will actually run, track what is held at each step, and
+ * take the maximum.
  */
-export function checkSpace(totalBytes: number, freeBytes: number | null): SpaceCheck {
-  if (freeBytes === null) return { ok: true, shortfallBytes: 0 };
-  const needed = totalBytes + SYNC_FREE_SPACE_MARGIN_BYTES;
-  return needed <= freeBytes ? { ok: true, shortfallBytes: 0 } : { ok: false, shortfallBytes: needed - freeBytes };
+export function checkSpace(params: {
+  plan: BookSyncPlan;
+  penItems: readonly BookPenItem[] | null;
+  freeBytes: number | null;
+  penTotalBytes?: number | null;
+  clusterBytes?: number | null;
+}): SpaceCheck {
+  const { plan, penItems, freeBytes, penTotalBytes = null, clusterBytes = null } = params;
+  const margin = safetyMarginBytes(penTotalBytes);
+
+  const existingByContentId = new Map((penItems ?? []).filter((p) => p.contentId).map((p) => [p.contentId as string, p.sizeBytes]));
+
+  let held = 0; // extra bytes on the card, relative to now, after each completed step
+  let peak = 0; // the worst moment across the whole sequence
+
+  // Adds first, then updates — the same order runSync uses, and each list is smallest first.
+  for (const item of [...plan.toAdd, ...plan.toUpdate]) {
+    const incoming = onDiskBytes(item.sizeBytes, clusterBytes);
+    const outgoing = onDiskBytes(existingByContentId.get(item.contentId) ?? 0, clusterBytes);
+
+    // During the write the staged copy and the old file coexist.
+    peak = Math.max(peak, held + incoming);
+    // After the rename the old one is gone.
+    held += incoming - outgoing;
+  }
+
+  const needed = peak + margin;
+  if (freeBytes === null) {
+    // Nothing to compare against. Proceed rather than refuse on a number we could not read —
+    // the write itself still fails safely, and the mid-sync handling catches it.
+    return { ok: true, shortfallBytes: 0, peakBytes: peak, netBytes: held, marginBytes: margin };
+  }
+  return {
+    ok: needed <= freeBytes,
+    shortfallBytes: Math.max(needed - freeBytes, 0),
+    peakBytes: peak,
+    netBytes: held,
+    marginBytes: margin,
+  };
 }

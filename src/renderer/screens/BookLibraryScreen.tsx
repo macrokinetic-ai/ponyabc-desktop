@@ -30,6 +30,19 @@ function formatBytes(n: number): string {
   return `${Math.round(n / 1024)} KB`;
 }
 
+/**
+ * How much more room is needed, always rounded UP.
+ *
+ * "You need about 796 MB more" when the true figure is 796.4 MB would send a parent to free
+ * exactly 796 MB and be told no a second time. Rounding up is the only direction that leaves
+ * them better off than the number suggested.
+ */
+function formatShortfall(bytes: number): string {
+  const MB = 1024 * 1024;
+  if (bytes >= 1024 * MB) return `${(Math.ceil((bytes / (1024 * MB)) * 10) / 10).toFixed(1)} GB`;
+  return `${Math.ceil(bytes / MB)} MB`;
+}
+
 function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n: Record<string, string> | null; filename: string }, locale: string): string {
   const resolvedLocale = isSupportedLocale(locale) ? locale : DEFAULT_LOCALE;
   return resolveBookDisplayName({ friendlyName: source.friendlyName ?? '', friendlyNameI18n: source.friendlyNameI18n, filename: source.filename }, resolvedLocale);
@@ -219,7 +232,15 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
    * added.
    */
   async function runSync() {
-    const space = checkSpace(plan.totalBytes, lib.meta.penFreeBytes);
+    // Peak, not net: an update holds the new copy and the old one at the same time, so a sync
+    // whose totals fit can still run the card out half-way through.
+    const space = checkSpace({
+      plan,
+      penItems: lib.penItems,
+      freeBytes: lib.meta.penFreeBytes,
+      penTotalBytes: lib.meta.penTotalBytes,
+      clusterBytes: lib.meta.penClusterBytes,
+    });
     if (!space.ok) {
       setSpaceProblem(space.shortfallBytes);
       return;
@@ -404,7 +425,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
       {spaceProblem !== null && (
         <div className="note-box">
           <p className="error-text">{t('space.title')}</p>
-          <p className="hint">{t('space.body', { amount: formatBytes(spaceProblem) })}</p>
+          <p className="hint">{t('space.body', { amount: formatShortfall(spaceProblem) })}</p>
           <button type="button" className="button" onClick={() => onNavigate?.('recordings')}>
             {t('space.goToRecordings')}
           </button>

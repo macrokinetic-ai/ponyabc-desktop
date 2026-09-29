@@ -39,6 +39,29 @@ export async function getFreeBytes(targetPath: string): Promise<number> {
   return stat.bavail * stat.bsize;
 }
 
+export interface VolumeInfo {
+  freeBytes: number;
+  totalBytes: number;
+  /**
+   * The volume's allocation unit. On a FAT card this is the cluster size, which is what makes a
+   * 3 KB file occupy 32 KB — so a sync that adds forty books needs more room than the sum of
+   * their sizes. `statfs` reports it as `bsize`: on Windows that comes from
+   * `GetDiskFreeSpace` (sectors-per-cluster × bytes-per-sector), which is exactly the number we
+   * want; on macOS and Linux it is the filesystem's block size, which serves the same purpose.
+   */
+  clusterBytes: number;
+}
+
+/** Size, free space and allocation unit in one `statfs`, for the pre-sync space check. */
+export async function getVolumeInfo(targetPath: string): Promise<VolumeInfo> {
+  const stat = await fs.promises.statfs(targetPath);
+  return {
+    freeBytes: stat.bavail * stat.bsize,
+    totalBytes: stat.blocks * stat.bsize,
+    clusterBytes: stat.bsize,
+  };
+}
+
 /** A fresh, non-conflicting backup folder for one batch, under the given root (not an OS
  *  temp dir that might get auto-cleaned — the caller points this at persistent storage). */
 export function makeBackupDir(backupRootDir: string): string {

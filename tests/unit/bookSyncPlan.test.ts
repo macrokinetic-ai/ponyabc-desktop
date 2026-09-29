@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BookCatalogItem, BookPenItem } from '../../src/shared/types';
-import { SYNC_FREE_SPACE_MARGIN_BYTES, buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '../../src/shared/bookSyncPlan';
+import { SYNC_MARGIN_MIN_BYTES, buildSyncPlan, checkSpace, onDiskBytes, otherBooksOnPen, ourBooksOnPen, safetyMarginBytes } from '../../src/shared/bookSyncPlan';
 
 /**
  * One button, so the decision is ours. These pin the three rules a parent never sees but always
@@ -135,24 +135,109 @@ describe('grouping what is on the pen', () => {
   });
 });
 
-describe('will it fit', () => {
-  it('leaves headroom rather than filling the card to the last byte', () => {
-    expect(checkSpace(1_000 * MB, 1_000 * MB + SYNC_FREE_SPACE_MARGIN_BYTES)).toEqual({ ok: true, shortfallBytes: 0 });
-    expect(checkSpace(1_000 * MB, 1_000 * MB).ok).toBe(false);
+describe('will it fit — measured at the peak, not the net', () => {
+  const GB = 1_000_000_000;
+  const plan = (toAdd: BookCatalogItem[] = [], toUpdate: BookCatalogItem[] = []) => ({
+    toAdd,
+    toUpdate,
+    totalBytes: [...toAdd, ...toUpdate].reduce((n, i) => n + i.sizeBytes, 0),
+    addsBooks: toAdd.length > 0,
   });
 
-  it('says how much more is needed, so the message can be specific', () => {
-    const check = checkSpace(1_000 * MB, 800 * MB);
+  it('BLOCKS an update that fits on paper but not while both copies exist', () => {
+    // Replacing a 1 GB book with a 1 GB book costs nothing NET, so a check against the totals
+    // would happily start it. But the new copy is staged while the old one is still there, so
+    // for those nineteen minutes the card must hold both — and 500 MB free does not.
+    const book = item({ contentId: 'a', sizeBytes: 1 * GB, status: 'on-pen-differs' });
+    const freeBytes = 500 * MB;
+    const check = checkSpace({
+      plan: plan([], [book]),
+      penItems: [pen({ contentId: 'a', sizeBytes: 1 * GB })],
+      freeBytes,
+      penTotalBytes: 16 * GB,
+      clusterBytes: 32_768,
+    });
+
+    // The claim, stated: the net fits and the peak does not.
+    expect(check.netBytes + check.marginBytes).toBeLessThanOrEqual(freeBytes);
+    expect(check.peakBytes + check.marginBytes).toBeGreaterThan(freeBytes);
+
+    expect(check.netBytes).toBe(0); // nothing extra once it is done
+    // ...but a whole book's worth while it runs, rounded to clusters as the card stores it.
+    expect(check.peakBytes).toBe(onDiskBytes(1 * GB, 32_768));
     expect(check.ok).toBe(false);
-    expect(check.shortfallBytes).toBe(200 * MB + SYNC_FREE_SPACE_MARGIN_BYTES);
+    expect(check.shortfallBytes).toBeGreaterThan(0);
+  });
+
+  it('allows the same update when there is room for both copies at once', () => {
+    const book = item({ contentId: 'a', sizeBytes: 1 * GB, status: 'on-pen-differs' });
+    const check = checkSpace({
+      plan: plan([], [book]),
+      penItems: [pen({ contentId: 'a', sizeBytes: 1 * GB })],
+      freeBytes: 2 * GB,
+      penTotalBytes: 16 * GB,
+      clusterBytes: 32_768,
+    });
+    expect(check.ok).toBe(true);
+  });
+
+  it('takes the maximum over the sequence, not the last step', () => {
+    // A big add first, then a small one: the peak is reached part-way, not at the end.
+    const check = checkSpace({
+      plan: plan([item({ contentId: 'a', sizeBytes: 500 * MB }), item({ contentId: 'b', sizeBytes: 100 * MB })]),
+      penItems: [],
+      freeBytes: 10 * GB,
+      penTotalBytes: 16 * GB,
+      clusterBytes: null,
+    });
+    // Both are added, so the card ends up holding both — and the peak is the same as the net
+    // here precisely because nothing is being replaced.
+    expect(check.netBytes).toBe(600 * MB);
+    expect(check.peakBytes).toBe(600 * MB);
+  });
+
+  it('counts what a card actually stores, rounding every file up to a cluster', () => {
+    const tiny = checkSpace({
+      plan: plan([item({ contentId: 'a', sizeBytes: 1 })]),
+      penItems: [],
+      freeBytes: 10 * GB,
+      penTotalBytes: 16 * GB,
+      clusterBytes: 32_768,
+    });
+    // A one-byte book still occupies a whole 32 KB cluster.
+    expect(tiny.peakBytes).toBe(32_768);
+
+    const unrounded = checkSpace({ plan: plan([item({ contentId: 'a', sizeBytes: 1 })]), penItems: [], freeBytes: 10 * GB, clusterBytes: null });
+    expect(unrounded.peakBytes).toBe(1);
+  });
+
+  it('keeps a margin of 1% of the card, or 50 MB, whichever is larger', () => {
+    expect(safetyMarginBytes(16 * GB)).toBe(Math.ceil(16 * GB * 0.01)); // 160 MB on a 16 GB card
+    expect(safetyMarginBytes(1 * GB)).toBe(SYNC_MARGIN_MIN_BYTES); // 1% would be only 10 MB
+    expect(safetyMarginBytes(null)).toBe(SYNC_MARGIN_MIN_BYTES);
+  });
+
+  it('refuses an exact fit that leaves no margin, and allows one that leaves exactly enough', () => {
+    const one = item({ contentId: 'a', sizeBytes: 1 * GB });
+    const margin = safetyMarginBytes(16 * GB);
+
+    const exact = checkSpace({ plan: plan([one]), penItems: [], freeBytes: 1 * GB, penTotalBytes: 16 * GB, clusterBytes: null });
+    expect(exact.ok).toBe(false);
+    expect(exact.shortfallBytes).toBe(margin);
+
+    const justEnough = checkSpace({ plan: plan([one]), penItems: [], freeBytes: 1 * GB + margin, penTotalBytes: 16 * GB, clusterBytes: null });
+    expect(justEnough.ok).toBe(true);
+    expect(justEnough.shortfallBytes).toBe(0);
   });
 
   it('proceeds when free space could not be read, rather than refusing on a failed stat', () => {
-    expect(checkSpace(1_000 * MB, null)).toEqual({ ok: true, shortfallBytes: 0 });
+    const check = checkSpace({ plan: plan([item({ sizeBytes: 1 * GB })]), penItems: [], freeBytes: null });
+    expect(check.ok).toBe(true);
+    expect(check.shortfallBytes).toBe(0);
   });
 
-  it('is happy with an empty plan', () => {
-    expect(checkSpace(0, 0).ok).toBe(false); // 0 bytes still wants the margin free
-    expect(checkSpace(0, SYNC_FREE_SPACE_MARGIN_BYTES).ok).toBe(true);
+  it('an empty plan needs nothing but still respects the margin', () => {
+    expect(checkSpace({ plan: plan(), penItems: [], freeBytes: 0, penTotalBytes: 16 * GB }).ok).toBe(false);
+    expect(checkSpace({ plan: plan(), penItems: [], freeBytes: 10 * GB, penTotalBytes: 16 * GB }).ok).toBe(true);
   });
 });

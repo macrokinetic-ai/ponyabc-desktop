@@ -449,6 +449,11 @@ export interface BookLibraryMeta {
    *  read. The sync refuses to start if what it would write does not fit — running out of room
    *  part-way through a twenty-minute copy is a poor way to find out. */
   penFreeBytes: number | null;
+  /** The pen's total size, for the safety margin. null when unknown. */
+  penTotalBytes: number | null;
+  /** The card's allocation unit, so file sizes can be rounded the way FAT actually stores them.
+   *  null when unknown, in which case no rounding is applied. */
+  penClusterBytes: number | null;
 }
 
 export interface BookListResult {
