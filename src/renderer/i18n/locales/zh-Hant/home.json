@@ -8,9 +8,9 @@
     "disconnectedTitle": "未連接 P5 點讀筆"
   },
   "entries": {
-    "recordingsBody": "在點讀筆與電腦資料夾之間複製 DIY 錄音，並替換貼紙音訊。",
-    "bookBody": "將官方 BOOK 內容加入點讀筆，或先下載到這部電腦。",
-    "firmwareBody": "僅支援 Windows。逐步引導完成點讀筆韌體升級。"
+    "recordingsBody": "把孩子的錄音在這部電腦保存一份、為它們改名，需要時隨時放回點讀筆。",
+    "bookBody": "把 PonyABC 書本放進點讀筆，並保持最新。",
+    "firmwareBody": "僅支援 Windows。有新版本時，更新點讀筆本身的軟件。"
   },
   "warrantyTitle": "保養登記",
   "registerButton": "註冊您的點讀筆",
