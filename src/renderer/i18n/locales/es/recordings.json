@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Guardar en el equipo →",
     "sendToPen": "← Enviar al lápiz",
-    "replaceSticker": "Reemplazar este adhesivo con el audio seleccionado…"
+    "replaceSticker": "Reemplazar este adhesivo con el audio seleccionado…",
+    "play": "Escuchar",
+    "deleteFromPen": "Borrar del lápiz"
   },
   "transferPlan": {
     "title": "Enviar al lápiz — revise antes de enviar",
@@ -84,5 +86,61 @@
     "errorTooLarge": "Este archivo es demasiado grande para escuchar.",
     "errorGeneric": "No se pudo reproducir este archivo (no compatible o ilegible).",
     "penEncodingHint": "Que suene bien aquí no garantiza que el lápiz pueda reproducir el mismo archivo una vez enviado."
+  },
+  "onPen": {
+    "title": "En su lápiz",
+    "intro": "Las grabaciones que tiene ahora su lápiz."
+  },
+  "backup": {
+    "title": "Copias en este ordenador",
+    "intro": "Una copia guarda cada grabación para que pueda volver a ponerlas más adelante.",
+    "button": "Guardar copia de mis grabaciones",
+    "done": "{{count}} grabación(es) guardadas.",
+    "none": "Aún no hay copias. Elija Guardar copia de mis grabaciones.",
+    "choose": "Copia que se usará:",
+    "countLabel": "{{count}} grabación(es)",
+    "missing": "No se encontró esa copia."
+  },
+  "restore": {
+    "button": "Volver a ponerlas en mi lápiz",
+    "reviewTitle": "Antes de volver a ponerlas",
+    "noClashes": "Se añadirán {{count}} grabación(es). Nada de lo que ya está en el lápiz cambiará.",
+    "clashIntro": "Algunos de estos números ya tienen una grabación en el lápiz. Escuche las dos y elija cuál conservar.",
+    "fromBackup": "De la copia:",
+    "onPen": "Ahora en el lápiz:",
+    "replace": "Usar la de la copia",
+    "keepPen": "Conservar la del lápiz",
+    "decideAll": "Elija para cada una de arriba.",
+    "confirm": "Volver a ponerlas",
+    "done": "{{count}} grabación(es) devueltas a su lápiz.",
+    "nothingToDo": "Todo lo de esa copia ya está en su lápiz."
+  },
+  "label": {
+    "button": "Cambiar el nombre",
+    "prompt": "¿Cómo quiere llamarla?",
+    "hint": "Este nombre solo está en este ordenador. Su lápiz siempre usa el número de la pegatina."
+  },
+  "reassign": {
+    "button": "Cambiar de pegatina",
+    "prompt": "Nuevo número de pegatina",
+    "hint": "Escriba el número impreso en la pegatina, exactamente igual.",
+    "confirm": "Moverla",
+    "done": "Movida a la nueva pegatina.",
+    "failed": "No se pudo hacer. Inténtelo de nuevo.",
+    "rejected": {
+      "notDigits": "Escriba solo los números de la pegatina.",
+      "length": "Escriba el número tal como está impreso, incluidos los ceros del principio.",
+      "occupied": "Esa pegatina ya tiene una grabación.",
+      "unchanged": "Ya está en esa pegatina."
+    }
+  },
+  "deletePen": {
+    "confirm": "¿Borrar «{{name}}» de su lápiz?",
+    "backupNotice": "Antes se guarda una copia en este ordenador, para que pueda recuperarla.",
+    "done": "Borrada. Hay una copia en sus copias de seguridad.",
+    "failed": "No se pudo borrar. No se cambió nada."
+  },
+  "advancedTools": {
+    "title": "Herramientas avanzadas"
   }
 }

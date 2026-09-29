@@ -13,7 +13,8 @@
     "cancel": "Annuler",
     "retry": "Réessayer",
     "close": "Fermer",
-    "refresh": "Actualiser"
+    "refresh": "Actualiser",
+    "save": "Enregistrer"
   },
   "penRoot": {
     "label": "Stockage du stylo",

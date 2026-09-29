@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Guardar no computador →",
     "sendToPen": "← Enviar para a caneta",
-    "replaceSticker": "Substituir este autocolante com o áudio selecionado…"
+    "replaceSticker": "Substituir este autocolante com o áudio selecionado…",
+    "play": "Ouvir",
+    "deleteFromPen": "Apagar da caneta"
   },
   "transferPlan": {
     "title": "Enviar para a caneta — reveja antes de enviar",
@@ -84,5 +86,61 @@
     "errorTooLarge": "Este ficheiro é demasiado grande para pré-ouvir.",
     "errorGeneric": "Não foi possível reproduzir este ficheiro (não suportado ou ilegível).",
     "penEncodingHint": "Tocar bem aqui não garante que a caneta consiga reproduzir o mesmo ficheiro depois de enviado."
+  },
+  "onPen": {
+    "title": "Na sua caneta",
+    "intro": "As gravações que a caneta tem neste momento."
+  },
+  "backup": {
+    "title": "Cópias neste computador",
+    "intro": "Uma cópia guarda cada gravação, para as poder repor mais tarde.",
+    "button": "Guardar cópia das gravações",
+    "done": "{{count}} gravação(ões) guardadas.",
+    "none": "Ainda não há cópias. Escolha Guardar cópia das gravações.",
+    "choose": "Cópia a usar:",
+    "countLabel": "{{count}} gravação(ões)",
+    "missing": "Essa cópia não foi encontrada."
+  },
+  "restore": {
+    "button": "Repor na minha caneta",
+    "reviewTitle": "Antes de repor",
+    "noClashes": "Vão ser adicionadas {{count}} gravação(ões). Nada do que já está na caneta muda.",
+    "clashIntro": "Alguns destes números já têm uma gravação na caneta. Ouça as duas e escolha qual fica.",
+    "fromBackup": "Da cópia:",
+    "onPen": "Agora na caneta:",
+    "replace": "Usar a da cópia",
+    "keepPen": "Manter a da caneta",
+    "decideAll": "Escolha para cada uma acima.",
+    "confirm": "Repor",
+    "done": "{{count}} gravação(ões) repostas na caneta.",
+    "nothingToDo": "Tudo o que está nessa cópia já está na sua caneta."
+  },
+  "label": {
+    "button": "Mudar o nome",
+    "prompt": "Como lhe quer chamar?",
+    "hint": "Este nome fica só neste computador. A caneta usa sempre o número do autocolante."
+  },
+  "reassign": {
+    "button": "Mudar de autocolante",
+    "prompt": "Novo número do autocolante",
+    "hint": "Escreva o número impresso no autocolante, tal e qual.",
+    "confirm": "Mover",
+    "done": "Movida para o novo autocolante.",
+    "failed": "Não foi possível. Tente novamente.",
+    "rejected": {
+      "notDigits": "Escreva apenas os números do autocolante.",
+      "length": "Escreva o número tal como está impresso, incluindo os zeros iniciais.",
+      "occupied": "Esse autocolante já tem uma gravação.",
+      "unchanged": "Já está nesse autocolante."
+    }
+  },
+  "deletePen": {
+    "confirm": "Apagar «{{name}}» da sua caneta?",
+    "backupNotice": "É guardada primeiro uma cópia neste computador, para a poder repor.",
+    "done": "Apagada. Há uma cópia nas suas cópias de segurança.",
+    "failed": "Não foi possível apagar. Nada foi alterado."
+  },
+  "advancedTools": {
+    "title": "Ferramentas avançadas"
   }
 }

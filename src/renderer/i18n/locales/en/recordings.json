@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Save to computer →",
     "sendToPen": "← Send to pen",
-    "replaceSticker": "Replace this sticker using selected audio…"
+    "replaceSticker": "Replace this sticker using selected audio…",
+    "play": "Play",
+    "deleteFromPen": "Delete from pen"
   },
   "transferPlan": {
     "title": "Send to pen — review before sending",
@@ -84,5 +86,61 @@
     "errorTooLarge": "This file is too large to preview.",
     "errorGeneric": "Couldn't play this file (unsupported or unreadable).",
     "penEncodingHint": "Playing fine here doesn't guarantee the pen can play the same file once sent."
+  },
+  "onPen": {
+    "title": "On your pen",
+    "intro": "The recordings your pen is holding right now."
+  },
+  "backup": {
+    "title": "Backups on this computer",
+    "intro": "A backup keeps a copy of every recording, so you can put them back later.",
+    "button": "Back up my recordings",
+    "done": "Backed up {{count}} recording(s).",
+    "none": "No backups yet. Select Back up my recordings to make one.",
+    "choose": "Backup to use:",
+    "countLabel": "{{count}} recording(s)",
+    "missing": "That backup could not be found."
+  },
+  "restore": {
+    "button": "Put these back on my pen",
+    "reviewTitle": "Before we put these back",
+    "noClashes": "{{count}} recording(s) will be added to your pen. Nothing already on it will change.",
+    "clashIntro": "Some of these numbers already have a recording on your pen. Listen to both and choose which one to keep.",
+    "fromBackup": "From the backup:",
+    "onPen": "On your pen now:",
+    "replace": "Use the one from the backup",
+    "keepPen": "Keep the one on my pen",
+    "decideAll": "Please choose for each one above.",
+    "confirm": "Put them back",
+    "done": "Put {{count}} recording(s) back on your pen.",
+    "nothingToDo": "Everything in that backup is already on your pen."
+  },
+  "label": {
+    "button": "Rename",
+    "prompt": "What would you like to call this?",
+    "hint": "This name is only on this computer. Your pen always uses the sticker number."
+  },
+  "reassign": {
+    "button": "Change sticker",
+    "prompt": "New sticker number",
+    "hint": "Type the number printed on the sticker, exactly as it appears.",
+    "confirm": "Move it",
+    "done": "Moved to the new sticker.",
+    "failed": "That could not be done. Please try again.",
+    "rejected": {
+      "notDigits": "Please type only the numbers on the sticker.",
+      "length": "Please type the number exactly as printed on the sticker, including any zeros at the start.",
+      "occupied": "There is already a recording on that sticker.",
+      "unchanged": "That is the sticker it is already on."
+    }
+  },
+  "deletePen": {
+    "confirm": "Delete “{{name}}” from your pen?",
+    "backupNotice": "A copy is saved to this computer first, so you can put it back later.",
+    "done": "Deleted. A copy is in your backups.",
+    "failed": "That could not be deleted. Nothing was changed."
+  },
+  "advancedTools": {
+    "title": "Advanced tools"
   }
 }

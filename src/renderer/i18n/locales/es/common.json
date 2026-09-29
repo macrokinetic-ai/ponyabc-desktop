@@ -13,7 +13,8 @@
     "cancel": "Cancelar",
     "retry": "Reintentar",
     "close": "Cerrar",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "save": "Guardar"
   },
   "penRoot": {
     "label": "Almacenamiento del lápiz",

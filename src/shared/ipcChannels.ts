@@ -27,6 +27,20 @@ export const IPC = {
 
   audioPreviewRead: 'ponyabc:audio:read',
 
+  // Recordings v2 — snapshot backups, restore, per-side delete, sticker reassign, labels.
+  recordingBackupCreate: 'ponyabc:recordingBackup:create',
+  recordingBackupList: 'ponyabc:recordingBackup:list',
+  recordingRestorePlan: 'ponyabc:recordingBackup:restore:plan',
+  recordingRestoreExecute: 'ponyabc:recordingBackup:restore:execute',
+  recordingDeleteFromPen: 'ponyabc:recordingBackup:deletePen',
+  recordingDeleteFromBackup: 'ponyabc:recordingBackup:deleteBackup',
+  recordingReassign: 'ponyabc:recordingBackup:reassign',
+  recordingLabelsGet: 'ponyabc:recordingBackup:labels:get',
+  recordingLabelSet: 'ponyabc:recordingBackup:labels:set',
+  recordingLegacyScan: 'ponyabc:recordingBackup:legacy:scan',
+  recordingLegacyMigrate: 'ponyabc:recordingBackup:legacy:migrate',
+  recordingBackupProgress: 'ponyabc:recordingBackup:progress',
+
   bookList: 'ponyabc:book:list',
   bookCatalogRefresh: 'ponyabc:book:catalog:refresh',
   bookAdd: 'ponyabc:book:add',

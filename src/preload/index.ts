@@ -78,7 +78,21 @@ const api: PonyAbcApi = {
 
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => subscribe(IPC.transferProgress, listener),
 
-  readAudioPreview: (params: { source: AudioSource; fileName: string }) => ipcRenderer.invoke(IPC.audioPreviewRead, params) as Promise<AudioPreviewResult>,
+  readAudioPreview: (params: { source: AudioSource; fileName: string; snapshotId?: string }) => ipcRenderer.invoke(IPC.audioPreviewRead, params) as Promise<AudioPreviewResult>,
+
+  recordingBackupCreate: () => ipcRenderer.invoke(IPC.recordingBackupCreate),
+  recordingBackupList: () => ipcRenderer.invoke(IPC.recordingBackupList),
+  recordingRestorePlan: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestorePlan, params),
+  recordingRestoreExecute: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestoreExecute, params),
+  recordingDeleteFromPen: (params: unknown) => ipcRenderer.invoke(IPC.recordingDeleteFromPen, params),
+  recordingDeleteFromBackup: (params: unknown) => ipcRenderer.invoke(IPC.recordingDeleteFromBackup, params),
+  recordingReassign: (params: unknown) => ipcRenderer.invoke(IPC.recordingReassign, params),
+  recordingLabelsGet: () => ipcRenderer.invoke(IPC.recordingLabelsGet),
+  recordingLabelSet: (params: unknown) => ipcRenderer.invoke(IPC.recordingLabelSet, params),
+  recordingLegacyScan: (params: unknown) => ipcRenderer.invoke(IPC.recordingLegacyScan, params),
+  recordingLegacyMigrate: (params: unknown) => ipcRenderer.invoke(IPC.recordingLegacyMigrate, params),
+  onRecordingBackupProgress: (listener: (event: { fileIndex: number; fileCount: number; fileName: string }) => void) =>
+    subscribe(IPC.recordingBackupProgress, listener),
 
   bookList: () => ipcRenderer.invoke(IPC.bookList) as Promise<BookListResult>,
   bookCatalogRefresh: () => ipcRenderer.invoke(IPC.bookCatalogRefresh) as Promise<BookListResult>,

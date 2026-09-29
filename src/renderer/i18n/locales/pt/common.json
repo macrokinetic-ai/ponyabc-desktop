@@ -13,7 +13,8 @@
     "cancel": "Cancelar",
     "retry": "Tentar novamente",
     "close": "Fechar",
-    "refresh": "Atualizar"
+    "refresh": "Atualizar",
+    "save": "Guardar"
   },
   "penRoot": {
     "label": "Armazenamento da caneta",

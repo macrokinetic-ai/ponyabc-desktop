@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Auf dem Computer speichern →",
     "sendToPen": "← An den Stift senden",
-    "replaceSticker": "Diesen Aufkleber mit ausgewähltem Audio ersetzen…"
+    "replaceSticker": "Diesen Aufkleber mit ausgewähltem Audio ersetzen…",
+    "play": "Abspielen",
+    "deleteFromPen": "Vom Stift löschen"
   },
   "transferPlan": {
     "title": "An den Stift senden — vor dem Senden prüfen",
@@ -84,5 +86,61 @@
     "errorTooLarge": "Diese Datei ist zu groß zum Vorhören.",
     "errorGeneric": "Datei konnte nicht abgespielt werden (nicht unterstützt oder nicht lesbar).",
     "penEncodingHint": "Dass es hier funktioniert, garantiert nicht, dass der Stift dieselbe Datei nach dem Senden abspielen kann."
+  },
+  "onPen": {
+    "title": "Auf Ihrem Stift",
+    "intro": "Die Aufnahmen, die Ihr Stift gerade enthält."
+  },
+  "backup": {
+    "title": "Sicherungen auf diesem Computer",
+    "intro": "Eine Sicherung bewahrt eine Kopie jeder Aufnahme, damit Sie sie später zurückspielen können.",
+    "button": "Meine Aufnahmen sichern",
+    "done": "{{count}} Aufnahme(n) gesichert.",
+    "none": "Noch keine Sicherung. Wählen Sie „Meine Aufnahmen sichern“.",
+    "choose": "Zu verwendende Sicherung:",
+    "countLabel": "{{count}} Aufnahme(n)",
+    "missing": "Diese Sicherung wurde nicht gefunden."
+  },
+  "restore": {
+    "button": "Zurück auf meinen Stift",
+    "reviewTitle": "Bevor wir sie zurückspielen",
+    "noClashes": "{{count}} Aufnahme(n) werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
+    "clashIntro": "Zu einigen dieser Nummern gibt es bereits eine Aufnahme auf dem Stift. Hören Sie beide an und wählen Sie.",
+    "fromBackup": "Aus der Sicherung:",
+    "onPen": "Jetzt auf dem Stift:",
+    "replace": "Die aus der Sicherung nehmen",
+    "keepPen": "Die vom Stift behalten",
+    "decideAll": "Bitte wählen Sie für jede oben.",
+    "confirm": "Zurückspielen",
+    "done": "{{count}} Aufnahme(n) zurück auf den Stift gespielt.",
+    "nothingToDo": "Alles aus dieser Sicherung ist bereits auf Ihrem Stift."
+  },
+  "label": {
+    "button": "Umbenennen",
+    "prompt": "Wie möchten Sie das nennen?",
+    "hint": "Dieser Name bleibt auf diesem Computer. Ihr Stift verwendet immer die Aufklebernummer."
+  },
+  "reassign": {
+    "button": "Aufkleber wechseln",
+    "prompt": "Neue Aufklebernummer",
+    "hint": "Tippen Sie die Nummer genau so ein, wie sie auf dem Aufkleber steht.",
+    "confirm": "Verschieben",
+    "done": "Auf den neuen Aufkleber verschoben.",
+    "failed": "Das hat nicht geklappt. Bitte erneut versuchen.",
+    "rejected": {
+      "notDigits": "Bitte nur die Ziffern vom Aufkleber eingeben.",
+      "length": "Bitte die Nummer genau wie gedruckt eingeben, samt führender Nullen.",
+      "occupied": "Auf diesem Aufkleber liegt bereits eine Aufnahme.",
+      "unchanged": "Das ist bereits der aktuelle Aufkleber."
+    }
+  },
+  "deletePen": {
+    "confirm": "„{{name}}“ vom Stift löschen?",
+    "backupNotice": "Vorher wird eine Kopie auf diesem Computer gespeichert, damit Sie sie zurückspielen können.",
+    "done": "Gelöscht. Eine Kopie liegt in Ihren Sicherungen.",
+    "failed": "Konnte nicht gelöscht werden. Es wurde nichts geändert."
+  },
+  "advancedTools": {
+    "title": "Erweiterte Werkzeuge"
   }
 }

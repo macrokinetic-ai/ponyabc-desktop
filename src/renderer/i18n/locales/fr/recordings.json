@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Enregistrer sur l'ordinateur →",
     "sendToPen": "← Envoyer au stylo",
-    "replaceSticker": "Remplacer cet autocollant avec l'audio sélectionné…"
+    "replaceSticker": "Remplacer cet autocollant avec l'audio sélectionné…",
+    "play": "Écouter",
+    "deleteFromPen": "Supprimer du stylo"
   },
   "transferPlan": {
     "title": "Envoyer au stylo — vérifiez avant d'envoyer",
@@ -84,5 +86,61 @@
     "errorTooLarge": "Ce fichier est trop volumineux pour être écouté.",
     "errorGeneric": "Impossible de lire ce fichier (non pris en charge ou illisible).",
     "penEncodingHint": "Une lecture réussie ici ne garantit pas que le stylo pourra lire le même fichier une fois envoyé."
+  },
+  "onPen": {
+    "title": "Sur votre stylo",
+    "intro": "Les enregistrements actuellement sur votre stylo."
+  },
+  "backup": {
+    "title": "Sauvegardes sur cet ordinateur",
+    "intro": "Une sauvegarde conserve une copie de chaque enregistrement, pour pouvoir les remettre plus tard.",
+    "button": "Sauvegarder mes enregistrements",
+    "done": "{{count}} enregistrement(s) sauvegardé(s).",
+    "none": "Aucune sauvegarde. Choisissez Sauvegarder mes enregistrements pour en créer une.",
+    "choose": "Sauvegarde à utiliser :",
+    "countLabel": "{{count}} enregistrement(s)",
+    "missing": "Cette sauvegarde est introuvable."
+  },
+  "restore": {
+    "button": "Les remettre sur mon stylo",
+    "reviewTitle": "Avant de les remettre",
+    "noClashes": "{{count}} enregistrement(s) seront ajoutés. Rien de ce qui est déjà sur le stylo ne changera.",
+    "clashIntro": "Certains de ces numéros ont déjà un enregistrement sur votre stylo. Écoutez les deux et choisissez lequel garder.",
+    "fromBackup": "Depuis la sauvegarde :",
+    "onPen": "Sur votre stylo :",
+    "replace": "Prendre celui de la sauvegarde",
+    "keepPen": "Garder celui du stylo",
+    "decideAll": "Choisissez pour chacun ci-dessus.",
+    "confirm": "Les remettre",
+    "done": "{{count}} enregistrement(s) remis sur votre stylo.",
+    "nothingToDo": "Tout ce que contient cette sauvegarde est déjà sur votre stylo."
+  },
+  "label": {
+    "button": "Renommer",
+    "prompt": "Comment voulez-vous l’appeler ?",
+    "hint": "Ce nom reste sur cet ordinateur. Votre stylo utilise toujours le numéro de la gommette."
+  },
+  "reassign": {
+    "button": "Changer de gommette",
+    "prompt": "Nouveau numéro de gommette",
+    "hint": "Tapez le numéro imprimé sur la gommette, exactement tel quel.",
+    "confirm": "Le déplacer",
+    "done": "Déplacé vers la nouvelle gommette.",
+    "failed": "Cela n'a pas pu être fait. Réessayez.",
+    "rejected": {
+      "notDigits": "Tapez uniquement les chiffres de la gommette.",
+      "length": "Tapez le numéro exactement comme il est imprimé, y compris les zéros du début.",
+      "occupied": "Cette gommette a déjà un enregistrement.",
+      "unchanged": "C'est déjà la gommette actuelle."
+    }
+  },
+  "deletePen": {
+    "confirm": "Supprimer « {{name}} » de votre stylo ?",
+    "backupNotice": "Une copie est d'abord enregistrée sur cet ordinateur, pour pouvoir la remettre plus tard.",
+    "done": "Supprimé. Une copie est dans vos sauvegardes.",
+    "failed": "Impossible de supprimer. Rien n'a été modifié."
+  },
+  "advancedTools": {
+    "title": "Outils avancés"
   }
 }

@@ -73,6 +73,20 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
       ],
     })),
     onPenVolumesChanged: vi.fn(() => () => {}),
+
+    // Recordings v2 — the backups panel calls these on mount.
+    recordingBackupCreate: vi.fn(async () => ({ status: 'ok', snapshotId: 's1', recordingCount: 2, dedupedCount: 0, failedCount: 0 })),
+    recordingBackupList: vi.fn(async () => []),
+    recordingRestorePlan: vi.fn(async () => ({ status: 'ok', snapshotId: 's1', items: [], missingFromBackup: [] })),
+    recordingRestoreExecute: vi.fn(async () => ({ status: 'ok', restored: [], replaced: [], skipped: [], unchanged: [], failed: [], penBackupSnapshotId: null })),
+    recordingDeleteFromPen: vi.fn(async () => ({ status: 'ok', deleted: [], failed: [], backupSnapshotId: 's1' })),
+    recordingDeleteFromBackup: vi.fn(async () => ({ status: 'ok', deleted: [], failed: [], backupSnapshotId: null })),
+    recordingReassign: vi.fn(async () => ({ status: 'ok', fileName: '0462.mp3', backupSnapshotId: 's1' })),
+    recordingLabelsGet: vi.fn(async () => ({})),
+    recordingLabelSet: vi.fn(async () => ({})),
+    recordingLegacyScan: vi.fn(async () => ({ groups: [], single: [], renamedCount: 0 })),
+    recordingLegacyMigrate: vi.fn(async () => ({ status: 'needs-choices', undecided: [] })),
+    onRecordingBackupProgress: vi.fn(() => () => {}),
     selectComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
     restoreComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
     listComputerFolder: vi.fn(async () => ({

@@ -13,7 +13,8 @@
     "cancel": "Abbrechen",
     "retry": "Erneut versuchen",
     "close": "Schließen",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "save": "Speichern"
   },
   "penRoot": {
     "label": "Stift-Speicher",

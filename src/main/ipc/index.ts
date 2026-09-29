@@ -10,6 +10,19 @@ import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from 
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
 import {
+  createRecordingBackup,
+  deleteRecordingsFromBackup,
+  deleteRecordingsFromPen,
+  executeRecordingRestore,
+  getRecordingLabels,
+  listRecordingBackups,
+  migrateLegacyRecordingBackups,
+  planRecordingRestore,
+  reassignRecording,
+  scanLegacyRecordingBackups,
+  setRecordingLabel,
+} from './recordingBackup';
+import {
   bookAdd,
   bookBackups,
   bookCatalogRefresh,
@@ -91,6 +104,19 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.replaceStickerExecute, (_event, params) => executeReplaceSticker(getWindow(), params));
 
   ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));
+
+  // Recordings v2. Every one of these re-resolves the pen itself; none trusts a stored path.
+  ipcMain.handle(IPC.recordingBackupCreate, () => createRecordingBackup(getWindow()));
+  ipcMain.handle(IPC.recordingBackupList, () => listRecordingBackups());
+  ipcMain.handle(IPC.recordingRestorePlan, (_event, params) => planRecordingRestore(params));
+  ipcMain.handle(IPC.recordingRestoreExecute, (_event, params) => executeRecordingRestore(getWindow(), params));
+  ipcMain.handle(IPC.recordingDeleteFromPen, (_event, params) => deleteRecordingsFromPen(params));
+  ipcMain.handle(IPC.recordingDeleteFromBackup, (_event, params) => deleteRecordingsFromBackup(params));
+  ipcMain.handle(IPC.recordingReassign, (_event, params) => reassignRecording(params));
+  ipcMain.handle(IPC.recordingLabelsGet, () => getRecordingLabels());
+  ipcMain.handle(IPC.recordingLabelSet, (_event, params) => setRecordingLabel(params));
+  ipcMain.handle(IPC.recordingLegacyScan, (_event, params) => scanLegacyRecordingBackups(params));
+  ipcMain.handle(IPC.recordingLegacyMigrate, (_event, params) => migrateLegacyRecordingBackups(params));
 
   ipcMain.handle(IPC.bookList, () => bookList());
   ipcMain.handle(IPC.bookCatalogRefresh, () => bookCatalogRefresh());

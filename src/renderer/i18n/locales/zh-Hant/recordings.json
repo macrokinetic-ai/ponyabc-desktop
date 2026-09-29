@@ -32,7 +32,9 @@
   "actions": {
     "saveToComputer": "儲存至電腦 →",
     "sendToPen": "← 傳送至點讀筆",
-    "replaceSticker": "用所選音訊替換此貼紙…"
+    "replaceSticker": "用所選音訊替換此貼紙…",
+    "play": "播放",
+    "deleteFromPen": "從點讀筆刪除"
   },
   "transferPlan": {
     "title": "傳送至點讀筆 — 傳送前請覆核",
@@ -81,5 +83,61 @@
     "errorTooLarge": "此檔案過大，無法試聽。",
     "errorGeneric": "無法播放此檔案（格式不支援或無法讀取）。",
     "penEncodingHint": "此處播放正常，不代表傳送到點讀筆後一定支援同一編碼。"
+  },
+  "onPen": {
+    "title": "點讀筆內的錄音",
+    "intro": "點讀筆現時儲存的錄音。"
+  },
+  "backup": {
+    "title": "此電腦的備份",
+    "intro": "備份會保存每段錄音的副本，日後可以放回點讀筆。",
+    "button": "備份我的錄音",
+    "done": "已備份 {{count}} 段錄音。",
+    "none": "尚未有備份。按「備份我的錄音」建立一個。",
+    "choose": "選擇備份：",
+    "countLabel": "{{count}} 段錄音",
+    "missing": "找不到該備份。"
+  },
+  "restore": {
+    "button": "放回點讀筆",
+    "reviewTitle": "放回之前",
+    "noClashes": "將會加入 {{count}} 段錄音，筆內原有的不會改動。",
+    "clashIntro": "部分號碼在點讀筆內已有錄音。可先試聽兩段，再決定保留哪一段。",
+    "fromBackup": "備份的一段：",
+    "onPen": "點讀筆現有的一段：",
+    "replace": "用備份嗰段",
+    "keepPen": "保留點讀筆嗰段",
+    "decideAll": "請為上面每一段作出選擇。",
+    "confirm": "放回去",
+    "done": "已將 {{count}} 段錄音放回點讀筆。",
+    "nothingToDo": "該備份的內容已全部在點讀筆內。"
+  },
+  "label": {
+    "button": "改名",
+    "prompt": "想改成甚麼名？",
+    "hint": "這個名只儲存在此電腦。點讀筆一律使用貼紙號碼。"
+  },
+  "reassign": {
+    "button": "更換貼紙",
+    "prompt": "新的貼紙號碼",
+    "hint": "請照貼紙上印的號碼輸入，一模一樣。",
+    "confirm": "移過去",
+    "done": "已移至新的貼紙。",
+    "failed": "未能完成，請再試一次。",
+    "rejected": {
+      "notDigits": "請只輸入貼紙上的數字。",
+      "length": "請照貼紙上印的號碼輸入，包括開頭的 0。",
+      "occupied": "該貼紙已經有錄音。",
+      "unchanged": "它已經在這張貼紙上。"
+    }
+  },
+  "deletePen": {
+    "confirm": "要從點讀筆刪除「{{name}}」嗎？",
+    "backupNotice": "刪除前會先在此電腦保存副本，日後仍可放回。",
+    "done": "已刪除，副本已存在備份中。",
+    "failed": "未能刪除，沒有任何改動。"
+  },
+  "advancedTools": {
+    "title": "進階工具"
   }
 }

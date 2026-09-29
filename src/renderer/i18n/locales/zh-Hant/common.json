@@ -13,7 +13,8 @@
     "cancel": "取消",
     "retry": "重試",
     "close": "關閉",
-    "refresh": "重新整理"
+    "refresh": "重新整理",
+    "save": "儲存"
   },
   "penRoot": {
     "label": "點讀筆儲存空間",

@@ -13,7 +13,8 @@
     "cancel": "Annulla",
     "retry": "Riprova",
     "close": "Chiudi",
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "save": "Salva"
   },
   "penRoot": {
     "label": "Archiviazione della penna",

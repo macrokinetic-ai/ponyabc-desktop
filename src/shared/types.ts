@@ -218,7 +218,9 @@ export interface ReplaceStickerSummary {
 // the renderer turns that into a Blob/object URL for a native <audio> element. Nothing is
 // streamed to or from a network location, and no path the renderer supplies is ever used
 // directly — only a name looked up inside an already-authorized directory.
-export type AudioSource = 'pen' | 'computer';
+/** Where a preview reads from. 'backup' is a snapshot folder, which is what makes "listen to
+ *  both before you choose" possible during a restore clash. */
+export type AudioSource = 'pen' | 'computer' | 'backup';
 
 export type AudioPreviewResult =
   | { status: 'ok'; base64: string; mimeType: string; sizeBytes: number }
@@ -846,7 +848,30 @@ export interface PonyAbcApi {
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => () => void;
 
   // Local-only preview playback — never modifies anything, never leaves the machine.
-  readAudioPreview: (params: { source: AudioSource; fileName: string }) => Promise<AudioPreviewResult>;
+  readAudioPreview: (params: { source: AudioSource; fileName: string; snapshotId?: string }) => Promise<AudioPreviewResult>;
+
+  // Recordings v2 — snapshot backups, restore, per-side delete, sticker reassign, labels.
+  // Types come from the main-process services so there is one definition, not a copy that
+  // drifts: a recording's filename IS its sticker number, and that fact has to stay exact.
+  recordingBackupCreate: () => Promise<import('../main/ipc/recordingBackup').BackupCreateResult>;
+  recordingBackupList: () => Promise<import('../main/ipc/recordingBackup').SnapshotSummary[]>;
+  recordingRestorePlan: (params: { snapshotId: string; fileNames?: string[] }) => Promise<import('../main/ipc/recordingBackup').RestorePlanResult>;
+  recordingRestoreExecute: (params: {
+    snapshotId: string;
+    plan: import('../main/services/recordingRestore').RestorePlan;
+    decisions: Record<string, import('../main/services/recordingRestore').RestoreDecision>;
+  }) => Promise<import('../main/ipc/recordingBackup').RestoreExecuteResult>;
+  recordingDeleteFromPen: (params: { fileNames: string[] }) => Promise<import('../main/ipc/recordingBackup').PenDeleteResult>;
+  recordingDeleteFromBackup: (params: { snapshotId: string; fileNames: string[] }) => Promise<import('../main/ipc/recordingBackup').BackupDeleteResult>;
+  recordingReassign: (params: { fileName: string; input: string }) => Promise<import('../main/ipc/recordingBackup').ReassignIpcResult>;
+  recordingLabelsGet: () => Promise<Record<string, string>>;
+  recordingLabelSet: (params: { fileName: string; label: string }) => Promise<Record<string, string>>;
+  recordingLegacyScan: (params: { folder: string }) => Promise<import('../main/services/recordingMigration').LegacyScan>;
+  recordingLegacyMigrate: (params: {
+    scan: import('../main/services/recordingMigration').LegacyScan;
+    choices: Record<string, string>;
+  }) => Promise<import('../main/services/recordingMigration').MigrationResult>;
+  onRecordingBackupProgress: (listener: (event: { fileIndex: number; fileCount: number; fileName: string }) => void) => () => void;
 
   // BOOK library — catalog browsing, local cache, and safe pen install/remove/restore.
   bookList: () => Promise<BookListResult>;

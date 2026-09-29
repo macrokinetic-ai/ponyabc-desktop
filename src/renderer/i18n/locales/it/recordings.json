@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Salva sul computer →",
     "sendToPen": "← Invia alla penna",
-    "replaceSticker": "Sostituisci questo adesivo con l'audio selezionato…"
+    "replaceSticker": "Sostituisci questo adesivo con l'audio selezionato…",
+    "play": "Ascolta",
+    "deleteFromPen": "Elimina dalla penna"
   },
   "transferPlan": {
     "title": "Invia alla penna — verifica prima di inviare",
@@ -84,5 +86,61 @@
     "errorTooLarge": "Questo file è troppo grande per l'ascolto.",
     "errorGeneric": "Impossibile riprodurre questo file (non supportato o illeggibile).",
     "penEncodingHint": "Una riproduzione corretta qui non garantisce che la penna possa riprodurre lo stesso file una volta inviato."
+  },
+  "onPen": {
+    "title": "Sulla tua penna",
+    "intro": "Le registrazioni che la penna contiene adesso."
+  },
+  "backup": {
+    "title": "Backup su questo computer",
+    "intro": "Un backup conserva una copia di ogni registrazione, così puoi rimetterle più avanti.",
+    "button": "Fai il backup delle registrazioni",
+    "done": "{{count}} registrazione/i salvate.",
+    "none": "Ancora nessun backup. Scegli Fai il backup delle registrazioni.",
+    "choose": "Backup da usare:",
+    "countLabel": "{{count}} registrazione/i",
+    "missing": "Backup non trovato."
+  },
+  "restore": {
+    "button": "Rimettile sulla penna",
+    "reviewTitle": "Prima di rimetterle",
+    "noClashes": "Verranno aggiunte {{count}} registrazione/i. Quello che è già sulla penna non cambia.",
+    "clashIntro": "Alcuni di questi numeri hanno già una registrazione sulla penna. Ascoltale entrambe e scegli quale tenere.",
+    "fromBackup": "Dal backup:",
+    "onPen": "Ora sulla penna:",
+    "replace": "Usa quella del backup",
+    "keepPen": "Tieni quella della penna",
+    "decideAll": "Scegli per ognuna qui sopra.",
+    "confirm": "Rimettile",
+    "done": "{{count}} registrazione/i rimesse sulla penna.",
+    "nothingToDo": "Tutto quel backup è già sulla penna."
+  },
+  "label": {
+    "button": "Rinomina",
+    "prompt": "Come vuoi chiamarla?",
+    "hint": "Questo nome resta su questo computer. La penna usa sempre il numero dell’adesivo."
+  },
+  "reassign": {
+    "button": "Cambia adesivo",
+    "prompt": "Nuovo numero adesivo",
+    "hint": "Scrivi il numero stampato sull’adesivo, esattamente così.",
+    "confirm": "Spostala",
+    "done": "Spostata sul nuovo adesivo.",
+    "failed": "Non è riuscito. Riprova.",
+    "rejected": {
+      "notDigits": "Scrivi solo i numeri dell’adesivo.",
+      "length": "Scrivi il numero come è stampato, compresi gli zeri iniziali.",
+      "occupied": "Quell’adesivo ha già una registrazione.",
+      "unchanged": "È già su quell’adesivo."
+    }
+  },
+  "deletePen": {
+    "confirm": "Eliminare «{{name}}» dalla penna?",
+    "backupNotice": "Prima viene salvata una copia su questo computer, così puoi rimetterla.",
+    "done": "Eliminata. Una copia è nei tuoi backup.",
+    "failed": "Non è stato possibile eliminarla. Nulla è cambiato."
+  },
+  "advancedTools": {
+    "title": "Strumenti avanzati"
   }
 }

@@ -13,7 +13,8 @@
     "cancel": "Cancel",
     "retry": "Retry",
     "close": "Close",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "save": "Save"
   },
   "penRoot": {
     "label": "Pen storage",

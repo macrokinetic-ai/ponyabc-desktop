@@ -32,7 +32,9 @@
   "actions": {
     "saveToComputer": "保存到电脑 →",
     "sendToPen": "← 发送到点读笔",
-    "replaceSticker": "用所选音频替换此贴纸…"
+    "replaceSticker": "用所选音频替换此贴纸…",
+    "play": "播放",
+    "deleteFromPen": "从点读笔删除"
   },
   "transferPlan": {
     "title": "发送到点读笔 — 发送前请核对",
@@ -81,5 +83,61 @@
     "errorTooLarge": "此文件过大，无法试听。",
     "errorGeneric": "无法播放此文件（格式不支持或无法读取）。",
     "penEncodingHint": "此处播放正常，不代表传送到点读笔后一定支持同一编码。"
+  },
+  "onPen": {
+    "title": "点读笔内的录音",
+    "intro": "点读笔当前保存的录音。"
+  },
+  "backup": {
+    "title": "此电脑的备份",
+    "intro": "备份会保存每段录音的副本，以后可以放回点读笔。",
+    "button": "备份我的录音",
+    "done": "已备份 {{count}} 段录音。",
+    "none": "尚未有备份。点「备份我的录音」建立一个。",
+    "choose": "选择备份：",
+    "countLabel": "{{count}} 段录音",
+    "missing": "找不到该备份。"
+  },
+  "restore": {
+    "button": "放回点读笔",
+    "reviewTitle": "放回之前",
+    "noClashes": "将会加入 {{count}} 段录音，笔内原有的不会改动。",
+    "clashIntro": "部分号码在点读笔内已有录音。可先试听两段，再决定保留哪一段。",
+    "fromBackup": "备份的一段：",
+    "onPen": "点读笔现有的一段：",
+    "replace": "用备份那段",
+    "keepPen": "保留点读笔那段",
+    "decideAll": "请为上面每一段作出选择。",
+    "confirm": "放回去",
+    "done": "已将 {{count}} 段录音放回点读笔。",
+    "nothingToDo": "该备份的内容已全部在点读笔内。"
+  },
+  "label": {
+    "button": "改名",
+    "prompt": "想改成什么名字？",
+    "hint": "这个名字只保存在此电脑。点读笔一律使用贴纸号码。"
+  },
+  "reassign": {
+    "button": "更换贴纸",
+    "prompt": "新的贴纸号码",
+    "hint": "请照贴纸上印的号码输入，一模一样。",
+    "confirm": "移过去",
+    "done": "已移至新的贴纸。",
+    "failed": "未能完成，请再试一次。",
+    "rejected": {
+      "notDigits": "请只输入贴纸上的数字。",
+      "length": "请照贴纸上印的号码输入，包括开头的 0。",
+      "occupied": "该贴纸已经有录音。",
+      "unchanged": "它已经在这张贴纸上。"
+    }
+  },
+  "deletePen": {
+    "confirm": "要从点读笔删除“{{name}}”吗？",
+    "backupNotice": "删除前会先在此电脑保存副本，以后仍可放回。",
+    "done": "已删除，副本已存在备份中。",
+    "failed": "未能删除，没有任何改动。"
+  },
+  "advancedTools": {
+    "title": "进阶工具"
   }
 }

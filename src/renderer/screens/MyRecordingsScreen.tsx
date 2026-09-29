@@ -17,6 +17,7 @@ import { ComputerFolderBar } from '../components/ComputerFolderBar';
 import { TransferPlanPanel } from '../components/TransferPlanPanel';
 import { ReplaceStickerPanel } from '../components/ReplaceStickerPanel';
 import { AudioPreviewBar } from '../components/AudioPreviewBar';
+import { RecordingBackupsPanel } from '../components/RecordingBackupsPanel';
 import { usePenRoot } from '../state/PenRootContext';
 import { useComputerFolder } from '../state/ComputerFolderContext';
 import { useTransferProgress } from '../hooks/useCopyProgress';
@@ -288,6 +289,13 @@ export function MyRecordingsScreen() {
     <div className="screen">
       <h1>{t('title')}</h1>
 
+      {/* What a parent came here to do: keep a copy, put one back, name it, move it, delete it.
+          The folder-to-folder transfer tools below are still here, one disclosure away, for
+          anyone who wants them. */}
+      <RecordingBackupsPanel />
+
+      <details className="advanced-details">
+        <summary>{t('advancedTools.title')}</summary>
       <div className="dual-pane">
         <section className="pane">
           <div className="pane__header">
@@ -419,6 +427,8 @@ export function MyRecordingsScreen() {
           </div>
         </section>
       </div>
+
+      </details>
 
       <AudioPreviewBar state={audioPreview.state} onTogglePlayPause={audioPreview.togglePlayPause} onSeek={audioPreview.seek} onClose={audioPreview.stop} />
 
