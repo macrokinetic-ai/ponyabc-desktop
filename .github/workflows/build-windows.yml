@@ -241,6 +241,102 @@ jobs:
           }
           Write-Host "TILE ASSETS VERIFIED: $($pkgAssets.Count) packaged images, none default art, all manifest references resolve."
 
+      - name: "Store package: verify version, checksum sidecar and EXE icon"
+        shell: pwsh
+        run: |
+          # Checks that were missing and each of which has already cost a real
+          # submission or near-miss:
+          #   1. manifest Identity/Version must equal package.json version + '.0'.
+          #      electron-builder derives it, so a mismatch means the build did not
+          #      pick up the bump and you would resubmit the SAME version.
+          #   2. the built version must be strictly GREATER than what is already live
+          #      in the Store. main once sat at 0.3.15 while 0.3.16.0 was published;
+          #      Partner Center rejects a version that is not higher.
+          #   3. the .sha256 sidecar must actually match the .appx it sits next to.
+          #   4. the packaged EXE must not carry default Electron artwork — the APPX
+          #      tiles and the EXE icon are separate assets and 10.1.1.11 was caused
+          #      by fixing one and not the other.
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+          $problems = @()
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'No .appx file found in release/' }
+
+          # --- 1. manifest version vs package.json ---------------------------------
+          $pkgVersion = (Get-Content 'package.json' -Raw | ConvertFrom-Json).version
+          $expectedManifestVersion = "$pkgVersion.0"
+
+          $extract = Join-Path $env:RUNNER_TEMP 'appx-version-check'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($appx.FullName, $extract)
+          [xml]$m = Get-Content (Join-Path $extract 'AppxManifest.xml') -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($m.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $actualManifestVersion = $m.SelectSingleNode('//a:Identity', $ns).GetAttribute('Version')
+
+          Write-Host "package.json version      : $pkgVersion"
+          Write-Host "manifest Identity/Version : $actualManifestVersion (expected $expectedManifestVersion)"
+          if ($actualManifestVersion -ne $expectedManifestVersion) {
+            $problems += "manifest Identity/Version is '$actualManifestVersion' but package.json implies '$expectedManifestVersion' — the build did not pick up the version bump"
+          }
+
+          # --- 2. must be higher than what is already published --------------------
+          $publishedFile = 'store-assets/PUBLISHED-STORE-VERSION'
+          if (Test-Path $publishedFile) {
+            $published = (Get-Content $publishedFile -Raw).Trim()
+            Write-Host "already live in the Store  : $published"
+            if ([version]$actualManifestVersion -le [version]$published) {
+              $problems += "built version $actualManifestVersion is NOT higher than the published $published — Partner Center will reject this package"
+            }
+          } else {
+            Write-Host "::warning::$publishedFile is missing — cannot check the version actually increases"
+          }
+
+          # --- 3. checksum sidecar matches the package -----------------------------
+          $sidecar = "$($appx.FullName).sha256"
+          if (-not (Test-Path $sidecar)) {
+            $problems += "checksum sidecar $([IO.Path]::GetFileName($sidecar)) is missing"
+          } else {
+            $recorded = ((Get-Content $sidecar -Raw).Trim() -split '\s+')[0]
+            $actual = (Get-FileHash $appx.FullName -Algorithm SHA256).Hash.ToLower()
+            Write-Host "appx sha256 (recomputed)  : $actual"
+            Write-Host "appx sha256 (sidecar)     : $($recorded.ToLower())"
+            if ($recorded.ToLower() -ne $actual) {
+              $problems += "sidecar checksum does not match the .appx — the sidecar is stale"
+            }
+          }
+
+          # --- 4. EXE icon is the real PonyABC icon --------------------------------
+          # A POSITIVE assertion against the known-good icon, not a blacklist of
+          # electron's default: nobody has a trustworthy hash for every default
+          # electron-builder ships, and a blacklist silently passes anything new.
+          # If the icon is intentionally changed, update the .expected file in the
+          # same commit — that makes the change explicit and reviewable.
+          $ico = 'build/icon.ico'
+          $icoExpectedFile = 'build/icon.ico.sha256.expected'
+          if (-not (Test-Path $ico)) {
+            $problems += "$ico is missing — the EXE would fall back to default Electron artwork"
+          } elseif (-not (Test-Path $icoExpectedFile)) {
+            $problems += "$icoExpectedFile is missing — cannot prove the EXE icon is the PonyABC one"
+          } else {
+            $icoHash = (Get-FileHash $ico -Algorithm SHA256).Hash.ToUpper()
+            $icoExpected = (Get-Content $icoExpectedFile -Raw).Trim().ToUpper()
+            Write-Host "build/icon.ico sha256     : $icoHash"
+            Write-Host "build/icon.ico expected   : $icoExpected"
+            if ($icoHash -ne $icoExpected) {
+              $problems += "build/icon.ico does not match the recorded PonyABC icon. If this change is intended, update $icoExpectedFile in the same commit."
+            }
+            if ((Get-Item $ico).Length -lt 20000) {
+              $problems += "build/icon.ico is only $((Get-Item $ico).Length) bytes — too small to hold the 16-256px sizes this app ships"
+            }
+          }
+
+          if ($problems.Count -gt 0) {
+            $problems | ForEach-Object { Write-Host "::error::$_" }
+            throw 'VERSION / CHECKSUM / ICON VERIFICATION FAILED — see above.'
+          }
+          Write-Host "VERIFIED: version $actualManifestVersion is correct and higher than the published release, sidecar matches, EXE icon is custom."
+
       # --- 3. INSTALLATION — runs the ACTUAL delivered 1-install.ps1, not a parallel CI-only ------
       #        reimplementation, so a passing CI run is real evidence the tester's own script ----
       #        works, not just that installation is possible in general. --------------------------
