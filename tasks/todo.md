@@ -36,10 +36,10 @@ order, put them in the manual, and assemble one hand-over folder.
       never launches anything, never runs preflight, off unless the env var is set
 - [x] 4. Scenario-driven capture script (one Electron launch per state group, both locales)
 - [x] 5. Capture all 38, look at every one
-- [ ] 6. Put the numbered screenshots into both manuals; regenerate both PDFs
-- [ ] 7. Assemble ~/Documents/AI-Reports/manual-0.3.17/ (screenshots/, 2 PDFs,
+- [x] 6. Put the numbered screenshots into both manuals; regenerate both PDFs
+- [x] 7. Assemble ~/Documents/AI-Reports/manual-0.3.17/ (screenshots/, 2 PDFs,
       whats-new-0.3.17.md, index.md with a one-line description per shot in both languages)
-- [ ] 8. Tests, typecheck, lint, build; report + INDEX.md
+- [x] 8. Tests, typecheck, lint, build; report + INDEX.md
 
 ## Rules held
 
@@ -47,3 +47,34 @@ order, put them in the manual, and assemble one hand-over folder.
 - The demo paths are off unless an env var is set, and the firmware one additionally
   refuses to run in a packaged build.
 - No firmware is published, nothing is submitted, no Partner Center.
+
+## Review
+
+All nineteen screens were captured in both languages — 38 pictures, none missing. They were
+taken on Windows, in the repo's own Windows job, because the firmware wizard renders on Windows
+only: on macOS that screen is a single "this needs Windows" banner, so five of the nineteen
+exist nowhere else.
+
+The app did real work in every shot. `scripts/make-demo-pen.mjs` builds a throwaway pen folder
+and `PONYABC_TEST_VOLUMES_ROOT` points the app's own volume scan at it, so a real pen plugged
+into the same machine is invisible to the app while a capture runs. The recordings are really
+backed up, really relabelled, really restored, and the "fix my pen's book list" prompt appears
+because the fixture's index really is one record short.
+
+Two screens cannot be produced that way, and both are handled in the demo layer only:
+
+- A sync has no catalogue to download from, so a demo sync reports the completion and the
+  "restart your pen" notice the real one produces.
+- The firmware result screens would mean flashing a real pen to take a picture.
+  `demoFirmware.ts` hands the wizard an outcome directly: it launches nothing, runs no
+  preflight deletion, touches no disk, and refuses outright in a packaged build — pinned by
+  `tests/unit/demoFirmware.test.ts`.
+
+Photographing the screens found six wording faults that reading the code had not, all now
+fixed in all eight languages. They are listed in the report.
+
+One picture is still missing and can only be taken by hand: a real pen being written to, for
+section 3 of both manuals. The placeholder is still marked in both.
+
+Verified: typecheck clean, 674 tests pass, build clean, and the capture itself reports
+38 captured / 0 failed / 0 skipped.
