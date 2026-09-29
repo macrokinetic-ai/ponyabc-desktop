@@ -209,6 +209,16 @@ describe('BookLibraryScreen — dual pane', () => {
   });
 });
 
+/** Resolves once bookList has gone one full macrotask without being called again. */
+async function settleBookListCalls(): Promise<void> {
+  const calls = () => (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
+  for (let i = 0; i < 20; i++) {
+    const before = calls();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (calls() === before) return;
+  }
+}
+
 describe('BookLibraryScreen — status legend', () => {
   it('is collapsed by default, so it never duplicates a row label in the DOM', async () => {
     await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
@@ -360,6 +370,11 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
   it('an offline UI-language switch updates the displayed name instantly, with no additional bookList/bookCatalogRefresh calls', async () => {
     await renderScreen();
+    // Mount legitimately lists twice — once on mount, once when the pen-root scan resolves — and
+    // which of those has landed by now depends on machine speed. Wait for the count to stop
+    // moving before taking the baseline, or the second call gets attributed to the language
+    // switch on a slow runner. (It did, on Windows CI.)
+    await settleBookListCalls();
     const listCallsBefore = (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
     const refreshCallsBefore = (window.ponyabc.bookCatalogRefresh as ReturnType<typeof vi.fn>).mock.calls.length;
 
