@@ -1,6 +1,6 @@
 {
   "title": "Minhas gravações",
-  "emptyState": "Nenhuma gravação DIY encontrada na caneta.",
+  "emptyState": "Ainda não há gravações na sua caneta.",
   "computerEmptyState": "Não há ficheiros .mp3 nesta pasta.",
   "selectAll": "Selecionar tudo",
   "selectedCount": "{{count}} selecionado(s)",

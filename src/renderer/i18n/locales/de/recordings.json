@@ -1,6 +1,6 @@
 {
   "title": "Meine Aufnahmen",
-  "emptyState": "Keine DIY-Aufnahmen auf dem Stift gefunden.",
+  "emptyState": "Auf Ihrem Stift sind noch keine Aufnahmen.",
   "computerEmptyState": "Keine .mp3-Dateien in diesem Ordner.",
   "selectAll": "Alle auswählen",
   "selectedCount": "{{count}} ausgewählt",

@@ -1,6 +1,6 @@
 {
   "title": "Le mie registrazioni",
-  "emptyState": "Nessuna registrazione DIY trovata sulla penna.",
+  "emptyState": "Sulla penna non ci sono ancora registrazioni.",
   "computerEmptyState": "Nessun file .mp3 in questa cartella.",
   "selectAll": "Seleziona tutto",
   "selectedCount": "{{count}} selezionato/i",

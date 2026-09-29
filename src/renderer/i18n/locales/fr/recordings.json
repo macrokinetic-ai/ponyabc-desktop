@@ -1,6 +1,6 @@
 {
   "title": "Mes enregistrements",
-  "emptyState": "Aucun enregistrement DIY trouvé sur le stylo.",
+  "emptyState": "Il n'y a pas encore d'enregistrement sur votre stylo.",
   "computerEmptyState": "Aucun fichier .mp3 dans ce dossier.",
   "selectAll": "Tout sélectionner",
   "selectedCount": "{{count}} sélectionné(s)",

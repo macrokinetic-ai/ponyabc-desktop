@@ -1,6 +1,6 @@
 {
   "title": "Mis grabaciones",
-  "emptyState": "No se encontraron grabaciones DIY en el lápiz.",
+  "emptyState": "Todavía no hay grabaciones en su lápiz.",
   "computerEmptyState": "No hay archivos .mp3 en esta carpeta.",
   "selectAll": "Seleccionar todo",
   "selectedCount": "{{count}} seleccionado(s)",

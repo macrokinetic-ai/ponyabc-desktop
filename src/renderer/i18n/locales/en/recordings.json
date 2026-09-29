@@ -1,6 +1,6 @@
 {
   "title": "My Recordings",
-  "emptyState": "No DIY recordings found on the pen.",
+  "emptyState": "There are no recordings on your pen yet.",
   "computerEmptyState": "No .mp3 files in this folder.",
   "selectAll": "Select all",
   "selectedCount": "{{count}} selected",

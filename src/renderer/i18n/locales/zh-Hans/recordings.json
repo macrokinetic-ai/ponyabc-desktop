@@ -1,6 +1,6 @@
 {
   "title": "我的录音",
-  "emptyState": "点读笔上未找到 DIY 录音。",
+  "emptyState": "点读笔内尚未有录音。",
   "computerEmptyState": "此文件夹内没有 .mp3 文件。",
   "selectAll": "全选",
   "selectedCount": "已选择 {{count}} 个",
