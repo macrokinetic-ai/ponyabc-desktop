@@ -2,7 +2,7 @@
 
 Everything worth learning from a real pen, in one sitting, highest-risk first.
 
-**Total: about 2 hours 15 minutes**, of which roughly 50 minutes is waiting for copies at the
+**Total: about 2 hours 20 minutes**, of which roughly 50 minutes is waiting for copies at the
 pen's ~1 MB/s. Bring something else to do during steps 3 and 7.
 
 ## Before you start
@@ -124,55 +124,90 @@ important possible result of this session.
 
 ---
 
-# Part 3 — books (≈40 min)
+# Part 3 — books (≈45 min)
 
-## Step 7 — add a large book and watch the estimate (≈25 min)
+The BOOK screen is now one button. There are no checkboxes, no per-book Add, and **no way to
+delete a book** — if you find one, that is a bug worth telling me about immediately.
 
-1. [ ] Pick a book of about 1 GB. Before it starts, the app says **"about ___ minutes"**.
-2. [ ] Start it and note the real time: ____ minutes.
+## Step 7 — the summary, before you press anything (≈2 min)
 
-|                                                                        |      |
-| ---------------------------------------------------------------------- | ---- |
-| Was the estimate close, and never optimistic?                          | ____ |
-| Did the progress bar move steadily?                                    | ____ |
-| Did "time remaining" settle down and count down sensibly?              | ____ |
-| Did the PC stay awake on its own?                                      | ____ |
-| Did the "Please don't unplug your pen" notice stay visible throughout? | ____ |
+1. [ ] Connect the pen and open **BOOK Library**.
 
-## Step 8 — update a book you already have (≈10 min)
+|                                                                         |      |
+| ----------------------------------------------------------------------- | ---- |
+| Does it say **"Your pen is connected"**?                                | ____ |
+| Does the summary read as a sentence you would say out loud?             | ____ |
+| Does the number of books match what is actually on the pen?             | ____ |
+| Does it estimate a time before you press anything?                      | ____ |
+| Any "(s)" anywhere, or a size like "797.3 MB"? _(there should be none)_ | ____ |
 
-1. [ ] Pick a book already on the pen and choose **Update**, then **Replace**.
+## Step 8 — sync (≈25 min, depending on what is due)
 
-|                                                                    |      |
-| ------------------------------------------------------------------ | ---- |
-| Does it finish and say **"All done! Your book has been updated."** | ____ |
-| Does it **not** tell you to restart the pen?                       | ____ |
-| Does that book still play without restarting?                      | ____ |
+1. [ ] Press **Sync books**. Note the estimate it gave: ____ minutes.
+2. [ ] Leave it running. **Take a photo of the screen while it is working** — this is the one
+       screenshot the manual still needs.
+3. [ ] Note the real time taken: ____ minutes.
 
-_A same-name replacement keeps the book's position, so no restart is needed. If it asks you to
-restart, that is a bug — tell me._
+|                                                                   |      |
+| ----------------------------------------------------------------- | ---- |
+| Was the estimate close, and never optimistic?                     | ____ |
+| Did the "Please don't unplug your pen" notice stay up throughout? | ____ |
+| Did the progress bar and the count-down move sensibly?            | ____ |
+| Did the computer stay awake on its own?                           | ____ |
+| Did smaller books finish first?                                   | ____ |
+| At the end: **"All done! Please unplug your pen…"**               | ____ |
 
-## Step 9 — "Fix my pen's book list" (≈5 min)
+4. [ ] Unplug, restart the pen, and try a book that was added: ____
 
-1. [ ] Close the app. In File Explorer, **copy any `.axb` into `BOOK\` by hand** (or delete one —
-       keep a copy).
+## Step 9 — sync again with nothing to do (≈2 min)
+
+1. [ ] Reconnect and open **BOOK Library**.
+
+|                                                              |      |
+| ------------------------------------------------------------ | ---- |
+| Does it say **"All your books are up to date."**?            | ____ |
+| Is **Sync books** greyed out?                                | ____ |
+| Does **Check for new books** work and update "Last checked"? | ____ |
+
+## Step 10 — not enough space (≈5 min)
+
+_Only if the pen is nearly full, or you can fill it. Skip if awkward._
+
+1. [ ] Fill the pen (copy a large file onto it with Explorer), then press **Sync books**.
+
+|                                                               |      |
+| ------------------------------------------------------------- | ---- |
+| Does it refuse **before** writing anything?                   | ____ |
+| Does it say how much more space is needed, as a round number? | ____ |
+| Does **Go to My Recordings** work?                            | ____ |
+| Is the pen unchanged afterwards?                              | ____ |
+
+## Step 11 — books we did not put there (≈3 min)
+
+1. [ ] Copy any non-PonyABC `.axb` onto the pen with Explorer, reconnect, and open the app.
+2. [ ] Open **See book list**.
+
+|                                                          |      |
+| -------------------------------------------------------- | ---- |
+| Is it listed under **"Other books (not from PonyABC)"**? | ____ |
+| Does the app leave it completely alone after a sync?     | ____ |
+
+## Step 12 — "Fix my pen's book list" (≈5 min)
+
+1. [ ] Close the app. With Explorer, **delete one book** from `BOOK\` (keep a copy).
 2. [ ] Open the app and connect the pen.
 
-|                                                                 |      |
-| --------------------------------------------------------------- | ---- |
-| Does it offer **"Fix my pen's book list"**?                     | ____ |
-| Does it do nothing until you press it?                          | ____ |
-| After pressing it and restarting the pen, does everything play? | ____ |
+|                                                              |      |
+| ------------------------------------------------------------ | ---- |
+| Does it offer **"Fix my pen's book list"**?                  | ____ |
+| Does it do nothing until you press it?                       | ____ |
+| After pressing and restarting the pen, does everything play? | ____ |
 
-## Step 10 — you cannot delete a book (≈1 min)
+## Step 13 — you cannot delete a book (≈1 min)
 
-1. [ ] Look over the BOOK Library screen with books on the pen.
-
-|                                                                        |      |
-| ---------------------------------------------------------------------- | ---- |
-| Is there **any** way to remove or delete a book? There should be none. | ____ |
-
----
+|                                                                                         |      |
+| --------------------------------------------------------------------------------------- | ---- |
+| Is there **any** way on the screen to remove or delete a book? _(there should be none)_ | ____ |
 
 # Part 4 — recordings (≈20 min)
 
