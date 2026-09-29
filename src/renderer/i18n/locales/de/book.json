@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Andere Bücher (nicht von PonyABC)",
-    "body": "Diese stammen von woanders. Diese App lässt sie unverändert.",
-    "count": "{{count}} Buch/Bücher"
+    "body": "Diese stammen von woanders. Diese App lässt sie unverändert."
   },
   "newBooks": {
     "title": "Neue Bücher",
@@ -214,20 +213,30 @@
     "disconnected": "Bitte schließen Sie Ihren Stift mit dem USB-Kabel an"
   },
   "sync": {
-    "has": "Auf Ihrem Stift sind {{count}} PonyABC-Bücher.",
     "hasNone": "Auf Ihrem Stift sind noch keine PonyABC-Bücher.",
-    "available": "{{added}} neue(s) Buch/Bücher und {{updated}} Aktualisierung(en) verfügbar. Etwa {{minutes}} Minuten.",
-    "availableShort": "{{added}} neue(s) Buch/Bücher und {{updated}} Aktualisierung(en) verfügbar. Etwa eine Minute.",
     "upToDate": "Alle Ihre Bücher sind aktuell.",
     "button": "Bücher abgleichen",
     "working": "Wird abgeglichen…",
     "needPen": "Schließen Sie Ihren Stift an, um abzugleichen.",
-    "stoppedNoSpace": "Ihr Stift ist voll, daher haben wir aufgehört. Die fertigen Bücher sind darauf."
+    "stoppedNoSpace": "Ihr Stift ist voll, daher haben wir aufgehört. Die fertigen Bücher sind darauf.",
+    "has_one": "Auf Ihrem Stift ist {{count}} PonyABC-Buch.",
+    "has_other": "Auf Ihrem Stift sind {{count}} PonyABC-Bücher.",
+    "newBooks_one": "{{count}} neues Buch",
+    "newBooks_other": "{{count}} neue Bücher",
+    "updates_one": "{{count}} Aktualisierung",
+    "updates_other": "{{count}} Aktualisierungen",
+    "availableBoth": "{{news}} und {{updates}} verfügbar.",
+    "availableAdds": "{{news}} verfügbar.",
+    "availableUpdates": "{{updates}} verfügbar.",
+    "time_one": "Etwa {{count}} Minute.",
+    "time_other": "Etwa {{count}} Minuten.",
+    "timeShort": "Etwa eine Minute."
   },
   "space": {
     "title": "Ihr Stift hat nicht genug Platz",
     "body": "Es fehlen etwa {{amount}}. Sichern Sie Ihre Aufnahmen, löschen Sie nicht mehr benötigte, und gleichen Sie dann erneut ab.",
-    "goToRecordings": "Zu Meine Aufnahmen"
+    "goToRecordings": "Zu Meine Aufnahmen",
+    "unreadable": "Der freie Speicher auf Ihrem Stift konnte nicht geprüft werden. Ziehen Sie ihn ab, schließen Sie ihn wieder an und versuchen Sie es erneut."
   },
   "list": {
     "toggle": "Bücherliste ansehen",
@@ -237,5 +246,8 @@
     "other": "Andere Bücher (nicht von PonyABC)",
     "otherBody": "Diese stammen von woanders. Diese App ändert sie nie.",
     "none": "Keine"
+  },
+  "size": {
+    "about": "etwa {{size}}"
   }
 }

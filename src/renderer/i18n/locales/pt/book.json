@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Outros livros (não são da PonyABC)",
-    "body": "Vieram de outro lado. Esta aplicação deixa-os tal como estão.",
-    "count": "{{count}} livro(s)"
+    "body": "Vieram de outro lado. Esta aplicação deixa-os tal como estão."
   },
   "newBooks": {
     "title": "Livros novos",
@@ -214,20 +213,30 @@
     "disconnected": "Ligue a caneta com o cabo USB"
   },
   "sync": {
-    "has": "A sua caneta tem {{count}} livro(s) PonyABC.",
     "hasNone": "Ainda não há livros PonyABC na sua caneta.",
-    "available": "Há {{added}} livro(s) novo(s) e {{updated}} atualização(ões). Cerca de {{minutes}} minutos.",
-    "availableShort": "Há {{added}} livro(s) novo(s) e {{updated}} atualização(ões). Cerca de um minuto.",
     "upToDate": "Todos os seus livros estão atualizados.",
     "button": "Sincronizar livros",
     "working": "A sincronizar…",
     "needPen": "Ligue a caneta para sincronizar.",
-    "stoppedNoSpace": "A caneta encheu, por isso parámos. Os livros concluídos estão na caneta."
+    "stoppedNoSpace": "A caneta encheu, por isso parámos. Os livros concluídos estão na caneta.",
+    "has_one": "A sua caneta tem {{count}} livro PonyABC.",
+    "has_other": "A sua caneta tem {{count}} livros PonyABC.",
+    "newBooks_one": "{{count}} livro novo",
+    "newBooks_other": "{{count}} livros novos",
+    "updates_one": "{{count}} atualização",
+    "updates_other": "{{count}} atualizações",
+    "availableBoth": "Há {{news}} e {{updates}}.",
+    "availableAdds": "Há {{news}}.",
+    "availableUpdates": "Há {{updates}}.",
+    "time_one": "Cerca de {{count}} minuto.",
+    "time_other": "Cerca de {{count}} minutos.",
+    "timeShort": "Cerca de um minuto."
   },
   "space": {
     "title": "A sua caneta não tem espaço suficiente",
     "body": "Faltam cerca de {{amount}}. Faça uma cópia das gravações, apague as que já não precisa e sincronize outra vez.",
-    "goToRecordings": "Ir para As minhas gravações"
+    "goToRecordings": "Ir para As minhas gravações",
+    "unreadable": "Não foi possível verificar o espaço livre da sua caneta. Desligue-a, volte a ligá-la e tente novamente."
   },
   "list": {
     "toggle": "Ver a lista de livros",
@@ -237,5 +246,8 @@
     "other": "Outros livros (não são da PonyABC)",
     "otherBody": "Vieram de outro lado. Esta aplicação nunca os altera.",
     "none": "Nenhum"
+  },
+  "size": {
+    "about": "cerca de {{size}}"
   }
 }

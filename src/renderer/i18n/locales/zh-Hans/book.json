@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "其他书本（并非来自 PonyABC）",
-    "body": "这些书本来自其他来源，本程序不会作任何改动。",
-    "count": "{{count}} 本"
+    "body": "这些书本来自其他来源，本程序不会作任何改动。"
   },
   "newBooks": {
     "title": "新书",
@@ -214,20 +213,26 @@
     "disconnected": "请用 USB 线连接点读笔"
   },
   "sync": {
-    "has": "点读笔内有 {{count}} 本 PonyABC 书本。",
     "hasNone": "点读笔内尚未有 PonyABC 书本。",
-    "available": "有 {{added}} 本新书和 {{updated}} 项更新，约需 {{minutes}} 分钟。",
-    "availableShort": "有 {{added}} 本新书和 {{updated}} 项更新，约需一分钟。",
     "upToDate": "所有书本已是最新。",
     "button": "同步书本",
     "working": "同步中…",
     "needPen": "请先连接点读笔才能同步。",
-    "stoppedNoSpace": "点读笔已满，因此已停止。已完成的书本仍在笔内。"
+    "stoppedNoSpace": "点读笔已满，因此已停止。已完成的书本仍在笔内。",
+    "has_other": "点读笔内有 {{count}} 本 PonyABC 书本。",
+    "newBooks_other": "{{count}} 本新书",
+    "updates_other": "{{count}} 项更新",
+    "availableBoth": "可加入{{news}}，并更新{{updates}}。",
+    "availableAdds": "可加入{{news}}。",
+    "availableUpdates": "可更新{{updates}}。",
+    "time_other": "约需 {{count}} 分钟。",
+    "timeShort": "约需一分钟。"
   },
   "space": {
     "title": "点读笔空间不足",
     "body": "尚欠约 {{amount}}。请先备份录音，删除不再需要的部分，然后再同步。",
-    "goToRecordings": "前往“我的录音”"
+    "goToRecordings": "前往“我的录音”",
+    "unreadable": "无法检查点读笔的剩余空间。请拔出点读笔，重新插入后再试。"
   },
   "list": {
     "toggle": "查看书本列表",
@@ -237,5 +242,8 @@
     "other": "其他书本（并非来自 PonyABC）",
     "otherBody": "这些书本来自其他来源，本程序不会作任何改动。",
     "none": "没有"
+  },
+  "size": {
+    "about": "约 {{size}}"
   }
 }

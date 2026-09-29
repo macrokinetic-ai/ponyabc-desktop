@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Autres livres (pas de PonyABC)",
-    "body": "Ils viennent d'ailleurs. Cette application n'y touche pas.",
-    "count": "{{count}} livre(s)"
+    "body": "Ils viennent d'ailleurs. Cette application n'y touche pas."
   },
   "newBooks": {
     "title": "Nouveaux livres",
@@ -214,20 +213,30 @@
     "disconnected": "Branchez votre stylo avec son câble USB"
   },
   "sync": {
-    "has": "Votre stylo a {{count}} livre(s) PonyABC.",
     "hasNone": "Il n'y a pas encore de livre PonyABC sur votre stylo.",
-    "available": "{{added}} nouveau(x) livre(s) et {{updated}} mise(s) à jour sont disponibles. Environ {{minutes}} minutes.",
-    "availableShort": "{{added}} nouveau(x) livre(s) et {{updated}} mise(s) à jour sont disponibles. Environ une minute.",
     "upToDate": "Tous vos livres sont à jour.",
     "button": "Synchroniser les livres",
     "working": "Synchronisation…",
     "needPen": "Branchez votre stylo pour synchroniser.",
-    "stoppedNoSpace": "Votre stylo est plein, nous avons arrêté. Les livres terminés sont bien dessus."
+    "stoppedNoSpace": "Votre stylo est plein, nous avons arrêté. Les livres terminés sont bien dessus.",
+    "has_one": "Votre stylo a {{count}} livre PonyABC.",
+    "has_other": "Votre stylo a {{count}} livres PonyABC.",
+    "newBooks_one": "{{count}} nouveau livre",
+    "newBooks_other": "{{count}} nouveaux livres",
+    "updates_one": "{{count}} mise à jour",
+    "updates_other": "{{count}} mises à jour",
+    "availableBoth": "{{news}} et {{updates}} sont disponibles.",
+    "availableAdds": "{{news}} disponible(s).",
+    "availableUpdates": "{{updates}} disponible(s).",
+    "time_one": "Environ {{count}} minute.",
+    "time_other": "Environ {{count}} minutes.",
+    "timeShort": "Environ une minute."
   },
   "space": {
     "title": "Votre stylo n'a pas assez de place",
     "body": "Il manque environ {{amount}}. Sauvegardez vos enregistrements, supprimez ceux dont vous n’avez plus besoin, puis synchronisez à nouveau.",
-    "goToRecordings": "Aller à Mes enregistrements"
+    "goToRecordings": "Aller à Mes enregistrements",
+    "unreadable": "Nous n'avons pas pu vérifier l'espace libre de votre stylo. Débranchez-le, rebranchez-le et réessayez."
   },
   "list": {
     "toggle": "Voir la liste des livres",
@@ -237,5 +246,8 @@
     "other": "Autres livres (pas de PonyABC)",
     "otherBody": "Ils viennent d'ailleurs. Cette application n'y touche jamais.",
     "none": "Aucun"
+  },
+  "size": {
+    "about": "environ {{size}}"
   }
 }

@@ -110,6 +110,8 @@ export function onDiskBytes(bytes: number, clusterBytes: number | null): number 
 
 export interface SpaceCheck {
   ok: boolean;
+  /** Set when the check could not be made at all, rather than made and failed. */
+  reason?: 'not-enough-space' | 'unreadable';
   /** How much more room is needed. 0 when it fits. */
   shortfallBytes: number;
   /** The most the card is ever asked to hold during the sync, over what is on it now. */
@@ -159,12 +161,15 @@ export function checkSpace(params: {
 
   const needed = peak + margin;
   if (freeBytes === null) {
-    // Nothing to compare against. Proceed rather than refuse on a number we could not read —
-    // the write itself still fails safely, and the mid-sync handling catches it.
-    return { ok: true, shortfallBytes: 0, peakBytes: peak, netBytes: held, marginBytes: margin };
+    // We cannot tell whether it fits, so we do not start. The requirement is that a parent
+    // knows BEFORE anything is written — and "we could not check" is an answer they can act on,
+    // whereas discovering it half-way through a twenty-minute copy is not.
+    return { ok: false, reason: 'unreadable', shortfallBytes: 0, peakBytes: peak, netBytes: held, marginBytes: margin };
   }
+  const fits = needed <= freeBytes;
   return {
-    ok: needed <= freeBytes,
+    ok: fits,
+    ...(fits ? {} : { reason: 'not-enough-space' as const }),
     shortfallBytes: Math.max(needed - freeBytes, 0),
     peakBytes: peak,
     netBytes: held,

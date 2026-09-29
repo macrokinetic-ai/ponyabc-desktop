@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Altri libri (non di PonyABC)",
-    "body": "Vengono da altrove. Questa app non li tocca.",
-    "count": "{{count}} libro/i"
+    "body": "Vengono da altrove. Questa app non li tocca."
   },
   "newBooks": {
     "title": "Libri nuovi",
@@ -214,20 +213,30 @@
     "disconnected": "Collega la penna con il suo cavo USB"
   },
   "sync": {
-    "has": "Sulla penna ci sono {{count}} libri PonyABC.",
     "hasNone": "Sulla penna non ci sono ancora libri PonyABC.",
-    "available": "Ci sono {{added}} libro/i nuovo/i e {{updated}} aggiornamento/i. Circa {{minutes}} minuti.",
-    "availableShort": "Ci sono {{added}} libro/i nuovo/i e {{updated}} aggiornamento/i. Circa un minuto.",
     "upToDate": "Tutti i tuoi libri sono aggiornati.",
     "button": "Sincronizza i libri",
     "working": "Sincronizzazione…",
     "needPen": "Collega la penna per sincronizzare.",
-    "stoppedNoSpace": "La penna si è riempita, quindi ci siamo fermati. I libri completati sono sulla penna."
+    "stoppedNoSpace": "La penna si è riempita, quindi ci siamo fermati. I libri completati sono sulla penna.",
+    "has_one": "Sulla penna c’è {{count}} libro PonyABC.",
+    "has_other": "Sulla penna ci sono {{count}} libri PonyABC.",
+    "newBooks_one": "{{count}} libro nuovo",
+    "newBooks_other": "{{count}} libri nuovi",
+    "updates_one": "{{count}} aggiornamento",
+    "updates_other": "{{count}} aggiornamenti",
+    "availableBoth": "Ci sono {{news}} e {{updates}}.",
+    "availableAdds": "Ci sono {{news}}.",
+    "availableUpdates": "Ci sono {{updates}}.",
+    "time_one": "Circa {{count}} minuto.",
+    "time_other": "Circa {{count}} minuti.",
+    "timeShort": "Circa un minuto."
   },
   "space": {
     "title": "La penna non ha spazio a sufficienza",
     "body": "Mancano circa {{amount}}. Fai un backup delle registrazioni, elimina quelle che non ti servono più, poi sincronizza di nuovo.",
-    "goToRecordings": "Vai a Le mie registrazioni"
+    "goToRecordings": "Vai a Le mie registrazioni",
+    "unreadable": "Non è stato possibile controllare lo spazio libero della penna. Scollegala, ricollegala e riprova."
   },
   "list": {
     "toggle": "Vedi l’elenco dei libri",
@@ -237,5 +246,8 @@
     "other": "Altri libri (non di PonyABC)",
     "otherBody": "Vengono da altrove. Questa app non li modifica mai.",
     "none": "Nessuno"
+  },
+  "size": {
+    "about": "circa {{size}}"
   }
 }

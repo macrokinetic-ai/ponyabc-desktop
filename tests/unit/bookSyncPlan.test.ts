@@ -230,10 +230,19 @@ describe('will it fit — measured at the peak, not the net', () => {
     expect(justEnough.shortfallBytes).toBe(0);
   });
 
-  it('proceeds when free space could not be read, rather than refusing on a failed stat', () => {
+  it('BLOCKS when free space could not be read at all', () => {
+    // The requirement is that a parent knows before the first byte whether it fits. "We could
+    // not check" is an answer they can act on — unplug and replug; discovering it half-way
+    // through a twenty-minute copy is not.
     const check = checkSpace({ plan: plan([item({ sizeBytes: 1 * GB })]), penItems: [], freeBytes: null });
-    expect(check.ok).toBe(true);
-    expect(check.shortfallBytes).toBe(0);
+    expect(check.ok).toBe(false);
+    expect(check.reason).toBe('unreadable');
+    expect(check.shortfallBytes).toBe(0); // there is no shortfall to report, only an unknown
+  });
+
+  it('distinguishes "too small" from "could not check"', () => {
+    expect(checkSpace({ plan: plan([item({ sizeBytes: 9 * GB })]), penItems: [], freeBytes: 1 * GB }).reason).toBe('not-enough-space');
+    expect(checkSpace({ plan: plan([item({ sizeBytes: 1 })]), penItems: [], freeBytes: 9 * GB }).reason).toBeUndefined();
   });
 
   it('an empty plan needs nothing but still respects the margin', () => {

@@ -25,22 +25,18 @@ import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransf
 import { buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '@shared/bookSyncPlan';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
-function formatBytes(n: number): string {
-  if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  return `${Math.round(n / 1024)} KB`;
-}
-
 /**
- * How much more room is needed, always rounded UP.
+ * A size for a parent: always rounded **up**, and to a round number.
  *
- * "You need about 796 MB more" when the true figure is 796.4 MB would send a parent to free
- * exactly 796 MB and be told no a second time. Rounding up is the only direction that leaves
- * them better off than the number suggested.
+ * Two reasons, both about not making someone do arithmetic. "797.3 MB" is a measurement, not an
+ * amount anyone acts on. And rounding DOWN would send a parent to free exactly the figure we
+ * printed and be refused a second time — up is the only direction that leaves them better off
+ * than the number suggested.
  */
-function formatShortfall(bytes: number): string {
+function formatFriendlySize(bytes: number): string {
   const MB = 1024 * 1024;
   if (bytes >= 1024 * MB) return `${(Math.ceil((bytes / (1024 * MB)) * 10) / 10).toFixed(1)} GB`;
-  return `${Math.ceil(bytes / MB)} MB`;
+  return `${Math.ceil(bytes / MB / 100) * 100} MB`;
 }
 
 function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n: Record<string, string> | null; filename: string }, locale: string): string {
@@ -222,8 +218,20 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
   const hasWork = plan.toAdd.length > 0 || plan.toUpdate.length > 0;
   const syncMinutes = estimateMinutes(transferBytesFor([...plan.toAdd, ...plan.toUpdate].map((i) => i.sizeBytes)));
 
-  /** Bytes short, or null when it fits (or we could not read the free space). */
-  const [spaceProblem, setSpaceProblem] = useState<number | null>(null);
+  // Assembled from plural-aware parts rather than one string with two counts in it: i18next can
+  // pluralise on one number, and "1 new book and 2 updates" needs two.
+  const news = t('sync.newBooks', { count: plan.toAdd.length });
+  const updates = t('sync.updates', { count: plan.toUpdate.length });
+  const availableSentence =
+    plan.toAdd.length > 0 && plan.toUpdate.length > 0
+      ? t('sync.availableBoth', { news, updates })
+      : plan.toAdd.length > 0
+        ? t('sync.availableAdds', { news })
+        : t('sync.availableUpdates', { updates });
+  const timeSentence = syncMinutes > 0 ? t('sync.time', { count: syncMinutes }) : t('sync.timeShort');
+
+  /** Bytes short when the card is too small, or 'unreadable' when we could not check at all. */
+  const [spaceProblem, setSpaceProblem] = useState<number | 'unreadable' | null>(null);
 
   /**
    * Adds everything missing and updates everything changed, one book at a time, smallest first.
@@ -242,7 +250,10 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
       clusterBytes: lib.meta.penClusterBytes,
     });
     if (!space.ok) {
-      setSpaceProblem(space.shortfallBytes);
+      // Either way nothing is written. A parent must know before the first byte whether it
+      // fits — and "we could not check" is something they can act on; finding out half-way
+      // through a twenty-minute copy is not.
+      setSpaceProblem(space.reason === 'unreadable' ? 'unreadable' : space.shortfallBytes);
       return;
     }
 
@@ -398,11 +409,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
       <div className="book-summary">
         <p>
           {ourBooks.length > 0 ? t('sync.has', { count: ourBooks.length }) : t('sync.hasNone')}{' '}
-          {hasWork
-            ? syncMinutes > 0
-              ? t('sync.available', { added: plan.toAdd.length, updated: plan.toUpdate.length, minutes: syncMinutes })
-              : t('sync.availableShort', { added: plan.toAdd.length, updated: plan.toUpdate.length })
-            : t('sync.upToDate')}
+          {hasWork ? `${availableSentence} ${timeSentence}` : t('sync.upToDate')}
         </p>
 
         <div className="book-summary__actions">
@@ -424,11 +431,17 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
           it — a parent who is told only "not enough space" has no way to act. */}
       {spaceProblem !== null && (
         <div className="note-box">
-          <p className="error-text">{t('space.title')}</p>
-          <p className="hint">{t('space.body', { amount: formatShortfall(spaceProblem) })}</p>
-          <button type="button" className="button" onClick={() => onNavigate?.('recordings')}>
-            {t('space.goToRecordings')}
-          </button>
+          {spaceProblem === 'unreadable' ? (
+            <p className="error-text">{t('space.unreadable')}</p>
+          ) : (
+            <>
+              <p className="error-text">{t('space.title')}</p>
+              <p className="hint">{t('space.body', { amount: formatFriendlySize(spaceProblem) })}</p>
+              <button type="button" className="button" onClick={() => onNavigate?.('recordings')}>
+                {t('space.goToRecordings')}
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -440,10 +453,10 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
         <BookNameList items={ourBooks.map((p) => displayNameFor({ friendlyName: p.friendlyName, friendlyNameI18n: p.friendlyNameI18n, filename: p.fileName }, i18n.language))} emptyLabel={t('list.none')} />
 
         <h3 className="status-legend__heading">{t('list.willAdd')}</h3>
-        <BookNameList items={plan.toAdd.map((i) => `${displayNameFor(i, i18n.language)} · ${formatBytes(i.sizeBytes)}`)} emptyLabel={t('list.none')} />
+        <BookNameList items={plan.toAdd.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
 
         <h3 className="status-legend__heading">{t('list.willUpdate')}</h3>
-        <BookNameList items={plan.toUpdate.map((i) => `${displayNameFor(i, i18n.language)} · ${formatBytes(i.sizeBytes)}`)} emptyLabel={t('list.none')} />
+        <BookNameList items={plan.toUpdate.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
 
         {otherBooks.length > 0 && (
           <>

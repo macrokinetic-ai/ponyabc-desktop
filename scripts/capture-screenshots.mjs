@@ -28,7 +28,10 @@ const label = labelArg ? labelArg.split('=')[1] : 'app';
 const pressArg = rest.find((a) => a.startsWith('--press='));
 const pressText = pressArg ? pressArg.split('=').slice(1).join('=') : null;
 
-const DEBUG_PORT = 9334;
+// A fixed port made back-to-back captures collide: the previous Electron had not always
+// released 9334 by the time the next one asked for it, and the run failed silently with no
+// screenshot. Each run now takes its own port.
+const DEBUG_PORT = Number(process.env.PONYABC_CDP_PORT) || 9334 + Math.floor(Math.random() * 500);
 fs.mkdirSync(outDir, { recursive: true });
 
 // When launching the bare Electron binary (a dev `out/` build) rather than a packaged app,

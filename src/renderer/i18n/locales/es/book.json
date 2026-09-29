@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Otros libros (no de PonyABC)",
-    "body": "Vienen de otro sitio. Esta aplicación los deja tal cual.",
-    "count": "{{count}} libro(s)"
+    "body": "Vienen de otro sitio. Esta aplicación los deja tal cual."
   },
   "newBooks": {
     "title": "Libros nuevos",
@@ -214,20 +213,30 @@
     "disconnected": "Conecte su lápiz con su cable USB"
   },
   "sync": {
-    "has": "Su lápiz tiene {{count}} libro(s) de PonyABC.",
     "hasNone": "Aún no hay libros de PonyABC en su lápiz.",
-    "available": "Hay {{added}} libro(s) nuevo(s) y {{updated}} actualización(es). Unos {{minutes}} minutos.",
-    "availableShort": "Hay {{added}} libro(s) nuevo(s) y {{updated}} actualización(es). Alrededor de un minuto.",
     "upToDate": "Todos sus libros están al día.",
     "button": "Sincronizar libros",
     "working": "Sincronizando…",
     "needPen": "Conecte su lápiz para sincronizar.",
-    "stoppedNoSpace": "Su lápiz se llenó, así que paramos. Los libros terminados están en el lápiz."
+    "stoppedNoSpace": "Su lápiz se llenó, así que paramos. Los libros terminados están en el lápiz.",
+    "has_one": "Su lápiz tiene {{count}} libro de PonyABC.",
+    "has_other": "Su lápiz tiene {{count}} libros de PonyABC.",
+    "newBooks_one": "{{count}} libro nuevo",
+    "newBooks_other": "{{count}} libros nuevos",
+    "updates_one": "{{count}} actualización",
+    "updates_other": "{{count}} actualizaciones",
+    "availableBoth": "Hay {{news}} y {{updates}}.",
+    "availableAdds": "Hay {{news}}.",
+    "availableUpdates": "Hay {{updates}}.",
+    "time_one": "Un minuto aproximadamente.",
+    "time_other": "Unos {{count}} minutos.",
+    "timeShort": "Alrededor de un minuto."
   },
   "space": {
     "title": "Su lápiz no tiene suficiente espacio",
     "body": "Faltan unos {{amount}}. Guarde una copia de sus grabaciones, borre las que ya no necesite y sincronice de nuevo.",
-    "goToRecordings": "Ir a Mis grabaciones"
+    "goToRecordings": "Ir a Mis grabaciones",
+    "unreadable": "No pudimos comprobar el espacio libre de su lápiz. Desconéctelo, vuelva a conectarlo e inténtelo de nuevo."
   },
   "list": {
     "toggle": "Ver la lista de libros",
@@ -237,5 +246,8 @@
     "other": "Otros libros (no de PonyABC)",
     "otherBody": "Vienen de otro sitio. Esta aplicación nunca los cambia.",
     "none": "Ninguno"
+  },
+  "size": {
+    "about": "unos {{size}}"
   }
 }

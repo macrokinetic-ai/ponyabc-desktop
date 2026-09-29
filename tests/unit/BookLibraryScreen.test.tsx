@@ -239,7 +239,7 @@ describe('BookLibraryScreen — the summary', () => {
     );
 
     await screen.findByText(/Your pen has 2 PonyABC book/);
-    await screen.findByText(/1 new book\(s\) and 1 update\(s\) are available\. About \d+ minutes\./);
+    await screen.findByText(/1 new book and 1 update are available\. About \d+ minutes\./);
   });
 
   it('says everything is up to date, and disables the button, when there is nothing to do', async () => {
@@ -320,16 +320,69 @@ describe('BookLibraryScreen — not enough space', () => {
     expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();
   });
 
-  it('proceeds when free space could not be read, rather than refusing on a failed check', async () => {
+  it('refuses to start when the free space could not be checked, and writes nothing', async () => {
     await renderScreen(
       listResult({
         penItems: [],
         catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 1_000_000 })],
-        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: null },
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: null, penTotalBytes: null, penClusterBytes: null },
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await screen.findByText("We couldn't check your pen's free space. Please unplug your pen, plug it in again and try again.");
+    expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();
+    expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('BookLibraryScreen — wording', () => {
+  it('uses real plurals, never "(s)"', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' })],
+        catalogItems: [
+          catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false }),
+          catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen' }),
+        ],
+      }),
+    );
+
+    await screen.findByText(/Your pen has 1 PonyABC book\./);
+    await screen.findByText(/1 new book are available|1 new book is available|1 new book/);
+    expect(document.body.textContent).not.toContain('(s)');
+  });
+
+  it('pluralises properly once there is more than one', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' }), penItem({ fileName: '0452.axb', contentId: 'b2' })],
+        catalogItems: [
+          catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false }),
+          catalogItem({ contentId: 'b2', status: 'on-pen-current', actionable: false }),
+          catalogItem({ contentId: 'b3', filename: '0453.axb', friendlyName: 'Three', status: 'not-on-pen' }),
+          catalogItem({ contentId: 'b4', filename: '0454.axb', friendlyName: 'Four', status: 'not-on-pen' }),
+        ],
+      }),
+    );
+    await screen.findByText(/Your pen has 2 PonyABC books\./);
+    await screen.findByText(/2 new books are available\./);
+  });
+
+  it('rounds sizes up to something a parent can act on', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [],
+        catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 300_000_000 })],
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 100_000_000, penTotalBytes: 16_000_000_000, penClusterBytes: 32_768 },
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
-    await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalled());
+
+    // A round number, rounded UP — never "397.3 MB".
+    const body = await screen.findByText(/You need about \d+00 MB more|You need about \d\.\d GB more/);
+    expect(body.textContent).not.toMatch(/\d\.\d MB/);
   });
 });
 

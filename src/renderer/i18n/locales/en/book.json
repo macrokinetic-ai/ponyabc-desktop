@@ -188,8 +188,7 @@
   },
   "otherBooks": {
     "title": "Other books (not from PonyABC)",
-    "body": "These came from somewhere else. This app leaves them exactly as they are.",
-    "count": "{{count}} book(s)"
+    "body": "These came from somewhere else. This app leaves them exactly as they are."
   },
   "newBooks": {
     "title": "New books",
@@ -214,20 +213,30 @@
     "disconnected": "Please connect your pen with its USB cable"
   },
   "sync": {
-    "has": "Your pen has {{count}} PonyABC book(s).",
     "hasNone": "There are no PonyABC books on your pen yet.",
-    "available": "{{added}} new book(s) and {{updated}} update(s) are available. About {{minutes}} minutes.",
-    "availableShort": "{{added}} new book(s) and {{updated}} update(s) are available. About a minute.",
     "upToDate": "All your books are up to date.",
     "button": "Sync books",
     "working": "Syncing…",
     "needPen": "Connect your pen to sync.",
-    "stoppedNoSpace": "Your pen filled up, so we stopped. The books that finished are on your pen."
+    "stoppedNoSpace": "Your pen filled up, so we stopped. The books that finished are on your pen.",
+    "has_one": "Your pen has {{count}} PonyABC book.",
+    "has_other": "Your pen has {{count}} PonyABC books.",
+    "newBooks_one": "{{count}} new book",
+    "newBooks_other": "{{count}} new books",
+    "updates_one": "{{count}} update",
+    "updates_other": "{{count}} updates",
+    "availableBoth": "{{news}} and {{updates}} are available.",
+    "availableAdds": "{{news}} are available.",
+    "availableUpdates": "{{updates}} are available.",
+    "time_one": "About {{count}} minute.",
+    "time_other": "About {{count}} minutes.",
+    "timeShort": "About a minute."
   },
   "space": {
     "title": "Your pen doesn't have enough space",
     "body": "You need about {{amount}} more. Please back up your recordings and delete some you no longer need, then sync again.",
-    "goToRecordings": "Go to My Recordings"
+    "goToRecordings": "Go to My Recordings",
+    "unreadable": "We couldn't check your pen's free space. Please unplug your pen, plug it in again and try again."
   },
   "list": {
     "toggle": "See book list",
@@ -237,5 +246,8 @@
     "other": "Other books (not from PonyABC)",
     "otherBody": "These came from somewhere else. This app never changes them.",
     "none": "None"
+  },
+  "size": {
+    "about": "about {{size}}"
   }
 }
