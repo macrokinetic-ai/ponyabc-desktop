@@ -92,7 +92,7 @@ export type BookIndexCommitResult =
  * `writtenFileNames` scopes the macOS cleanup to files this batch actually wrote — everything
  * else in BOOK/ belongs to the customer.
  */
-export function commitBookIndexReset(params: { writtenFileNames?: string[] } = {}): BookIndexCommitResult {
+export async function commitBookIndexReset(params: { writtenFileNames?: string[] } = {}): Promise<BookIndexCommitResult> {
   const pen = resolvePen();
   if (!pen.ok) return { status: 'no-pen-selected' };
   if (!pending().get()[pen.penKey]) return { status: 'not-needed' };
@@ -118,7 +118,7 @@ export function commitBookIndexReset(params: { writtenFileNames?: string[] } = {
 
   // Best effort, and never a failure: the customer is being told to unplug anyway, and on
   // Windows there is no reliable way to do this without administrator rights.
-  const ejected = ejectPen(pen.realPath);
+  const ejected = await ejectPen(pen.realPath);
   return { status: 'reset', deleted: outcome.deleted, ejected };
 }
 
@@ -127,7 +127,7 @@ export function commitBookIndexReset(params: { writtenFileNames?: string[] } = {
  * made when the customer added or removed a book, and asking again would be asking them to
  * confirm something they already did.
  */
-export function completePendingBookIndexReset(): BookIndexCommitResult {
+export async function completePendingBookIndexReset(): Promise<BookIndexCommitResult> {
   if (!isBookIndexStale()) return { status: 'not-needed' };
   return commitBookIndexReset();
 }
@@ -151,7 +151,7 @@ export function getBookIndexStatus(): BookIndexStatus | { status: 'no-pen-select
 }
 
 /** The explicit "Fix my pen's book list" action. */
-export function fixBookIndex(): BookIndexCommitResult {
+export async function fixBookIndex(): Promise<BookIndexCommitResult> {
   const pen = resolvePen();
   if (!pen.ok) return { status: 'no-pen-selected' };
   // Mark first, so that a failure here is retried on the next connection exactly like any other

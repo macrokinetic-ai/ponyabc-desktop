@@ -91,7 +91,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   // to add or remove a book; being asked to confirm the consequence again would be asking them
   // about something they have already done.
   const afterPenResolved = <T extends { status: string }>(result: T): T => {
-    if (result.status === 'ok') completePendingBookIndexReset();
+    if (result.status === 'ok') void completePendingBookIndexReset();
     return result;
   };
 

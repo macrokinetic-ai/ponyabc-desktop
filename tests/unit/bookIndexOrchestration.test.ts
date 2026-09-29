@@ -20,7 +20,7 @@ vi.mock('electron', () => ({
   app: { getPath: (name: string) => (name === 'userData' ? h.userDataDir : ''), getVersion: () => '0.0.0-test' },
 }));
 // Never let a test shell out to diskutil.
-vi.mock('../../src/main/services/penEject', () => ({ ejectPen: vi.fn(() => false) }));
+vi.mock('../../src/main/services/penEject', () => ({ ejectPen: vi.fn(async () => false) }));
 
 let tmp: string;
 let penDir: string;
@@ -68,7 +68,7 @@ describe('the rule', () => {
     bookIndex.markBookIndexStale('added');
     expect(indexPresent()).toBe(true); // not yet — books first, index last
 
-    const result = bookIndex.commitBookIndexReset();
+    const result = await bookIndex.commitBookIndexReset();
 
     expect(result.status).toBe('reset');
     expect(indexPresent()).toBe(false);
@@ -79,7 +79,7 @@ describe('the rule', () => {
     writeIndex(3);
     const { bookIndex } = await load();
     bookIndex.markBookIndexStale('removed');
-    expect(bookIndex.commitBookIndexReset().status).toBe('reset');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('reset');
     expect(indexPresent()).toBe(false);
   });
 
@@ -90,7 +90,7 @@ describe('the rule', () => {
     const { bookIndex } = await load();
 
     // Nothing marked the index stale, because no position changed.
-    const result = bookIndex.commitBookIndexReset();
+    const result = await bookIndex.commitBookIndexReset();
 
     expect(result.status).toBe('not-needed');
     expect(indexPresent()).toBe(true);
@@ -105,10 +105,10 @@ describe('the rule', () => {
     bookIndex.markBookIndexStale('removed'); // and one taken away
     bookIndex.markBookIndexStale('added'); // and another new one
 
-    expect(bookIndex.commitBookIndexReset().status).toBe('reset');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('reset');
     expect(indexPresent()).toBe(false);
     // The batch is finished; a second commit has nothing left to do.
-    expect(bookIndex.commitBookIndexReset().status).toBe('not-needed');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('not-needed');
   });
 });
 
@@ -127,7 +127,7 @@ describe('when things go wrong', () => {
     writeIndex(1);
     const { bookIndex } = await load();
 
-    expect(bookIndex.commitBookIndexReset().status).toBe('not-needed');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('not-needed');
     expect(indexPresent()).toBe(true);
   });
 
@@ -137,7 +137,7 @@ describe('when things go wrong', () => {
     bookIndex.markBookIndexStale('added');
 
     fs.chmodSync(bookDir, 0o500); // can list, cannot unlink
-    const result = bookIndex.commitBookIndexReset();
+    const result = await bookIndex.commitBookIndexReset();
     fs.chmodSync(bookDir, 0o755);
 
     expect(result.status).toBe('still-pending');
@@ -157,7 +157,7 @@ describe('when things go wrong', () => {
     vi.resetModules();
     const again = await load();
     expect(again.bookIndex.isBookIndexStale()).toBe(true);
-    expect(again.bookIndex.completePendingBookIndexReset().status).toBe('reset');
+    expect((await again.bookIndex.completePendingBookIndexReset()).status).toBe('reset');
     expect(indexPresent()).toBe(false);
   });
 
@@ -175,13 +175,13 @@ describe('when things go wrong', () => {
     session.setPenRoot(resolved);
 
     expect(bookIndex.isBookIndexStale()).toBe(false);
-    expect(bookIndex.commitBookIndexReset().status).toBe('not-needed');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('not-needed');
   });
 
   it('does nothing at all without a pen', async () => {
     const { session, bookIndex } = await load();
     session.setPenRoot(null);
-    expect(bookIndex.commitBookIndexReset().status).toBe('no-pen-selected');
+    expect((await bookIndex.commitBookIndexReset()).status).toBe('no-pen-selected');
     expect(bookIndex.getBookIndexStatus()).toEqual({ status: 'no-pen-selected' });
   });
 });
@@ -199,7 +199,7 @@ describe('self-heal', () => {
     expect(indexPresent()).toBe(true);
 
     // ...only the explicit action does.
-    expect(bookIndex.fixBookIndex().status).toBe('reset');
+    expect((await bookIndex.fixBookIndex()).status).toBe('reset');
     expect(indexPresent()).toBe(false);
   });
 
@@ -209,11 +209,11 @@ describe('self-heal', () => {
     const { bookIndex } = await load();
 
     fs.chmodSync(bookDir, 0o500);
-    expect(bookIndex.fixBookIndex().status).toBe('still-pending');
+    expect((await bookIndex.fixBookIndex()).status).toBe('still-pending');
     fs.chmodSync(bookDir, 0o755);
 
     expect(bookIndex.isBookIndexStale()).toBe(true);
-    expect(bookIndex.completePendingBookIndexReset().status).toBe('reset');
+    expect((await bookIndex.completePendingBookIndexReset()).status).toBe('reset');
   });
 });
 
