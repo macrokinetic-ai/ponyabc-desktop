@@ -1,0 +1,70 @@
+PonyABC Desktop 0.3.17 — test build for Windows
+===============================================
+
+This is a TEST version of PonyABC Desktop, for trying out before it goes
+to the Microsoft Store. It is not the Store version and it is not for
+customers.
+
+You do NOT need PowerShell, a certificate, or an administrator password.
+It is an ordinary double-click install.
+
+
+WHAT IS IN THIS FOLDER
+----------------------
+
+  PonyABC-Desktop-v0.3.17-winx64.exe          the installer - this is the one to run
+  PonyABC-Desktop-v0.3.17-winx64.exe.sha256   a checksum, for anyone who wants to verify it
+  READ-ME-FIRST.txt                           this file
+
+
+BEFORE YOU START
+----------------
+
+If this computer already has PonyABC Desktop from the Microsoft Store,
+uninstall it first, so there is no doubt which one you are testing:
+
+  Start > Settings > Apps > Installed apps > PonyABC Desktop > Uninstall
+
+(You can put the Store version back at the end - see the last section.)
+
+
+INSTALLING IT
+-------------
+
+1. Double-click PonyABC-Desktop-v0.3.17-winx64.exe
+
+2. Windows will show a blue box saying "Windows protected your PC".
+   This is expected. The test build is not signed, and Windows says this
+   about every unsigned installer.
+
+   Click "More info", then click "Run anyway".
+
+3. The installer opens. Click "Install".
+   If it asks where to install it, the suggested folder is right - just
+   click "Next".
+
+4. When it finishes, leave "Run PonyABC Desktop" ticked and click "Finish".
+
+That is all. It installs only for you, in your own user account, so
+Windows will not ask for an administrator password.
+
+
+IF SOMETHING GOES WRONG
+-----------------------
+
+In the app: Settings > Support > "Export diagnostics", save the file it
+offers, and send that file to us. It is a record of what the app did. It
+contains no personal information and nothing is sent anywhere unless you
+choose to send it.
+
+
+PUTTING THE STORE VERSION BACK
+------------------------------
+
+1. Start > Settings > Apps > Installed apps > PonyABC Desktop > Uninstall
+
+2. Install the Store version again from:
+   https://apps.microsoft.com/detail/9P544XC6B609
+
+Uninstalling does not touch the recordings on your pen, and it leaves the
+backups this test version made on the computer where they are.

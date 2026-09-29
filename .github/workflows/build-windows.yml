@@ -55,9 +55,14 @@ jobs:
           name: windows-installer
           # dist:win's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar —
           # ship it alongside the installer so a downloaded artifact can be verified too.
+          # READ-ME-FIRST.txt rides along because the person who downloads this is usually a
+          # tester, not a developer: it names the file to double-click, says what the
+          # "Windows protected your PC" box is and which two words to click, and explains how
+          # to put the Store version back afterwards.
           path: |
             release/*.exe
             release/*.sha256
+            store-assets/windows-installer-kit/READ-ME-FIRST.txt
           if-no-files-found: error
 
       # When this run was triggered by pushing a version tag (i.e. a release tag such as
