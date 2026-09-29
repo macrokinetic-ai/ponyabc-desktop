@@ -161,7 +161,32 @@ export async function createSnapshot(params: {
   now?: Date;
   onProgress?: (event: { fileIndex: number; fileCount: number; fileName: string }) => void;
 }): Promise<CreateSnapshotResult> {
-  const { diyDirReal, backupRootDir, penVolumeLabel, labels = {}, now, onProgress } = params;
+  const { diyDirReal, ...rest } = params;
+  let names: string[] = [];
+  try {
+    names = fs.readdirSync(diyDirReal).filter(isEligibleMp3FileName).sort();
+  } catch {
+    // No DIY folder (pen unplugged mid-operation, or not a pen at all) — an empty snapshot is
+    // still a valid, restorable record of "there was nothing here".
+    names = [];
+  }
+  return createSnapshotFromFiles({ ...rest, files: names.map((fileName) => ({ fileName, sourcePath: path.join(diyDirReal, fileName) })) });
+}
+
+/**
+ * The core of a snapshot, taking explicit sources so it can serve both an ordinary backup of the
+ * pen and the migration of an old `(1)`-style folder, where the file a recording must be saved
+ * as is not the name it currently has on disk.
+ */
+export async function createSnapshotFromFiles(params: {
+  files: ReadonlyArray<{ fileName: string; sourcePath: string }>;
+  backupRootDir: string;
+  penVolumeLabel: string | null;
+  labels?: Record<string, string>;
+  now?: Date;
+  onProgress?: (event: { fileIndex: number; fileCount: number; fileName: string }) => void;
+}): Promise<CreateSnapshotResult> {
+  const { files, backupRootDir, penVolumeLabel, labels = {}, now, onProgress } = params;
 
   const snapshotId = makeSnapshotId(now);
   const snapshotDir = path.join(backupRootDir, snapshotId);
@@ -169,22 +194,14 @@ export async function createSnapshot(params: {
 
   const byteIndex = buildByteIndex(backupRootDir);
 
-  let names: string[] = [];
-  try {
-    names = fs.readdirSync(diyDirReal).filter(isEligibleMp3FileName).sort();
-  } catch {
-    names = [];
-  }
-
   const entries: SnapshotEntry[] = [];
   const failed: CreateSnapshotResult['failed'] = [];
   let dedupedCount = 0;
   let linkFallbackCount = 0;
 
-  for (let i = 0; i < names.length; i++) {
-    const fileName = names[i];
-    onProgress?.({ fileIndex: i, fileCount: names.length, fileName });
-    const sourcePath = path.join(diyDirReal, fileName);
+  for (let i = 0; i < files.length; i++) {
+    const { fileName, sourcePath } = files[i];
+    onProgress?.({ fileIndex: i, fileCount: files.length, fileName });
 
     try {
       const stat = fs.statSync(sourcePath);
