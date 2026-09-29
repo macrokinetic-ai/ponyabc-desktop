@@ -782,3 +782,17 @@ and "DIY MP3" on screens a nursery parent meets first.
 **How to apply:** rendering a screen as an image is a different review from reading its source.
 Do it before calling a customer-facing change done — the screenshot shows what the customer
 gets, including every string the change left behind.
+
+## An artifact's shape is part of what you are shipping
+
+Adding a plain-English README to the Windows installer artifact, I listed it in
+`upload-artifact`'s paths from where it lives in the repo — next to `release/*.exe`.
+`upload-artifact` roots the zip at the **least common ancestor** of the paths it is given, so
+that would have shipped a tester a zip containing two nested folders to dig through, in a change
+whose entire purpose was to save them from digging. Copying the file into `release/` first keeps
+the zip flat.
+
+**How to apply:** when a build produces something a person will open, picture the thing they
+actually receive — the extracted folder, not the file list in the workflow. For
+`upload-artifact` specifically, every path in one artifact should share the directory you want
+to be the root.
