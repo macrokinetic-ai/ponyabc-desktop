@@ -54,9 +54,9 @@
     "verifiedCurrent": "Última verificación: coincide con la versión oficial",
     "verifiedDiffers": "Última verificación: difiere de la versión oficial",
     "sizeDiffers": "El tamaño difiere de la versión oficial",
-    "matchedHashUnknown": "No se puede verificar contra el catálogo",
-    "awaitingCatalog": "Esperando coincidencia con el catálogo",
-    "unknown": "Desconocido",
+    "matchedHashUnknown": "En el lápiz — sin suma de comprobación oficial con la que contrastar",
+    "awaitingCatalog": "En el lápiz — catálogo aún no cargado",
+    "unknown": "Contenido no oficial",
     "notOnPen": "No está en el lápiz",
     "onPenPresent": "En el lápiz — sin verificar",
     "onPenCurrent": "En el lápiz — verificado, coincide",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Verificado",
     "verifiedDiffers": "Difiere",
     "sizeDiffers": "Tamaño distinto",
-    "matchedHashUnknown": "En el lápiz",
-    "awaitingCatalog": "Esperando…",
-    "unknown": "Desconocido",
+    "matchedHashUnknown": "Sin suma de comprobación",
+    "awaitingCatalog": "Sin catálogo",
+    "unknown": "Fuera del catálogo",
     "notOnPen": "No está en el lápiz",
     "onPenPresent": "En el lápiz",
     "onPenVerifying": "Verificando…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Descargar seleccionados a la App",
     "downloadAll": "Descargar todo a la App",
     "cancelDownloadBatch": "Cancelar descarga"
+  },
+  "statusHelp": {
+    "present": "El nombre coincide con un libro oficial, pero la App no ha leído el archivo para comprobar su contenido. Actualizar nunca lee los archivos, así que este es el estado normal hasta que elija Verificar este archivo.",
+    "verifying": "La App está leyendo este archivo y comparándolo con la versión oficial.",
+    "verifiedCurrent": "Verificó este archivo y su contenido coincidía exactamente con la versión oficial. Solo se muestra mientras esa comprobación siga siendo válida para este lápiz y este archivo.",
+    "verifiedDiffers": "Verificó este archivo y su contenido no coincidía con la versión oficial: puede ser una edición anterior o una copia dañada. Vuelva a añadirlo desde la lista oficial para sustituirlo.",
+    "sizeDiffers": "El tamaño del archivo ya difiere de la versión oficial, así que el contenido no puede coincidir. No hizo falta leer el archivo para saberlo.",
+    "matchedHashUnknown": "El nombre coincide con un libro oficial, pero el catálogo no publica una suma de comprobación, así que no hay nada con lo que contrastar.",
+    "awaitingCatalog": "Todavía no se ha cargado ningún catálogo, así que este archivo no se ha comparado con nada. Conéctese a internet y actualice.",
+    "unknown": "Este archivo no está en el catálogo oficial. La App no lo toca y no puede eliminarlo ni sustituirlo.",
+    "notOnPen": "Este libro no está en el lápiz conectado.",
+    "onPenPresent": "En el lápiz hay un archivo con el nombre de este libro, pero su contenido no se ha comprobado.",
+    "onPenVerifying": "La App está leyendo el archivo del lápiz y comparándolo con la versión oficial.",
+    "onPenCurrent": "El archivo del lápiz se verificó y coincide exactamente con esta versión oficial.",
+    "onPenDiffers": "El archivo del lápiz se verificó y no coincide con esta versión oficial. Añádalo al lápiz para sustituirlo: primero se hace una copia de seguridad del archivo existente.",
+    "onPenSizeDiffers": "El archivo del lápiz tiene un tamaño distinto al de esta versión oficial, así que no puede ser el mismo contenido.",
+    "metadataIncomplete": "A la ficha del catálogo le falta el nombre de archivo o la suma de comprobación que la App necesita, así que este libro aún no se puede instalar. Su lápiz no tiene ningún problema.",
+    "ambiguous": "Dos o más fichas del catálogo reclaman el mismo nombre de archivo, así que la App no puede saber a cuál se refiere. Se muestra solo como referencia hasta que se corrija en el servidor."
+  },
+  "cacheHelp": {
+    "cached": "Hay una copia comprobada guardada en este ordenador, así que añadirlo al lápiz no requiere descarga.",
+    "notDownloaded": "Todavía no está guardado en este ordenador. Se descarga cuando lo añade al lápiz.",
+    "downloading": "Descargándose ahora en este ordenador."
+  },
+  "legend": {
+    "title": "¿Qué significan estas etiquetas?",
+    "intro": "Cada libro oficial muestra dos datos independientes: si está en el lápiz y si hay una copia guardada en este ordenador. Uno no implica el otro.",
+    "penHeading": "Contenido en el lápiz",
+    "catalogHeading": "Contenido oficial",
+    "cacheHeading": "Copias en este ordenador"
   }
 }

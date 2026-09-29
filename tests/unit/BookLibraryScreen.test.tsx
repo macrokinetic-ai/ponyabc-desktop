@@ -7,6 +7,7 @@ import { PenRootProvider } from '../../src/renderer/state/PenRootContext';
 import { BookLibraryProvider } from '../../src/renderer/state/BookLibraryContext';
 import { BookLibraryScreen } from '../../src/renderer/screens/BookLibraryScreen';
 import type { BookCatalogItem, BookListResult, BookPenItem, PonyAbcApi } from '../../src/shared/types';
+import { CACHE_STATUS_LABELS, CATALOG_STATUS_LABELS, PEN_STATUS_LABELS } from '../../src/renderer/screens/bookStatusLabels';
 
 function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem {
   return {
@@ -208,20 +209,49 @@ describe('BookLibraryScreen — dual pane', () => {
   });
 });
 
+describe('BookLibraryScreen — status legend', () => {
+  it('is collapsed by default, so it never duplicates a row label in the DOM', async () => {
+    await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
+    await screen.findByText('Size differs');
+    expect(screen.getAllByText('Size differs')).toHaveLength(1);
+    await screen.findByText('What do these labels mean?');
+  });
+
+  it('explains every status once opened, including the two that are easiest to misread', async () => {
+    await renderScreen(listResult());
+    // jsdom does not implement <summary>'s activation behaviour, so a click never opens the
+    // disclosure here. Open it the way the browser would and fire the same toggle event.
+    await screen.findByText('What do these labels mean?');
+    const details = document.querySelector('details.status-legend') as HTMLDetailsElement;
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+
+    for (const keys of [...Object.values(PEN_STATUS_LABELS), ...Object.values(CATALOG_STATUS_LABELS), ...Object.values(CACHE_STATUS_LABELS)]) {
+      const help = i18n.t(keys.help, { ns: 'book' });
+      expect(screen.getAllByText(help).length, keys.help).toBeGreaterThan(0);
+    }
+
+    // The two specific misreadings this legend exists to correct: "on the pen" is not
+    // "checked", and "stored on this computer" is not "on the pen".
+    await screen.findByText(/has not read the file to check its contents/);
+    await screen.findByText(/adding it to the pen needs no download/);
+  });
+});
+
 describe('BookLibraryScreen — left pane (pen)', () => {
-  it('an Unknown pen file has no checkbox and shows the filename + Unknown label', async () => {
+  it('an unrecognized pen file has no checkbox and is labelled as not official content', async () => {
     await renderScreen(listResult({ penItems: [penItem({ fileName: 'mystery.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false })] }));
-    await screen.findByText(/mystery\.axb — Unknown/);
+    await screen.findByText(/mystery\.axb — Not official content/);
     // No checkbox is rendered for it at all (read-only, not merely disabled) — scoped to the
     // list itself, since the pane's own "select all" toolbar checkbox is unrelated.
     expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
   });
 
-  it('an unmatched pen file shows "Waiting for catalog match" (not "Unknown") while no catalog has ever loaded, and stays read-only', async () => {
+  it('an unmatched pen file says the catalog has not loaded (not "not official content") while no catalog has ever loaded, and stays read-only', async () => {
     await renderScreen(
       listResult({ penItems: [penItem({ fileName: 'mystery.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'awaiting-catalog', removable: false })] }),
     );
-    await screen.findByText(/mystery\.axb — Waiting for catalog match/);
+    await screen.findByText(/mystery\.axb — On pen — catalog not loaded yet/);
     expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
   });
 
@@ -238,7 +268,7 @@ describe('BookLibraryScreen — left pane (pen)', () => {
     await screen.findByText('Size differs'); // short form in the default (collapsed) row
     expect(screen.queryByText(/Size differs from official version/)).toBeNull(); // long form not shown yet
     const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
-    expect(checkbox).not.toBeNull(); // still selectable — not treated like Unknown
+    expect(checkbox).not.toBeNull(); // still selectable — not treated like unrecognized content
 
     const nameToggle = document.querySelectorAll('.pane')[0].querySelector('.recordings-list__name-toggle') as HTMLElement;
     fireEvent.click(nameToggle); // expand

@@ -54,9 +54,9 @@
     "verifiedCurrent": "Última verificação: corresponde à versão oficial",
     "verifiedDiffers": "Última verificação: difere da versão oficial",
     "sizeDiffers": "O tamanho difere da versão oficial",
-    "matchedHashUnknown": "Não é possível verificar com o catálogo",
-    "awaitingCatalog": "A aguardar correspondência com o catálogo",
-    "unknown": "Desconhecido",
+    "matchedHashUnknown": "Na caneta — sem soma de verificação oficial para comparar",
+    "awaitingCatalog": "Na caneta — catálogo ainda não carregado",
+    "unknown": "Conteúdo não oficial",
     "notOnPen": "Não está na caneta",
     "onPenPresent": "Na caneta — ainda não verificado",
     "onPenCurrent": "Na caneta — verificado, corresponde",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Verificado",
     "verifiedDiffers": "Difere",
     "sizeDiffers": "Tamanho diferente",
-    "matchedHashUnknown": "Na caneta",
-    "awaitingCatalog": "A aguardar…",
-    "unknown": "Desconhecido",
+    "matchedHashUnknown": "Sem soma de verificação",
+    "awaitingCatalog": "Sem catálogo",
+    "unknown": "Fora do catálogo",
     "notOnPen": "Não está na caneta",
     "onPenPresent": "Na caneta",
     "onPenVerifying": "A verificar…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Transferir selecionados para a App",
     "downloadAll": "Transferir tudo para a App",
     "cancelDownloadBatch": "Cancelar transferência"
+  },
+  "statusHelp": {
+    "present": "O nome corresponde a um livro oficial, mas a App não leu o ficheiro para verificar o conteúdo. Atualizar nunca lê os ficheiros, por isso este é o estado normal até escolher Verificar este ficheiro.",
+    "verifying": "A App está a ler este ficheiro e a compará-lo com a versão oficial.",
+    "verifiedCurrent": "Verificou este ficheiro e o conteúdo correspondia exatamente à versão oficial. Só é mostrado enquanto essa verificação continuar válida para esta caneta e este ficheiro.",
+    "verifiedDiffers": "Verificou este ficheiro e o conteúdo não correspondia à versão oficial — pode ser uma edição mais antiga ou uma cópia danificada. Adicione-o novamente a partir da lista oficial para o substituir.",
+    "sizeDiffers": "O tamanho do ficheiro já difere da versão oficial, por isso o conteúdo não pode corresponder. Não foi preciso ler o ficheiro para o saber.",
+    "matchedHashUnknown": "O nome corresponde a um livro oficial, mas o catálogo não publica uma soma de verificação, por isso não há nada com que comparar.",
+    "awaitingCatalog": "Ainda não foi carregado nenhum catálogo, por isso este ficheiro não foi comparado com nada. Ligue-se à internet e atualize.",
+    "unknown": "Este ficheiro não está no catálogo oficial. A App não lhe toca e não o pode remover nem substituir.",
+    "notOnPen": "Este livro não está na caneta ligada.",
+    "onPenPresent": "Está na caneta um ficheiro com o nome deste livro, mas o seu conteúdo não foi verificado.",
+    "onPenVerifying": "A App está a ler o ficheiro na caneta e a compará-lo com a versão oficial.",
+    "onPenCurrent": "O ficheiro na caneta foi verificado e corresponde exatamente a esta versão oficial.",
+    "onPenDiffers": "O ficheiro na caneta foi verificado e não corresponde a esta versão oficial. Adicione-o à caneta para o substituir — é feita primeiro uma cópia de segurança do ficheiro existente.",
+    "onPenSizeDiffers": "O ficheiro na caneta tem um tamanho diferente desta versão oficial, por isso não pode ter o mesmo conteúdo.",
+    "metadataIncomplete": "Falta à entrada do catálogo o nome do ficheiro ou a soma de verificação de que a App precisa, por isso este livro ainda não pode ser instalado. A sua caneta não tem qualquer problema.",
+    "ambiguous": "Duas ou mais entradas do catálogo reclamam o mesmo nome de ficheiro, por isso a App não consegue saber qual é a pretendida. Mostrado apenas a título informativo até ser corrigido no servidor."
+  },
+  "cacheHelp": {
+    "cached": "Está guardada neste computador uma cópia verificada, por isso adicioná-la à caneta não exige transferência.",
+    "notDownloaded": "Ainda não está guardado neste computador. É transferido quando o adicionar à caneta.",
+    "downloading": "A ser transferido para este computador."
+  },
+  "legend": {
+    "title": "O que significam estas indicações?",
+    "intro": "Cada livro oficial mostra duas informações separadas: se está na caneta e se existe uma cópia guardada neste computador. Uma não implica a outra.",
+    "penHeading": "Conteúdo na caneta",
+    "catalogHeading": "Conteúdo oficial",
+    "cacheHeading": "Cópias neste computador"
   }
 }

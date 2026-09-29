@@ -54,9 +54,9 @@
     "verifiedCurrent": "上次校驗：與官方版本相符",
     "verifiedDiffers": "上次校驗：與官方版本不同",
     "sizeDiffers": "大小與官方版本不同",
-    "matchedHashUnknown": "無法與目錄核對",
-    "awaitingCatalog": "等待目錄配對",
-    "unknown": "未知內容",
+    "matchedHashUnknown": "筆內已有——沒有官方校驗碼可核對",
+    "awaitingCatalog": "筆內已有——尚未載入目錄",
+    "unknown": "非官方內容",
     "notOnPen": "未在點讀筆",
     "onPenPresent": "筆內已有——未校驗",
     "onPenCurrent": "筆內已有——已校驗，相符",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "已校驗",
     "verifiedDiffers": "不同",
     "sizeDiffers": "大小不同",
-    "matchedHashUnknown": "筆內已有",
-    "awaitingCatalog": "等待配對",
-    "unknown": "未知",
+    "matchedHashUnknown": "無校驗碼",
+    "awaitingCatalog": "未有目錄",
+    "unknown": "不在目錄內",
     "notOnPen": "未在筆",
     "onPenPresent": "筆內已有",
     "onPenVerifying": "校驗中…",
@@ -95,5 +95,35 @@
     "downloadSelected": "下載所選到 App",
     "downloadAll": "下載全部到 App",
     "cancelDownloadBatch": "取消下載"
+  },
+  "statusHelp": {
+    "present": "檔名與官方書本相符，但 App 未讀取檔案內容作核對。重新整理不會讀取檔案內容，所以在你選擇「校驗此檔案」之前，這都是正常狀態。",
+    "verifying": "App 正在讀取此檔案，並與官方版本比對。",
+    "verifiedCurrent": "你曾校驗此檔案，內容與官方版本完全相符。只在該次校驗對這支筆和這個檔案仍然有效時顯示。",
+    "verifiedDiffers": "你曾校驗此檔案，內容與官方版本不符，可能是舊版或已損壞的副本。可從官方內容清單重新加入以取代它。",
+    "sizeDiffers": "檔案大小已與官方版本不同，內容不可能相同。毋須讀取檔案內容即可得知。",
+    "matchedHashUnknown": "檔名與官方書本相符，但目錄未提供校驗碼，因此沒有可比對的依據。",
+    "awaitingCatalog": "尚未載入目錄，因此此檔案未與任何資料比對過。請連接互聯網後重新整理。",
+    "unknown": "此檔案不在官方目錄內。App 不會改動它，也不能移除或取代它。",
+    "notOnPen": "此書本不在已連接的點讀筆內。",
+    "onPenPresent": "點讀筆內有同名檔案，但未核對過內容。",
+    "onPenVerifying": "App 正在讀取筆內的檔案，並與官方版本比對。",
+    "onPenCurrent": "筆內檔案經校驗，與此官方版本完全相符。",
+    "onPenDiffers": "筆內檔案經校驗，與此官方版本不符。可加入點讀筆以取代，原有檔案會先備份。",
+    "onPenSizeDiffers": "筆內檔案大小與此官方版本不同，內容不可能相同。",
+    "metadataIncomplete": "目錄項目缺少 App 所需的檔名或校驗碼，因此此書本暫時無法安裝。你的點讀筆並沒有問題。",
+    "ambiguous": "有兩個或以上的目錄項目使用相同檔名，App 無法判斷是指哪一個。在伺服器修正之前只作參考顯示。"
+  },
+  "cacheHelp": {
+    "cached": "此電腦已儲存一份已核對的副本，加入點讀筆時毋須下載。",
+    "notDownloaded": "此電腦尚未儲存副本。加入點讀筆時會自動下載。",
+    "downloading": "正在下載到此電腦。"
+  },
+  "legend": {
+    "title": "這些標籤代表甚麼？",
+    "intro": "每本官方書本會分別顯示兩項資料：是否已在點讀筆內，以及此電腦是否已儲存副本。兩者互不相關。",
+    "penHeading": "點讀筆內的內容",
+    "catalogHeading": "官方內容",
+    "cacheHeading": "此電腦的副本"
   }
 }

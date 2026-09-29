@@ -54,9 +54,9 @@
     "verifiedCurrent": "Ultima verifica: corrisponde alla versione ufficiale",
     "verifiedDiffers": "Ultima verifica: differisce dalla versione ufficiale",
     "sizeDiffers": "La dimensione differisce dalla versione ufficiale",
-    "matchedHashUnknown": "Impossibile verificare rispetto al catalogo",
-    "awaitingCatalog": "In attesa di corrispondenza col catalogo",
-    "unknown": "Sconosciuto",
+    "matchedHashUnknown": "Sulla penna — nessun codice di controllo ufficiale da confrontare",
+    "awaitingCatalog": "Sulla penna — catalogo non ancora caricato",
+    "unknown": "Contenuto non ufficiale",
     "notOnPen": "Non sulla penna",
     "onPenPresent": "Sulla penna — non ancora verificato",
     "onPenCurrent": "Sulla penna — verificato, corrisponde",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Verificato",
     "verifiedDiffers": "Differisce",
     "sizeDiffers": "Dimensione diversa",
-    "matchedHashUnknown": "Sulla penna",
-    "awaitingCatalog": "In attesa…",
-    "unknown": "Sconosciuto",
+    "matchedHashUnknown": "Senza codice di controllo",
+    "awaitingCatalog": "Nessun catalogo",
+    "unknown": "Fuori catalogo",
     "notOnPen": "Non sulla penna",
     "onPenPresent": "Sulla penna",
     "onPenVerifying": "Verifica…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Scarica selezionati nell'App",
     "downloadAll": "Scarica tutto nell'App",
     "cancelDownloadBatch": "Annulla download"
+  },
+  "statusHelp": {
+    "present": "Il nome corrisponde a un libro ufficiale, ma l'App non ha letto il file per controllarne il contenuto. L'aggiornamento non legge mai i file: è quindi lo stato normale finché non si sceglie Verifica questo file.",
+    "verifying": "L'App sta leggendo questo file e lo confronta con la versione ufficiale.",
+    "verifiedCurrent": "Hai verificato questo file e il contenuto corrispondeva esattamente alla versione ufficiale. Mostrato solo finché quella verifica resta valida per questa penna e questo file.",
+    "verifiedDiffers": "Hai verificato questo file e il contenuto non corrispondeva alla versione ufficiale: potrebbe essere un'edizione precedente o una copia danneggiata. Aggiungilo di nuovo dall'elenco ufficiale per sostituirlo.",
+    "sizeDiffers": "La dimensione del file è già diversa da quella della versione ufficiale, quindi il contenuto non può corrispondere. Non è servito leggere il file per saperlo.",
+    "matchedHashUnknown": "Il nome corrisponde a un libro ufficiale, ma il catalogo non pubblica un codice di controllo: non c’è nulla con cui confrontarlo.",
+    "awaitingCatalog": "Non è ancora stato caricato alcun catalogo, quindi questo file non è stato confrontato con nulla. Collegati a internet e aggiorna.",
+    "unknown": "Questo file non è nel catalogo ufficiale. L'App non lo tocca e non può rimuoverlo né sostituirlo.",
+    "notOnPen": "Questo libro non è sulla penna collegata.",
+    "onPenPresent": "Sulla penna c’è un file con il nome di questo libro, ma il suo contenuto non è stato controllato.",
+    "onPenVerifying": "L'App sta leggendo il file sulla penna e lo confronta con la versione ufficiale.",
+    "onPenCurrent": "Il file sulla penna è stato verificato e corrisponde esattamente a questa versione ufficiale.",
+    "onPenDiffers": "Il file sulla penna è stato verificato e non corrisponde a questa versione ufficiale. Aggiungilo alla penna per sostituirlo: il file esistente viene prima salvato in backup.",
+    "onPenSizeDiffers": "Il file sulla penna ha una dimensione diversa da questa versione ufficiale, quindi non può avere lo stesso contenuto.",
+    "metadataIncomplete": "Alla voce di catalogo manca il nome del file o il codice di controllo che l'App richiede, quindi questo libro non può ancora essere installato. La penna non ha alcun problema.",
+    "ambiguous": "Due o più voci di catalogo rivendicano lo stesso nome di file, quindi l'App non può capire quale sia quella giusta. Mostrata solo a titolo informativo finché non viene corretta sul server."
+  },
+  "cacheHelp": {
+    "cached": "Una copia controllata è salvata su questo computer, quindi aggiungerla alla penna non richiede alcun download.",
+    "notDownloaded": "Non ancora salvato su questo computer. Viene scaricato quando lo aggiungi alla penna.",
+    "downloading": "In download su questo computer."
+  },
+  "legend": {
+    "title": "Che cosa significano queste diciture?",
+    "intro": "Per ogni libro ufficiale sono indicate due informazioni distinte: se è sulla penna e se una copia è salvata su questo computer. L’una non implica l’altra.",
+    "penHeading": "Contenuto sulla penna",
+    "catalogHeading": "Contenuto ufficiale",
+    "cacheHeading": "Copie su questo computer"
   }
 }

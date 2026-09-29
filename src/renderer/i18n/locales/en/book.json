@@ -54,9 +54,9 @@
     "verifiedCurrent": "Last verified: matches official version",
     "verifiedDiffers": "Last verified: differs from official version",
     "sizeDiffers": "Size differs from official version",
-    "matchedHashUnknown": "Cannot verify against the catalog",
-    "awaitingCatalog": "Waiting for catalog match",
-    "unknown": "Unknown",
+    "matchedHashUnknown": "On pen — no official checksum to check against",
+    "awaitingCatalog": "On pen — catalog not loaded yet",
+    "unknown": "Not official content",
     "notOnPen": "Not on pen",
     "onPenPresent": "On pen — not yet verified",
     "onPenCurrent": "On pen — verified, matches",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Verified",
     "verifiedDiffers": "Differs",
     "sizeDiffers": "Size differs",
-    "matchedHashUnknown": "On pen",
-    "awaitingCatalog": "Waiting…",
-    "unknown": "Unknown",
+    "matchedHashUnknown": "No checksum",
+    "awaitingCatalog": "No catalog",
+    "unknown": "Not in catalog",
     "notOnPen": "Not on pen",
     "onPenPresent": "On pen",
     "onPenVerifying": "Verifying…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Download selected to App",
     "downloadAll": "Download all to App",
     "cancelDownloadBatch": "Cancel download"
+  },
+  "statusHelp": {
+    "present": "The name matches an official book, but the App has not read the file to check its contents. Refreshing never reads files, so this is the normal state until you choose Verify this file.",
+    "verifying": "The App is reading this file now and comparing it with the official version.",
+    "verifiedCurrent": "You verified this file and its contents matched the official version exactly. Shown only while that check still applies to this pen and this file.",
+    "verifiedDiffers": "You verified this file and its contents did not match the official version — it may be an older edition or a damaged copy. Add it again from the official list to replace it.",
+    "sizeDiffers": "The file size already differs from the official version, so the contents cannot match. Knowing this needed no reading of the file.",
+    "matchedHashUnknown": "The name matches an official book, but the catalog publishes no checksum for it, so there is nothing to compare against.",
+    "awaitingCatalog": "No catalog has been loaded yet, so this file has not been compared with anything. Connect to the internet and refresh.",
+    "unknown": "This file is not in the official catalog. The App leaves it alone and will not remove or replace it.",
+    "notOnPen": "This book is not on the connected pen.",
+    "onPenPresent": "A file with this book's name is on the pen, but its contents have not been checked.",
+    "onPenVerifying": "The App is reading the file on the pen now and comparing it with the official version.",
+    "onPenCurrent": "The file on the pen was verified and matches this official version exactly.",
+    "onPenDiffers": "The file on the pen was verified and does not match this official version. Add it to the pen to replace it — the existing file is backed up first.",
+    "onPenSizeDiffers": "The file on the pen is a different size from this official version, so it cannot be the same content.",
+    "metadataIncomplete": "The catalog entry is missing the file name or checksum the App needs, so this book cannot be installed yet. Nothing is wrong with your pen.",
+    "ambiguous": "Two or more catalog entries claim the same file name, so the App cannot tell which one is meant. Shown for reference only until it is corrected on the server."
+  },
+  "cacheHelp": {
+    "cached": "A checked copy is stored on this computer, so adding it to the pen needs no download.",
+    "notDownloaded": "Not stored on this computer yet. It is downloaded when you add it to the pen.",
+    "downloading": "Being downloaded to this computer now."
+  },
+  "legend": {
+    "title": "What do these labels mean?",
+    "intro": "Each official book shows two separate facts: whether it is on the pen, and whether a copy is stored on this computer. Neither implies the other.",
+    "penHeading": "Content on the pen",
+    "catalogHeading": "Official content",
+    "cacheHeading": "Copies on this computer"
   }
 }

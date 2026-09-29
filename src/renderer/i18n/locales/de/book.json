@@ -54,9 +54,9 @@
     "verifiedCurrent": "Letzte Prüfung: entspricht der offiziellen Version",
     "verifiedDiffers": "Letzte Prüfung: weicht von der offiziellen Version ab",
     "sizeDiffers": "Größe weicht von der offiziellen Version ab",
-    "matchedHashUnknown": "Kann nicht mit dem Katalog abgeglichen werden",
-    "awaitingCatalog": "Wartet auf Katalogabgleich",
-    "unknown": "Unbekannt",
+    "matchedHashUnknown": "Auf dem Stift — keine offizielle Prüfsumme zum Abgleich",
+    "awaitingCatalog": "Auf dem Stift — Katalog noch nicht geladen",
+    "unknown": "Kein offizieller Inhalt",
     "notOnPen": "Nicht auf dem Stift",
     "onPenPresent": "Auf dem Stift — noch nicht überprüft",
     "onPenCurrent": "Auf dem Stift — geprüft, stimmt überein",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Geprüft",
     "verifiedDiffers": "Abweichend",
     "sizeDiffers": "Größe abweichend",
-    "matchedHashUnknown": "Auf dem Stift",
-    "awaitingCatalog": "Wartet…",
-    "unknown": "Unbekannt",
+    "matchedHashUnknown": "Ohne Prüfsumme",
+    "awaitingCatalog": "Kein Katalog",
+    "unknown": "Nicht im Katalog",
     "notOnPen": "Nicht auf dem Stift",
     "onPenPresent": "Auf dem Stift",
     "onPenVerifying": "Wird geprüft…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Auswahl in die App laden",
     "downloadAll": "Alles in die App laden",
     "cancelDownloadBatch": "Download abbrechen"
+  },
+  "statusHelp": {
+    "present": "Der Name entspricht einem offiziellen Buch, die App hat die Datei aber nicht gelesen, um den Inhalt zu prüfen. Beim Aktualisieren werden nie Dateien gelesen — das ist also der normale Zustand, bis Sie „Diese Datei überprüfen“ wählen.",
+    "verifying": "Die App liest diese Datei gerade und vergleicht sie mit der offiziellen Version.",
+    "verifiedCurrent": "Sie haben diese Datei überprüft und ihr Inhalt stimmte exakt mit der offiziellen Version überein. Wird nur angezeigt, solange diese Prüfung für diesen Stift und diese Datei noch gilt.",
+    "verifiedDiffers": "Sie haben diese Datei überprüft und ihr Inhalt stimmte nicht mit der offiziellen Version überein — möglicherweise eine ältere Ausgabe oder eine beschädigte Kopie. Fügen Sie sie aus der offiziellen Liste erneut hinzu, um sie zu ersetzen.",
+    "sizeDiffers": "Die Dateigröße weicht bereits von der offiziellen Version ab, der Inhalt kann also nicht übereinstimmen. Dafür musste die Datei nicht gelesen werden.",
+    "matchedHashUnknown": "Der Name entspricht einem offiziellen Buch, der Katalog veröffentlicht dafür aber keine Prüfsumme — es gibt also nichts zum Vergleichen.",
+    "awaitingCatalog": "Es wurde noch kein Katalog geladen, diese Datei wurde daher mit nichts verglichen. Stellen Sie eine Internetverbindung her und aktualisieren Sie.",
+    "unknown": "Diese Datei steht nicht im offiziellen Katalog. Die App rührt sie nicht an und kann sie weder entfernen noch ersetzen.",
+    "notOnPen": "Dieses Buch ist nicht auf dem verbundenen Stift.",
+    "onPenPresent": "Eine Datei mit dem Namen dieses Buches ist auf dem Stift, ihr Inhalt wurde aber nicht geprüft.",
+    "onPenVerifying": "Die App liest gerade die Datei auf dem Stift und vergleicht sie mit der offiziellen Version.",
+    "onPenCurrent": "Die Datei auf dem Stift wurde überprüft und stimmt exakt mit dieser offiziellen Version überein.",
+    "onPenDiffers": "Die Datei auf dem Stift wurde überprüft und stimmt nicht mit dieser offiziellen Version überein. Fügen Sie sie dem Stift hinzu, um sie zu ersetzen — die vorhandene Datei wird zuvor gesichert.",
+    "onPenSizeDiffers": "Die Datei auf dem Stift hat eine andere Größe als diese offizielle Version, kann also nicht denselben Inhalt haben.",
+    "metadataIncomplete": "Dem Katalogeintrag fehlt der Dateiname oder die Prüfsumme, die die App benötigt; dieses Buch kann daher noch nicht installiert werden. Mit Ihrem Stift ist alles in Ordnung.",
+    "ambiguous": "Zwei oder mehr Katalogeinträge beanspruchen denselben Dateinamen, die App kann also nicht erkennen, welcher gemeint ist. Wird nur zur Information angezeigt, bis es auf dem Server korrigiert ist."
+  },
+  "cacheHelp": {
+    "cached": "Eine geprüfte Kopie liegt auf diesem Computer; das Hinzufügen zum Stift erfordert keinen Download.",
+    "notDownloaded": "Noch nicht auf diesem Computer gespeichert. Der Download erfolgt, wenn Sie das Buch dem Stift hinzufügen.",
+    "downloading": "Wird gerade auf diesen Computer heruntergeladen."
+  },
+  "legend": {
+    "title": "Was bedeuten diese Angaben?",
+    "intro": "Zu jedem offiziellen Buch werden zwei getrennte Angaben gezeigt: ob es auf dem Stift ist und ob eine Kopie auf diesem Computer liegt. Das eine bedingt das andere nicht.",
+    "penHeading": "Inhalt auf dem Stift",
+    "catalogHeading": "Offizieller Inhalt",
+    "cacheHeading": "Kopien auf diesem Computer"
   }
 }

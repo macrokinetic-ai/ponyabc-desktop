@@ -54,9 +54,9 @@
     "verifiedCurrent": "上次校验：与官方版本相符",
     "verifiedDiffers": "上次校验：与官方版本不同",
     "sizeDiffers": "大小与官方版本不同",
-    "matchedHashUnknown": "无法与目录核对",
-    "awaitingCatalog": "等待目录匹配",
-    "unknown": "未知内容",
+    "matchedHashUnknown": "笔内已有——没有官方校验码可核对",
+    "awaitingCatalog": "笔内已有——尚未载入目录",
+    "unknown": "非官方内容",
     "notOnPen": "未在点读笔",
     "onPenPresent": "笔内已有——未校验",
     "onPenCurrent": "笔内已有——已校验，相符",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "已校验",
     "verifiedDiffers": "不同",
     "sizeDiffers": "大小不同",
-    "matchedHashUnknown": "笔内已有",
-    "awaitingCatalog": "等待匹配",
-    "unknown": "未知",
+    "matchedHashUnknown": "无校验码",
+    "awaitingCatalog": "暂无目录",
+    "unknown": "不在目录内",
     "notOnPen": "未在笔",
     "onPenPresent": "笔内已有",
     "onPenVerifying": "校验中…",
@@ -95,5 +95,35 @@
     "downloadSelected": "下载所选到 App",
     "downloadAll": "下载全部到 App",
     "cancelDownloadBatch": "取消下载"
+  },
+  "statusHelp": {
+    "present": "文件名与官方书本相符，但 App 未读取文件内容进行核对。刷新不会读取文件内容，所以在你选择“校验此文件”之前，这都是正常状态。",
+    "verifying": "App 正在读取此文件，并与官方版本比对。",
+    "verifiedCurrent": "你曾校验此文件，内容与官方版本完全相符。仅在该次校验对这支笔和这个文件仍然有效时显示。",
+    "verifiedDiffers": "你曾校验此文件，内容与官方版本不符，可能是旧版或已损坏的副本。可从官方内容列表重新添加以替换它。",
+    "sizeDiffers": "文件大小已与官方版本不同，内容不可能相同。无需读取文件内容即可得知。",
+    "matchedHashUnknown": "文件名与官方书本相符，但目录未提供校验码，因此没有可比对的依据。",
+    "awaitingCatalog": "尚未载入目录，因此此文件未与任何数据比对过。请连接网络后刷新。",
+    "unknown": "此文件不在官方目录内。App 不会改动它，也不能移除或替换它。",
+    "notOnPen": "此书本不在已连接的点读笔内。",
+    "onPenPresent": "点读笔内有同名文件，但未核对过内容。",
+    "onPenVerifying": "App 正在读取笔内的文件，并与官方版本比对。",
+    "onPenCurrent": "笔内文件经校验，与此官方版本完全相符。",
+    "onPenDiffers": "笔内文件经校验，与此官方版本不符。可添加到点读笔以替换，原有文件会先备份。",
+    "onPenSizeDiffers": "笔内文件大小与此官方版本不同，内容不可能相同。",
+    "metadataIncomplete": "目录项目缺少 App 所需的文件名或校验码，因此此书本暂时无法安装。你的点读笔并没有问题。",
+    "ambiguous": "有两个或以上的目录项目使用相同文件名，App 无法判断是指哪一个。在服务器修正之前仅作参考显示。"
+  },
+  "cacheHelp": {
+    "cached": "此电脑已保存一份已核对的副本，添加到点读笔时无需下载。",
+    "notDownloaded": "此电脑尚未保存副本。添加到点读笔时会自动下载。",
+    "downloading": "正在下载到此电脑。"
+  },
+  "legend": {
+    "title": "这些标签代表什么？",
+    "intro": "每本官方书本会分别显示两项信息：是否已在点读笔内，以及此电脑是否已保存副本。两者互不相关。",
+    "penHeading": "点读笔内的内容",
+    "catalogHeading": "官方内容",
+    "cacheHeading": "此电脑的副本"
   }
 }

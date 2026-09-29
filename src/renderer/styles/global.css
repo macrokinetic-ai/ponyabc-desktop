@@ -1151,3 +1151,71 @@ body {
 .collapsible__content p {
   margin: 0.25rem 0 0.75rem;
 }
+
+/* Update Book Content — label legend. Collapsed by default so it never competes with the two
+ * panes, but always present: the statuses it explains are the screen's main source of
+ * confusion ("on pen" vs "verified", "cached" vs "on pen"). */
+.status-legend {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.status-legend > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-legend__heading {
+  font-size: 13px;
+  margin: 12px 0 4px;
+}
+
+.status-legend__list {
+  margin: 0;
+}
+
+.status-legend__item {
+  display: grid;
+  grid-template-columns: minmax(120px, 22%) 1fr;
+  gap: 4px 12px;
+  padding: 3px 0;
+}
+
+.status-legend__item dt {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status-legend__item dd {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+/* Narrow windows: the two-column term/definition grid stops being readable well before the
+ * app's minimum width, so stack it. */
+@media (max-width: 720px) {
+  .status-legend__item {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The same explanation as the chip's tooltip, shown inline in an expanded row so it is
+ * reachable by keyboard and on a touch screen. */
+.status-help {
+  font-style: italic;
+}
+
+/* Firmware — the pre-flash cleanup note. Collapsed: it only matters to someone who upgrades
+ * outside this app, but the vendor documents it nowhere, so it has to live somewhere. */
+.firmware-faq {
+  margin-top: 8px;
+}
+
+.firmware-faq > summary {
+  cursor: pointer;
+  font-size: 13px;
+}

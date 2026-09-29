@@ -54,9 +54,9 @@
     "verifiedCurrent": "Dernière vérification : correspond à la version officielle",
     "verifiedDiffers": "Dernière vérification : diffère de la version officielle",
     "sizeDiffers": "La taille diffère de la version officielle",
-    "matchedHashUnknown": "Impossible de vérifier par rapport au catalogue",
-    "awaitingCatalog": "En attente de correspondance avec le catalogue",
-    "unknown": "Inconnu",
+    "matchedHashUnknown": "Sur le stylo — aucune somme de contrôle officielle à comparer",
+    "awaitingCatalog": "Sur le stylo — catalogue pas encore chargé",
+    "unknown": "Contenu non officiel",
     "notOnPen": "Pas sur le stylo",
     "onPenPresent": "Sur le stylo — non vérifié",
     "onPenCurrent": "Sur le stylo — vérifié, correspond",
@@ -72,9 +72,9 @@
     "verifiedCurrent": "Vérifié",
     "verifiedDiffers": "Diffère",
     "sizeDiffers": "Taille différente",
-    "matchedHashUnknown": "Sur le stylo",
-    "awaitingCatalog": "En attente…",
-    "unknown": "Inconnu",
+    "matchedHashUnknown": "Sans somme de contrôle",
+    "awaitingCatalog": "Sans catalogue",
+    "unknown": "Hors catalogue",
     "notOnPen": "Pas sur le stylo",
     "onPenPresent": "Sur le stylo",
     "onPenVerifying": "Vérification…",
@@ -95,5 +95,35 @@
     "downloadSelected": "Télécharger la sélection vers l'App",
     "downloadAll": "Tout télécharger vers l'App",
     "cancelDownloadBatch": "Annuler le téléchargement"
+  },
+  "statusHelp": {
+    "present": "Le nom correspond à un livre officiel, mais l'App n'a pas lu le fichier pour en vérifier le contenu. Une actualisation ne lit jamais les fichiers : c'est donc l'état normal tant que vous n'avez pas choisi Vérifier ce fichier.",
+    "verifying": "L'App lit ce fichier et le compare à la version officielle.",
+    "verifiedCurrent": "Vous avez vérifié ce fichier et son contenu correspondait exactement à la version officielle. Affiché tant que cette vérification reste valable pour ce stylo et ce fichier.",
+    "verifiedDiffers": "Vous avez vérifié ce fichier et son contenu ne correspondait pas à la version officielle — il peut s'agir d'une édition plus ancienne ou d'une copie endommagée. Ajoutez-le de nouveau depuis la liste officielle pour le remplacer.",
+    "sizeDiffers": "La taille du fichier diffère déjà de la version officielle : le contenu ne peut donc pas correspondre. Aucune lecture du fichier n'a été nécessaire.",
+    "matchedHashUnknown": "Le nom correspond à un livre officiel, mais le catalogue ne publie aucune somme de contrôle : il n'y a rien à comparer.",
+    "awaitingCatalog": "Aucun catalogue n'a encore été chargé, ce fichier n'a donc été comparé à rien. Connectez-vous à Internet puis actualisez.",
+    "unknown": "Ce fichier ne figure pas au catalogue officiel. L'App n'y touche pas et ne peut ni le supprimer ni le remplacer.",
+    "notOnPen": "Ce livre n'est pas sur le stylo connecté.",
+    "onPenPresent": "Un fichier portant le nom de ce livre est sur le stylo, mais son contenu n'a pas été vérifié.",
+    "onPenVerifying": "L'App lit le fichier présent sur le stylo et le compare à la version officielle.",
+    "onPenCurrent": "Le fichier sur le stylo a été vérifié et correspond exactement à cette version officielle.",
+    "onPenDiffers": "Le fichier sur le stylo a été vérifié et ne correspond pas à cette version officielle. Ajoutez-le au stylo pour le remplacer — le fichier existant est d'abord sauvegardé.",
+    "onPenSizeDiffers": "Le fichier sur le stylo n'a pas la même taille que cette version officielle : le contenu ne peut pas être identique.",
+    "metadataIncomplete": "Il manque à la fiche du catalogue le nom de fichier ou la somme de contrôle dont l'App a besoin ; ce livre ne peut pas encore être installé. Votre stylo n'a aucun problème.",
+    "ambiguous": "Au moins deux fiches du catalogue revendiquent le même nom de fichier : l'App ne peut pas déterminer laquelle est visée. Affiché à titre indicatif jusqu'à correction sur le serveur."
+  },
+  "cacheHelp": {
+    "cached": "Une copie vérifiée est enregistrée sur cet ordinateur : l'ajouter au stylo ne nécessite aucun téléchargement.",
+    "notDownloaded": "Pas encore enregistré sur cet ordinateur. Le téléchargement a lieu lorsque vous l'ajoutez au stylo.",
+    "downloading": "Téléchargement en cours sur cet ordinateur."
+  },
+  "legend": {
+    "title": "Que signifient ces mentions ?",
+    "intro": "Chaque livre officiel affiche deux informations distinctes : s'il est sur le stylo, et si une copie est enregistrée sur cet ordinateur. L'une n'implique pas l'autre.",
+    "penHeading": "Contenu sur le stylo",
+    "catalogHeading": "Contenu officiel",
+    "cacheHeading": "Copies sur cet ordinateur"
   }
 }

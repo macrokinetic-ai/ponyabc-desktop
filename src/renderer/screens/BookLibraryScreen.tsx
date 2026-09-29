@@ -14,6 +14,14 @@ import { isSupportedLocale, DEFAULT_LOCALE } from '@shared/locales';
 import { PenRootBar } from '../components/PenRootBar';
 import { BookCatalogBar } from '../components/BookCatalogBar';
 import { usePenRoot } from '../state/PenRootContext';
+import {
+  CACHE_STATUS_LABELS,
+  CACHE_STATUS_LEGEND_ORDER,
+  CATALOG_STATUS_LABELS,
+  CATALOG_STATUS_LEGEND_ORDER,
+  PEN_STATUS_LABELS,
+  PEN_STATUS_LEGEND_ORDER,
+} from './bookStatusLabels';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 function formatBytes(n: number): string {
@@ -32,6 +40,60 @@ function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n:
 function NewBadge({ updatedAtMs, label }: { updatedAtMs: number | null; label: string }) {
   if (!isRecentlyUpdated(updatedAtMs, Date.now())) return null;
   return <span className="new-badge">{label}</span>;
+}
+
+/**
+ * Explains every label the screen can show, in one collapsed block that is always available —
+ * not only when something unusual happens. It is driven by the same key tables as the rows, so
+ * a status can never exist without an entry here.
+ *
+ * `<details>` rather than hover-only help: the chips carry `title` tooltips too, but a tooltip
+ * is unreachable by keyboard and on a touch screen, and this screen's labels are exactly the
+ * ones a confused user needs to read slowly.
+ */
+function StatusLegend({
+  t,
+  showNewBadgeNote,
+}: {
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  showNewBadgeNote: boolean;
+}) {
+  const rows = (entries: readonly { short: string; help: string }[]) => (
+    <dl className="status-legend__list">
+      {entries.map((e) => (
+        <div key={e.short} className="status-legend__item">
+          <dt>{t(e.short)}</dt>
+          <dd>{t(e.help)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+
+  // Rendered only while open: the legend repeats every label verbatim, and leaving that in the
+  // DOM permanently would duplicate each status for find-in-page and for the accessibility tree.
+  const [open, setOpen] = useState(false);
+
+  return (
+    <details className="status-legend" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{t('legend.title')}</summary>
+      {open && (
+        <>
+          <p className="hint">{t('legend.intro')}</p>
+
+          <h3 className="status-legend__heading">{t('legend.penHeading')}</h3>
+          {rows(PEN_STATUS_LEGEND_ORDER.map((s) => PEN_STATUS_LABELS[s]))}
+
+          <h3 className="status-legend__heading">{t('legend.catalogHeading')}</h3>
+          {rows(CATALOG_STATUS_LEGEND_ORDER.map((s) => CATALOG_STATUS_LABELS[s]))}
+
+          <h3 className="status-legend__heading">{t('legend.cacheHeading')}</h3>
+          {rows(CACHE_STATUS_LEGEND_ORDER.map((k) => CACHE_STATUS_LABELS[k]))}
+
+          {showNewBadgeNote && <p className="hint">{t('newBadgeLegend')}</p>}
+        </>
+      )}
+    </details>
+  );
 }
 
 function resultMessage(t: (key: string, opts?: Record<string, unknown>) => string, result: BookActionResult | BookRemoveResult): string | null {
@@ -264,48 +326,18 @@ export function BookLibraryScreen() {
 
   const verifyingNow = Object.keys(lib.verifyProgress).length > 0;
 
-  const penStatusKey: Record<BookPenMatchStatus, string> = {
-    present: 'status.present',
-    verifying: 'status.verifying',
-    'verified-current': 'status.verifiedCurrent',
-    'verified-differs': 'status.verifiedDiffers',
-    'size-differs': 'status.sizeDiffers',
-    'matched-hash-unknown': 'status.matchedHashUnknown',
-    'awaiting-catalog': 'status.awaitingCatalog',
-    unknown: 'status.unknown',
-  };
-  const catalogStatusKey: Record<BookCatalogItem['status'], string> = {
-    'not-on-pen': 'status.notOnPen',
-    'on-pen-present': 'status.onPenPresent',
-    'on-pen-current': 'status.onPenCurrent',
-    'on-pen-differs': 'status.onPenDiffers',
-    'on-pen-size-differs': 'status.onPenSizeDiffers',
-    'on-pen-verifying': 'status.onPenVerifying',
-    'metadata-incomplete': 'status.metadataIncomplete',
-    ambiguous: 'status.ambiguous',
-  };
-  // Short forms for the default (collapsed) row — the full/detailed wording (e.g. "not yet
-  // verified") only ever appears in the expanded detail block below, never in the general list.
-  const penStatusShortKey: Record<BookPenMatchStatus, string> = {
-    present: 'statusShort.present',
-    verifying: 'statusShort.verifying',
-    'verified-current': 'statusShort.verifiedCurrent',
-    'verified-differs': 'statusShort.verifiedDiffers',
-    'size-differs': 'statusShort.sizeDiffers',
-    'matched-hash-unknown': 'statusShort.matchedHashUnknown',
-    'awaiting-catalog': 'statusShort.awaitingCatalog',
-    unknown: 'statusShort.unknown',
-  };
-  const catalogStatusShortKey: Record<BookCatalogItem['status'], string> = {
-    'not-on-pen': 'statusShort.notOnPen',
-    'on-pen-present': 'statusShort.onPenPresent',
-    'on-pen-current': 'statusShort.onPenCurrent',
-    'on-pen-differs': 'statusShort.onPenDiffers',
-    'on-pen-size-differs': 'statusShort.onPenSizeDiffers',
-    'on-pen-verifying': 'statusShort.onPenVerifying',
-    'metadata-incomplete': 'statusShort.metadataIncomplete',
-    ambiguous: 'statusShort.ambiguous',
-  };
+  // Short forms (`.short`) are the chip on the collapsed row; the full wording (e.g. "not yet
+  // verified") appears only in the expanded detail, and `.help` — the condition that produced
+  // the status — appears in the detail, as the chip's tooltip, and in the legend. All three
+  // come from bookStatusLabels.ts so the legend can never fall behind the rows.
+  const penStatusKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].full;
+  const penStatusShortKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].short;
+  const penStatusHelpKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].help;
+  const catalogStatusKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].full;
+  const catalogStatusShortKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].short;
+  const catalogStatusHelpKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].help;
+  const cacheStatusHelpKey = (item: BookCatalogItem, hasProgress: boolean): string =>
+    hasProgress ? CACHE_STATUS_LABELS.downloading.help : item.cached ? CACHE_STATUS_LABELS.cached.help : CACHE_STATUS_LABELS.notDownloaded.help;
   const cacheStatusText = (item: BookCatalogItem, hasProgress: boolean): string => {
     if (hasProgress) return t('cacheStatus.downloading');
     return item.cached ? t('cacheStatus.cached') : t('cacheStatus.notDownloaded');
@@ -359,8 +391,8 @@ export function BookLibraryScreen() {
                     <li key={item.fileName} className="recordings-list__row">
                       {!item.removable ? (
                         <span className="recordings-list__label">
-                          <span className="recordings-list__name">
-                            {item.fileName} — {t(penStatusKey[item.status])}
+                          <span className="recordings-list__name" title={t(penStatusHelpKey(item.status))}>
+                            {item.fileName} — {t(penStatusKey(item.status))}
                           </span>
                         </span>
                       ) : (
@@ -373,8 +405,8 @@ export function BookLibraryScreen() {
                         </label>
                       )}
                       {item.removable && (
-                        <span className="hint">
-                          {t(penStatusShortKey[displayStatus])}
+                        <span className="hint" title={t(penStatusHelpKey(displayStatus))}>
+                          {t(penStatusShortKey(displayStatus))}
                           {progress && ` (${Math.round((progress.bytesRead / Math.max(progress.totalBytes, 1)) * 100)}%)`}
                         </span>
                       )}
@@ -384,7 +416,8 @@ export function BookLibraryScreen() {
                           <span className="hint">{item.fileName}</span>
                           <span className="hint">{formatBytes(item.sizeBytes)}</span>
                           {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                          <span className="hint">{t(penStatusKey[displayStatus])}</span>
+                          <span className="hint">{t(penStatusKey(displayStatus))}</span>
+                          <span className="hint status-help">{t(penStatusHelpKey(displayStatus))}</span>
                           <div className="recordings-list__detail-actions">
                             <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
                               {t('action.verifyThis')}
@@ -473,8 +506,8 @@ export function BookLibraryScreen() {
                             <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
                           </span>
                         )}
-                        <div className="hint">
-                          {t(catalogStatusShortKey[catalogDisplayStatus])}
+                        <div className="hint" title={t(catalogStatusHelpKey(catalogDisplayStatus))}>
+                          {t(catalogStatusShortKey(catalogDisplayStatus))}
                           {verifyProg && ` (${Math.round((verifyProg.bytesRead / Math.max(verifyProg.totalBytes, 1)) * 100)}%)`}
                           {progress && ` (${Math.round((progress.bytesReceived / Math.max(progress.totalBytes, 1)) * 100)}%)`}
                         </div>
@@ -485,7 +518,9 @@ export function BookLibraryScreen() {
                             <span className="hint">{item.filename}</span>
                             <span className="hint">{formatBytes(item.sizeBytes)}</span>
                             <span className="hint">{cacheStatusText(item, !!progress)}</span>
-                            <span className="hint">{t(catalogStatusKey[catalogDisplayStatus])}</span>
+                            <span className="hint status-help">{t(cacheStatusHelpKey(item, !!progress))}</span>
+                            <span className="hint">{t(catalogStatusKey(catalogDisplayStatus))}</span>
+                            <span className="hint status-help">{t(catalogStatusHelpKey(catalogDisplayStatus))}</span>
                             {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
                             {(item.cached || isOnPen(item.status)) && item.status !== 'ambiguous' && item.status !== 'metadata-incomplete' && (
                               <div className="recordings-list__detail-actions">
@@ -547,7 +582,7 @@ export function BookLibraryScreen() {
           {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
         </section>
       </div>
-      {anyNew && <p className="hint">{t('newBadgeLegend')}</p>}
+      <StatusLegend t={t} showNewBadgeNote={anyNew} />
 
       {pendingRemove && (
         <div className="plan-panel">
