@@ -12,7 +12,17 @@ import type { BookListResult } from '@shared/types';
  * book that needs updating, a book we did not put there, and two books that can be added — one
  * of them new since the last check.
  */
-export type DemoVariant = 'summary' | 'uptodate' | 'nospace' | 'syncing';
+export type DemoVariant = 'summary' | 'uptodate' | 'nospace' | 'nospace-unknown' | 'syncing';
+
+/**
+ * Set once a demo sync has "finished", so the screen afterwards says what it would really say:
+ * everything is on the pen and there is nothing left to do. Without it the summary would still
+ * offer the same two books to add in the photograph taken after the sync.
+ */
+let demoSyncComplete = false;
+export function markDemoSyncComplete(): void {
+  demoSyncComplete = true;
+}
 
 export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
   const now = Date.now();
@@ -109,11 +119,35 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
       lastCheck: { state: 'ok', atMs: now - 5 * 60 * 1000, httpStatus: 200, itemCount: 4, message: null, durationMs: 210 },
       // 'nospace' leaves far too little room for the 231 MB the plan would write, so the
       // refusal and its "you need about N more" message can be photographed.
-      penFreeBytes: variant === 'nospace' ? 120_000_000 : 9_400_000_000,
+      // 'nospace-unknown' is the filesystem refusing to say how much room is left: the sync is
+      // blocked rather than started hopefully, which is the screen this photographs.
+      penFreeBytes: variant === 'nospace-unknown' ? null : variant === 'nospace' ? 120_000_000 : 9_400_000_000,
       penTotalBytes: 15_900_000_000,
       penClusterBytes: 32_768,
     },
   };
+
+  if (demoSyncComplete) {
+    // What the screen says the moment a sync finishes: every book in the catalogue is now on
+    // the pen, including the two that were only offered a minute ago.
+    return {
+      ...base,
+      penItems: [
+        ...base.catalogItems.map((i) => ({
+          fileName: i.filename,
+          sizeBytes: i.sizeBytes,
+          contentId: i.contentId,
+          friendlyName: i.friendlyName,
+          friendlyNameI18n: i.friendlyNameI18n,
+          status: 'verified-current' as const,
+          removable: true,
+          updatedAtMs: i.updatedAtMs,
+        })),
+        ...(base.penItems ?? []).filter((p) => p.contentId === null),
+      ],
+      catalogItems: base.catalogItems.map((i) => ({ ...i, status: 'on-pen-current' as const, actionable: false })),
+    };
+  }
 
   if (variant === 'uptodate') {
     // Everything matches: nothing to add, nothing to update.
@@ -129,9 +163,11 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
   return base;
 }
 
+const VARIANTS: readonly DemoVariant[] = ['summary', 'uptodate', 'nospace', 'nospace-unknown', 'syncing'];
+
 export const demoVariant = (): DemoVariant => {
   const v = process.env.PONYABC_DEMO_DATA;
-  return v === 'uptodate' || v === 'nospace' || v === 'syncing' ? v : 'summary';
+  return VARIANTS.includes(v as DemoVariant) ? (v as DemoVariant) : 'summary';
 };
 
 export const demoDataEnabled = (): boolean => (process.env.PONYABC_DEMO_DATA ?? '') !== '';

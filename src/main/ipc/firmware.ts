@@ -30,6 +30,7 @@ import {
   summarizeRestore,
 } from '../services/firmwarePreflight';
 import { decodeLogBytes } from '../services/logEncoding';
+import { demoFirmwareEnabled, demoFirmwareOutcome, demoFirmwarePackage } from '../services/demoFirmware';
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
 import { appendDiagnostic, redactText } from '../services/diagnostics';
@@ -46,6 +47,9 @@ import {
 } from '../services/firmwareSessionLog';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
+  // Screenshots only, and never in a packaged build — see demoFirmware.ts.
+  if (demoFirmwareEnabled()) return { status: 'selected', info: demoFirmwarePackage() };
+
   const result = await dialog.showOpenDialog(window, {
     properties: ['openDirectory'],
     title: 'Select the extracted firmware package folder (the one containing download.bat)',
@@ -171,6 +175,21 @@ export async function startFirmwareUpgrade(
     preflightDeletions?: readonly string[];
   },
 ): Promise<FirmwareStartResult> {
+  // Screenshots only, and never in a packaged build — see demoFirmware.ts. Deliberately the
+  // first thing here: no lock is taken, no session log is written, no preflight deletion runs
+  // and nothing is launched. The wizard simply receives the outcome it would have received.
+  if (demoFirmwareEnabled()) {
+    const outcome = demoFirmwareOutcome();
+    setTimeout(() => {
+      try {
+        window.webContents.send(IPC.firmwareOutcome, outcome);
+      } catch {
+        // window already gone
+      }
+    }, 600);
+    return { status: 'started' };
+  }
+
   if (process.platform !== 'win32') return { status: 'unsupported-platform' };
   if (!session.getPenRoot()) return { status: 'no-pen-selected' };
 

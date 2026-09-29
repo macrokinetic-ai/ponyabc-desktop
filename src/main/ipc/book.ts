@@ -33,7 +33,7 @@ import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { getVolumeInfo } from '../services/transferPlanner';
-import { demoBookList, demoDataEnabled, demoVariant } from '../services/demoBookData';
+import { demoBookList, demoDataEnabled, demoVariant, markDemoSyncComplete } from '../services/demoBookData';
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
@@ -241,6 +241,15 @@ async function runInstallAction(
   window: BrowserWindow,
   params: { contentId: string; penGeneration: number },
 ): Promise<BookActionResult> {
+  // Screenshots and the manual only — see demoBookData.ts. The demo catalogue is not a real
+  // catalogue, so there is nothing to download and nowhere to write: report the completion the
+  // real path would report, and let the screen show what a parent sees when a sync finishes.
+  if (demoDataEnabled()) {
+    markDemoSyncComplete();
+    markBookIndexStale('added');
+    return { status: 'completed', createdNewFile: true };
+  }
+
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
   // A book can take twenty minutes to write at the pen's ~1 MB/s. If the computer sleeps

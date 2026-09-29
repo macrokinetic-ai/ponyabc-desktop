@@ -1,0 +1,51 @@
+name: Parent-manual screenshots (manual only)
+
+# Every screen in the parent manual, photographed on Windows — the platform the app ships on,
+# and the only one where the firmware wizard runs at all (on macOS that screen is a single
+# "this needs Windows" banner, so those five pictures cannot be taken anywhere else).
+#
+# workflow_dispatch ONLY: it is a documentation job, never part of a build or a release.
+#
+# Nothing here touches a real device. The app is pointed at a throwaway pen folder built by
+# scripts/make-demo-pen.mjs, and the firmware steps use the demo path in
+# src/main/services/demoFirmware.ts, which refuses to run in a packaged build and launches
+# nothing in any build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      locales:
+        description: Locales to capture, comma-separated
+        default: en,zh-Hant
+        required: false
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Capture every manual screen
+        run: node scripts/capture-manual-screenshots.mjs manual-screenshots --locales=${{ inputs.locales || 'en,zh-Hant' }}
+
+      - name: Show what came out
+        if: always()
+        run: |
+          Get-ChildItem manual-screenshots | Format-Table Name, Length
+          Get-Content manual-screenshots/capture-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual-screenshots
+          path: manual-screenshots
+          if-no-files-found: error
+          retention-days: 14
