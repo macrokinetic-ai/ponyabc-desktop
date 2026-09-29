@@ -5,7 +5,7 @@
   "lastUpdated": "Last updated: {{time}}",
   "devFixtureBanner": "Development catalog data — not live",
   "newBadge": "NEW",
-  "newBadgeLegend": "NEW indicates this item was added or updated on the server within the last 14 days.",
+  "newBadgeLegend": "NEW means this book was added to the list since you last checked.",
   "connection": {
     "label": "BOOK catalog",
     "checking": "Checking…",
@@ -168,5 +168,45 @@
     "remaining": "About {{minutes}} minutes left",
     "remainingShort": "Nearly done",
     "writing": "Copying “{{name}}” to your pen…"
-  }
+  },
+  "check": {
+    "button": "Check for new books",
+    "checking": "Checking…",
+    "last": "Last checked: {{time}}",
+    "never": "Not checked yet",
+    "failed": "We couldn't reach the PonyABC library. Check your internet connection and try again."
+  },
+  "yourBooks": {
+    "title": "Your books",
+    "intro": "The books on your pen right now.",
+    "empty": "No books on your pen yet. Add some below.",
+    "upToDate": "Up to date",
+    "updateAvailable": "Update available",
+    "checking": "Checking…",
+    "updating": "Updating…",
+    "update": "Update"
+  },
+  "otherBooks": {
+    "title": "Other books (not from PonyABC)",
+    "body": "These came from somewhere else. This app leaves them exactly as they are.",
+    "count": "{{count}} book(s)"
+  },
+  "newBooks": {
+    "title": "New books",
+    "intro": "Books you can add. Tick the ones whose cards you have.",
+    "empty": "Your pen already has every book we offer.",
+    "badge": "NEW",
+    "badgeHint": "NEW means this book was added to the list since you last checked."
+  },
+  "footer": {
+    "selected": "{{count}} book(s) selected, about {{minutes}} minutes",
+    "selectedShort": "{{count}} book(s) selected, a minute or two",
+    "none": "Tick a book above to add it.",
+    "add": "Add to your pen"
+  },
+  "estimate": {
+    "minutes": "about {{minutes}} min",
+    "short": "about a minute"
+  },
+  "penRequired": "Connect your pen to see and add books."
 }

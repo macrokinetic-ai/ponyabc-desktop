@@ -5,7 +5,7 @@
   "lastUpdated": "最後更新：{{time}}",
   "devFixtureBanner": "開發測試目錄資料——非正式內容",
   "newBadge": "NEW",
-  "newBadgeLegend": "NEW 表示此項目在最近 14 日內於伺服器新增或更新過。",
+  "newBadgeLegend": "「新」表示這本書是你上次檢查之後才加入清單的。",
   "connection": {
     "label": "BOOK 目錄",
     "checking": "檢查中…",
@@ -168,5 +168,45 @@
     "remaining": "尚餘大約 {{minutes}} 分鐘",
     "remainingShort": "即將完成",
     "writing": "正在將《{{name}}》複製到點讀筆…"
-  }
+  },
+  "check": {
+    "button": "檢查有沒有新書",
+    "checking": "檢查中…",
+    "last": "上次檢查：{{time}}",
+    "never": "尚未檢查",
+    "failed": "未能連接 PonyABC 書庫。請檢查網絡連線後再試一次。"
+  },
+  "yourBooks": {
+    "title": "你的書本",
+    "intro": "目前在點讀筆內的書本。",
+    "empty": "點讀筆內尚未有書本，可從下面加入。",
+    "upToDate": "已是最新",
+    "updateAvailable": "有更新版本",
+    "checking": "檢查中…",
+    "updating": "更新中…",
+    "update": "更新"
+  },
+  "otherBooks": {
+    "title": "其他書本（並非來自 PonyABC）",
+    "body": "這些書本來自其他來源，本程式不會作任何改動。",
+    "count": "{{count}} 本"
+  },
+  "newBooks": {
+    "title": "新書",
+    "intro": "可以加入的書本。請勾選你已擁有卡片的書本。",
+    "empty": "我們提供的書本，點讀筆內已全部齊備。",
+    "badge": "新",
+    "badgeHint": "「新」表示這本書是你上次檢查之後才加入清單的。"
+  },
+  "footer": {
+    "selected": "已選 {{count}} 本，約需 {{minutes}} 分鐘",
+    "selectedShort": "已選 {{count}} 本，約需一兩分鐘",
+    "none": "請在上面勾選想加入的書本。",
+    "add": "加入點讀筆"
+  },
+  "estimate": {
+    "minutes": "約 {{minutes}} 分鐘",
+    "short": "約一分鐘"
+  },
+  "penRequired": "請連接點讀筆，以檢視和加入書本。"
 }

@@ -8,10 +8,8 @@ import type {
   BookVerifyContentResult,
 } from '@shared/types';
 import { resolveBookDisplayName } from '@shared/bookDisplay';
-import { isRecentlyUpdated } from '@shared/bookNewBadge';
 import { isSupportedLocale, DEFAULT_LOCALE } from '@shared/locales';
 import { PenRootBar } from '../components/PenRootBar';
-import { BookCatalogBar } from '../components/BookCatalogBar';
 import { usePenRoot } from '../state/PenRootContext';
 import {
   CACHE_STATUS_LABELS,
@@ -23,9 +21,9 @@ import {
   SIMPLE_STATE_LABELS,
   SIMPLE_STATE_LEGEND_ORDER,
   simpleStateForCatalog,
-  simpleStateForPen,
 } from './bookStatusLabels';
 import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
+import { computeNewIds, readSeenIds, writeSeenIds } from './newBookIds';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 function formatBytes(n: number): string {
@@ -36,14 +34,6 @@ function formatBytes(n: number): string {
 function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n: Record<string, string> | null; filename: string }, locale: string): string {
   const resolvedLocale = isSupportedLocale(locale) ? locale : DEFAULT_LOCALE;
   return resolveBookDisplayName({ friendlyName: source.friendlyName ?? '', friendlyNameI18n: source.friendlyNameI18n, filename: source.filename }, resolvedLocale);
-}
-
-/** Recomputed against the real current clock on every render (never the local download/cache
- *  time) — this is what makes the badge disappear on its own once 14 real days pass, even
- *  entirely from an offline-cached server timestamp. */
-function NewBadge({ updatedAtMs, label }: { updatedAtMs: number | null; label: string }) {
-  if (!isRecentlyUpdated(updatedAtMs, Date.now())) return null;
-  return <span className="new-badge">{label}</span>;
 }
 
 /**
@@ -178,7 +168,6 @@ function isOnPen(status: BookCatalogItem['status']): boolean {
 
 export function BookLibraryScreen() {
   const { t, i18n } = useTranslation('book');
-  const { t: tCommon } = useTranslation('common');
   const penRoot = usePenRoot();
   const lib = useBookLibrary();
 
@@ -191,15 +180,50 @@ export function BookLibraryScreen() {
   // expands filename/size/official-update-date/full status/per-item actions below it.
   const [expandedPen, setExpandedPen] = useState<Set<string>>(new Set());
   const [expandedCatalog, setExpandedCatalog] = useState<Set<string>>(new Set());
-  const [downloadSummaryText, setDownloadSummaryText] = useState<string | null>(null);
 
   const penConnected = penRoot.result.status === 'ok';
   const penItems = lib.penItems ?? [];
-  const actionableCatalogItems = lib.catalogItems.filter((i) => i.actionable);
+
+  /**
+   * The screen answers three questions in order: what is on your pen, what could be, and how
+   * long adding it would take. Everything below is that split — and nothing in it can remove a
+   * book, because removal is the library's decision, not a parent's.
+   */
+  const catalogById = new Map(lib.catalogItems.map((i) => [i.contentId, i]));
+
+  /** Books on the pen that came from us — the only ones we will ever touch. */
+  const ownBooks = penItems
+    .filter((p) => p.contentId !== null)
+    .map((pen) => ({ pen, catalog: pen.contentId ? (catalogById.get(pen.contentId) ?? null) : null }));
+
+  /** Books on the pen that did not. Counted, named once, never acted on. */
+  const otherBooks = penItems.filter((p) => p.contentId === null);
+
+  /** Catalogue books that are not on the pen. A book on the pen can never appear here. */
+  const onPenContentIds = new Set(penItems.map((p) => p.contentId).filter((id): id is string => id !== null));
+  const addableBooks = lib.catalogItems.filter((i) => !onPenContentIds.has(i.contentId) && i.status === 'not-on-pen');
+
+  /**
+   * Which books are new *to this parent*. Computed once per catalogue change and remembered
+   * immediately, so a book is badged exactly once — see newBookIds.ts for why that is the
+   * useful meaning of "new".
+   */
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const catalogIdsKey = lib.catalogItems.map((i) => i.contentId).join(',');
+  useEffect(() => {
+    const ids = catalogIdsKey === '' ? [] : catalogIdsKey.split(',');
+    if (ids.length === 0) return;
+    const { newIds: fresh, nextSeen } = computeNewIds(ids, readSeenIds());
+    setNewIds(fresh);
+    writeSeenIds(nextSeen);
+  }, [catalogIdsKey]);
+
+  const selectedMinutes = estimateMinutes(
+    transferBytesFor(lib.catalogItems.filter((i) => catalogSelected.has(i.contentId)).map((i) => i.sizeBytes)),
+  );
   // "Download all to App" targets everything that could ever be cache-downloaded — broader
   // than actionableCatalogItems (which excludes on-pen-current/verifying, since there's
   // nothing to INSTALL for those, but they may still be worth having in the local cache).
-  const downloadableCatalogItems = lib.catalogItems.filter((i) => i.status !== 'metadata-incomplete' && i.status !== 'ambiguous');
 
   function toggleCatalog(contentId: string) {
     setCatalogSelected((prev) => {
@@ -345,22 +369,6 @@ export function BookLibraryScreen() {
     }
   }
 
-  async function handleDownloadBatch(contentIds: string[]) {
-    if (contentIds.length === 0) return;
-    setMessage(null);
-    setDownloadSummaryText(null);
-    await lib.downloadBatch(contentIds);
-  }
-
-  useEffect(() => {
-    if (!lib.batchDownloadSummary) return;
-    const s = lib.batchDownloadSummary;
-    const base = t('downloadBatchSummary', { downloaded: s.downloadedCount, skipped: s.skippedCount, failed: s.failedCount });
-    setDownloadSummaryText(s.cancelled ? `${base} ${t('downloadBatchCancelledSuffix')}` : base);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lib.batchDownloadSummary]);
-
-  const verifyingNow = Object.keys(lib.verifyProgress).length > 0;
 
   /**
    * The pen's book list against what is actually on the pen. A mismatch means books were added
@@ -445,9 +453,9 @@ export function BookLibraryScreen() {
     return item.cached ? t('cacheStatus.cached') : t('cacheStatus.notDownloaded');
   };
 
-  const now = Date.now();
-  const anyNew =
-    penItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now)) || lib.catalogItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now));
+  // The NEW badge now means "new to you", not "recently published" — so the legend note about
+  // it is shown exactly when a badge is on screen.
+  const anyNew = newIds.size > 0;
 
   return (
     <div className="screen">
@@ -457,233 +465,165 @@ export function BookLibraryScreen() {
       {lib.meta.conflicts.length > 0 && <div className="note-box">{t('ambiguousNotice', { count: lib.meta.conflicts.length })}</div>}
       {message && <p className="error-text">{message}</p>}
 
-      <div className="dual-pane">
-        <section className="pane">
-          <div className="pane__header">
-            <PenRootBar />
-            {penConnected && (
-              <div className="pane__toolbar">
-                <button type="button" className="button" onClick={() => void lib.refreshPen()}>
-                  {tCommon('buttons.refresh')}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="pane__list">
-            {!penConnected && <p className="hint">{t('penRequiredForWrite')}</p>}
-            {penConnected && penItems.length === 0 && <p className="hint">{t('emptyState')}</p>}
-            {penConnected && penItems.length > 0 && (
-              <ul className="recordings-list">
-                {penItems.map((item) => {
-                  const progress = item.contentId ? lib.verifyProgress[item.contentId] : undefined;
-                  const displayStatus: BookPenMatchStatus = progress ? 'verifying' : item.status;
-                  const expanded = expandedPen.has(item.fileName);
-                  return (
-                    <li key={item.fileName} className="recordings-list__row">
-                      {!item.removable ? (
-                        <span className="recordings-list__label">
-                          <span className="recordings-list__name" title={t(penStatusHelpKey(item.status))}>
-                            {item.fileName} — {t(penStatusKey(item.status))}
-                          </span>
-                        </span>
-                      ) : (
-                        <label className="recordings-list__label">
-                          <button type="button" className="recordings-list__name-toggle" onClick={() => togglePenExpand(item.fileName)}>
-                            {displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}
-                          </button>
-                          <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                        </label>
-                      )}
-                      {item.removable && (
-                        <span className="hint" title={t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].help)}>
-                          {t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].short)}
-                          {progress && ` (${Math.round((progress.bytesRead / Math.max(progress.totalBytes, 1)) * 100)}%)`}
-                        </span>
-                      )}
-                      {progress && <progress className="book-progress" value={progress.bytesRead} max={Math.max(progress.totalBytes, 1)} />}
-                      {item.removable && expanded && (
-                        <div className="recordings-list__detail">
-                          <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].help)}</span>
-                          <AdvancedDetails t={t}>
-                            <span className="hint">{item.fileName}</span>
-                            <span className="hint">{formatBytes(item.sizeBytes)}</span>
-                            {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                            <span className="hint">{t(penStatusKey(displayStatus))}</span>
-                            <span className="hint status-help">{t(penStatusHelpKey(displayStatus))}</span>
-                            <div className="recordings-list__detail-actions">
-                              <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
-                                {t('action.verifyThis')}
-                              </button>
-                            </div>
-                          </AdvancedDetails>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        <div className="dual-pane__actions">
-          {verifyingNow ? (
-            <button type="button" className="button" onClick={() => void lib.cancelVerify()}>
-              {t('action.cancelVerify')}
-            </button>
-          ) : (
-            <span className="hint">{t('verifyHint')}</span>
-          )}
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={!penConnected || catalogSelected.size === 0 || busy}
-            onClick={() => startAdd()}
-          >
-            {t('action.add')}
-          </button>
-        </div>
-
-        <section className="pane">
-          <div className="pane__header">
-            <BookCatalogBar />
-            <p className="hint">{t('catalogIntro')}</p>
-            {actionableCatalogItems.length > 0 && (
-              <div className="pane__toolbar">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={catalogSelected.size === actionableCatalogItems.length}
-                    onChange={() =>
-                      setCatalogSelected(
-                        catalogSelected.size === actionableCatalogItems.length ? new Set() : new Set(actionableCatalogItems.map((i) => i.contentId)),
-                      )
-                    }
-                  />
-                  {t('selectAll')}
-                </label>
-                <span>{t('selectedCount', { count: catalogSelected.size })}</span>
-              </div>
-            )}
-          </div>
-          <div className="pane__list">
-            {lib.catalogItems.length === 0 && <p className="hint">{t('emptyState')}</p>}
-            {lib.catalogItems.length > 0 && (
-              <ul className="recordings-list">
-                {lib.catalogItems.map((item) => {
-                  const progress = lib.downloadProgress[item.contentId];
-                  const isBatchProgress = progress?.completedCount !== undefined;
-                  const verifyProg = lib.verifyProgress[item.contentId];
-                  const catalogDisplayStatus: BookCatalogItem['status'] = verifyProg ? 'on-pen-verifying' : item.status;
-                  const expanded = expandedCatalog.has(item.contentId);
-                  return (
-                    <li key={item.contentId} className="recordings-list__row">
-                      <div>
-                        {item.actionable ? (
-                          <label className="recordings-list__label">
-                            <input type="checkbox" checked={catalogSelected.has(item.contentId)} onChange={() => toggleCatalog(item.contentId)} />
-                            <button type="button" className="recordings-list__name-toggle" onClick={() => toggleCatalogExpand(item.contentId)}>
-                              {displayNameFor(item, i18n.language)}
-                            </button>
-                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                          </label>
-                        ) : (
-                          <span className="recordings-list__label">
-                            <button type="button" className="recordings-list__name-toggle" onClick={() => toggleCatalogExpand(item.contentId)}>
-                              {displayNameFor(item, i18n.language)}
-                            </button>
-                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                          </span>
-                        )}
-                        <div className="hint" title={t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].help)}>
-                          {t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].short)}
-                          {verifyProg && ` (${Math.round((verifyProg.bytesRead / Math.max(verifyProg.totalBytes, 1)) * 100)}%)`}
-                          {progress && ` (${Math.round((progress.bytesReceived / Math.max(progress.totalBytes, 1)) * 100)}%)`}
-                        </div>
-                        {progress && <progress className="book-progress" value={progress.bytesReceived} max={Math.max(progress.totalBytes, 1)} />}
-                        {verifyProg && <progress className="book-progress" value={verifyProg.bytesRead} max={Math.max(verifyProg.totalBytes, 1)} />}
-                        {expanded && (
-                          <div className="recordings-list__detail">
-                            <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].help)}</span>
-                            <AdvancedDetails t={t}>
-                            <span className="hint">{item.filename}</span>
-                            <span className="hint">{formatBytes(item.sizeBytes)}</span>
-                            <span className="hint">{cacheStatusText(item, !!progress)}</span>
-                            <span className="hint status-help">{t(cacheStatusHelpKey(item, !!progress))}</span>
-                            <span className="hint">{t(catalogStatusKey(catalogDisplayStatus))}</span>
-                            <span className="hint status-help">{t(catalogStatusHelpKey(catalogDisplayStatus))}</span>
-                            {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                            {(item.cached || isOnPen(item.status)) && item.status !== 'ambiguous' && item.status !== 'metadata-incomplete' && (
-                              <div className="recordings-list__detail-actions">
-                                <button type="button" className="button" disabled={busy || !penConnected || !!verifyProg} onClick={() => void handleReinstall(item.contentId)}>
-                                  {t('action.reinstall')}
-                                </button>
-                              </div>
-                            )}
-                            </AdvancedDetails>
-                          </div>
-                        )}
-                      </div>
-                      <div className="recordings-list__preview">
-                        {item.actionable && !progress && !verifyProg && (
-                          <button
-                            type="button"
-                            className="button button--primary"
-                            disabled={busy || !penConnected}
-                            onClick={() => void startAdd([item.contentId])}
-                          >
-                            {t(isOnPen(item.status) ? 'action.updateOne' : 'action.addOne')}
-                          </button>
-                        )}
-                        {progress && !isBatchProgress && (
-                          <button type="button" className="button" onClick={() => void lib.cancelDownload(item.contentId)}>
-                            {t('action.cancelDownload')}
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-          <div className="pane__footer">
-            {lib.batchDownloadActive ? (
-              <>
-                <span className="hint">
-                  {t('downloadBatchProgress', {
-                    completed: lib.batchDownloadCounter?.completedCount ?? 0,
-                    total: lib.batchDownloadCounter?.totalCount ?? 0,
-                  })}
-                </span>
-                <button type="button" className="button" onClick={() => void lib.cancelDownloadBatch()}>
-                  {t('action.cancelDownloadBatch')}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="button"
-                  disabled={busy || catalogSelected.size === 0}
-                  onClick={() => void handleDownloadBatch([...catalogSelected])}
-                >
-                  {t('action.downloadSelected')}
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  disabled={busy || downloadableCatalogItems.length === 0}
-                  onClick={() => void handleDownloadBatch(downloadableCatalogItems.map((i) => i.contentId))}
-                >
-                  {t('action.downloadAll')}
-                </button>
-              </>
-            )}
-          </div>
-          {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
-        </section>
+      <div className="pane__header">
+        <PenRootBar />
       </div>
+
+      {/* ------------------------------------------------------ CHECK FOR NEW BOOKS --- */}
+      <div className="book-check">
+        <button type="button" className="button" disabled={lib.refreshing} onClick={() => void lib.refreshCatalog()}>
+          {lib.refreshing ? t('check.checking') : t('check.button')}
+        </button>
+        <span className="hint">
+          {lib.meta.fetchedAtMs !== null ? t('check.last', { time: new Date(lib.meta.fetchedAtMs).toLocaleString(i18n.language) }) : t('check.never')}
+        </span>
+      </div>
+      {/* A parent needs to know the check failed — otherwise "not checked yet" is all they see,
+          with no reason and nothing to do about it. */}
+      {lib.meta.lastCheck?.state === 'error' && <p className="hint">{t('check.failed')}</p>}
+
+      {/* ---------------------------------------------------------------- YOUR BOOKS --- */}
+      <section className="book-section">
+        <h2>{t('yourBooks.title')}</h2>
+        <p className="hint">{t('yourBooks.intro')}</p>
+
+        {!penConnected && <p className="hint">{t('penRequired')}</p>}
+        {penConnected && ownBooks.length === 0 && otherBooks.length === 0 && <p className="hint">{t('yourBooks.empty')}</p>}
+
+        {penConnected && ownBooks.length > 0 && (
+          <ul className="recordings-list">
+            {ownBooks.map(({ pen, catalog }) => {
+              const verifying = pen.contentId ? lib.verifyProgress[pen.contentId] : undefined;
+              const updating = catalog ? !!lib.downloadProgress[catalog.contentId] : false;
+              const needsUpdate = catalog?.status === 'on-pen-differs' || catalog?.status === 'on-pen-size-differs';
+              const expanded = expandedPen.has(pen.fileName);
+              return (
+                <li key={pen.fileName} className="recordings-list__row">
+                  <span className="recordings-list__label">
+                    <button type="button" className="recordings-list__name-toggle" onClick={() => togglePenExpand(pen.fileName)}>
+                      {displayNameFor({ friendlyName: pen.friendlyName, friendlyNameI18n: pen.friendlyNameI18n, filename: pen.fileName }, i18n.language)}
+                    </button>
+                  </span>
+                  <span className="hint">
+                    {verifying ? t('yourBooks.checking') : updating ? t('yourBooks.updating') : needsUpdate ? t('yourBooks.updateAvailable') : t('yourBooks.upToDate')}
+                  </span>
+                  {needsUpdate && catalog && !updating && (
+                    <button
+                      type="button"
+                      className="button button--primary"
+                      disabled={busy || !penConnected}
+                      onClick={() => startAdd([catalog.contentId])}
+                    >
+                      {t('yourBooks.update')}
+                    </button>
+                  )}
+                  {expanded && (
+                    <div className="recordings-list__detail">
+                      <span className="hint">{formatBytes(pen.sizeBytes)}</span>
+                      {pen.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(pen.updatedAtMs) })}</span>}
+                      <AdvancedDetails t={t}>
+                        <span className="hint">{pen.fileName}</span>
+                        <span className="hint">{t(penStatusKey(verifying ? 'verifying' : pen.status))}</span>
+                        <span className="hint status-help">{t(penStatusHelpKey(verifying ? 'verifying' : pen.status))}</span>
+                        <div className="recordings-list__detail-actions">
+                          <button type="button" className="button" disabled={busy || !!verifying} onClick={() => void runVerify([pen.fileName])}>
+                            {t('action.verifyThis')}
+                          </button>
+                          {catalog && (
+                            <button type="button" className="button" disabled={busy || !!verifying} onClick={() => void handleReinstall(catalog.contentId)}>
+                              {t('action.reinstall')}
+                            </button>
+                          )}
+                        </div>
+                      </AdvancedDetails>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {/* Books we did not put there. Named once, counted, and left completely alone — they
+            are the customer's, and offering to touch them would be offering to break them. */}
+        {penConnected && otherBooks.length > 0 && (
+          <div className="note-box">
+            <p>{t('otherBooks.title')}</p>
+            <p className="hint">{t('otherBooks.body')}</p>
+            <p className="hint">{t('otherBooks.count', { count: otherBooks.length })}</p>
+          </div>
+        )}
+      </section>
+
+      {/* ----------------------------------------------------------------- NEW BOOKS --- */}
+      <section className="book-section">
+        <h2>{t('newBooks.title')}</h2>
+        <p className="hint">{t('newBooks.intro')}</p>
+
+        {addableBooks.length === 0 && <p className="hint">{t('newBooks.empty')}</p>}
+        {addableBooks.length > 0 && (
+          <ul className="recordings-list">
+            {addableBooks.map((item) => {
+              const progress = lib.downloadProgress[item.contentId];
+              const expanded = expandedCatalog.has(item.contentId);
+              const minutes = estimateMinutes(transferBytesFor([item.sizeBytes]));
+              return (
+                <li key={item.contentId} className="recordings-list__row">
+                  <label className="recordings-list__label">
+                    <input
+                      type="checkbox"
+                      checked={catalogSelected.has(item.contentId)}
+                      disabled={!item.actionable}
+                      onChange={() => toggleCatalog(item.contentId)}
+                    />
+                    <button type="button" className="recordings-list__name-toggle" onClick={() => toggleCatalogExpand(item.contentId)}>
+                      {displayNameFor(item, i18n.language)}
+                    </button>
+                    {newIds.has(item.contentId) && <span className="new-badge">{t('newBooks.badge')}</span>}
+                  </label>
+                  <span className="hint">
+                    {formatBytes(item.sizeBytes)} · {minutes > 0 ? t('estimate.minutes', { minutes }) : t('estimate.short')}
+                  </span>
+                  {progress && <progress className="book-progress" value={progress.bytesReceived} max={Math.max(progress.totalBytes, 1)} />}
+                  {expanded && (
+                    <div className="recordings-list__detail">
+                      <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForCatalog(item.status, !!progress)].help)}</span>
+                      <AdvancedDetails t={t}>
+                        <span className="hint">{item.filename}</span>
+                        <span className="hint">{cacheStatusText(item, !!progress)}</span>
+                        <span className="hint status-help">{t(cacheStatusHelpKey(item, !!progress))}</span>
+                        <span className="hint">{t(catalogStatusKey(item.status))}</span>
+                        <span className="hint status-help">{t(catalogStatusHelpKey(item.status))}</span>
+                        {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
+                      </AdvancedDetails>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* -------------------------------------------------------------------- FOOTER --- */}
+      <div className="book-footer">
+        <span className="hint">
+          {catalogSelected.size === 0
+            ? t('footer.none')
+            : selectedMinutes > 0
+              ? t('footer.selected', { count: catalogSelected.size, minutes: selectedMinutes })
+              : t('footer.selectedShort', { count: catalogSelected.size })}
+        </span>
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!penConnected || catalogSelected.size === 0 || busy}
+          onClick={() => startAdd()}
+        >
+          {t('footer.add')}
+        </button>
+      </div>
+
       {writing && (
         <div className="note-box">
           <p>{t('transfer.dontUnplug')}</p>

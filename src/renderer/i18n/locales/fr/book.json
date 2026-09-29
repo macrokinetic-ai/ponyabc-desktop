@@ -5,7 +5,7 @@
   "lastUpdated": "Dernière mise à jour : {{time}}",
   "devFixtureBanner": "Données de catalogue de développement — pas réelles",
   "newBadge": "NOUVEAU",
-  "newBadgeLegend": "NOUVEAU signifie que cet élément a été ajouté ou mis à jour sur le serveur au cours des 14 derniers jours.",
+  "newBadgeLegend": "NOUVEAU signifie que ce livre a été ajouté à la liste depuis votre dernière vérification.",
   "connection": {
     "label": "Catalogue BOOK",
     "checking": "Vérification…",
@@ -168,5 +168,45 @@
     "remaining": "Environ {{minutes}} minutes restantes",
     "remainingShort": "Presque terminé",
     "writing": "Copie de « {{name}} » sur votre stylo…"
-  }
+  },
+  "check": {
+    "button": "Chercher de nouveaux livres",
+    "checking": "Recherche…",
+    "last": "Dernière vérification : {{time}}",
+    "never": "Pas encore vérifié",
+    "failed": "Impossible de joindre la bibliothèque PonyABC. Vérifiez votre connexion internet et réessayez."
+  },
+  "yourBooks": {
+    "title": "Vos livres",
+    "intro": "Les livres actuellement sur votre stylo.",
+    "empty": "Aucun livre sur votre stylo. Ajoutez-en ci-dessous.",
+    "upToDate": "À jour",
+    "updateAvailable": "Mise à jour disponible",
+    "checking": "Vérification…",
+    "updating": "Mise à jour…",
+    "update": "Mettre à jour"
+  },
+  "otherBooks": {
+    "title": "Autres livres (pas de PonyABC)",
+    "body": "Ils viennent d'ailleurs. Cette application n'y touche pas.",
+    "count": "{{count}} livre(s)"
+  },
+  "newBooks": {
+    "title": "Nouveaux livres",
+    "intro": "Livres que vous pouvez ajouter. Cochez ceux dont vous avez les cartes.",
+    "empty": "Votre stylo a déjà tous les livres que nous proposons.",
+    "badge": "NOUVEAU",
+    "badgeHint": "NOUVEAU signifie que ce livre a été ajouté à la liste depuis votre dernière vérification."
+  },
+  "footer": {
+    "selected": "{{count}} livre(s) sélectionné(s), environ {{minutes}} minutes",
+    "selectedShort": "{{count}} livre(s) sélectionné(s), une minute ou deux",
+    "none": "Cochez un livre ci-dessus pour l’ajouter.",
+    "add": "Ajouter à votre stylo"
+  },
+  "estimate": {
+    "minutes": "environ {{minutes}} min",
+    "short": "environ une minute"
+  },
+  "penRequired": "Branchez votre stylo pour voir et ajouter des livres."
 }

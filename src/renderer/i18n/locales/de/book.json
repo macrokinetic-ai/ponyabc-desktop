@@ -5,7 +5,7 @@
   "lastUpdated": "Zuletzt aktualisiert: {{time}}",
   "devFixtureBanner": "Entwickler-Testdaten — keine echten Inhalte",
   "newBadge": "NEU",
-  "newBadgeLegend": "NEU bedeutet, dass dieses Element in den letzten 14 Tagen auf dem Server hinzugefügt oder aktualisiert wurde.",
+  "newBadgeLegend": "NEU heißt, dieses Buch kam seit Ihrer letzten Prüfung in die Liste.",
   "connection": {
     "label": "BOOK-Katalog",
     "checking": "Wird geprüft…",
@@ -168,5 +168,45 @@
     "remaining": "Noch etwa {{minutes}} Minuten",
     "remainingShort": "Fast fertig",
     "writing": "„{{name}}“ wird auf Ihren Stift kopiert…"
-  }
+  },
+  "check": {
+    "button": "Nach neuen Büchern suchen",
+    "checking": "Wird gesucht…",
+    "last": "Zuletzt geprüft: {{time}}",
+    "never": "Noch nicht geprüft",
+    "failed": "Die PonyABC-Bibliothek war nicht erreichbar. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+  },
+  "yourBooks": {
+    "title": "Ihre Bücher",
+    "intro": "Die Bücher, die gerade auf Ihrem Stift sind.",
+    "empty": "Noch keine Bücher auf dem Stift. Fügen Sie unten welche hinzu.",
+    "upToDate": "Aktuell",
+    "updateAvailable": "Aktualisierung verfügbar",
+    "checking": "Wird geprüft…",
+    "updating": "Wird aktualisiert…",
+    "update": "Aktualisieren"
+  },
+  "otherBooks": {
+    "title": "Andere Bücher (nicht von PonyABC)",
+    "body": "Diese stammen von woanders. Diese App lässt sie unverändert.",
+    "count": "{{count}} Buch/Bücher"
+  },
+  "newBooks": {
+    "title": "Neue Bücher",
+    "intro": "Bücher, die Sie hinzufügen können. Haken Sie die an, deren Karten Sie haben.",
+    "empty": "Ihr Stift hat bereits alle Bücher, die wir anbieten.",
+    "badge": "NEU",
+    "badgeHint": "NEU heißt, dieses Buch kam seit Ihrer letzten Prüfung in die Liste."
+  },
+  "footer": {
+    "selected": "{{count}} Buch/Bücher ausgewählt, etwa {{minutes}} Minuten",
+    "selectedShort": "{{count}} Buch/Bücher ausgewählt, ein bis zwei Minuten",
+    "none": "Haken Sie oben ein Buch an, um es hinzuzufügen.",
+    "add": "Zum Stift hinzufügen"
+  },
+  "estimate": {
+    "minutes": "etwa {{minutes}} Min.",
+    "short": "etwa eine Minute"
+  },
+  "penRequired": "Schließen Sie Ihren Stift an, um Bücher zu sehen und hinzuzufügen."
 }

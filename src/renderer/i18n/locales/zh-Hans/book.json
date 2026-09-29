@@ -5,7 +5,7 @@
   "lastUpdated": "最后更新：{{time}}",
   "devFixtureBanner": "开发测试目录数据——非正式内容",
   "newBadge": "NEW",
-  "newBadgeLegend": "NEW 表示此项目在最近 14 天内于服务器新增或更新过。",
+  "newBadgeLegend": "“新”表示这本书是你上次检查之后才加入列表的。",
   "connection": {
     "label": "BOOK 目录",
     "checking": "检查中…",
@@ -168,5 +168,45 @@
     "remaining": "尚余大约 {{minutes}} 分钟",
     "remainingShort": "即将完成",
     "writing": "正在将《{{name}}》复制到点读笔…"
-  }
+  },
+  "check": {
+    "button": "检查有没有新书",
+    "checking": "检查中…",
+    "last": "上次检查：{{time}}",
+    "never": "尚未检查",
+    "failed": "未能连接 PonyABC 书库。请检查网络连接后再试一次。"
+  },
+  "yourBooks": {
+    "title": "你的书本",
+    "intro": "目前在点读笔内的书本。",
+    "empty": "点读笔内尚未有书本，可从下面加入。",
+    "upToDate": "已是最新",
+    "updateAvailable": "有更新版本",
+    "checking": "检查中…",
+    "updating": "更新中…",
+    "update": "更新"
+  },
+  "otherBooks": {
+    "title": "其他书本（并非来自 PonyABC）",
+    "body": "这些书本来自其他来源，本程序不会作任何改动。",
+    "count": "{{count}} 本"
+  },
+  "newBooks": {
+    "title": "新书",
+    "intro": "可以加入的书本。请勾选你已拥有卡片的书本。",
+    "empty": "我们提供的书本，点读笔内已全部齐备。",
+    "badge": "新",
+    "badgeHint": "“新”表示这本书是你上次检查之后才加入列表的。"
+  },
+  "footer": {
+    "selected": "已选 {{count}} 本，约需 {{minutes}} 分钟",
+    "selectedShort": "已选 {{count}} 本，约需一两分钟",
+    "none": "请在上面勾选想加入的书本。",
+    "add": "加入点读笔"
+  },
+  "estimate": {
+    "minutes": "约 {{minutes}} 分钟",
+    "short": "约一分钟"
+  },
+  "penRequired": "请连接点读笔，以查看和加入书本。"
 }

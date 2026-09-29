@@ -5,7 +5,7 @@
   "lastUpdated": "Ultimo aggiornamento: {{time}}",
   "devFixtureBanner": "Dati di catalogo di sviluppo — non reali",
   "newBadge": "NUOVO",
-  "newBadgeLegend": "NUOVO indica che questo elemento è stato aggiunto o aggiornato sul server negli ultimi 14 giorni.",
+  "newBadgeLegend": "NUOVO vuol dire che questo libro è entrato nell’elenco dopo il tuo ultimo controllo.",
   "connection": {
     "label": "Catalogo BOOK",
     "checking": "Verifica in corso…",
@@ -168,5 +168,45 @@
     "remaining": "Mancano circa {{minutes}} minuti",
     "remainingShort": "Quasi finito",
     "writing": "Copia di «{{name}}» sulla penna…"
-  }
+  },
+  "check": {
+    "button": "Cerca nuovi libri",
+    "checking": "Ricerca…",
+    "last": "Ultimo controllo: {{time}}",
+    "never": "Non ancora controllato",
+    "failed": "Non è stato possibile raggiungere la libreria PonyABC. Controlla la connessione a internet e riprova."
+  },
+  "yourBooks": {
+    "title": "I tuoi libri",
+    "intro": "I libri che sono adesso sulla penna.",
+    "empty": "Nessun libro sulla penna. Aggiungine qui sotto.",
+    "upToDate": "Aggiornato",
+    "updateAvailable": "Aggiornamento disponibile",
+    "checking": "Controllo…",
+    "updating": "Aggiornamento…",
+    "update": "Aggiorna"
+  },
+  "otherBooks": {
+    "title": "Altri libri (non di PonyABC)",
+    "body": "Vengono da altrove. Questa app non li tocca.",
+    "count": "{{count}} libro/i"
+  },
+  "newBooks": {
+    "title": "Libri nuovi",
+    "intro": "Libri che puoi aggiungere. Spunta quelli di cui hai le carte.",
+    "empty": "La penna ha già tutti i libri che offriamo.",
+    "badge": "NUOVO",
+    "badgeHint": "NUOVO vuol dire che questo libro è entrato nell’elenco dopo il tuo ultimo controllo."
+  },
+  "footer": {
+    "selected": "{{count}} libro/i selezionati, circa {{minutes}} minuti",
+    "selectedShort": "{{count}} libro/i selezionati, un minuto o due",
+    "none": "Spunta un libro qui sopra per aggiungerlo.",
+    "add": "Aggiungi alla penna"
+  },
+  "estimate": {
+    "minutes": "circa {{minutes}} min",
+    "short": "circa un minuto"
+  },
+  "penRequired": "Collega la penna per vedere e aggiungere i libri."
 }

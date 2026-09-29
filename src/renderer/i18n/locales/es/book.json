@@ -5,7 +5,7 @@
   "lastUpdated": "Última actualización: {{time}}",
   "devFixtureBanner": "Datos de catálogo de desarrollo — no reales",
   "newBadge": "NUEVO",
-  "newBadgeLegend": "NUEVO indica que este elemento se añadió o actualizó en el servidor en los últimos 14 días.",
+  "newBadgeLegend": "NUEVO significa que este libro se añadió a la lista desde su última comprobación.",
   "connection": {
     "label": "Catálogo BOOK",
     "checking": "Comprobando…",
@@ -168,5 +168,45 @@
     "remaining": "Quedan unos {{minutes}} minutos",
     "remainingShort": "Casi listo",
     "writing": "Copiando «{{name}}» en su lápiz…"
-  }
+  },
+  "check": {
+    "button": "Buscar libros nuevos",
+    "checking": "Buscando…",
+    "last": "Última comprobación: {{time}}",
+    "never": "Aún sin comprobar",
+    "failed": "No se pudo conectar con la biblioteca PonyABC. Compruebe su conexión a internet e inténtelo de nuevo."
+  },
+  "yourBooks": {
+    "title": "Sus libros",
+    "intro": "Los libros que hay ahora en su lápiz.",
+    "empty": "Aún no hay libros en su lápiz. Añada alguno abajo.",
+    "upToDate": "Al día",
+    "updateAvailable": "Actualización disponible",
+    "checking": "Comprobando…",
+    "updating": "Actualizando…",
+    "update": "Actualizar"
+  },
+  "otherBooks": {
+    "title": "Otros libros (no de PonyABC)",
+    "body": "Vienen de otro sitio. Esta aplicación los deja tal cual.",
+    "count": "{{count}} libro(s)"
+  },
+  "newBooks": {
+    "title": "Libros nuevos",
+    "intro": "Libros que puede añadir. Marque aquellos cuyas tarjetas tenga.",
+    "empty": "Su lápiz ya tiene todos los libros que ofrecemos.",
+    "badge": "NUEVO",
+    "badgeHint": "NUEVO significa que este libro se añadió a la lista desde su última comprobación."
+  },
+  "footer": {
+    "selected": "{{count}} libro(s) seleccionado(s), unos {{minutes}} minutos",
+    "selectedShort": "{{count}} libro(s) seleccionado(s), un minuto o dos",
+    "none": "Marque un libro arriba para añadirlo.",
+    "add": "Añadir a su lápiz"
+  },
+  "estimate": {
+    "minutes": "unos {{minutes}} min",
+    "short": "alrededor de un minuto"
+  },
+  "penRequired": "Conecte su lápiz para ver y añadir libros."
 }

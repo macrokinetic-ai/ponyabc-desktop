@@ -5,7 +5,7 @@
   "lastUpdated": "Última atualização: {{time}}",
   "devFixtureBanner": "Dados de catálogo de desenvolvimento — não reais",
   "newBadge": "NOVO",
-  "newBadgeLegend": "NOVO indica que este item foi adicionado ou atualizado no servidor nos últimos 14 dias.",
+  "newBadgeLegend": "NOVO quer dizer que este livro entrou na lista desde a sua última verificação.",
   "connection": {
     "label": "Catálogo BOOK",
     "checking": "A verificar…",
@@ -168,5 +168,45 @@
     "remaining": "Faltam cerca de {{minutes}} minutos",
     "remainingShort": "Quase pronto",
     "writing": "A copiar «{{name}}» para a sua caneta…"
-  }
+  },
+  "check": {
+    "button": "Procurar livros novos",
+    "checking": "A procurar…",
+    "last": "Última verificação: {{time}}",
+    "never": "Ainda não verificado",
+    "failed": "Não foi possível contactar a biblioteca PonyABC. Verifique a ligação à internet e tente novamente."
+  },
+  "yourBooks": {
+    "title": "Os seus livros",
+    "intro": "Os livros que estão agora na sua caneta.",
+    "empty": "Ainda não há livros na caneta. Adicione alguns abaixo.",
+    "upToDate": "Atualizado",
+    "updateAvailable": "Atualização disponível",
+    "checking": "A verificar…",
+    "updating": "A atualizar…",
+    "update": "Atualizar"
+  },
+  "otherBooks": {
+    "title": "Outros livros (não são da PonyABC)",
+    "body": "Vieram de outro lado. Esta aplicação deixa-os tal como estão.",
+    "count": "{{count}} livro(s)"
+  },
+  "newBooks": {
+    "title": "Livros novos",
+    "intro": "Livros que pode adicionar. Assinale aqueles de que tem os cartões.",
+    "empty": "A sua caneta já tem todos os livros que oferecemos.",
+    "badge": "NOVO",
+    "badgeHint": "NOVO quer dizer que este livro entrou na lista desde a sua última verificação."
+  },
+  "footer": {
+    "selected": "{{count}} livro(s) selecionado(s), cerca de {{minutes}} minutos",
+    "selectedShort": "{{count}} livro(s) selecionado(s), um minuto ou dois",
+    "none": "Assinale um livro acima para o adicionar.",
+    "add": "Adicionar à sua caneta"
+  },
+  "estimate": {
+    "minutes": "cerca de {{minutes}} min",
+    "short": "cerca de um minuto"
+  },
+  "penRequired": "Ligue a caneta para ver e adicionar livros."
 }

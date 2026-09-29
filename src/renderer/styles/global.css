@@ -1225,3 +1225,38 @@ body {
 .advanced-details > * {
   margin-top: 4px;
 }
+
+/* Update Book Content — the single-column parent layout: check for new books, your books,
+ * new books, then one footer that says how long and does it. */
+.book-section {
+  margin-top: 16px;
+}
+
+.book-section > h2 {
+  font-size: 18px;
+  margin: 0 0 2px;
+}
+
+.book-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* "Check for new books" — the first thing on the BOOK screen, and the only place the
+ * catalogue is mentioned to a parent at all. */
+.book-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
