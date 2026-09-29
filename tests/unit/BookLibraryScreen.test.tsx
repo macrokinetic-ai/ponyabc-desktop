@@ -235,6 +235,7 @@ describe("BookLibraryScreen — the pen's book list", () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
+    await screen.findByText('All done!');
     await screen.findByText(/Please unplug your pen, then switch it off and on again/);
     expect((window.ponyabc.bookIndexCommit as ReturnType<typeof vi.fn>).mock.calls[0][0]).toEqual({ writtenFileNames: ['0451.axb'] });
   });

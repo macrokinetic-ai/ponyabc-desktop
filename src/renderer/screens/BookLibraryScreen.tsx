@@ -249,6 +249,7 @@ export function BookLibraryScreen() {
     setPendingRemove(null);
     setBusy(true);
     setMessage(null);
+    setRestartNotice(false);
     try {
       const resolved = new Set<string>();
       let lastMessage: string | null = null;
@@ -308,18 +309,23 @@ export function BookLibraryScreen() {
       // pen are correct either way, and the list is finished on the next connection. Telling a
       // parent that something failed when their next action — unplug and restart — is identical
       // would be alarming them about our bookkeeping.
-      if (result.status === 'reset' || result.status === 'still-pending') return t('done.restartBody');
+      if (result.status === 'reset' || result.status === 'still-pending') {
+        setRestartNotice(true);
+        return null;
+      }
       return t('done.updatedOnly');
     } catch {
       // The books were written and verified before we got here. A failure to tidy the list must
       // not turn a successful batch into an error the parent cannot act on.
-      return t('done.restartBody');
+      setRestartNotice(true);
+      return null;
     }
   }
 
   async function executeAdd(targets: BookCatalogItem[], decisions: Record<string, 'replace' | 'skip'>) {
     setBusy(true);
     setMessage(null);
+    setRestartNotice(false);
     try {
       const resolved = new Set<string>();
       const written: string[] = [];
@@ -399,6 +405,8 @@ export function BookLibraryScreen() {
   const [fixingIndex, setFixingIndex] = useState(false);
   /** The books a pending Add/Update dialog is about — see startAdd. */
   const [pendingAdd, setPendingAdd] = useState<BookCatalogItem[] | null>(null);
+  /** Shown after a batch that added or removed a book — the one thing the parent must act on. */
+  const [restartNotice, setRestartNotice] = useState(false);
   const [fixMessage, setFixMessage] = useState<string | null>(null);
 
   const refreshIndexStatus = useCallback(async () => {
@@ -702,6 +710,13 @@ export function BookLibraryScreen() {
           {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
         </section>
       </div>
+      {restartNotice && (
+        <div className="note-box">
+          <p>{t('done.restartTitle')}</p>
+          <p className="hint">{t('done.restartBody')}</p>
+        </div>
+      )}
+
       {showFixPrompt && (
         <div className="note-box">
           <p>{t('fix.title')}</p>
