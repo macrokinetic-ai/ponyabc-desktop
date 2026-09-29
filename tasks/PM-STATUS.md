@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-29 02:05 BST** · by Claude Code · after the v0.3.17 housekeeping task
+Last updated: **2026-09-30 00:20 BST** · by Claude Code · after the British-English round
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -32,7 +32,7 @@ Tiles) for shipping default Electron tile art. Fixed in v0.3.16.
 
 |            |                                                                                                                                |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Branch     | **`release/0.3.17`** @ `dd007b5`, pushed                                                                                       |
+| Branch     | **`release/0.3.17`** @ `BRANCHSHA`, pushed                                                                                     |
 | Version    | **0.3.17** → manifest **0.3.17.0** (electron-builder appends `.0`)                                                             |
 | Windows CI | ✅ **success** (run 36502051892) — identity, tile assets, version, sidecar and EXE icon all verified against the built package |
 | `main`     | ✅ contains everything shipped (`v0.3.16` is an ancestor); Store pipeline merged in `9a9e240`                                  |
@@ -46,6 +46,10 @@ fixes for problems found in real-pen testing.**
 Not new features, not refactors, not "while I'm in here" improvements — including ones I might
 think are good. Everything asked for is built; what is missing is evidence from hardware, and the
 way to get that is to stop changing the thing being tested.
+
+Since that line was drawn, the owner has twice directed further work inside 0.3.17 — the parent
+manual with its screenshots (2026-09-29) and British English (2026-09-30). Both are recorded in
+the table below. The freeze otherwise stands.
 
 Anything else goes to 0.3.18. The open test plans are:
 
@@ -71,6 +75,8 @@ Anything else goes to 0.3.18. The open test plans are:
 | BOOK screen         | **One button.** Pen status in plain words, a one-line summary, **Sync books**, a collapsed book list, everything technical under Advanced. Parents cannot choose or delete books. Sync adds what is missing and updates what differs, smallest first, decided from filenames and sizes only; retired books are never added but still updated; nothing is ever deleted. Space checked before the first byte, with a way out. | ✅                                                                                             |
 | Manual & Store pack | **Parent manual** in `docs/manual/` (EN + 繁體中文, Markdown + print-ready PDF, with screenshots), **What's new** in all 8 languages, and `store-assets/0.3.17-readiness.md` listing the six things that still block submission.                                                                                                                                                                                            | ✅                                                                                             |
 | Library sync        | Designed for 0.3.18 — `docs/design/library-sync.md`. Differential, parent-chosen, never deletes non-catalog books. Needs one real-pen check (§E of the index test plan) and ~1.5 days of web work after 4 Oct.                                                                                                                                                                                                              | 📄 design                                                                                      |
+| Manual screenshots  | **Every parent-facing screen photographed**, EN + 繁體中文, 38 pictures, captured on Windows from the real app against a throwaway pen folder. Both manuals rebuilt around them. Six wording faults found by looking at the pictures, fixed in all 8 locales.                                                                                                                                                                   | ✅                                                                                             |
+| British English     | **English is en-GB.** Every date and time goes through one formatter — "30/09/2026, 00:01", 24-hour, in the chosen UI language rather than the computer's. American spellings gone from the English strings, the manual and the Store text. A test fails on either coming back.                                                                                                                                             | ✅                                                                                             |
 
 **Correction worth reading (A1).** The vendor's account of the firmware package is wrong on the
 mechanism. The V1.26 zip contains **no** `1.BIN` or `BOOKFILE.BIN`, and `download.bat` does not
@@ -80,7 +86,7 @@ firmware rebuilds them** (`app.bin` contains `storage/sd0/C/BOOK/1.bin` and the 
 outcome is as the vendor described; the timing is not — they reappear after the pen reboots, not
 when the PC tool finishes. Full evidence in `docs/vendor-notes.md`.
 
-Gates: typecheck ✅, 670 unit tests ✅, build ✅, Windows CI package verification ✅.
+Gates: typecheck ✅, 688 unit tests ✅, build ✅, Windows CI package verification ✅.
 
 ## 3. Expo readiness — 1–4 Oct
 
