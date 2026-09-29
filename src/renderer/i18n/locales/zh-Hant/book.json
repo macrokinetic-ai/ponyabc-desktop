@@ -222,9 +222,9 @@
     "has_other": "點讀筆內有 {{count}} 本 PonyABC 書本。",
     "newBooks_other": "{{count}} 本新書",
     "updates_other": "{{count}} 項更新",
-    "availableBoth": "可加入{{news}}，並更新{{updates}}。",
+    "availableBoth": "可加入{{news}}，另有{{updates}}。",
     "availableAdds": "可加入{{news}}。",
-    "availableUpdates": "可更新{{updates}}。",
+    "availableUpdates": "有{{updates}}。",
     "time_other": "約需 {{count}} 分鐘。",
     "timeShort": "約需一分鐘。"
   },
