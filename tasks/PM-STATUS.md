@@ -34,7 +34,7 @@ Tiles) for shipping default Electron tile art. Fixed in v0.3.16.
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Branch     | **`release/0.3.17`** @ `37ff4eb`, pushed                                                                                     |
 | Version    | **0.3.17** → manifest **0.3.17.0** (electron-builder appends `.0`)                                                             |
-| Windows CI | ✅ **success** (run 36502051892) — identity, tile assets, version, sidecar and EXE icon all verified against the built package |
+| Windows CI | ✅ **success** (run 36643861464, 2026-09-30) — identity, tile assets, version, sidecar and EXE icon verified against the built package, plus a real install, launch and cleanup |
 | `main`     | ✅ contains everything shipped (`v0.3.16` is an ancestor); Store pipeline merged in `9a9e240`                                  |
 | Next       | ⏳ **Waiting on Benny's list of v0.3.17 changes.** Preparation is done; nothing blocks starting.                               |
 
