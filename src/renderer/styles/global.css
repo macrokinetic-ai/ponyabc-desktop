@@ -1208,3 +1208,20 @@ body {
 .status-help {
   font-style: italic;
 }
+
+/* Advanced details — the technical status, filename and checksum wording. Closed by default and
+ * visually quieter than the row above it: a parent adding a book should never need to open it,
+ * and support should always be able to. */
+.advanced-details {
+  margin-top: 6px;
+}
+
+.advanced-details > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.advanced-details > * {
+  margin-top: 4px;
+}

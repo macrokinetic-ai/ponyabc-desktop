@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   BookActionResult,
@@ -21,6 +21,10 @@ import {
   CATALOG_STATUS_LEGEND_ORDER,
   PEN_STATUS_LABELS,
   PEN_STATUS_LEGEND_ORDER,
+  SIMPLE_STATE_LABELS,
+  SIMPLE_STATE_LEGEND_ORDER,
+  simpleStateForCatalog,
+  simpleStateForPen,
 } from './bookStatusLabels';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
@@ -40,6 +44,21 @@ function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n:
 function NewBadge({ updatedAtMs, label }: { updatedAtMs: number | null; label: string }) {
   if (!isRecentlyUpdated(updatedAtMs, Date.now())) return null;
   return <span className="new-badge">{label}</span>;
+}
+
+/**
+ * Everything a parent does not need. Closed by default, and closed again on every render of a
+ * newly-expanded row — the technical status, the filename, the checksum wording and the verify
+ * action all live in here so the row above can answer one question: is this book on my pen.
+ */
+function AdvancedDetails({ t, children }: { t: (key: string) => string; children: ReactNode }) {
+  return (
+    <details className="advanced-details">
+      <summary>{t('advanced.title')}</summary>
+      <p className="hint">{t('advanced.hint')}</p>
+      {children}
+    </details>
+  );
 }
 
 /**
@@ -80,16 +99,20 @@ function StatusLegend({
         <>
           <p className="hint">{t('legend.intro')}</p>
 
-          <h3 className="status-legend__heading">{t('legend.penHeading')}</h3>
-          {rows(PEN_STATUS_LEGEND_ORDER.map((s) => PEN_STATUS_LABELS[s]))}
-
-          <h3 className="status-legend__heading">{t('legend.catalogHeading')}</h3>
-          {rows(CATALOG_STATUS_LEGEND_ORDER.map((s) => CATALOG_STATUS_LABELS[s]))}
-
-          <h3 className="status-legend__heading">{t('legend.cacheHeading')}</h3>
-          {rows(CACHE_STATUS_LEGEND_ORDER.map((k) => CACHE_STATUS_LABELS[k]))}
+          {rows(SIMPLE_STATE_LEGEND_ORDER.map((s) => SIMPLE_STATE_LABELS[s]))}
 
           {showNewBadgeNote && <p className="hint">{t('newBadgeLegend')}</p>}
+
+          <AdvancedDetails t={t}>
+            <h3 className="status-legend__heading">{t('legend.penHeading')}</h3>
+            {rows(PEN_STATUS_LEGEND_ORDER.map((s) => PEN_STATUS_LABELS[s]))}
+
+            <h3 className="status-legend__heading">{t('legend.catalogHeading')}</h3>
+            {rows(CATALOG_STATUS_LEGEND_ORDER.map((s) => CATALOG_STATUS_LABELS[s]))}
+
+            <h3 className="status-legend__heading">{t('legend.cacheHeading')}</h3>
+            {rows(CACHE_STATUS_LEGEND_ORDER.map((k) => CACHE_STATUS_LABELS[k]))}
+          </AdvancedDetails>
         </>
       )}
     </details>
@@ -241,8 +264,9 @@ export function BookLibraryScreen() {
     }
   }
 
-  function startAdd() {
-    const targets = lib.catalogItems.filter((i) => catalogSelected.has(i.contentId));
+  function startAdd(contentIds?: string[]) {
+    const wanted = contentIds ? new Set(contentIds) : catalogSelected;
+    const targets = lib.catalogItems.filter((i) => wanted.has(i.contentId));
     if (targets.length === 0) return;
     const conflicts = targets.filter((i) => isOnPen(i.status));
     if (conflicts.length > 0) {
@@ -331,10 +355,8 @@ export function BookLibraryScreen() {
   // the status — appears in the detail, as the chip's tooltip, and in the legend. All three
   // come from bookStatusLabels.ts so the legend can never fall behind the rows.
   const penStatusKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].full;
-  const penStatusShortKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].short;
   const penStatusHelpKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].help;
   const catalogStatusKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].full;
-  const catalogStatusShortKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].short;
   const catalogStatusHelpKey = (s: BookCatalogItem['status']) => CATALOG_STATUS_LABELS[s].help;
   const cacheStatusHelpKey = (item: BookCatalogItem, hasProgress: boolean): string =>
     hasProgress ? CACHE_STATUS_LABELS.downloading.help : item.cached ? CACHE_STATUS_LABELS.cached.help : CACHE_STATUS_LABELS.notDownloaded.help;
@@ -405,24 +427,27 @@ export function BookLibraryScreen() {
                         </label>
                       )}
                       {item.removable && (
-                        <span className="hint" title={t(penStatusHelpKey(displayStatus))}>
-                          {t(penStatusShortKey(displayStatus))}
+                        <span className="hint" title={t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].help)}>
+                          {t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].short)}
                           {progress && ` (${Math.round((progress.bytesRead / Math.max(progress.totalBytes, 1)) * 100)}%)`}
                         </span>
                       )}
                       {progress && <progress className="book-progress" value={progress.bytesRead} max={Math.max(progress.totalBytes, 1)} />}
                       {item.removable && expanded && (
                         <div className="recordings-list__detail">
-                          <span className="hint">{item.fileName}</span>
-                          <span className="hint">{formatBytes(item.sizeBytes)}</span>
-                          {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                          <span className="hint">{t(penStatusKey(displayStatus))}</span>
-                          <span className="hint status-help">{t(penStatusHelpKey(displayStatus))}</span>
-                          <div className="recordings-list__detail-actions">
-                            <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
-                              {t('action.verifyThis')}
-                            </button>
-                          </div>
+                          <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForPen(displayStatus)].help)}</span>
+                          <AdvancedDetails t={t}>
+                            <span className="hint">{item.fileName}</span>
+                            <span className="hint">{formatBytes(item.sizeBytes)}</span>
+                            {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
+                            <span className="hint">{t(penStatusKey(displayStatus))}</span>
+                            <span className="hint status-help">{t(penStatusHelpKey(displayStatus))}</span>
+                            <div className="recordings-list__detail-actions">
+                              <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
+                                {t('action.verifyThis')}
+                              </button>
+                            </div>
+                          </AdvancedDetails>
                         </div>
                       )}
                     </li>
@@ -450,7 +475,7 @@ export function BookLibraryScreen() {
             type="button"
             className="button button--primary"
             disabled={!penConnected || catalogSelected.size === 0 || busy}
-            onClick={startAdd}
+            onClick={() => startAdd()}
           >
             {t('action.add')}
           </button>
@@ -459,6 +484,7 @@ export function BookLibraryScreen() {
         <section className="pane">
           <div className="pane__header">
             <BookCatalogBar />
+            <p className="hint">{t('catalogIntro')}</p>
             {actionableCatalogItems.length > 0 && (
               <div className="pane__toolbar">
                 <label>
@@ -506,8 +532,8 @@ export function BookLibraryScreen() {
                             <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
                           </span>
                         )}
-                        <div className="hint" title={t(catalogStatusHelpKey(catalogDisplayStatus))}>
-                          {t(catalogStatusShortKey(catalogDisplayStatus))}
+                        <div className="hint" title={t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].help)}>
+                          {t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].short)}
                           {verifyProg && ` (${Math.round((verifyProg.bytesRead / Math.max(verifyProg.totalBytes, 1)) * 100)}%)`}
                           {progress && ` (${Math.round((progress.bytesReceived / Math.max(progress.totalBytes, 1)) * 100)}%)`}
                         </div>
@@ -515,6 +541,8 @@ export function BookLibraryScreen() {
                         {verifyProg && <progress className="book-progress" value={verifyProg.bytesRead} max={Math.max(verifyProg.totalBytes, 1)} />}
                         {expanded && (
                           <div className="recordings-list__detail">
+                            <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForCatalog(catalogDisplayStatus, !!progress)].help)}</span>
+                            <AdvancedDetails t={t}>
                             <span className="hint">{item.filename}</span>
                             <span className="hint">{formatBytes(item.sizeBytes)}</span>
                             <span className="hint">{cacheStatusText(item, !!progress)}</span>
@@ -529,10 +557,21 @@ export function BookLibraryScreen() {
                                 </button>
                               </div>
                             )}
+                            </AdvancedDetails>
                           </div>
                         )}
                       </div>
                       <div className="recordings-list__preview">
+                        {item.actionable && !progress && !verifyProg && (
+                          <button
+                            type="button"
+                            className="button button--primary"
+                            disabled={busy || !penConnected}
+                            onClick={() => void startAdd([item.contentId])}
+                          >
+                            {t(isOnPen(item.status) ? 'action.updateOne' : 'action.addOne')}
+                          </button>
+                        )}
                         {progress && !isBatchProgress && (
                           <button type="button" className="button" onClick={() => void lib.cancelDownload(item.contentId)}>
                             {t('action.cancelDownload')}

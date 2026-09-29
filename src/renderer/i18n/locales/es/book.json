@@ -85,7 +85,7 @@
     "ambiguous": "Ambiguo"
   },
   "action": {
-    "add": "Añadir al lápiz",
+    "add": "Añadir lo seleccionado a su lápiz",
     "remove": "Eliminar del lápiz",
     "reinstall": "Volver a descargar",
     "cancelDownload": "Cancelar",
@@ -94,7 +94,9 @@
     "verifyThis": "Verificar este archivo",
     "downloadSelected": "Descargar seleccionados a la App",
     "downloadAll": "Descargar todo a la App",
-    "cancelDownloadBatch": "Cancelar descarga"
+    "cancelDownloadBatch": "Cancelar descarga",
+    "addOne": "Añadir",
+    "updateOne": "Actualizar"
   },
   "statusHelp": {
     "present": "El nombre coincide con un libro oficial, pero la App no ha leído el archivo para comprobar su contenido. Actualizar nunca lee los archivos, así que este es el estado normal hasta que elija Verificar este archivo.",
@@ -120,10 +122,31 @@
     "downloading": "Descargándose ahora en este ordenador."
   },
   "legend": {
-    "title": "¿Qué significan estas etiquetas?",
-    "intro": "Cada libro oficial muestra dos datos independientes: si está en el lápiz y si hay una copia guardada en este ordenador. Uno no implica el otro.",
+    "title": "¿Qué significan estas palabras?",
+    "intro": "Cada libro indica si está en su lápiz. Abra los detalles avanzados si necesita la versión técnica.",
     "penHeading": "Contenido en el lápiz",
     "catalogHeading": "Contenido oficial",
     "cacheHeading": "Copias en este ordenador"
-  }
+  },
+  "simple": {
+    "onPen": "En su lápiz",
+    "updateAvailable": "Actualización disponible",
+    "notOnPen": "Aún no está en su lápiz",
+    "downloading": "Descargando…",
+    "checking": "Comprobando…",
+    "needsHelp": "Algo no va bien: abra para ver ayuda"
+  },
+  "simpleHelp": {
+    "onPen": "Este libro está en su lápiz y listo para usar.",
+    "updateAvailable": "Hay una versión más reciente de este libro. Elija Añadir para ponerla en el lápiz; antes se guarda una copia de la anterior.",
+    "notOnPen": "Este libro aún no está en su lápiz. Elija Añadir para ponerlo.",
+    "downloading": "El libro se está copiando a este ordenador y luego al lápiz.",
+    "checking": "La aplicación está comprobando este libro. Solo tarda un momento.",
+    "needsHelp": "Este necesita una revisión: la lista de libros puede estar incompleta. Su lápiz no tiene ningún problema. Abra los detalles avanzados o contacte con soporte."
+  },
+  "advanced": {
+    "title": "Detalles avanzados",
+    "hint": "Información técnica para soporte. No la necesita para usar su lápiz."
+  },
+  "catalogIntro": "¿Ha comprado un libro nuevo? Búsquelo en esta lista y elija Añadir."
 }

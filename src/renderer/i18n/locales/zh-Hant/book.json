@@ -85,7 +85,7 @@
     "ambiguous": "有歧義"
   },
   "action": {
-    "add": "加入點讀筆",
+    "add": "將已選書本加入點讀筆",
     "remove": "從點讀筆移除",
     "reinstall": "重新下載",
     "cancelDownload": "取消",
@@ -94,7 +94,9 @@
     "verifyThis": "校驗此檔案",
     "downloadSelected": "下載所選到 App",
     "downloadAll": "下載全部到 App",
-    "cancelDownloadBatch": "取消下載"
+    "cancelDownloadBatch": "取消下載",
+    "addOne": "加入",
+    "updateOne": "更新"
   },
   "statusHelp": {
     "present": "檔名與官方書本相符，但 App 未讀取檔案內容作核對。重新整理不會讀取檔案內容，所以在你選擇「校驗此檔案」之前，這都是正常狀態。",
@@ -120,10 +122,31 @@
     "downloading": "正在下載到此電腦。"
   },
   "legend": {
-    "title": "這些標籤代表甚麼？",
-    "intro": "每本官方書本會分別顯示兩項資料：是否已在點讀筆內，以及此電腦是否已儲存副本。兩者互不相關。",
+    "title": "這些字是甚麼意思？",
+    "intro": "每本書都會顯示是否已在點讀筆內。需要技術資料可展開「進階資料」。",
     "penHeading": "點讀筆內的內容",
     "catalogHeading": "官方內容",
     "cacheHeading": "此電腦的副本"
-  }
+  },
+  "simple": {
+    "onPen": "已在點讀筆",
+    "updateAvailable": "有更新版本",
+    "notOnPen": "尚未加入點讀筆",
+    "downloading": "下載中…",
+    "checking": "檢查中…",
+    "needsHelp": "有點問題——按此查看說明"
+  },
+  "simpleHelp": {
+    "onPen": "這本書已在點讀筆內，可以使用。",
+    "updateAvailable": "這本書有較新版本。按「加入」即可更新，原有檔案會先備份。",
+    "notOnPen": "這本書尚未加入點讀筆。按「加入」即可放進去。",
+    "downloading": "正在複製到這部電腦，然後再放入點讀筆。",
+    "checking": "正在檢查這本書，很快就好。",
+    "needsHelp": "這一項需要再看看——書籍清單可能不完整。你的點讀筆沒有問題。可展開「進階資料」或聯絡客服。"
+  },
+  "advanced": {
+    "title": "進階資料",
+    "hint": "供客服參考的技術資料，日常使用不需要理會。"
+  },
+  "catalogIntro": "買咗新書？喺下面清單搵到佢，然後按「加入」。"
 }

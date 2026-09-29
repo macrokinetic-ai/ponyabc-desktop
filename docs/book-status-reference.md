@@ -9,6 +9,37 @@ The strings live in `src/renderer/i18n/locales/<locale>/book.json`; the mapping 
 string lives in `src/renderer/screens/bookStatusLabels.ts`, which also drives the in-app legend,
 so nothing here can be shown without being explained.
 
+## What the customer sees, and what is underneath
+
+**Our customers are nursery parents.** The main view answers three questions and nothing else:
+is this book on the pen, does it need updating, and how do I add it. Everything in the tables
+below still exists — it now lives under **Advanced details**, closed by default, for support.
+
+| Shown in the main view                    | Comes from                                                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **On your pen**                           | `verified-current`, `present`, `matched-hash-unknown`, `awaiting-catalog`, `unknown`, `on-pen-current`, `on-pen-present` |
+| **Update available**                      | `verified-differs`, `size-differs`, `on-pen-differs`, `on-pen-size-differs`                                              |
+| **Not on your pen yet**                   | `not-on-pen`                                                                                                             |
+| **Downloading…**                          | a download is in flight                                                                                                  |
+| **Checking…**                             | `verifying`, `on-pen-verifying`                                                                                          |
+| **Something's not right — open for help** | `metadata-incomplete`, `ambiguous`                                                                                       |
+
+Three deliberate decisions in that mapping:
+
+1. **A content difference is an update, not a fault.** "Differs" invited a parent to think their
+   pen was broken; in practice it nearly always means a newer edition exists.
+2. **An unrecognised file on the pen is still "On your pen".** It is the customer's file and it
+   is on their pen — both simply true. Calling it "Unknown" was alarming and told them nothing
+   they could act on.
+3. **The unhappy state is reserved for OUR data being wrong** — a catalogue entry missing its
+   filename or hash, or two entries claiming one filename. Its wording says so, because a parent
+   reading it has done nothing wrong and their pen is fine.
+
+`simpleStateForPen` / `simpleStateForCatalog` in `bookStatusLabels.ts` are the mapping, and the
+tests fail if a technical status ever maps to nothing, or if a customer-facing string contains
+"checksum", "hash", "catalogue", "manifest", ".axb" or an index filename — in any of the 8
+locales.
+
 ## The one thing to understand first
 
 The screen reports **two independent facts** about an official book:

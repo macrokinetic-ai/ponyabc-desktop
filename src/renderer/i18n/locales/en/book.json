@@ -85,7 +85,7 @@
     "ambiguous": "Ambiguous"
   },
   "action": {
-    "add": "Add to pen",
+    "add": "Add selected to your pen",
     "remove": "Remove from pen",
     "reinstall": "Re-download",
     "cancelDownload": "Cancel",
@@ -94,7 +94,9 @@
     "verifyThis": "Verify this file",
     "downloadSelected": "Download selected to App",
     "downloadAll": "Download all to App",
-    "cancelDownloadBatch": "Cancel download"
+    "cancelDownloadBatch": "Cancel download",
+    "addOne": "Add",
+    "updateOne": "Update"
   },
   "statusHelp": {
     "present": "The name matches an official book, but the App has not read the file to check its contents. Refreshing never reads files, so this is the normal state until you choose Verify this file.",
@@ -120,10 +122,31 @@
     "downloading": "Being downloaded to this computer now."
   },
   "legend": {
-    "title": "What do these labels mean?",
-    "intro": "Each official book shows two separate facts: whether it is on the pen, and whether a copy is stored on this computer. Neither implies the other.",
+    "title": "What do these words mean?",
+    "intro": "Each book shows whether it is on your pen. Open Advanced details if you need the technical version.",
     "penHeading": "Content on the pen",
     "catalogHeading": "Official content",
     "cacheHeading": "Copies on this computer"
-  }
+  },
+  "simple": {
+    "onPen": "On your pen",
+    "updateAvailable": "Update available",
+    "notOnPen": "Not on your pen yet",
+    "downloading": "Downloading…",
+    "checking": "Checking…",
+    "needsHelp": "Something's not right — open for help"
+  },
+  "simpleHelp": {
+    "onPen": "This book is on your pen and ready to use.",
+    "updateAvailable": "A newer version of this book is available. Select Add to put the new one on your pen — the old one is kept as a backup first.",
+    "notOnPen": "This book is not on your pen yet. Select Add to put it on.",
+    "downloading": "The book is being copied to this computer, and then to your pen.",
+    "checking": "The app is checking this book. It only takes a moment.",
+    "needsHelp": "This one needs a closer look — the book list may be incomplete. Nothing is wrong with your pen. Open Advanced details, or contact support."
+  },
+  "advanced": {
+    "title": "Advanced details",
+    "hint": "Technical information for support. You do not need this to use your pen."
+  },
+  "catalogIntro": "Bought a new book? Find it in this list and select Add."
 }

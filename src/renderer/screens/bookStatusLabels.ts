@@ -89,3 +89,73 @@ export const CATALOG_STATUS_LEGEND_ORDER: readonly BookCatalogItemStatus[] = [
 ];
 
 export const CACHE_STATUS_LEGEND_ORDER = ['cached', 'notDownloaded', 'downloading'] as const;
+
+/**
+ * What a parent sees.
+ *
+ * The screen's job, for the person who bought a book this morning, is to answer three questions:
+ * is this book on the pen, does it need updating, and how do I add it. Every technical status
+ * above maps onto one of these; the technical one is still there, under Advanced details, for
+ * support and for anyone who wants it.
+ *
+ * `needs-help` is deliberately the only unhappy state. It covers the cases that are a problem
+ * with our catalogue rather than with the customer's pen, and it must never read as an accusation
+ * that the pen is broken.
+ */
+export type SimpleBookState = 'on-pen' | 'update-available' | 'not-on-pen' | 'downloading' | 'checking' | 'needs-help';
+
+export const SIMPLE_STATE_LABELS: Record<SimpleBookState, BookStatusLabelKeys> = {
+  'on-pen': { short: 'simple.onPen', full: 'simple.onPen', help: 'simpleHelp.onPen' },
+  'update-available': { short: 'simple.updateAvailable', full: 'simple.updateAvailable', help: 'simpleHelp.updateAvailable' },
+  'not-on-pen': { short: 'simple.notOnPen', full: 'simple.notOnPen', help: 'simpleHelp.notOnPen' },
+  downloading: { short: 'simple.downloading', full: 'simple.downloading', help: 'simpleHelp.downloading' },
+  checking: { short: 'simple.checking', full: 'simple.checking', help: 'simpleHelp.checking' },
+  'needs-help': { short: 'simple.needsHelp', full: 'simple.needsHelp', help: 'simpleHelp.needsHelp' },
+};
+
+export const SIMPLE_STATE_LEGEND_ORDER: readonly SimpleBookState[] = [
+  'on-pen',
+  'update-available',
+  'not-on-pen',
+  'downloading',
+  'checking',
+  'needs-help',
+];
+
+/**
+ * A file sitting on the pen. Note that `unknown` and `awaiting-catalog` both map to "on your
+ * pen", because that is simply true — a file we do not recognise is still the customer's, and
+ * calling it a problem would be both alarming and wrong.
+ */
+export function simpleStateForPen(status: BookPenMatchStatus): SimpleBookState {
+  switch (status) {
+    case 'verifying':
+      return 'checking';
+    case 'verified-differs':
+    case 'size-differs':
+      return 'update-available';
+    default:
+      return 'on-pen';
+  }
+}
+
+/** An official book, seen from the catalogue side. */
+export function simpleStateForCatalog(status: BookCatalogItemStatus, isDownloading = false): SimpleBookState {
+  if (isDownloading) return 'downloading';
+  switch (status) {
+    case 'not-on-pen':
+      return 'not-on-pen';
+    case 'on-pen-verifying':
+      return 'checking';
+    case 'on-pen-differs':
+    case 'on-pen-size-differs':
+      return 'update-available';
+    // Both of these are OUR data being wrong — an entry with no filename or hash, or two entries
+    // claiming one filename. Nothing is wrong with the pen, and the wording must say so.
+    case 'metadata-incomplete':
+    case 'ambiguous':
+      return 'needs-help';
+    default:
+      return 'on-pen';
+  }
+}

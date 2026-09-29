@@ -85,7 +85,7 @@
     "ambiguous": "Ambiguo"
   },
   "action": {
-    "add": "Aggiungi alla penna",
+    "add": "Aggiungi i selezionati alla penna",
     "remove": "Rimuovi dalla penna",
     "reinstall": "Riscarica",
     "cancelDownload": "Annulla",
@@ -94,7 +94,9 @@
     "verifyThis": "Verifica questo file",
     "downloadSelected": "Scarica selezionati nell'App",
     "downloadAll": "Scarica tutto nell'App",
-    "cancelDownloadBatch": "Annulla download"
+    "cancelDownloadBatch": "Annulla download",
+    "addOne": "Aggiungi",
+    "updateOne": "Aggiorna"
   },
   "statusHelp": {
     "present": "Il nome corrisponde a un libro ufficiale, ma l'App non ha letto il file per controllarne il contenuto. L'aggiornamento non legge mai i file: è quindi lo stato normale finché non si sceglie Verifica questo file.",
@@ -120,10 +122,31 @@
     "downloading": "In download su questo computer."
   },
   "legend": {
-    "title": "Che cosa significano queste diciture?",
-    "intro": "Per ogni libro ufficiale sono indicate due informazioni distinte: se è sulla penna e se una copia è salvata su questo computer. L’una non implica l’altra.",
+    "title": "Che cosa significano queste parole?",
+    "intro": "Per ogni libro è indicato se è sulla penna. Apri i dettagli avanzati per la versione tecnica.",
     "penHeading": "Contenuto sulla penna",
     "catalogHeading": "Contenuto ufficiale",
     "cacheHeading": "Copie su questo computer"
-  }
+  },
+  "simple": {
+    "onPen": "Sulla tua penna",
+    "updateAvailable": "Aggiornamento disponibile",
+    "notOnPen": "Non ancora sulla penna",
+    "downloading": "Download in corso…",
+    "checking": "Controllo in corso…",
+    "needsHelp": "Qualcosa non va: apri per assistenza"
+  },
+  "simpleHelp": {
+    "onPen": "Questo libro è sulla penna e pronto da usare.",
+    "updateAvailable": "Di questo libro esiste una versione più recente. Scegli Aggiungi per metterla sulla penna: la vecchia viene prima salvata.",
+    "notOnPen": "Questo libro non è ancora sulla penna. Scegli Aggiungi per metterlo.",
+    "downloading": "Il libro viene copiato su questo computer e poi sulla penna.",
+    "checking": "L'app sta controllando questo libro. Ci vuole solo un attimo.",
+    "needsHelp": "Questo richiede un controllo: l'elenco dei libri potrebbe essere incompleto. La penna non ha alcun problema. Apri i dettagli avanzati o contatta l'assistenza."
+  },
+  "advanced": {
+    "title": "Dettagli avanzati",
+    "hint": "Informazioni tecniche per l'assistenza. Non servono per usare la penna."
+  },
+  "catalogIntro": "Hai comprato un libro nuovo? Cercalo in questo elenco e scegli Aggiungi."
 }

@@ -85,7 +85,7 @@
     "ambiguous": "Mehrdeutig"
   },
   "action": {
-    "add": "Zum Stift hinzufügen",
+    "add": "Auswahl zum Stift hinzufügen",
     "remove": "Vom Stift entfernen",
     "reinstall": "Erneut herunterladen",
     "cancelDownload": "Abbrechen",
@@ -94,7 +94,9 @@
     "verifyThis": "Diese Datei prüfen",
     "downloadSelected": "Auswahl in die App laden",
     "downloadAll": "Alles in die App laden",
-    "cancelDownloadBatch": "Download abbrechen"
+    "cancelDownloadBatch": "Download abbrechen",
+    "addOne": "Hinzufügen",
+    "updateOne": "Aktualisieren"
   },
   "statusHelp": {
     "present": "Der Name entspricht einem offiziellen Buch, die App hat die Datei aber nicht gelesen, um den Inhalt zu prüfen. Beim Aktualisieren werden nie Dateien gelesen — das ist also der normale Zustand, bis Sie „Diese Datei überprüfen“ wählen.",
@@ -120,10 +122,31 @@
     "downloading": "Wird gerade auf diesen Computer heruntergeladen."
   },
   "legend": {
-    "title": "Was bedeuten diese Angaben?",
-    "intro": "Zu jedem offiziellen Buch werden zwei getrennte Angaben gezeigt: ob es auf dem Stift ist und ob eine Kopie auf diesem Computer liegt. Das eine bedingt das andere nicht.",
+    "title": "Was bedeuten diese Wörter?",
+    "intro": "Bei jedem Buch steht, ob es auf Ihrem Stift ist. Die technische Fassung finden Sie unter den erweiterten Details.",
     "penHeading": "Inhalt auf dem Stift",
     "catalogHeading": "Offizieller Inhalt",
     "cacheHeading": "Kopien auf diesem Computer"
-  }
+  },
+  "simple": {
+    "onPen": "Auf Ihrem Stift",
+    "updateAvailable": "Aktualisierung verfügbar",
+    "notOnPen": "Noch nicht auf Ihrem Stift",
+    "downloading": "Wird heruntergeladen…",
+    "checking": "Wird geprüft…",
+    "needsHelp": "Etwas stimmt nicht — für Hilfe öffnen"
+  },
+  "simpleHelp": {
+    "onPen": "Dieses Buch ist auf Ihrem Stift und einsatzbereit.",
+    "updateAvailable": "Von diesem Buch gibt es eine neuere Fassung. Wählen Sie Hinzufügen — die alte wird vorher gesichert.",
+    "notOnPen": "Dieses Buch ist noch nicht auf Ihrem Stift. Wählen Sie Hinzufügen.",
+    "downloading": "Das Buch wird auf diesen Computer und dann auf Ihren Stift kopiert.",
+    "checking": "Die App prüft dieses Buch. Das dauert nur einen Moment.",
+    "needsHelp": "Hier lohnt ein genauerer Blick — die Bücherliste ist möglicherweise unvollständig. Mit Ihrem Stift ist alles in Ordnung. Öffnen Sie die erweiterten Details oder wenden Sie sich an den Support."
+  },
+  "advanced": {
+    "title": "Erweiterte Details",
+    "hint": "Technische Angaben für den Support. Zum Benutzen Ihres Stifts brauchen Sie sie nicht."
+  },
+  "catalogIntro": "Ein neues Buch gekauft? Suchen Sie es in dieser Liste und wählen Sie Hinzufügen."
 }

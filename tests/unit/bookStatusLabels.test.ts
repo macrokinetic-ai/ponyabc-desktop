@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { BookCatalogItemStatus, BookPenMatchStatus } from '../../src/shared/types';
+import type { SimpleBookState } from '../../src/renderer/screens/bookStatusLabels';
 import {
   CACHE_STATUS_LABELS,
   CACHE_STATUS_LEGEND_ORDER,
@@ -9,6 +10,10 @@ import {
   CATALOG_STATUS_LEGEND_ORDER,
   PEN_STATUS_LABELS,
   PEN_STATUS_LEGEND_ORDER,
+  SIMPLE_STATE_LABELS,
+  SIMPLE_STATE_LEGEND_ORDER,
+  simpleStateForCatalog,
+  simpleStateForPen,
 } from '../../src/renderer/screens/bookStatusLabels';
 
 /**
@@ -53,6 +58,7 @@ const ALL_CATALOG_STATUSES: BookCatalogItemStatus[] = [
 ];
 
 const ALL_KEYS = [
+  ...Object.values(SIMPLE_STATE_LABELS),
   ...Object.values(PEN_STATUS_LABELS),
   ...Object.values(CATALOG_STATUS_LABELS),
   ...Object.values(CACHE_STATUS_LABELS),
@@ -119,5 +125,59 @@ describe('book status labels — translations', () => {
     // verified. They must not collapse to the same chip again.
     const en = loadBook('en');
     expect(lookup(en, PEN_STATUS_LABELS.present.short)).not.toBe(lookup(en, PEN_STATUS_LABELS['matched-hash-unknown'].short));
+  });
+});
+
+describe('book status labels — what a parent sees', () => {
+  const ALL_SIMPLE: SimpleBookState[] = ['on-pen', 'update-available', 'not-on-pen', 'downloading', 'checking', 'needs-help'];
+
+  it('maps every technical status onto a plain-language state', () => {
+    for (const status of ALL_PEN_STATUSES) expect(ALL_SIMPLE, status).toContain(simpleStateForPen(status));
+    for (const status of ALL_CATALOG_STATUSES) expect(ALL_SIMPLE, status).toContain(simpleStateForCatalog(status));
+    expect(Object.keys(SIMPLE_STATE_LABELS).sort()).toEqual([...ALL_SIMPLE].sort());
+    expect([...SIMPLE_STATE_LEGEND_ORDER].sort()).toEqual([...ALL_SIMPLE].sort());
+  });
+
+  it('calls a content difference an update, not a fault', () => {
+    // A book that differs from the official version is the everyday "there is a new edition"
+    // case. Showing a parent "Differs" invited them to think their pen was broken.
+    expect(simpleStateForPen('verified-differs')).toBe('update-available');
+    expect(simpleStateForPen('size-differs')).toBe('update-available');
+    expect(simpleStateForCatalog('on-pen-differs')).toBe('update-available');
+    expect(simpleStateForCatalog('on-pen-size-differs')).toBe('update-available');
+  });
+
+  it('never calls an unrecognised file on the pen a problem', () => {
+    // It is the customer's file and it is on their pen. Both of these are simply true.
+    expect(simpleStateForPen('unknown')).toBe('on-pen');
+    expect(simpleStateForPen('awaiting-catalog')).toBe('on-pen');
+    expect(simpleStateForPen('matched-hash-unknown')).toBe('on-pen');
+  });
+
+  it('reserves the unhappy state for OUR catalogue being wrong', () => {
+    expect(simpleStateForCatalog('metadata-incomplete')).toBe('needs-help');
+    expect(simpleStateForCatalog('ambiguous')).toBe('needs-help');
+  });
+
+  it('shows downloading over anything else it might otherwise say', () => {
+    expect(simpleStateForCatalog('not-on-pen', true)).toBe('downloading');
+    expect(simpleStateForCatalog('on-pen-differs', true)).toBe('downloading');
+  });
+
+  it('keeps every plain-language string free of technical vocabulary, in every locale', () => {
+    // The product rule: a customer-facing string never contains these words. The technical
+    // wording still exists — it just lives under Advanced details.
+    const banned = /checksum|hash|SHA-?256|catalog\b|catalogue\b|manifest|preflight|1\.BIN|BOOKFILE|\.axb|metadata/i;
+    const offenders: string[] = [];
+    for (const locale of LOCALES) {
+      const doc = loadBook(locale);
+      for (const keys of Object.values(SIMPLE_STATE_LABELS)) {
+        for (const key of [keys.short, keys.full, keys.help]) {
+          const value = lookup(doc, key);
+          if (value && banned.test(value)) offenders.push(`${locale}: ${key} — ${value}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

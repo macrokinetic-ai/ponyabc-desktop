@@ -85,7 +85,7 @@
     "ambiguous": "Ambíguo"
   },
   "action": {
-    "add": "Adicionar à caneta",
+    "add": "Adicionar os selecionados à caneta",
     "remove": "Remover da caneta",
     "reinstall": "Descarregar novamente",
     "cancelDownload": "Cancelar",
@@ -94,7 +94,9 @@
     "verifyThis": "Verificar este ficheiro",
     "downloadSelected": "Transferir selecionados para a App",
     "downloadAll": "Transferir tudo para a App",
-    "cancelDownloadBatch": "Cancelar transferência"
+    "cancelDownloadBatch": "Cancelar transferência",
+    "addOne": "Adicionar",
+    "updateOne": "Atualizar"
   },
   "statusHelp": {
     "present": "O nome corresponde a um livro oficial, mas a App não leu o ficheiro para verificar o conteúdo. Atualizar nunca lê os ficheiros, por isso este é o estado normal até escolher Verificar este ficheiro.",
@@ -120,10 +122,31 @@
     "downloading": "A ser transferido para este computador."
   },
   "legend": {
-    "title": "O que significam estas indicações?",
-    "intro": "Cada livro oficial mostra duas informações separadas: se está na caneta e se existe uma cópia guardada neste computador. Uma não implica a outra.",
+    "title": "O que querem dizer estas palavras?",
+    "intro": "Cada livro indica se está na sua caneta. Abra os detalhes avançados para a versão técnica.",
     "penHeading": "Conteúdo na caneta",
     "catalogHeading": "Conteúdo oficial",
     "cacheHeading": "Cópias neste computador"
-  }
+  },
+  "simple": {
+    "onPen": "Na sua caneta",
+    "updateAvailable": "Atualização disponível",
+    "notOnPen": "Ainda não está na sua caneta",
+    "downloading": "A transferir…",
+    "checking": "A verificar…",
+    "needsHelp": "Algo não está bem — abra para ajuda"
+  },
+  "simpleHelp": {
+    "onPen": "Este livro está na sua caneta e pronto a usar.",
+    "updateAvailable": "Existe uma versão mais recente deste livro. Escolha Adicionar para a colocar na caneta — a anterior é guardada primeiro.",
+    "notOnPen": "Este livro ainda não está na sua caneta. Escolha Adicionar para o colocar.",
+    "downloading": "O livro está a ser copiado para este computador e depois para a caneta.",
+    "checking": "A aplicação está a verificar este livro. Demora só um instante.",
+    "needsHelp": "Este precisa de uma vista de olhos — a lista de livros pode estar incompleta. A sua caneta não tem qualquer problema. Abra os detalhes avançados ou contacte o apoio."
+  },
+  "advanced": {
+    "title": "Detalhes avançados",
+    "hint": "Informação técnica para o apoio. Não precisa dela para usar a caneta."
+  },
+  "catalogIntro": "Comprou um livro novo? Encontre-o nesta lista e escolha Adicionar."
 }

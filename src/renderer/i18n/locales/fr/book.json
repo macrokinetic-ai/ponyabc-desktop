@@ -85,7 +85,7 @@
     "ambiguous": "Ambigu"
   },
   "action": {
-    "add": "Ajouter au stylo",
+    "add": "Ajouter la sélection à votre stylo",
     "remove": "Supprimer du stylo",
     "reinstall": "Retélécharger",
     "cancelDownload": "Annuler",
@@ -94,7 +94,9 @@
     "verifyThis": "Vérifier ce fichier",
     "downloadSelected": "Télécharger la sélection vers l'App",
     "downloadAll": "Tout télécharger vers l'App",
-    "cancelDownloadBatch": "Annuler le téléchargement"
+    "cancelDownloadBatch": "Annuler le téléchargement",
+    "addOne": "Ajouter",
+    "updateOne": "Mettre à jour"
   },
   "statusHelp": {
     "present": "Le nom correspond à un livre officiel, mais l'App n'a pas lu le fichier pour en vérifier le contenu. Une actualisation ne lit jamais les fichiers : c'est donc l'état normal tant que vous n'avez pas choisi Vérifier ce fichier.",
@@ -120,10 +122,31 @@
     "downloading": "Téléchargement en cours sur cet ordinateur."
   },
   "legend": {
-    "title": "Que signifient ces mentions ?",
-    "intro": "Chaque livre officiel affiche deux informations distinctes : s'il est sur le stylo, et si une copie est enregistrée sur cet ordinateur. L'une n'implique pas l'autre.",
+    "title": "Que veulent dire ces mots ?",
+    "intro": "Chaque livre indique s'il est sur votre stylo. Ouvrez les détails avancés pour la version technique.",
     "penHeading": "Contenu sur le stylo",
     "catalogHeading": "Contenu officiel",
     "cacheHeading": "Copies sur cet ordinateur"
-  }
+  },
+  "simple": {
+    "onPen": "Sur votre stylo",
+    "updateAvailable": "Mise à jour disponible",
+    "notOnPen": "Pas encore sur votre stylo",
+    "downloading": "Téléchargement…",
+    "checking": "Vérification…",
+    "needsHelp": "Un souci — ouvrez pour de l'aide"
+  },
+  "simpleHelp": {
+    "onPen": "Ce livre est sur votre stylo et prêt à être utilisé.",
+    "updateAvailable": "Une version plus récente de ce livre est disponible. Choisissez Ajouter pour la mettre sur le stylo — l'ancienne est d'abord sauvegardée.",
+    "notOnPen": "Ce livre n'est pas encore sur votre stylo. Choisissez Ajouter pour l'y mettre.",
+    "downloading": "Le livre est copié sur cet ordinateur, puis sur votre stylo.",
+    "checking": "L'application vérifie ce livre. Cela ne prend qu'un instant.",
+    "needsHelp": "Celui-ci demande un coup d'œil — la liste des livres est peut-être incomplète. Votre stylo n'a aucun problème. Ouvrez les détails avancés ou contactez le support."
+  },
+  "advanced": {
+    "title": "Détails avancés",
+    "hint": "Informations techniques pour le support. Vous n'en avez pas besoin pour utiliser votre stylo."
+  },
+  "catalogIntro": "Vous avez acheté un nouveau livre ? Trouvez-le dans cette liste et choisissez Ajouter."
 }

@@ -7,7 +7,7 @@ import { PenRootProvider } from '../../src/renderer/state/PenRootContext';
 import { BookLibraryProvider } from '../../src/renderer/state/BookLibraryContext';
 import { BookLibraryScreen } from '../../src/renderer/screens/BookLibraryScreen';
 import type { BookCatalogItem, BookListResult, BookPenItem, PonyAbcApi } from '../../src/shared/types';
-import { CACHE_STATUS_LABELS, CATALOG_STATUS_LABELS, PEN_STATUS_LABELS } from '../../src/renderer/screens/bookStatusLabels';
+import { CACHE_STATUS_LABELS, CATALOG_STATUS_LABELS, PEN_STATUS_LABELS, SIMPLE_STATE_LABELS } from '../../src/renderer/screens/bookStatusLabels';
 
 function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem {
   return {
@@ -212,29 +212,45 @@ describe('BookLibraryScreen — dual pane', () => {
 describe('BookLibraryScreen — status legend', () => {
   it('is collapsed by default, so it never duplicates a row label in the DOM', async () => {
     await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
-    await screen.findByText('Size differs');
-    expect(screen.getAllByText('Size differs')).toHaveLength(1);
-    await screen.findByText('What do these labels mean?');
+    await screen.findByText('Update available');
+    expect(screen.getAllByText('Update available')).toHaveLength(1);
+    await screen.findByText('What do these words mean?');
   });
 
-  it('explains every status once opened, including the two that are easiest to misread', async () => {
-    await renderScreen(listResult());
+  it('leads with the plain-language states and keeps the technical ones under Advanced', async () => {
+    await renderScreen();
     // jsdom does not implement <summary>'s activation behaviour, so a click never opens the
     // disclosure here. Open it the way the browser would and fire the same toggle event.
-    await screen.findByText('What do these labels mean?');
+    await screen.findByText('What do these words mean?');
     const details = document.querySelector('details.status-legend') as HTMLDetailsElement;
     details.open = true;
     fireEvent(details, new Event('toggle'));
 
-    for (const keys of [...Object.values(PEN_STATUS_LABELS), ...Object.values(CATALOG_STATUS_LABELS), ...Object.values(CACHE_STATUS_LABELS)]) {
-      const help = i18n.t(keys.help, { ns: 'book' });
-      expect(screen.getAllByText(help).length, keys.help).toBeGreaterThan(0);
+    // What a parent gets, without opening anything further.
+    for (const keys of Object.values(SIMPLE_STATE_LABELS)) {
+      expect(screen.getAllByText(i18n.t(keys.help, { ns: 'book' })).length, keys.help).toBeGreaterThan(0);
     }
+    // ...and what they are spared until they ask for it. The technical text is present but
+    // sits inside a CLOSED disclosure, which is what "not shown to a parent" means in a browser.
+    const technical = screen.getByText(i18n.t(PEN_STATUS_LABELS['matched-hash-unknown'].help, { ns: 'book' }));
+    const enclosing = technical.closest('details.advanced-details') as HTMLDetailsElement | null;
+    expect(enclosing).not.toBeNull();
+    expect(enclosing?.open).toBe(false);
 
-    // The two specific misreadings this legend exists to correct: "on the pen" is not
-    // "checked", and "stored on this computer" is not "on the pen".
-    await screen.findByText(/has not read the file to check its contents/);
-    await screen.findByText(/adding it to the pen needs no download/);
+    const advanced = document.querySelector('details.status-legend details.advanced-details') as HTMLDetailsElement;
+    advanced.open = true;
+    fireEvent(advanced, new Event('toggle'));
+
+    for (const keys of [...Object.values(PEN_STATUS_LABELS), ...Object.values(CATALOG_STATUS_LABELS), ...Object.values(CACHE_STATUS_LABELS)]) {
+      expect(screen.getAllByText(i18n.t(keys.help, { ns: 'book' })).length, keys.help).toBeGreaterThan(0);
+    }
+  });
+
+  it('never shows a parent a checksum, a hash or a filename in the main view', async () => {
+    await renderScreen(listResult({ penItems: [penItem({ status: 'matched-hash-unknown' })], catalogItems: [catalogItem({ status: 'metadata-incomplete', actionable: false })] }));
+    await screen.findByText('On your pen');
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/checksum|hash|SHA-?256|catalog entry|\.axb/i);
   });
 });
 
@@ -265,7 +281,7 @@ describe('BookLibraryScreen — left pane (pen)', () => {
 
   it('a pen file matched by name but with a differing size shows the short "Size differs" status by default, and the full wording only once expanded — stays selectable/removable (never auto-flagged as corrupted)', async () => {
     await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
-    await screen.findByText('Size differs'); // short form in the default (collapsed) row
+    await screen.findByText('Update available'); // short form in the default (collapsed) row
     expect(screen.queryByText(/Size differs from official version/)).toBeNull(); // long form not shown yet
     const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
     expect(checkbox).not.toBeNull(); // still selectable — not treated like unrecognized content
@@ -296,7 +312,7 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'not-on-pen' })] }));
     const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add selected to your pen' }));
     await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalledWith({ contentId: 'b1', penGeneration: 1 }));
   });
 
@@ -304,7 +320,7 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-differs' })] }));
     const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add selected to your pen' }));
     await screen.findByText('Some selected items differ from the pen');
     expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
 
@@ -318,10 +334,10 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
   it('an on-pen-size-differs catalog item is actionable and shows the short size-mismatch status by default, requiring the same Replace/Skip confirm as a hash-differs item', async () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-size-differs' })] }));
-    await screen.findByText('Size differs'); // short form in the default (collapsed) row
+    await screen.findByText('Update available'); // short form in the default (collapsed) row
     const checkbox = document.querySelectorAll('.pane')[1].querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add selected to your pen' }));
     await screen.findByText('Some selected items differ from the pen');
     expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
   });
@@ -356,12 +372,12 @@ describe('BookLibraryScreen — right pane (catalog)', () => {
 
   it('a "verifying" catalog item resolves in place once a bookVerifyUpdate event arrives, no re-list call', async () => {
     await renderScreen(listResult({ catalogItems: [catalogItem({ status: 'on-pen-verifying', actionable: false })] }));
-    await screen.findByText('Verifying…');
+    await screen.findByText('Checking…');
     const listCallsBefore = (window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length;
 
     verifyListener?.({ fileName: '0451.axb', contentId: 'b1', result: { penStatus: 'verified-differs', catalogStatus: 'on-pen-differs' } });
 
-    await screen.findByText('Differs');
+    await screen.findByText('Update available');
     expect((window.ponyabc.bookList as ReturnType<typeof vi.fn>).mock.calls.length).toBe(listCallsBefore);
   });
 
