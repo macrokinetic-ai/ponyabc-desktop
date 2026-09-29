@@ -13,7 +13,7 @@
     "title": "Prepare su lápiz",
     "checklistUsb": "Conecte el lápiz P5 a este ordenador con un cable USB.",
     "checklistPower": "Mantenga el lápiz conectado y con alimentación durante toda la actualización — no lo desconecte.",
-    "checklistNoOtherOps": "Asegúrese de que no haya otra operación de archivos (BOOK, DIY u otra actualización) en curso.",
+    "checklistNoOtherOps": "Cierre cualquier otro programa que esté usando el lápiz.",
     "penDetected": "Lápiz detectado.",
     "penRequired": "Conecte un lápiz para continuar.",
     "nextButton": "Siguiente"
@@ -41,7 +41,7 @@
       "version": "Versión oficial: {{version}}",
       "packageLabel": "Paquete: {{label}} ({{date}})",
       "onPenVersionUnknown": "Versión actual en el lápiz: no disponible",
-      "onPenVersionHint": "Esta aplicación no puede leer la versión del firmware ya presente en el lápiz — actualmente no existe una forma fiable de consultarla.",
+      "onPenVersionHint": "Esta aplicación no puede saber qué versión hay ya en su lápiz.",
       "hardwareRevNotice": "Este firmware corresponde a la versión de hardware {{hardwareRev}}. Esta aplicación no puede detectar automáticamente la versión de hardware del lápiz conectado.",
       "hardwareConfirmLegend": "Confirme la versión de hardware del lápiz conectado:",
       "hardwareConfirmYes": "Confirmado — mi lápiz es la versión de hardware {{hardwareRev}}",
@@ -74,23 +74,25 @@
     "phaseAwaitingAuth": "Esperando autorización de Windows, o iniciando…",
     "phaseToolRunning": "Actualizando el lápiz — mantenga la conexión USB.",
     "phaseFinishing": "Confirmando el resultado…",
-    "noCancelNotice": "La actualización no se puede cancelar a la fuerza una vez iniciada.",
+    "noCancelNotice": "Una vez iniciada, la actualización no se puede detener. Espere: suele tardar unos minutos.",
     "noOutputYet": "Aún no hay salida."
   },
   "result": {
     "title": "Resultado",
-    "successMessage": "La actualización del firmware se ha completado. Reinicie el lápiz y pruebe la reproducción.",
-    "processFinishedMessage": "El proceso de actualización del firmware ha terminado. Reinicie el lápiz y pruebe la reproducción.",
-    "failedTitle": "La actualización no se inició o no se completó.",
-    "unclearTitle": "No se pudo confirmar el resultado.",
-    "unclearBodyUnconfirmed": "No se pudo confirmar si la herramienta de actualización realmente terminó de ejecutarse. Por seguridad, no se permitirá ninguna nueva actualización de firmware ni escritura BOOK/DIY en el lápiz mientras esto no se resuelva. Cierre completamente esta aplicación y vuelva a abrirla solo después de haber confirmado usted mismo (por ejemplo, en el Administrador de tareas de Windows, o revisando el propio lápiz) que el proceso se ha detenido.",
+    "successMessage": "Su lápiz está actualizado. Apáguelo y vuelva a encenderlo, y pruebe uno de sus libros.",
+    "processFinishedMessage": "La actualización ha terminado. Apague el lápiz y vuelva a encenderlo, y pruebe uno de sus libros.",
+    "failedTitle": "La actualización no se completó",
+    "unclearTitle": "No pudimos confirmar que la actualización terminara",
+    "unclearBodyUnconfirmed": "Por seguridad, esta aplicación no cambiará nada en su lápiz por ahora. Cierre PonyABC por completo, ábrala de nuevo y ejecute la actualización otra vez.",
     "finishButton": "Finalizar",
     "returnHomeButton": "Volver al inicio",
     "acknowledgeButtonUnconfirmed": "Entiendo — reiniciaré la aplicación",
-    "restartNoticeAcknowledged": "Anotado. Esta aplicación permanecerá bloqueada para nuevas actualizaciones de firmware y escrituras BOOK/DIY hasta que la cierre por completo y la vuelva a abrir.",
+    "restartNoticeAcknowledged": "Cierre PonyABC por completo y ábrala de nuevo antes de usar su lápiz con esta aplicación.",
     "startOverButton": "Empezar de nuevo",
-    "preflightFailedTitle": "The upgrade did not start — the pen could not be prepared.",
-    "preflightFailedBody": "Before a firmware upgrade, two index files (1.BIN and BOOKFILE.BIN) must be removed from the pen's BOOK folder, or the new firmware will not take effect. They could not be removed, so nothing was changed on the pen and no upgrade was started. Check that the pen is still connected and not write-protected, then try again."
+    "preflightFailedTitle": "La actualización no se inició",
+    "preflightFailedBody": "Su lápiz no ha cambiado. Compruebe que sigue conectado e inténtelo de nuevo.",
+    "failedBody": "Su lápiz no ha cambiado. Compruebe que sigue conectado e inténtelo de nuevo.",
+    "retryAfterUnclearBody": "No pudimos confirmar que la actualización terminara. Ejecútela una vez más: repetirla no supone ningún riesgo."
   },
   "technicalDetails": {
     "title": "Detalles técnicos",
@@ -98,16 +100,12 @@
     "collapseButton": "Ocultar"
   },
   "recovery": {
-    "title": "Actualización anterior no confirmada como finalizada",
-    "stillRunningBody": "Una actualización de firmware de una sesión anterior parece seguir en ejecución fuera de esta aplicación. Reiniciar esta aplicación no es evidencia de que se haya detenido. Las nuevas actualizaciones de firmware y las escrituras BOOK/DIY en el lápiz permanecen bloqueadas, y esta aplicación no intentará detener el otro proceso por sí misma.",
-    "unknownBody": "Esta aplicación no pudo determinar si una actualización de firmware de una sesión anterior ha terminado. Las nuevas actualizaciones de firmware y las escrituras BOOK/DIY en el lápiz permanecen bloqueadas hasta que esto pueda confirmarse.",
+    "title": "Puede que una actualización anterior siga en marcha",
+    "stillRunningBody": "Una actualización iniciada antes sigue ejecutándose en este ordenador. Espere a que termine, o reinicie el ordenador, antes de usar su lápiz con esta aplicación.",
+    "unknownBody": "No pudimos saber si una actualización anterior terminó. Por seguridad, esta aplicación no cambiará nada en su lápiz hasta que esté claro.",
     "checking": "Comprobando…",
     "checkAgainButton": "Comprobar de nuevo",
     "startedAt": "Intento de actualización iniciado: {{time}}",
     "lastChecked": "Última comprobación: {{time}}"
-  },
-  "faq": {
-    "manualUpgradeWarningTitle": "Upgrading with the vendor tool instead of this app",
-    "manualUpgradeWarningBody": "If you run the manufacturer's upgrade tool directly rather than using this app, you must first delete 1.BIN and BOOKFILE.BIN from the pen's BOOK folder. Without this the upgrade appears to run but the new firmware does not take effect. This app does it for you automatically."
   }
 }

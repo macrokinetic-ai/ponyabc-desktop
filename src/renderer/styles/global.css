@@ -1208,14 +1208,3 @@ body {
 .status-help {
   font-style: italic;
 }
-
-/* Firmware — the pre-flash cleanup note. Collapsed: it only matters to someone who upgrades
- * outside this app, but the vendor documents it nowhere, so it has to live somewhere. */
-.firmware-faq {
-  margin-top: 8px;
-}
-
-.firmware-faq > summary {
-  cursor: pointer;
-  font-size: 13px;
-}

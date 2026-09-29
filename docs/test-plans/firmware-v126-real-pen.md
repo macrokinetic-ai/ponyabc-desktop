@@ -47,18 +47,19 @@ because the upgrade below will look fine and not have taken.
 This is the check the whole feature exists for. Before this release the upgrade would report
 success here and the version would still read the old one.
 
-## 5. Does the pen rebuild the index? — an open question, please answer it
+## 5. The index comes back — confirm it does
 
-We do not know whether the pen recreates `1.BIN` and `BOOKFILE.BIN` by itself. Vendor did not
-say. It matters: if it does not, and the files are what the pen uses to find its books, then
-something must rebuild them or the books stop working.
+The pen's own firmware rebuilds `1.BIN` and `BOOKFILE.BIN`; `app.bin` contains the paths
+`storage/sd0/C/BOOK/1.bin` and `.../bookfile.bin` and the code that scans `BOOK` to build them
+(verified 2026-09-29 — see `docs/vendor-notes.md`). Nothing on the PC writes them, so they come
+back **after the pen boots on the new firmware**, not at the moment the flashing tool finishes.
 
-- [ ] After the reboot in step 4, reconnect the pen and look in `BOOK\` again. Do `1.BIN` and
-      `BOOKFILE.BIN` exist now? Note their sizes — the same as step 1, or different?
-- [ ] If they are still missing, touch a book with the pen and then re-check. Some devices
-      rebuild lazily, on first use rather than on boot.
-
-**Write down what you see either way.** Both answers are useful and neither is a failure.
+- [ ] After the reboot in step 4, reconnect the pen and look in `BOOK\` again. **Expect `1.BIN`
+      and `BOOKFILE.BIN` to be back.** Note their sizes — same as step 1, or different?
+- [ ] If they are still missing, touch a book with the pen, then re-check. Some devices rebuild
+      on first use rather than on boot.
+- [ ] If they are still missing after that, **stop and report it** — with the books not playing
+      (step 6), that combination is the one real failure mode this whole change could introduce.
 
 ## 6. Everything still plays
 
@@ -89,13 +90,27 @@ first.
       Book updates must never run the cleanup.
 - [ ] Reboot the pen and confirm the newly added book plays.
 
-## 9. What a failure should look like (optional, spare pen only)
+## 9. Cancel the Windows prompt — the pen must end up untouched
 
-To see the guard work, make the deletion fail: with the pen connected, set `BOOK\1.BIN` to
-read-only in its file Properties, then start an upgrade.
+**Do this one.** It is the most likely thing a real customer does by accident, and it is the
+path the app now protects.
 
-- [ ] The app stops with "The upgrade did not start — the pen could not be prepared." and
-      explains which files must be removed.
+- [ ] Note what is in `BOOK\` first (step 1 already did).
+- [ ] Start the upgrade, and when Windows asks for permission, **click No / Cancel**.
+- [ ] The app says the update did not finish and that the pen has not been changed. It must not
+      claim success, and must not mention any filenames.
+- [ ] Look in `BOOK\`: **`1.BIN` and `BOOKFILE.BIN` are back**, same sizes as step 1. The app
+      copies them before deleting and puts them back when the flash never starts.
+- [ ] Unplug, power-cycle, and **play a book and a DIY recording**. Both must work exactly as
+      before — the pen should be indistinguishable from one that was never plugged in.
+- [ ] Now run the upgrade again and approve the prompt. It should succeed normally.
+
+## 10. What a failure should look like (optional, spare pen only)
+
+To see the other guard work, make the deletion fail: with the pen connected, set `BOOK\1.BIN`
+to read-only in its file Properties, then start an upgrade.
+
+- [ ] The app stops and says the update did not start and the pen has not been changed.
 - [ ] Nothing was flashed: the pen's version is unchanged, and the books still play.
 - [ ] Clear the read-only flag and retry — it now succeeds.
 

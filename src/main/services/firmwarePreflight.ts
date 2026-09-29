@@ -46,6 +46,20 @@ export interface PreflightDeletion {
   status: PreflightDeletionStatus;
   /** Present only for `failed`. */
   error?: string;
+  /** Where this file's bytes were copied before it was deleted, when a backup directory was
+   *  given. Null when nothing was backed up (no backup dir, file absent, or the copy failed —
+   *  a failed copy also means the file is NOT deleted). */
+  backupPath?: string | null;
+}
+
+export interface PreflightRestoreResult {
+  /** Files put back, by their original on-disk name. */
+  restored: string[];
+  /** Files deliberately left alone because something of that name is on the pen again — the
+   *  new firmware rebuilds its own index, and a rebuilt one must never be clobbered by a stale
+   *  copy. */
+  skippedPresent: string[];
+  failed: Array<{ fileName: string; error: string }>;
 }
 
 export type FirmwarePreflightResult =
@@ -70,6 +84,7 @@ export type FirmwarePreflightResult =
 export function runFirmwarePreflight(
   penRootPath: string,
   fileNames: readonly string[] = DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
+  options: { backupDir?: string } = {},
 ): FirmwarePreflightResult {
   // 1. Confirm this really is a PonyABC pen before deleting anything from it. resolvePenRoot
   //    canonicalizes the path and requires BOTH BOOK and DIY to exist, which is the same
@@ -140,9 +155,32 @@ export function runFirmwarePreflight(
       break;
     }
 
+    // Copy before deleting. The pen's own firmware is what rebuilds this index — nothing in the
+    // vendor package can put it back (see docs/vendor-notes.md) — so if the upgrade is abandoned
+    // before the flash begins, these copies are the ONLY way the pen gets its books back.
+    let backupPath: string | null = null;
+    if (options.backupDir) {
+      try {
+        fs.mkdirSync(options.backupDir, { recursive: true });
+        backupPath = path.join(options.backupDir, hit.name);
+        fs.copyFileSync(target, backupPath);
+      } catch (err) {
+        // A backup we could not take means we must not delete: deleting anyway would leave the
+        // pen with no index and no way back, which is strictly worse than not upgrading.
+        deletions.push({
+          requested,
+          matched: hit.name,
+          status: 'failed',
+          backupPath: null,
+          error: `could not back up before deleting: ${err instanceof Error ? err.message : String(err)}`,
+        });
+        break;
+      }
+    }
+
     try {
       fs.unlinkSync(target);
-      deletions.push({ requested, matched: hit.name, status: 'deleted' });
+      deletions.push({ requested, matched: hit.name, status: 'deleted', backupPath });
     } catch (err) {
       deletions.push({
         requested,
@@ -177,4 +215,48 @@ export function summarizePreflight(deletions: readonly PreflightDeletion[]): str
   return deletions
     .map((d) => `${d.requested}=${d.status}${d.matched && d.matched !== d.requested ? ` (as ${d.matched})` : ''}`)
     .join(', ');
+}
+
+/**
+ * Puts back the files the preflight deleted, for the one case that warrants it: the upgrade was
+ * abandoned **before the vendor tool wrote anything**, so the pen is still running its old
+ * firmware and the index we removed is still the correct one for it.
+ *
+ * It must NOT be called once flashing has begun. A pen that is part-way through a firmware write
+ * needs its index rebuilt by the new firmware, and restoring the old one would recreate exactly
+ * the stale-index failure the preflight exists to prevent.
+ *
+ * Never overwrites: if a file of that name is on the pen again, the firmware has rebuilt it and
+ * that copy wins.
+ */
+export function restorePreflightBackups(bookDir: string, deletions: readonly PreflightDeletion[]): PreflightRestoreResult {
+  const result: PreflightRestoreResult = { restored: [], skippedPresent: [], failed: [] };
+
+  for (const deletion of deletions) {
+    if (deletion.status !== 'deleted' || !deletion.backupPath || !deletion.matched) continue;
+    const fileName = deletion.matched;
+    const target = path.join(bookDir, fileName);
+
+    if (fs.existsSync(target)) {
+      result.skippedPresent.push(fileName);
+      continue;
+    }
+
+    try {
+      fs.copyFileSync(deletion.backupPath, target);
+      result.restored.push(fileName);
+    } catch (err) {
+      result.failed.push({ fileName, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  return result;
+}
+
+/** One-line summary of a restore, for the session log and diagnostics. */
+export function summarizeRestore(result: PreflightRestoreResult): string {
+  const parts = [`restored ${result.restored.length}`];
+  if (result.skippedPresent.length > 0) parts.push(`skipped ${result.skippedPresent.length} (already present)`);
+  if (result.failed.length > 0) parts.push(`FAILED ${result.failed.map((f) => `${f.fileName}: ${f.error}`).join('; ')}`);
+  return parts.join(', ');
 }

@@ -30,6 +30,48 @@ The working theory is that the old firmware leaves a stale index that the new fi
 will not rebuild while it exists. That is an inference from the observed behaviour — the
 vendor did not explain the mechanism, so do not state it as fact to customers.
 
+### Where the NEW `1.BIN` / `BOOKFILE.BIN` come from — verified 2026-09-29
+
+The vendor's account is that "the firmware package contains the new `1.BIN` and `BOOKFILE.BIN`,
+and `download.bat` generates/copies them into BOOK". **The outcome is right and the mechanism is
+not**, which matters for what we can promise the user and when.
+
+Checked directly against `pen-AC6966-V1.26-…-SD.zip` (SHA-256
+`14cc6ca6e86badc95c0f96f3b55d5f836c83461d3d37870aa18486efa2ad6ec6`):
+
+- **No entry in the package is named `1.BIN` or `BOOKFILE.BIN`**, at any depth, in any casing —
+  464 payload files searched by name, and every text file searched by content.
+- **`download.bat` is a _build_ script, not a flasher.** It runs `llvm-objcopy` over `sdk.elf` to
+  regenerate `text.bin`/`data.bin`/the overlays, concatenates them into `app.bin`, copies that
+  into `soundbox\standard\`, and chains to `soundbox\standard\download.bat`.
+- That second script is the real one, and it runs
+  `isd_download.exe -tonorflash -dev br25 … -uboot uboot.boot -app app.bin …`. It programs the
+  pen's **norflash over USB/serial**. It never mounts, opens or writes the pen's mass-storage
+  `BOOK` folder at all.
+
+So where do the new files come from? **The firmware itself writes them, on the pen, at runtime.**
+`app.bin` contains the literal paths
+
+```
+storage/sd0/C/BOOK/1.bin
+storage/sd0/C/BOOK/bookfile.bin
+```
+
+alongside the symbols that build them — `ScanDirAndBuildBookFileList`, `InitBookFile`,
+`CheckBookFile`, `FindFileByBookFileList` (from `sdk.map` / `symbol_tbl.txt`). The pen scans its
+own `BOOK` directory and rebuilds the index there.
+
+**What follows from this, and why it is worth the paragraph:**
+
+1. The two files reappear **after the pen boots on the new firmware and rescans**, not at the
+   moment the PC tool finishes. Anyone looking in `BOOK\` while the pen is still plugged in as a
+   USB drive right after flashing should expect them to be **missing**, and that is correct.
+2. Nothing on the PC side can put them back. If an upgrade is abandoned **before** the flash
+   starts, the pen is still on the old firmware with its old books, and only the copies we took
+   ourselves can restore its index — hence the preflight backup below.
+3. It also explains the original bug cleanly: the old index is a file the _old_ firmware built,
+   and the new firmware will not rebuild it while a file is already sitting there.
+
 ### What this does NOT apply to
 
 **Updating `.axb` books does not need this, and must never do it.** A book update that

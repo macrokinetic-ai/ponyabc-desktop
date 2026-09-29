@@ -13,7 +13,7 @@
     "title": "Bereiten Sie Ihren Stift vor",
     "checklistUsb": "Verbinden Sie den P5-Stift über ein USB-Kabel mit diesem Computer.",
     "checklistPower": "Halten Sie den Stift während des gesamten Updates angeschlossen und mit Strom versorgt — trennen Sie ihn nicht.",
-    "checklistNoOtherOps": "Stellen Sie sicher, dass kein anderer Dateivorgang (BOOK, DIY oder ein weiteres Update) läuft.",
+    "checklistNoOtherOps": "Schließen Sie alle anderen Programme, die den Stift verwenden.",
     "penDetected": "Stift erkannt.",
     "penRequired": "Schließen Sie einen Stift an, um fortzufahren.",
     "nextButton": "Weiter"
@@ -41,7 +41,7 @@
       "version": "Offizielle Version: {{version}}",
       "packageLabel": "Paket: {{label}} ({{date}})",
       "onPenVersionUnknown": "Aktuelle Version auf dem Stift: nicht auslesbar",
-      "onPenVersionHint": "Diese App kann die bereits auf dem Stift vorhandene Firmware-Version nicht auslesen — dafür gibt es derzeit keine zuverlässige Methode.",
+      "onPenVersionHint": "Diese App kann nicht erkennen, welche Version bereits auf Ihrem Stift ist.",
       "hardwareRevNotice": "Diese Firmware gilt für Hardware-Version {{hardwareRev}}. Diese App kann die Hardware-Version des angeschlossenen Stifts nicht automatisch erkennen.",
       "hardwareConfirmLegend": "Bestätigen Sie die Hardware-Version des angeschlossenen Stifts:",
       "hardwareConfirmYes": "Bestätigt — mein Stift hat Hardware-Version {{hardwareRev}}",
@@ -74,23 +74,25 @@
     "phaseAwaitingAuth": "Warten auf Windows-Autorisierung oder Start…",
     "phaseToolRunning": "Der Stift wird aktualisiert — bitte USB-Verbindung aufrechterhalten.",
     "phaseFinishing": "Ergebnis wird bestätigt…",
-    "noCancelNotice": "Das Update kann nach dem Start nicht erzwungen abgebrochen werden.",
+    "noCancelNotice": "Sobald die Aktualisierung läuft, kann sie nicht mehr gestoppt werden. Bitte warten Sie — meist dauert es nur wenige Minuten.",
     "noOutputYet": "Noch keine Ausgabe."
   },
   "result": {
     "title": "Ergebnis",
-    "successMessage": "Das Firmware-Update ist abgeschlossen. Bitte starten Sie den Stift neu und testen Sie die Wiedergabe.",
-    "processFinishedMessage": "Der Firmware-Update-Vorgang ist beendet. Bitte starten Sie den Stift neu und testen Sie die Wiedergabe.",
-    "failedTitle": "Das Update wurde nicht gestartet oder nicht abgeschlossen.",
-    "unclearTitle": "Das Ergebnis konnte nicht bestätigt werden.",
-    "unclearBodyUnconfirmed": "Es konnte nicht bestätigt werden, ob das Update-Tool tatsächlich fertig ausgeführt wurde. Aus Sicherheitsgründen wird kein neues Firmware-Update und kein BOOK/DIY-Schreibvorgang auf den Stift zugelassen, solange dies ungeklärt ist. Beenden Sie diese App erst vollständig und öffnen Sie sie erst dann neu, wenn Sie selbst bestätigt haben (z. B. im Windows-Task-Manager oder durch Prüfen des Stifts selbst), dass der Vorgang beendet ist.",
+    "successMessage": "Ihr Stift ist auf dem neuesten Stand. Schalten Sie ihn aus und wieder ein und probieren Sie eines Ihrer Bücher.",
+    "processFinishedMessage": "Die Aktualisierung ist abgeschlossen. Schalten Sie Ihren Stift aus und wieder ein und probieren Sie eines Ihrer Bücher.",
+    "failedTitle": "Die Aktualisierung wurde nicht abgeschlossen",
+    "unclearTitle": "Wir konnten nicht bestätigen, dass die Aktualisierung fertig ist",
+    "unclearBodyUnconfirmed": "Zur Sicherheit ändert diese App vorerst nichts an Ihrem Stift. Bitte schließen Sie PonyABC vollständig, öffnen Sie es erneut und führen Sie die Aktualisierung noch einmal aus.",
     "finishButton": "Fertig",
     "returnHomeButton": "Zur Startseite zurückkehren",
     "acknowledgeButtonUnconfirmed": "Verstanden — ich starte die App neu",
-    "restartNoticeAcknowledged": "Notiert. Diese App bleibt für neue Firmware-Updates und BOOK/DIY-Schreibvorgänge gesperrt, bis Sie sie vollständig beenden und neu öffnen.",
+    "restartNoticeAcknowledged": "Bitte schließen Sie PonyABC vollständig und öffnen Sie es erneut, bevor Sie Ihren Stift mit dieser App verwenden.",
     "startOverButton": "Neu starten",
-    "preflightFailedTitle": "The upgrade did not start — the pen could not be prepared.",
-    "preflightFailedBody": "Before a firmware upgrade, two index files (1.BIN and BOOKFILE.BIN) must be removed from the pen's BOOK folder, or the new firmware will not take effect. They could not be removed, so nothing was changed on the pen and no upgrade was started. Check that the pen is still connected and not write-protected, then try again."
+    "preflightFailedTitle": "Die Aktualisierung hat nicht begonnen",
+    "preflightFailedBody": "An Ihrem Stift wurde nichts geändert. Prüfen Sie, ob er noch angeschlossen ist, und versuchen Sie es erneut.",
+    "failedBody": "An Ihrem Stift wurde nichts geändert. Prüfen Sie, ob er noch angeschlossen ist, und versuchen Sie es erneut.",
+    "retryAfterUnclearBody": "Wir konnten nicht bestätigen, dass die Aktualisierung fertig ist. Bitte führen Sie sie noch einmal aus — ein zweiter Durchlauf ist unbedenklich."
   },
   "technicalDetails": {
     "title": "Technische Details",
@@ -98,16 +100,12 @@
     "collapseButton": "Ausblenden"
   },
   "recovery": {
-    "title": "Vorheriges Update nicht als abgeschlossen bestätigt",
-    "stillRunningBody": "Ein Firmware-Update aus einer vorherigen Sitzung scheint außerhalb dieser App noch zu laufen. Ein Neustart dieser App ist kein Beweis dafür, dass es beendet wurde. Neue Firmware-Updates und BOOK/DIY-Schreibvorgänge auf den Stift bleiben gesperrt, und diese App wird nicht versuchen, den anderen Prozess selbst zu beenden.",
-    "unknownBody": "Diese App konnte nicht feststellen, ob ein Firmware-Update aus einer vorherigen Sitzung abgeschlossen wurde. Neue Firmware-Updates und BOOK/DIY-Schreibvorgänge auf den Stift bleiben gesperrt, bis dies bestätigt werden kann.",
+    "title": "Eine frühere Aktualisierung läuft möglicherweise noch",
+    "stillRunningBody": "Eine früher gestartete Aktualisierung läuft noch auf diesem Computer. Warten Sie, bis sie fertig ist, oder starten Sie den Computer neu, bevor Sie Ihren Stift mit dieser App verwenden.",
+    "unknownBody": "Wir konnten nicht feststellen, ob eine frühere Aktualisierung abgeschlossen wurde. Zur Sicherheit ändert diese App nichts an Ihrem Stift, solange das unklar ist.",
     "checking": "Wird geprüft…",
     "checkAgainButton": "Erneut prüfen",
     "startedAt": "Update-Versuch gestartet: {{time}}",
     "lastChecked": "Zuletzt geprüft: {{time}}"
-  },
-  "faq": {
-    "manualUpgradeWarningTitle": "Upgrading with the vendor tool instead of this app",
-    "manualUpgradeWarningBody": "If you run the manufacturer's upgrade tool directly rather than using this app, you must first delete 1.BIN and BOOKFILE.BIN from the pen's BOOK folder. Without this the upgrade appears to run but the new firmware does not take effect. This app does it for you automatically."
   }
 }

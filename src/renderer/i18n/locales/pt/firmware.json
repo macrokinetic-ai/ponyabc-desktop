@@ -13,7 +13,7 @@
     "title": "Prepare a sua caneta",
     "checklistUsb": "Ligue a caneta P5 a este computador com um cabo USB.",
     "checklistPower": "Mantenha a caneta ligada e com alimentação durante toda a atualização — não a desligue.",
-    "checklistNoOtherOps": "Certifique-se de que nenhuma outra operação de ficheiros (BOOK, DIY ou outra atualização) está em curso.",
+    "checklistNoOtherOps": "Feche qualquer outro programa que esteja a usar a caneta.",
     "penDetected": "Caneta detetada.",
     "penRequired": "Ligue uma caneta para continuar.",
     "nextButton": "Seguinte"
@@ -41,7 +41,7 @@
       "version": "Versão oficial: {{version}}",
       "packageLabel": "Pacote: {{label}} ({{date}})",
       "onPenVersionUnknown": "Versão atual na caneta: não disponível",
-      "onPenVersionHint": "Esta app não consegue ler a versão do firmware já existente na caneta — atualmente não existe uma forma fiável de a consultar.",
+      "onPenVersionHint": "Esta aplicação não consegue saber que versão já está na sua caneta.",
       "hardwareRevNotice": "Este firmware aplica-se à versão de hardware {{hardwareRev}}. Esta app não consegue detetar automaticamente a versão de hardware da caneta ligada.",
       "hardwareConfirmLegend": "Confirme a versão de hardware da caneta ligada:",
       "hardwareConfirmYes": "Confirmado — a minha caneta é versão de hardware {{hardwareRev}}",
@@ -74,23 +74,25 @@
     "phaseAwaitingAuth": "A aguardar autorização do Windows, ou a iniciar…",
     "phaseToolRunning": "A atualizar a caneta — mantenha a ligação USB.",
     "phaseFinishing": "A confirmar o resultado…",
-    "noCancelNotice": "A atualização não pode ser cancelada à força depois de iniciada.",
+    "noCancelNotice": "Depois de começar, a atualização não pode ser parada. Aguarde — normalmente demora alguns minutos.",
     "noOutputYet": "Ainda sem resultado."
   },
   "result": {
     "title": "Resultado",
-    "successMessage": "A atualização do firmware está concluída. Reinicie a caneta e teste a reprodução.",
-    "processFinishedMessage": "O processo de atualização do firmware terminou. Reinicie a caneta e teste a reprodução.",
-    "failedTitle": "A atualização não foi iniciada ou não foi concluída.",
-    "unclearTitle": "Não foi possível confirmar o resultado.",
-    "unclearBodyUnconfirmed": "Não foi possível confirmar se a ferramenta de atualização realmente terminou de ser executada. Por segurança, nenhuma nova atualização de firmware ou gravação BOOK/DIY na caneta será permitida enquanto isso não for resolvido. Feche completamente este aplicativo e reabra-o somente depois de confirmar por conta própria (por exemplo, no Gerenciador de Tarefas do Windows, ou verificando a própria caneta) que o processo foi interrompido.",
+    "successMessage": "A sua caneta está atualizada. Desligue-a e volte a ligá-la, e experimente um dos seus livros.",
+    "processFinishedMessage": "A atualização terminou. Desligue a caneta e volte a ligá-la, e experimente um dos seus livros.",
+    "failedTitle": "A atualização não ficou concluída",
+    "unclearTitle": "Não conseguimos confirmar que a atualização terminou",
+    "unclearBodyUnconfirmed": "Por segurança, esta aplicação não vai alterar nada na sua caneta para já. Feche o PonyABC por completo, abra-o de novo e execute a atualização mais uma vez.",
     "finishButton": "Concluir",
     "returnHomeButton": "Voltar ao início",
     "acknowledgeButtonUnconfirmed": "Compreendo — vou reiniciar o aplicativo",
-    "restartNoticeAcknowledged": "Registrado. Este aplicativo permanecerá bloqueado para novas atualizações de firmware e gravações BOOK/DIY até que você o feche completamente e o reabra.",
+    "restartNoticeAcknowledged": "Feche o PonyABC por completo e abra-o de novo antes de usar a caneta com esta aplicação.",
     "startOverButton": "Recomeçar",
-    "preflightFailedTitle": "The upgrade did not start — the pen could not be prepared.",
-    "preflightFailedBody": "Before a firmware upgrade, two index files (1.BIN and BOOKFILE.BIN) must be removed from the pen's BOOK folder, or the new firmware will not take effect. They could not be removed, so nothing was changed on the pen and no upgrade was started. Check that the pen is still connected and not write-protected, then try again."
+    "preflightFailedTitle": "A atualização não começou",
+    "preflightFailedBody": "A sua caneta não foi alterada. Verifique se continua ligada e tente novamente.",
+    "failedBody": "A sua caneta não foi alterada. Verifique se continua ligada e tente novamente.",
+    "retryAfterUnclearBody": "Não conseguimos confirmar que a atualização terminou. Execute-a mais uma vez — repeti-la não traz riscos."
   },
   "technicalDetails": {
     "title": "Detalhes técnicos",
@@ -98,16 +100,12 @@
     "collapseButton": "Ocultar"
   },
   "recovery": {
-    "title": "Atualização anterior não confirmada como concluída",
-    "stillRunningBody": "Uma atualização de firmware de uma sessão anterior parece continuar em execução fora deste aplicativo. Reiniciar este aplicativo não é evidência de que ela parou. Novas atualizações de firmware e gravações BOOK/DIY na caneta permanecem bloqueadas, e este aplicativo não tentará interromper o outro processo por conta própria.",
-    "unknownBody": "Este aplicativo não conseguiu determinar se uma atualização de firmware de uma sessão anterior foi concluída. Novas atualizações de firmware e gravações BOOK/DIY na caneta permanecem bloqueadas até que isso possa ser confirmado.",
+    "title": "Uma atualização anterior pode ainda estar a decorrer",
+    "stillRunningBody": "Uma atualização iniciada antes ainda está a decorrer neste computador. Espere que termine, ou reinicie o computador, antes de usar a caneta com esta aplicação.",
+    "unknownBody": "Não conseguimos saber se uma atualização anterior terminou. Por segurança, esta aplicação não vai alterar nada na caneta enquanto isso não for claro.",
     "checking": "Verificando…",
     "checkAgainButton": "Verificar novamente",
     "startedAt": "Tentativa de atualização iniciada: {{time}}",
     "lastChecked": "Última verificação: {{time}}"
-  },
-  "faq": {
-    "manualUpgradeWarningTitle": "Upgrading with the vendor tool instead of this app",
-    "manualUpgradeWarningBody": "If you run the manufacturer's upgrade tool directly rather than using this app, you must first delete 1.BIN and BOOKFILE.BIN from the pen's BOOK folder. Without this the upgrade appears to run but the new firmware does not take effect. This app does it for you automatically."
   }
 }

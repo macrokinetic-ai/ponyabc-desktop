@@ -144,6 +144,8 @@ async function freshImports() {
 
   return {
     session,
+    penDir,
+    bookDir: path.join(penDir, 'BOOK'),
     runElevated: vi.mocked(runElevated),
     checkStillRunning: vi.mocked(firmwareRecovery.checkStillRunning),
     firmwareIpc,
@@ -434,5 +436,111 @@ describe('exportFirmwareDiagnostics — Settings -> Support export, driven by a 
     expect(files.length).toBeGreaterThanOrEqual(1);
     const record = JSON.parse(fs.readFileSync(path.join(result.path, files[0]), 'utf-8'));
     expect(record.endedAtMs).toBeNull();
+  });
+});
+
+/**
+ * The pre-flash cleanup removes the pen's book index before flashing. Nothing in the vendor
+ * package can put it back — verified 2026-09-29: the package contains no 1.BIN/BOOKFILE.BIN and
+ * download.bat only programs the norflash; the pen's own firmware rebuilds the index once it
+ * boots. So an upgrade that is abandoned BEFORE the flash begins must return the pen to exactly
+ * where it was, and an upgrade that may have begun writing must not be second-guessed.
+ */
+describe('startFirmwareUpgrade — the pen index is restored only when nothing was written', () => {
+  const seedIndex = (bookDir: string) => {
+    fs.writeFileSync(path.join(bookDir, '1.BIN'), 'old index');
+    fs.writeFileSync(path.join(bookDir, 'BOOKFILE.BIN'), 'old list');
+  };
+  const indexPresent = (bookDir: string) =>
+    fs.existsSync(path.join(bookDir, '1.BIN')) && fs.existsSync(path.join(bookDir, 'BOOKFILE.BIN'));
+
+  it('UAC declined: the pen is put back exactly as it was', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockResolvedValueOnce({ status: 'declined' });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    await waitForOutcome(send);
+
+    expect(indexPresent(bookDir)).toBe(true);
+    expect(fs.readFileSync(path.join(bookDir, '1.BIN'), 'utf8')).toBe('old index');
+    expect(fs.readFileSync(path.join(bookDir, 'BOOKFILE.BIN'), 'utf8')).toBe('old list');
+  });
+
+  it('the tool never launched (launch error): restored', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockResolvedValueOnce({ status: 'launch-error', message: 'nope' });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    await waitForOutcome(send);
+
+    expect(indexPresent(bookDir)).toBe(true);
+  });
+
+  it('the tool ran and produced output, outcome unclear: NOT restored', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockImplementationOnce(async (params) => {
+      params.onLogUpdate?.(Buffer.from('opening device...\n', 'utf-8'));
+      return { status: 'completed', exitCode: 0 };
+    });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    const outcome = await waitForOutcome(send);
+
+    // No recognized success signal, but the tool clearly started — putting the old index back
+    // under possibly-new firmware would recreate the exact bug the cleanup exists to prevent.
+    expect(outcome.status).toBe('unclear');
+    expect(indexPresent(bookDir)).toBe(false);
+  });
+
+  it('timed out with the process still possibly running: NOT restored', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockResolvedValueOnce({ status: 'timeout' });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    await waitForOutcome(send);
+
+    // Writing to the pen while a real flash may still be in flight is the worst possible moment.
+    expect(indexPresent(bookDir)).toBe(false);
+  });
+
+  it('a successful upgrade leaves the index deleted for the new firmware to rebuild', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockImplementationOnce(async (params) => {
+      params.onLogUpdate?.(Buffer.from('download success\n', 'utf-8'));
+      return { status: 'completed', exitCode: 0 };
+    });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    const outcome = await waitForOutcome(send);
+
+    expect(outcome.status).toBe('success');
+    expect(indexPresent(bookDir)).toBe(false);
+  });
+
+  it('restoring never clobbers an index the pen rebuilt in the meantime', async () => {
+    const { runElevated, firmwareIpc, bookDir } = await freshImports();
+    seedIndex(bookDir);
+    runElevated.mockImplementationOnce(async () => {
+      // The pen reappears with a freshly-built index before the declined result comes back.
+      fs.writeFileSync(path.join(bookDir, '1.BIN'), 'REBUILT');
+      return { status: 'declined' };
+    });
+
+    const { win, send } = makeWindow();
+    await firmwareIpc.startFirmwareUpgrade(win, { packageDir });
+    await waitForOutcome(send);
+
+    expect(fs.readFileSync(path.join(bookDir, '1.BIN'), 'utf8')).toBe('REBUILT');
+    expect(fs.readFileSync(path.join(bookDir, 'BOOKFILE.BIN'), 'utf8')).toBe('old list');
   });
 });

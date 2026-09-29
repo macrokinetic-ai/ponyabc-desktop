@@ -20,10 +20,13 @@ import * as session from '../services/session';
 import { acquirePenLock } from '../services/penOperationLock';
 import { runElevated, type RunElevatedResult } from '../services/elevatedRun';
 import { determineOutcome, inspectFirmwarePackage } from '../services/firmwareUpgrade';
+import type { PreflightDeletion } from '../services/firmwarePreflight';
 import {
   DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
+  restorePreflightBackups,
   runFirmwarePreflight,
   summarizePreflight,
+  summarizeRestore,
 } from '../services/firmwarePreflight';
 import { decodeLogBytes } from '../services/logEncoding';
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
@@ -228,6 +231,37 @@ export async function startFirmwareUpgrade(
     let calledRunElevated = false;
     let elevationResult: RunElevatedResult | null = null;
 
+    // Pre-flash cleanup state, needed by the restore decision far below.
+    let preflightBackupDir: string | null = null;
+    let preflightBookDir: string | null = null;
+    let preflightDeletions: readonly PreflightDeletion[] = [];
+    /** Set the moment the vendor tool produces its first byte of output — positive evidence it
+     *  began running, and therefore that the pen must NOT have its old index restored. */
+    let sawToolOutput = false;
+
+    /**
+     * Restores the pen's old index, but only when we have positive evidence the vendor tool
+     * never wrote anything: it was never launched (UAC declined, launch error, unsupported
+     * platform), or it produced no output at all AND is confirmed to have stopped.
+     *
+     * The asymmetry is deliberate. Restoring when the flash never started returns the pen
+     * exactly to where it was. Restoring after a flash may have begun would put a stale index
+     * back under new firmware — the precise failure the preflight exists to prevent — so every
+     * uncertain case does nothing and tells the user to run the upgrade again instead.
+     */
+    const restorePreflightIfUnwritten = (why: string): boolean => {
+      if (!preflightBookDir || preflightDeletions.length === 0) return false;
+      const result = restorePreflightBackups(preflightBookDir, preflightDeletions);
+      const summary = summarizeRestore(result);
+      sessionLog.recordStage('preflight-restore', { why, summary, restored: result.restored.length });
+      appendDiagnostic(diagnosticsStore(), 'firmware-preflight', {
+        result: 'restored',
+        why,
+        summary,
+      });
+      return result.restored.length > 0;
+    };
+
     const decodeAccumulatedLog = () => decodeLogBytes(Buffer.concat(rawLogChunks), detectedCodepage);
 
     const sendProgress = (phase: FirmwareUpgradePhase) => {
@@ -250,7 +284,13 @@ export async function startFirmwareUpgrade(
       const penForPreflight = session.getPenRoot();
       if (!penForPreflight) throw new Error('pen selection lost before preflight');
       const preflightFiles = params.preflightDeletions ?? DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS;
-      const preflight = runFirmwarePreflight(penForPreflight.realPath, preflightFiles);
+      // Cleared per run, kept afterwards: a copy of the pen's old index is tiny, and having last
+      // run's on disk is what makes a post-mortem possible when someone reports a bad upgrade.
+      preflightBackupDir = path.join(app.getPath('userData'), 'firmwarePreflightBackup');
+      fs.rmSync(preflightBackupDir, { recursive: true, force: true });
+      const preflight = runFirmwarePreflight(penForPreflight.realPath, preflightFiles, { backupDir: preflightBackupDir });
+      preflightDeletions = preflight.deletions;
+      preflightBookDir = preflight.bookDir;
       const preflightSummary = summarizePreflight(preflight.deletions);
       sessionLog.recordStage('preflight', {
         requested: preflightFiles.join(','),
@@ -268,6 +308,10 @@ export async function startFirmwareUpgrade(
         // Fatal, and deliberately NOT 'unclear': nothing was launched, so the pen is untouched
         // and the user can safely retry. Flashing over a stale index is the exact failure this
         // check exists to prevent, so continuing anyway would defeat the point.
+        //
+        // The preflight stops at its first failure, so one file may already be gone. Put it
+        // back — a pen left with half an index is worse off than before it was plugged in.
+        restorePreflightIfUnwritten('preflight-failed');
         sessionLog.finish({
           processTerminationConfirmed: true,
           outcomeStatus: 'failed',
@@ -320,6 +364,7 @@ export async function startFirmwareUpgrade(
           sessionLog.appendRawLogBytes(delta);
           if (!sawFirstLog) {
             sawFirstLog = true; // first real evidence the tool actually started
+            sawToolOutput = true; // ...and therefore that the old index must NOT be restored
             sessionLog.recordStage('flashing-output', { firstBytesAtMs: Date.now() });
           }
           sendProgress('tool-running');
@@ -352,6 +397,22 @@ export async function startFirmwareUpgrade(
         processTerminationConfirmed: outcome.processTerminationConfirmed,
       });
       sessionLog.recordStage('result-classification', { status: outcome.status, reason: outcome.reason });
+
+      // Did the vendor tool ever write? Three states, and only the first restores:
+      //   never started  — declined / launch-error / unsupported-platform, or zero output from a
+      //                    process confirmed to have stopped  -> restore, pen is as it was
+      //   started        — any output at all                  -> never restore
+      //   unknown        — termination not confirmed (timeout) -> never restore; it may still be
+      //                    mid-write, and racing it would be the worst possible moment to write
+      //                    a stale index back onto the pen
+      const flashDefinitelyNeverStarted =
+        !sawToolOutput &&
+        outcome.status !== 'success' &&
+        (elevation.status === 'declined' ||
+          elevation.status === 'launch-error' ||
+          elevation.status === 'unsupported-platform' ||
+          outcome.processTerminationConfirmed);
+      if (flashDefinitelyNeverStarted) restorePreflightIfUnwritten(`not-started-${elevation.status}`);
       // These three are deliberately kept distinct — see the doc on FirmwareSessionRecord's
       // toolProcessConfirmedFinished/successSignalDetected/penFirmwareVersionVerified fields.
       // "The tool's process stopped" is exactly outcome.processTerminationConfirmed;
@@ -418,6 +479,9 @@ export async function startFirmwareUpgrade(
       // on ANY caught error, which would have wrongly unlocked even if the error happened after
       // an elevated process may already have been spawned.
       const terminationConfirmed = !calledRunElevated || elevationResult?.status === 'completed';
+      // Nothing was ever launched, so the pen is still on its old firmware and its old index is
+      // still the right one. Anything after a launch attempt is left alone.
+      if (!calledRunElevated) restorePreflightIfUnwritten('internal-error-before-launch');
       sessionLog.recordStage('exception', {
         message: err instanceof Error ? err.message : String(err),
         terminationConfirmed,

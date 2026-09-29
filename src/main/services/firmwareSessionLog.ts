@@ -23,6 +23,7 @@ export type FirmwareSessionStage =
   // upgrade so a later "the upgrade didn't take" report can be checked against whether
   // the deletion actually happened. See firmwarePreflight.ts.
   | 'preflight'
+  | 'preflight-restore'
   | 'verification'
   | 'extraction'
   | 'launch'

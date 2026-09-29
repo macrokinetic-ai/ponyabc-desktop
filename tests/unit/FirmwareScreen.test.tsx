@@ -179,7 +179,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     await screen.findByText(/Write sector:147/);
     expect(screen.queryByText(/%/)).toBeNull(); // no fabricated percentage anywhere
-    expect(screen.getByText('The upgrade cannot be force-cancelled once it has started.')).toBeTruthy();
+    expect(screen.getByText('Once the update starts it cannot be stopped. Please wait — it usually takes a few minutes.')).toBeTruthy();
     // No cancel button anywhere on this screen once upgrading has started.
     expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
   });
@@ -201,11 +201,11 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+    await screen.findByText('Your pen is up to date. Please switch it off and on again, then try one of your books.');
     expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Return to Home' })).toBeTruthy();
     // No removed elements: no red "result could not be confirmed" title, no old buttons.
-    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    expect(screen.queryByText('We could not confirm the update finished')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
     expect(screen.queryByRole('button', { name: /I tested the pen/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /I understand/ })).toBeNull();
@@ -228,8 +228,8 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
-    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    await screen.findByText('The update has finished. Please switch your pen off and on again, then try one of your books.');
+    expect(screen.queryByText('We could not confirm the update finished')).toBeNull();
     expect(screen.queryByText('Upgrade completed successfully.')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
@@ -257,7 +257,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
+    await screen.findByText('The update has finished. Please switch your pen off and on again, then try one of your books.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to Home' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
@@ -283,7 +283,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The upgrade did not start or did not complete.');
+    await screen.findByText('The update did not finish');
     expect(screen.queryByRole('button', { name: 'Return to Home' })).toBeNull();
   });
 
@@ -304,7 +304,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+    await screen.findByText('Your pen is up to date. Please switch it off and on again, then try one of your books.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
@@ -333,9 +333,9 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The upgrade did not start or did not complete.');
-    expect(screen.queryByText('The firmware upgrade is completed. Please restart the pen and test playback.')).toBeNull();
-    expect(screen.queryByText('The firmware upgrade process has finished. Please restart the pen and test playback.')).toBeNull();
+    await screen.findByText('The update did not finish');
+    expect(screen.queryByText('Your pen is up to date. Please switch it off and on again, then try one of your books.')).toBeNull();
+    expect(screen.queryByText('The update has finished. Please switch your pen off and on again, then try one of your books.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
@@ -359,18 +359,20 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawNoLicenseWarning: false,
     });
 
-    await screen.findByText('The upgrade did not start — the pen could not be prepared.');
+    await screen.findByText('The update did not start');
+    await screen.findByText('Your pen has not been changed. Please check it is still plugged in and try again.');
     // The generic wording would tell the user nothing about what to do next, and would leave
     // "did not complete" hanging over a pen that was never written to.
-    expect(screen.queryByText('The upgrade did not start or did not complete.')).toBeNull();
+    expect(screen.queryByText('The update did not finish')).toBeNull();
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
 
-  it('shows the manual-upgrade cleanup warning on the confirm step, where the vendor documents it nowhere', async () => {
+  it('never shows a customer the index filenames or the vendor tool — they are internal', async () => {
+    // The wizard handles the cleanup silently. A parent should not meet 1.BIN, BOOKFILE.BIN or
+    // the manufacturer's own tool anywhere in this app; that lives in docs/vendor-notes.md.
     renderScreen();
     await advanceToConfirm();
-    await screen.findByText('Upgrading with the vendor tool instead of this app');
-    await screen.findByText(/must first delete 1\.BIN and BOOKFILE\.BIN/);
+    expect(document.body.textContent).not.toMatch(/1\.BIN|BOOKFILE|vendor tool|manufacturer/i);
   });
 
   it('an "unclear" outcome whose termination could NOT be confirmed (e.g. a timeout) never offers the normal acknowledge path, never resets the wizard, and stays locked even after the user clicks through', async () => {
@@ -387,7 +389,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       logExcerpt: 'partial output, then nothing',
       processTerminationConfirmed: false,
     });
-    await screen.findByText('The result could not be confirmed.');
+    await screen.findByText('We could not confirm the update finished');
     // Neither the normal-completion "Finish" button nor "Start over" is offered here — those
     // paths are only for a confirmed-terminated outcome.
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
@@ -399,7 +401,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
 
     // Clicking through shows the persistent "still locked" notice — never the reset wizard.
     await screen.findByText(
-      'Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.',
+      'Please close PonyABC completely and open it again before using your pen with this app.',
     );
     expect(screen.queryByText('Prepare your pen')).toBeNull();
     expect(screen.queryByRole('button', { name: 'I understand — I will restart the app' })).toBeNull();
@@ -554,10 +556,10 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_001_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
     expect(
       screen.getByText(
-        'A firmware upgrade from a previous session appears to still be running outside this app. Restarting this app is not evidence it has stopped. New firmware upgrades and BOOK/DIY pen writes stay blocked, and this app will not attempt to stop the other process itself.',
+        'An update started earlier is still running on this computer. Please wait for it to finish, or restart the computer, before using your pen with this app.',
       ),
     ).toBeTruthy();
     // The normal wizard must not render underneath/instead — no way to sneak into a new attempt.
@@ -572,10 +574,10 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_001_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
     expect(
       screen.getByText(
-        'This app could not determine whether a firmware upgrade from a previous session has finished. New firmware upgrades and BOOK/DIY pen writes stay blocked until this can be confirmed.',
+        'We could not tell whether an earlier update finished. To keep your pen safe, this app will not change anything on it until that is clear.',
       ),
     ).toBeTruthy();
     expect(screen.queryByText('Prepare your pen')).toBeNull();
@@ -589,7 +591,7 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
     }));
     window.ponyabc.recheckFirmwareRecovery = vi.fn(async () => ({ status: 'none' }) as const);
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
 
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
@@ -610,19 +612,19 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_002_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
 
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
 
     expect(screen.queryByText('Prepare your pen')).toBeNull();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
   });
 
   it('"none" (the common case): the normal wizard renders immediately, no recovery screen at all', async () => {
     window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({ status: 'none' }) as const);
     renderScreen();
     await screen.findByText('Prepare your pen');
-    expect(screen.queryByText('Previous upgrade not confirmed finished')).toBeNull();
+    expect(screen.queryByText('An earlier update may still be running')).toBeNull();
   });
 });

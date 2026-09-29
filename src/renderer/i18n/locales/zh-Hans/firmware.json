@@ -13,7 +13,7 @@
     "title": "准备你的点读笔",
     "checklistUsb": "用 USB 线将 P5 点读笔连接到这台电脑。",
     "checklistPower": "整个升级过程请保持点读笔连接并供电——不要拔除。",
-    "checklistNoOtherOps": "请确认没有其他文件操作（BOOK、DIY 或另一个升级）正在进行。",
+    "checklistNoOtherOps": "请先关闭其他正在使用点读笔的程序。",
     "penDetected": "已检测到点读笔。",
     "penRequired": "请先连接点读笔才能继续。",
     "nextButton": "下一步"
@@ -41,7 +41,7 @@
       "version": "官方版本：{{version}}",
       "packageLabel": "套件：{{label}}（{{date}}）",
       "onPenVersionUnknown": "目前笔内版本：尚未能读取",
-      "onPenVersionHint": "本应用程序目前无法读取点读笔上已有的固件版本——现时没有可靠的方法查询。",
+      "onPenVersionHint": "本程序无法得知点读笔上当前的版本。",
       "hardwareRevNotice": "此韧体适用硬件版本 {{hardwareRev}}；目前未能自动识别所连接点读笔的硬件版本。",
       "hardwareConfirmLegend": "请确认所连接点读笔的硬件版本：",
       "hardwareConfirmYes": "已确认——我的点读笔是硬件版本 {{hardwareRev}}",
@@ -74,23 +74,25 @@
     "phaseAwaitingAuth": "等待 Windows 授权，或正在启动中…",
     "phaseToolRunning": "正在更新点读笔，请保持 USB 连接。",
     "phaseFinishing": "正在确认结果…",
-    "noCancelNotice": "升级开始后无法强行取消。",
+    "noCancelNotice": "更新开始后无法中途停止，请耐心等候，一般只需几分钟。",
     "noOutputYet": "暂时没有输出。"
   },
   "result": {
     "title": "结果",
-    "successMessage": "固件升级已完成。请重新启动点读笔并试播。",
-    "processFinishedMessage": "固件升级流程已结束。请重新启动点读笔并试播。",
-    "failedTitle": "升级未能启动或未能完成。",
-    "unclearTitle": "无法确认结果。",
-    "unclearBodyUnconfirmed": "无法确认升级工具是否已经真正执行完毕。为安全起见，在此问题解决之前，将不允许进行新的固件升级或 BOOK/DIY 写入点读笔。请在你自行确认（例如通过 Windows 任务管理器，或直接检查点读笔本身）该进程已经停止后，才完全关闭并重新打开本应用程序。",
+    "successMessage": "你的点读笔已更新完成。请将笔关掉再开启，然后试播一本书。",
+    "processFinishedMessage": "更新已完成。请将点读笔关掉再开启，然后试播一本书。",
+    "failedTitle": "更新未能完成",
+    "unclearTitle": "未能确认更新是否完成",
+    "unclearBodyUnconfirmed": "为保障你的点读笔，本程序暂时不会对它作任何改动。请完全关闭 PonyABC，重新开启，然后再执行一次更新。",
     "finishButton": "完成",
     "returnHomeButton": "返回主页",
     "acknowledgeButtonUnconfirmed": "我明白——我会重新启动应用程序",
-    "restartNoticeAcknowledged": "已记录。在你完全关闭并重新打开本应用程序之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
+    "restartNoticeAcknowledged": "请完全关闭 PonyABC 并重新开启，然后才用本程序操作点读笔。",
     "startOverButton": "重新开始",
-    "preflightFailedTitle": "The upgrade did not start — the pen could not be prepared.",
-    "preflightFailedBody": "Before a firmware upgrade, two index files (1.BIN and BOOKFILE.BIN) must be removed from the pen's BOOK folder, or the new firmware will not take effect. They could not be removed, so nothing was changed on the pen and no upgrade was started. Check that the pen is still connected and not write-protected, then try again."
+    "preflightFailedTitle": "更新未能开始",
+    "preflightFailedBody": "你的点读笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
+    "failedBody": "你的点读笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
+    "retryAfterUnclearBody": "未能确认更新是否完成。请再执行一次更新，重复执行是安全的。"
   },
   "technicalDetails": {
     "title": "技术详情",
@@ -98,16 +100,12 @@
     "collapseButton": "隐藏"
   },
   "recovery": {
-    "title": "先前的升级尚未确认结束",
-    "stillRunningBody": "先前会话的固件升级，看起来仍在本应用程序之外运行中。重新启动本应用程序并不代表它已经停止。新的固件升级与 BOOK/DIY 写入点读笔将保持锁定，本应用程序也不会尝试自行终止该进程。",
-    "unknownBody": "本应用程序无法判断先前会话的固件升级是否已经结束。在此确认之前，新的固件升级与 BOOK/DIY 写入点读笔将保持锁定。",
+    "title": "先前的更新可能仍在进行",
+    "stillRunningBody": "较早前开始的更新仍在这台电脑上运行。请等它完成，或重新启动电脑，然后才用本程序操作点读笔。",
+    "unknownBody": "未能确认较早前的更新是否已完成。为保障你的点读笔，在情况未明朗前，本程序不会对它作任何改动。",
     "checking": "检查中…",
     "checkAgainButton": "重新检查",
     "startedAt": "升级尝试开始时间：{{time}}",
     "lastChecked": "上次检查时间：{{time}}"
-  },
-  "faq": {
-    "manualUpgradeWarningTitle": "Upgrading with the vendor tool instead of this app",
-    "manualUpgradeWarningBody": "If you run the manufacturer's upgrade tool directly rather than using this app, you must first delete 1.BIN and BOOKFILE.BIN from the pen's BOOK folder. Without this the upgrade appears to run but the new firmware does not take effect. This app does it for you automatically."
   }
 }

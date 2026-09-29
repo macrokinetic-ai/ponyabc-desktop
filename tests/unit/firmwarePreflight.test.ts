@@ -4,8 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
+  restorePreflightBackups,
   runFirmwarePreflight,
   summarizePreflight,
+  summarizeRestore,
 } from '../../src/main/services/firmwarePreflight';
 
 /**
@@ -215,5 +217,140 @@ describe('firmware preflight — configuration and reporting', () => {
       { requested: 'BOOKFILE.BIN', matched: null, status: 'absent' },
     ]);
     expect(s).toBe('1.BIN=deleted (as 1.bin), BOOKFILE.BIN=absent');
+  });
+});
+
+describe('firmware preflight — backup and restore', () => {
+  /**
+   * Why this exists: nothing in the vendor package can put the pen's index back (verified
+   * 2026-09-29 — the package contains no 1.BIN/BOOKFILE.BIN, and download.bat only programs the
+   * norflash; the pen's own firmware rebuilds the index). So if an upgrade is abandoned before
+   * the flash begins, these copies are the only way the pen gets its books back.
+   */
+
+  it('copies each file before deleting it, and reports where', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(book, '1.BIN'), 'old index');
+    write(path.join(book, 'BOOKFILE.BIN'), 'old list');
+
+    const r = runFirmwarePreflight(root, DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS, { backupDir });
+
+    expect(r.ok).toBe(true);
+    expect(fs.readFileSync(path.join(backupDir, '1.BIN'), 'utf8')).toBe('old index');
+    expect(fs.readFileSync(path.join(backupDir, 'BOOKFILE.BIN'), 'utf8')).toBe('old list');
+    expect(r.deletions.every((d) => d.status !== 'deleted' || typeof d.backupPath === 'string')).toBe(true);
+  });
+
+  it('backs up under the pen\'s own casing, so a restore puts the name back unchanged', () => {
+    const root = makePen();
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(root, 'BOOK', '1.bin'), 'lowercase on this pen');
+
+    runFirmwarePreflight(root, ['1.BIN'], { backupDir });
+
+    expect(fs.readdirSync(backupDir)).toEqual(['1.bin']);
+  });
+
+  it('does NOT delete a file it could not back up', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    write(path.join(book, '1.BIN'), 'precious');
+    // A path that cannot be created as a directory — mkdirSync fails, so the backup fails.
+    const backupDir = path.join(tmp, 'not-a-dir');
+    write(backupDir, 'this is a file');
+
+    const r = runFirmwarePreflight(root, ['1.BIN'], { backupDir });
+
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.reason).toBe('deletion-failed');
+    expect(r.detail).toMatch(/back up/i);
+    // Deleting a file we could not copy would leave the pen with no index and no way back —
+    // strictly worse than not upgrading at all.
+    expect(fs.readFileSync(path.join(book, '1.BIN'), 'utf8')).toBe('precious');
+  });
+
+  it('restores both files exactly as they were', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(book, '1.BIN'), 'old index');
+    write(path.join(book, 'BOOKFILE.BIN'), 'old list');
+
+    const r = runFirmwarePreflight(root, DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS, { backupDir });
+    expect(fs.existsSync(path.join(book, '1.BIN'))).toBe(false);
+
+    const restore = restorePreflightBackups(book, r.deletions);
+
+    expect(restore.restored.sort()).toEqual(['1.BIN', 'BOOKFILE.BIN']);
+    expect(restore.failed).toEqual([]);
+    expect(fs.readFileSync(path.join(book, '1.BIN'), 'utf8')).toBe('old index');
+    expect(fs.readFileSync(path.join(book, 'BOOKFILE.BIN'), 'utf8')).toBe('old list');
+  });
+
+  it('never overwrites an index the new firmware has already rebuilt', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(book, '1.BIN'), 'old index');
+
+    const r = runFirmwarePreflight(root, ['1.BIN'], { backupDir });
+    // The pen booted on new firmware and rebuilt its own index before we got here.
+    write(path.join(book, '1.BIN'), 'REBUILT BY NEW FIRMWARE');
+
+    const restore = restorePreflightBackups(book, r.deletions);
+
+    expect(restore.restored).toEqual([]);
+    expect(restore.skippedPresent).toEqual(['1.BIN']);
+    expect(fs.readFileSync(path.join(book, '1.BIN'), 'utf8')).toBe('REBUILT BY NEW FIRMWARE');
+  });
+
+  it('restores only what it actually deleted — an absent file is not invented', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(book, '1.BIN'), 'only this one existed');
+
+    const r = runFirmwarePreflight(root, DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS, { backupDir });
+    const restore = restorePreflightBackups(book, r.deletions);
+
+    expect(restore.restored).toEqual(['1.BIN']);
+    expect(fs.existsSync(path.join(book, 'BOOKFILE.BIN'))).toBe(false);
+  });
+
+  it('is a no-op when no backup directory was given', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    write(path.join(book, '1.BIN'), 'gone for good');
+
+    const r = runFirmwarePreflight(root, ['1.BIN']);
+    const restore = restorePreflightBackups(book, r.deletions);
+
+    expect(restore.restored).toEqual([]);
+    expect(fs.existsSync(path.join(book, '1.BIN'))).toBe(false);
+  });
+
+  it('reports a restore failure rather than claiming success', () => {
+    const root = makePen();
+    const book = path.join(root, 'BOOK');
+    const backupDir = path.join(tmp, 'backup');
+    write(path.join(book, '1.BIN'), 'old index');
+
+    const r = runFirmwarePreflight(root, ['1.BIN'], { backupDir });
+    fs.rmSync(backupDir, { recursive: true, force: true }); // backup lost between delete and restore
+
+    const restore = restorePreflightBackups(book, r.deletions);
+
+    expect(restore.restored).toEqual([]);
+    expect(restore.failed).toHaveLength(1);
+    expect(summarizeRestore(restore)).toMatch(/FAILED/);
+  });
+
+  it('summarises a restore for the log', () => {
+    expect(summarizeRestore({ restored: ['1.BIN'], skippedPresent: ['BOOKFILE.BIN'], failed: [] })).toBe(
+      'restored 1, skipped 1 (already present)',
+    );
   });
 });
