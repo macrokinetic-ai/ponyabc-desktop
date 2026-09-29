@@ -352,3 +352,127 @@ Portal 當時把 poster 標成 9:16，卻列出 720×1080 / 1440×2160；輸出�
 ## 15. 可直接貼給下一個 AI 的起始訊息
 
 > 請先讀這份 PonyABC Microsoft Store 交接報告。產品已在 2026-09-28 上架，Store ID 9P544XC6B609。本次成功流程使用圖示修正的 APPX 0.3.16.0。不要重新開始首次提交。先依目前任務確認 repository 狀態，特別是 fix/store-tile-icons 是否已整合；保留 manifest identity，區分歷史報告與你親自驗證的結果。短連結尚無建立成功證據。除非我提出新改動，不要改 firmware 行為。
+---
+
+## 16. 獨立核實（Claude Code，2026-09-29）
+
+本節由 Claude Code 於 2026-09-29 加入。上面 §1–§15 **原文未改動**，保留為前一位 AI 的交接記錄。
+本節是 §2 及 §13 要求的「以實際檔案、完整 checksum、git commit 為準」的重新稽核結果，
+只記錄**我親自執行並看到輸出**的項目。Partner Center 欄位無法由我讀取，仍以使用者截圖為準。
+
+`/Users/aiagent/Documents/ponyabc-desktop/` 內的同名檔案與本檔在 2026-09-29 內容完全相同
+（SHA-256 一致），該份**未加入本節**。
+
+### 16.1 已核實一致 ✅
+
+| 項目                    | 交接報告聲稱                                         | 我實際量到                                                                                   |
+| ----------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| v0.3.16 APPX 存在       | `store-assets/v0.3.16-tile-fix/…v0.3.16-winx64.appx` | 存在，117 MB                                                                                 |
+| v0.3.15 APPX 存在       | `store-assets/FINAL-SUBMISSION/…v0.3.15-winx64.appx` | 存在，115 MB                                                                                 |
+| APPX SHA-256            | `48ad39b2…506dbf4b`                                  | **三方一致**：重新計算 = 旁邊 `.sha256` = 報告值                                             |
+| Identity/Name           | `PonyABC.PonyABCDesktop`                             | 相同（讀自已上傳的 manifest）                                                                |
+| Identity/Version        | `0.3.16.0`                                           | 相同                                                                                         |
+| Identity/Publisher      | `CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5`            | 相同                                                                                         |
+| PublisherDisplayName    | `PonyABC`                                            | 相同                                                                                         |
+| MinVersion              | `10.0.14316.0`                                       | 相同（**仍只是 manifest 宣告，未實測**）                                                     |
+| ProcessorArchitecture   | x64                                                  | 相同                                                                                         |
+| 包內圖示資產            | 40 個 PNG，真正 PonyABC 圖                           | 包內 **40 個 PNG**，其中 **35 個雜湊各不相同** → 是真實多尺寸資產，不是同一張 default 圖重複 |
+| 5 張 Windows 截圖       | 已準備                                               | 5 個檔案存在（home / my-recordings / book-library / firmware / settings）                    |
+| Microsoft 拒絕附件      | 在 web repo                                          | 存在，63 KB                                                                                  |
+| Desktop privacy 頁      | 已部署、200                                          | **HTTP 200**                                                                                 |
+| 舊 registration privacy | 未改、仍在                                           | **HTTP 200**                                                                                 |
+| Store 產品頁            | 已上架                                               | `apps.microsoft.com/detail/9P544XC6B609` → **HTTP 200**                                      |
+
+### 16.2 兩項需要更正交接報告的地方
+
+1. **短連結其實成功了。** §12 寫「沒有短連結建立成功證據，不要當成已生效」。
+   實測 `https://tinyurl.com/ponyabc-windows` → **HTTP 302**，最終導向
+   `https://apps.microsoft.com/detail/9P544XC6B609`。**連結可用。**
+   但要注意：TinyURL 免費版在中間插入 `redirect.viglink.com` 聯盟導向。
+   對外宣傳用連結建議自行判斷是否接受，或改用自己網域轉址。
+
+2. **manifest 內的 Publisher 沒有問題。** 我第一次抽取時誤以為 `<Identity>` 缺少 Publisher，
+   原因是該元素跨多行、我的比對只讀到第一個 `>`。重新完整讀取後，
+   `CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5` 確實在已上傳的 manifest 內，
+   與 `electron-builder.win-appx.yml` 的設定一致。**交接報告此處正確。**
+
+### 16.3 ~~🛑 重大風險：Store 打包流程完全不在 `main`~~（已於 2026-09-29 解決，見 §16.6）
+
+§4 及 §13 提醒過「`fix/store-tile-icons` 未 merge，下次發佈前務必確認」。**實測結果比提醒更嚴重。**
+
+```
+fix/store-tile-icons          -> 未 merge 入 main
+origin/fix/store-tile-icons   -> 未 merge 入 origin/main
+msix-store-packaging          -> 未 merge 入 main
+origin/msix-store-packaging   -> 未 merge 入 origin/main
+```
+
+`main` 目前**完全沒有** Store 打包所需的東西：
+
+| 檔案                              | main                   | fix/store-tile-icons |
+| --------------------------------- | ---------------------- | -------------------- |
+| `build/appx/`（tile 圖示）        | **不存在（0 個 PNG）** | 40 個 PNG            |
+| `electron-builder.win-appx.yml`   | **不存在**             | 存在                 |
+| `scripts/generate-appx-assets.py` | **不存在**             | 存在                 |
+| `package.json` version            | **0.3.15**             | 0.3.16               |
+
+已上架版本是 **0.3.16.0**。所以若有人由 `main` 直接做下一個版本，會同時撞到四個問題：
+
+1. 根本沒有 APPX build 設定，打不出 Store 套件；
+2. 沒有資產產生器，`build/appx/` 依然空白；
+3. electron-builder 會再次補上預設 Electron 圖示 → **重演 10.1.1.11 On Device Tiles 被拒**；
+4. 版本 0.3.15 **低於**已上架的 0.3.16，Partner Center 會拒收。
+
+本機目前 checked out 的分支就是 `fix/store-tile-icons`（`13114f0`），`main` 是舊的。
+**這是下次發佈前第一件要處理的事**，不是可選項。
+
+### 16.4 我沒有核實的項目（不要當成已驗證）
+
+- **Partner Center 所有欄位**（Pricing、Properties、Age ratings、Store listing 實際保存值、
+  Additional Testing Information 最終文字）——我無法登入，仍只有使用者截圖。
+- **由正式 Microsoft Store 安裝後的實機測試**——§1 已指出未有；到 2026-09-29 仍未有。
+- **Windows Start / taskbar / All apps 實際外觀**——包內資產正確不等於系統呈現正確。
+- **firmware flash 真實成敗**、UAC decline 及 interrupted-launch recovery 實測。
+- **MinVersion 10.0.14316.0 是否真的可執行**——只是 manifest 宣告。
+- §9 提到的 OAuth token 是否已撤銷／輪換——我沒有查證，亦刻意不重新輸出任何 credential。
+
+### 16.5 下次發佈前檢查清單（依實測結果排序）
+
+1. **先處理 §16.3**：把 `msix-store-packaging` 及 `fix/store-tile-icons` 正常整合入 `main`
+   （或明確決定由哪個分支發佈），確認整合後 `main` 同時有 `build/appx/` 40 個 PNG、
+   `electron-builder.win-appx.yml`、`scripts/generate-appx-assets.py`。
+2. 版本必須 **高於 0.3.16.0**。
+3. 在 Windows CI build，並**解壓最終 APPX**核對 manifest、全部 tile/scale 資產、
+   distinct 圖片雜湊數（本次 35/40，可作對照基準）、EXE icon、checksum。
+4. 保持 identity 四項不變：Name / Publisher / PublisherDisplayName / Store ID。
+5. 發佈後確認 `apps.microsoft.com/detail/9P544XC6B609` 回 200，並**實際由 Store 安裝一次**
+   ——這是由首次上架至今一直缺的證據。
+
+### 16.6 後續處理（2026-09-29 01:20，Claude Code）
+
+**§16.3 的重大風險已解決。** 上面 §16.3 寫「Store 打包流程完全不在 `main`」——當時屬實，
+現已修正，該段保留作記錄，但**不要再當成未處理事項**：
+
+- `fix/store-tile-icons`（本身已是 `msix-store-packaging` 的 superset）已合併入 `main`，
+  merge commit **`9a9e240`**，無衝突，已 push。
+- 合併後實測：`main` 的 `build/appx/` 有 40 個 PNG、`electron-builder.win-appx.yml` 及
+  `scripts/generate-appx-assets.py` 均存在、`package.json` 為 0.3.16。
+- `git merge-base --is-ancestor v0.3.16 main` 成立 → **`main` 現已包含所有已上架內容**。
+- `main` 的 push build 成功（run 36501779459），即合併後的樹確實建得起。
+- `main` 原有 2 個未 push 的 firmware UI commit（`8c40d24`、`2299524`）已保留，無遺失。
+
+**已補上的 provenance：** v0.3.16 的來源 commit 是
+`f39df08ad9b26e1768e1ff0dc9f1026198ef5c4e`（CI run **35883786536**，artifact
+`windows-appx`）。已下載該 CI artifact，與 `store-assets/v0.3.16-tile-fix/` 內的 APPX
+**逐 byte 相同**，並與 `.sha256` 及報告值一致（四方一致）。該 commit 已建立 annotated tag
+**`v0.3.16`** 並 push。§4 原本寫「不知道 v0.3.16 最終完整 commit SHA」——現在知道了。
+
+**§12 短連結需要更正：** `https://tinyurl.com/ponyabc-windows` 實測回 **HTTP 302**，
+最終導向 `https://apps.microsoft.com/detail/9P544XC6B609`，**連結可用**。
+注意 TinyURL 免費版會經 `redirect.viglink.com` 聯盟導向。
+
+**仍然未做（與 §16.4 一致）：** Partner Center 欄位無法由 AI 核實；**由正式 Microsoft
+Store 安裝後的實機測試至今仍未做過**；§9 提到的 wrangler OAuth token **未撤銷亦未輪換**
+（2026-09-29 實測 `wrangler whoami` 仍可認證）。
+
+目前狀態請以 `tasks/PM-STATUS.md` 為單一事實來源。
