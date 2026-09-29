@@ -88,7 +88,9 @@
     "returnHomeButton": "Zur Startseite zurückkehren",
     "acknowledgeButtonUnconfirmed": "Verstanden — ich starte die App neu",
     "restartNoticeAcknowledged": "Notiert. Diese App bleibt für neue Firmware-Updates und BOOK/DIY-Schreibvorgänge gesperrt, bis Sie sie vollständig beenden und neu öffnen.",
-    "startOverButton": "Neu starten"
+    "startOverButton": "Neu starten",
+    "preflightFailedTitle": "The upgrade did not start — the pen could not be prepared.",
+    "preflightFailedBody": "Before a firmware upgrade, two index files (1.BIN and BOOKFILE.BIN) must be removed from the pen's BOOK folder, or the new firmware will not take effect. They could not be removed, so nothing was changed on the pen and no upgrade was started. Check that the pen is still connected and not write-protected, then try again."
   },
   "technicalDetails": {
     "title": "Technische Details",
@@ -103,5 +105,9 @@
     "checkAgainButton": "Erneut prüfen",
     "startedAt": "Update-Versuch gestartet: {{time}}",
     "lastChecked": "Zuletzt geprüft: {{time}}"
+  },
+  "faq": {
+    "manualUpgradeWarningTitle": "Upgrading with the vendor tool instead of this app",
+    "manualUpgradeWarningBody": "If you run the manufacturer's upgrade tool directly rather than using this app, you must first delete 1.BIN and BOOKFILE.BIN from the pen's BOOK folder. Without this the upgrade appears to run but the new firmware does not take effect. This app does it for you automatically."
   }
 }

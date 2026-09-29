@@ -5,3 +5,8 @@ release/
 .DS_Store
 store-assets/FINAL-SUBMISSION/
 store-assets/v0.3.16-tile-fix/*.appx
+
+# Vendor firmware packages and BOOK .axb content staged for a release.
+# Large binaries (hundreds of MB) that must never enter git history — once
+# committed they are effectively permanent, even after a later delete.
+/source/

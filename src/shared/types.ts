@@ -604,6 +604,10 @@ export type DiagnosticEntryKind =
   | 'pen-verify'
   | 'pen-verify-batch'
   | 'firmware-upgrade'
+  /** Pre-flash cleanup — which files the upgrade removed from the pen's BOOK directory, or why
+   *  it aborted. Kept as its own kind so a later "the upgrade didn't take" report can be
+   *  answered from diagnostics alone. */
+  | 'firmware-preflight'
   | 'firmware-recovery';
 
 export interface DiagnosticEntry {

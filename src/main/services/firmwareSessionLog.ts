@@ -19,6 +19,10 @@ import path from 'node:path';
 
 export type FirmwareSessionStage =
   | 'download'
+  // Pre-flash cleanup of the pen's BOOK index (1.BIN / BOOKFILE.BIN). Recorded per
+  // upgrade so a later "the upgrade didn't take" report can be checked against whether
+  // the deletion actually happened. See firmwarePreflight.ts.
+  | 'preflight'
   | 'verification'
   | 'extraction'
   | 'launch'

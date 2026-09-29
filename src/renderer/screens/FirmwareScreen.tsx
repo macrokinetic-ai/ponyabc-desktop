@@ -506,6 +506,10 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
           <h2>{t('confirm.title')}</h2>
           <p>{t('confirm.summary', { path: packageInfo.rootDir })}</p>
           <p className="hint">{t('confirm.uacNotice')}</p>
+          <details className="firmware-faq">
+            <summary>{t('faq.manualUpgradeWarningTitle')}</summary>
+            <p className="hint">{t('faq.manualUpgradeWarningBody')}</p>
+          </details>
           {startMessage && <p className="error-text">{startMessage}</p>}
           <div className="firmware-wizard__actions">
             <button type="button" className="button" disabled={starting} onClick={() => setStep('package')}>
@@ -556,11 +560,17 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
             </div>
           )}
 
-          {outcome.status === 'failed' && (
-            <div className="note-box">
-              <p className="error-text">{t('result.failedTitle')}</p>
-            </div>
-          )}
+          {outcome.status === 'failed' &&
+            (outcome.reason.startsWith('preflight-') ? (
+              <div className="note-box">
+                <p className="error-text">{t('result.preflightFailedTitle')}</p>
+                <p className="hint">{t('result.preflightFailedBody')}</p>
+              </div>
+            ) : (
+              <div className="note-box">
+                <p className="error-text">{t('result.failedTitle')}</p>
+              </div>
+            ))}
 
           {outcome.status === 'unclear' && !outcome.processTerminationConfirmed && (
             <div className="note-box">

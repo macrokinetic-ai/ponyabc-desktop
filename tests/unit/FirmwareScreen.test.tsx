@@ -340,6 +340,39 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
   });
 
+  it('a pre-flash cleanup abort explains itself instead of showing the generic failure text', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'failed',
+      reason: 'preflight-deletion-failed',
+      exitCode: null,
+      logExcerpt: '1.BIN: EACCES',
+      // Nothing was launched, so termination is genuinely confirmed and the pen is untouched.
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+
+    await screen.findByText('The upgrade did not start — the pen could not be prepared.');
+    // The generic wording would tell the user nothing about what to do next, and would leave
+    // "did not complete" hanging over a pen that was never written to.
+    expect(screen.queryByText('The upgrade did not start or did not complete.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
+  });
+
+  it('shows the manual-upgrade cleanup warning on the confirm step, where the vendor documents it nowhere', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    await screen.findByText('Upgrading with the vendor tool instead of this app');
+    await screen.findByText(/must first delete 1\.BIN and BOOKFILE\.BIN/);
+  });
+
   it('an "unclear" outcome whose termination could NOT be confirmed (e.g. a timeout) never offers the normal acknowledge path, never resets the wizard, and stays locked even after the user clicks through', async () => {
     window.ponyabc.acknowledgeFirmwareOutcome = vi.fn(async () => ({ ok: false, locked: true }));
     renderScreen();

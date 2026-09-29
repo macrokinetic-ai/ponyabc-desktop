@@ -20,6 +20,11 @@ import * as session from '../services/session';
 import { acquirePenLock } from '../services/penOperationLock';
 import { runElevated, type RunElevatedResult } from '../services/elevatedRun';
 import { determineOutcome, inspectFirmwarePackage } from '../services/firmwareUpgrade';
+import {
+  DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
+  runFirmwarePreflight,
+  summarizePreflight,
+} from '../services/firmwarePreflight';
 import { decodeLogBytes } from '../services/logEncoding';
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
@@ -149,7 +154,19 @@ export async function recheckFirmwareRecovery(): Promise<FirmwareRecoveryStatus>
  * regenerates or re-derives firmware bytes: the package folder is used read-only, exactly as
  * extracted.
  */
-export async function startFirmwareUpgrade(window: BrowserWindow, params: { packageDir: string }): Promise<FirmwareStartResult> {
+export async function startFirmwareUpgrade(
+  window: BrowserWindow,
+  params: {
+    packageDir: string;
+    /**
+     * Files to delete from the pen's BOOK directory before flashing. Omitted means
+     * DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS. Threaded through as a parameter so a release
+     * can carry its own list from the catalogue later without an app release — see
+     * docs/design/firmware-preflight-metadata.md.
+     */
+    preflightDeletions?: readonly string[];
+  },
+): Promise<FirmwareStartResult> {
   if (process.platform !== 'win32') return { status: 'unsupported-platform' };
   if (!session.getPenRoot()) return { status: 'no-pen-selected' };
 
@@ -223,10 +240,67 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     };
 
     try {
+      // --- PRE-FLASH CLEANUP ---------------------------------------------------------
+      // Runs BEFORE the work directory is created, before the recovery marker is written and
+      // before anything is launched, so an abort here leaves the pen and the machine exactly
+      // as they were. The rule (vendor-confirmed, verified on a real pen 2026-09-30): a
+      // firmware upgrade silently does not take effect unless 1.BIN and BOOKFILE.BIN are
+      // removed from the pen's BOOK directory first. See firmwarePreflight.ts.
+      sendProgress('preparing-launcher');
+      const penForPreflight = session.getPenRoot();
+      if (!penForPreflight) throw new Error('pen selection lost before preflight');
+      const preflightFiles = params.preflightDeletions ?? DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS;
+      const preflight = runFirmwarePreflight(penForPreflight.realPath, preflightFiles);
+      const preflightSummary = summarizePreflight(preflight.deletions);
+      sessionLog.recordStage('preflight', {
+        requested: preflightFiles.join(','),
+        result: preflight.ok ? 'ok' : preflight.reason,
+        summary: preflightSummary,
+        bookDir: preflight.bookDir,
+      });
+      appendDiagnostic(diagnosticsStore(), 'firmware-preflight', {
+        result: preflight.ok ? 'ok' : preflight.reason,
+        requested: preflightFiles.join(','),
+        summary: preflightSummary,
+      });
+
+      if (!preflight.ok) {
+        // Fatal, and deliberately NOT 'unclear': nothing was launched, so the pen is untouched
+        // and the user can safely retry. Flashing over a stale index is the exact failure this
+        // check exists to prevent, so continuing anyway would defeat the point.
+        sessionLog.finish({
+          processTerminationConfirmed: true,
+          outcomeStatus: 'failed',
+          outcomeReason: `preflight-${preflight.reason}`,
+          userMessageKey: 'result.preflightFailedTitle',
+          toolProcessConfirmedFinished: true,
+          successSignalDetected: false,
+        });
+        release();
+        endFirmwareUpgrade();
+        try {
+          window.webContents.send(IPC.firmwareOutcome, {
+            status: 'failed',
+            reason: `preflight-${preflight.reason}`,
+            exitCode: null,
+            logExcerpt: redactText(`${preflight.detail}\n${preflightSummary}`),
+            processTerminationConfirmed: true,
+            // Nothing was ever decoded from the vendor tool here — the abort happens before it
+            // is launched — so `logExcerpt` is our own plain text and is safe to display.
+            encodingKnown: true,
+            otaTableHadFailures: false,
+            sawUfwGenerated: false,
+            sawNoLicenseWarning: false,
+          } satisfies FirmwareUpgradeOutcome);
+        } catch {
+          // window already gone
+        }
+        return;
+      }
+
       const workDir = path.join(app.getPath('userData'), 'firmwareRun');
       fs.rmSync(workDir, { recursive: true, force: true }); // never reuse a stale prior run's .bat/.ps1/.log
       sessionLog.update({ workDir });
-      sendProgress('preparing-launcher');
       sessionLog.recordStage('launch', { workDir, entryBatPath: info.entryBatPath });
       sendProgress('awaiting-authorization-or-starting');
 
