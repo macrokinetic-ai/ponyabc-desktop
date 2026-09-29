@@ -561,6 +561,13 @@ export type BookActionStatus =
   | 'restore-not-allowed'
   | 'error';
 
+export interface BookWriteProgressEvent {
+  contentId: string;
+  filename: string;
+  bytesWritten: number;
+  totalBytes: number;
+}
+
 export interface BookActionResult {
   status: BookActionStatus;
   message?: string;
@@ -903,6 +910,10 @@ export interface PonyAbcApi {
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
 
   // Batch "download to App" — cache-only, one file at a time, never writes to the pen.
+  /** Bytes written to the pen during an add or update. The pen's USB is 1.x (~1 MB/s), so this
+   *  is what turns a twenty-minute copy from an apparent hang into visible progress. */
+  onBookWriteProgress: (listener: (event: BookWriteProgressEvent) => void) => () => void;
+
   /** The pen's book index: whether it still matches what is on the pen, finishing a batch, and
    *  the explicit "Fix my pen's book list" action. */
   bookIndexStatus: () => Promise<import('../main/ipc/bookIndex').BookIndexStatus | { status: 'no-pen-selected' }>;

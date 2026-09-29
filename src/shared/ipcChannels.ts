@@ -54,6 +54,7 @@ export const IPC = {
   bookDownloadBatch: 'ponyabc:book:downloadBatch',
 
   // The pen's book index — reset after adds/removes, and the self-heal check.
+  bookWriteProgress: 'ponyabc:book:writeProgress',
   bookIndexStatus: 'ponyabc:book:index:status',
   bookIndexCommit: 'ponyabc:book:index:commit',
   bookIndexFix: 'ponyabc:book:index:fix',

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import type {
   BookActionResult,
   BookCatalogItem,
-  BookPenItem,
   BookPenMatchStatus,
   BookRemoveResult,
   BookVerifyContentResult,
@@ -26,6 +25,7 @@ import {
   simpleStateForCatalog,
   simpleStateForPen,
 } from './bookStatusLabels';
+import { estimateMinutes, remainingMinutes } from './penTransferEstimate';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 function formatBytes(n: number): string {
@@ -182,9 +182,7 @@ export function BookLibraryScreen() {
   const penRoot = usePenRoot();
   const lib = useBookLibrary();
 
-  const [penSelected, setPenSelected] = useState<Set<string>>(new Set());
   const [catalogSelected, setCatalogSelected] = useState<Set<string>>(new Set());
-  const [pendingRemove, setPendingRemove] = useState<BookPenItem[] | null>(null);
   const [addConflicts, setAddConflicts] = useState<BookCatalogItem[] | null>(null);
   const [addDecisions, setAddDecisions] = useState<Record<string, 'replace' | 'skip'>>({});
   const [busy, setBusy] = useState(false);
@@ -197,21 +195,12 @@ export function BookLibraryScreen() {
 
   const penConnected = penRoot.result.status === 'ok';
   const penItems = lib.penItems ?? [];
-  const removablePenItems = penItems.filter((i) => i.removable);
   const actionableCatalogItems = lib.catalogItems.filter((i) => i.actionable);
   // "Download all to App" targets everything that could ever be cache-downloaded — broader
   // than actionableCatalogItems (which excludes on-pen-current/verifying, since there's
   // nothing to INSTALL for those, but they may still be worth having in the local cache).
   const downloadableCatalogItems = lib.catalogItems.filter((i) => i.status !== 'metadata-incomplete' && i.status !== 'ambiguous');
 
-  function togglePen(fileName: string) {
-    setPenSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(fileName)) next.delete(fileName);
-      else next.add(fileName);
-      return next;
-    });
-  }
   function toggleCatalog(contentId: string) {
     setCatalogSelected((prev) => {
       const next = new Set(prev);
@@ -235,35 +224,6 @@ export function BookLibraryScreen() {
       else next.add(contentId);
       return next;
     });
-  }
-
-  function startRemove() {
-    const targets = penItems.filter((i) => penSelected.has(i.fileName));
-    if (targets.length === 0) return;
-    setPendingRemove(targets);
-  }
-
-  async function confirmRemove() {
-    if (!pendingRemove) return;
-    const targets = pendingRemove;
-    setPendingRemove(null);
-    setBusy(true);
-    setMessage(null);
-    setRestartNotice(false);
-    try {
-      const resolved = new Set<string>();
-      let lastMessage: string | null = null;
-      for (const item of targets) {
-        const result = await lib.remove(item.fileName);
-        if (result.status === 'completed') resolved.add(item.fileName);
-        else lastMessage = resultMessage(t, result);
-      }
-      setPenSelected((prev) => new Set([...prev].filter((n) => !resolved.has(n))));
-      if (lastMessage) setMessage(lastMessage);
-      else if (resolved.size > 0) setMessage(await finishBookBatch([]));
-    } finally {
-      setBusy(false);
-    }
   }
 
   function startAdd(contentIds?: string[]) {
@@ -326,6 +286,14 @@ export function BookLibraryScreen() {
     setBusy(true);
     setMessage(null);
     setRestartNotice(false);
+
+    // Say how long this will take BEFORE it starts, not after. A parent deciding whether to begin
+    // a twenty-minute copy needs the number while they can still choose.
+    const willWrite = targets.filter((i) => !(isOnPen(i.status) && decisions[i.contentId] === 'skip'));
+    const totalBytes = willWrite.reduce((sum, i) => sum + i.sizeBytes, 0);
+    const minutes = estimateMinutes(totalBytes);
+    setMessage(minutes > 0 ? t('transfer.estimateBefore', { minutes }) : t('transfer.estimateBeforeShort'));
+
     try {
       const resolved = new Set<string>();
       const written: string[] = [];
@@ -348,6 +316,7 @@ export function BookLibraryScreen() {
       else if (written.length > 0) setMessage(await finishBookBatch(written));
     } finally {
       setBusy(false);
+      setWriting(null);
     }
   }
 
@@ -407,6 +376,28 @@ export function BookLibraryScreen() {
   const [pendingAdd, setPendingAdd] = useState<BookCatalogItem[] | null>(null);
   /** Shown after a batch that added or removed a book — the one thing the parent must act on. */
   const [restartNotice, setRestartNotice] = useState(false);
+
+  /**
+   * Writing to the pen, at the pen's own speed.
+   *
+   * The USB is 1.x — 978 kB/s measured — so a single book is minutes, not seconds. Without an
+   * estimate up front and a visible count-down, a working copy is indistinguishable from a hang,
+   * and a parent who unplugs mid-write leaves a half-written book on a FAT volume.
+   */
+  const [writing, setWriting] = useState<{ name: string; bytesWritten: number; totalBytes: number; startedAtMs: number } | null>(null);
+
+  useEffect(() => {
+    return window.ponyabc.onBookWriteProgress((event) => {
+      setWriting((prev) => ({
+        name: event.filename,
+        bytesWritten: event.bytesWritten,
+        totalBytes: event.totalBytes,
+        // Only restart the clock when a different book starts, or every update would reset the
+        // elapsed time and the estimate would never settle.
+        startedAtMs: prev && prev.name === event.filename ? prev.startedAtMs : Date.now(),
+      }));
+    });
+  }, []);
   const [fixMessage, setFixMessage] = useState<string | null>(null);
 
   const refreshIndexStatus = useCallback(async () => {
@@ -472,17 +463,6 @@ export function BookLibraryScreen() {
             <PenRootBar />
             {penConnected && (
               <div className="pane__toolbar">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={removablePenItems.length > 0 && penSelected.size === removablePenItems.length}
-                    onChange={() =>
-                      setPenSelected(penSelected.size === removablePenItems.length ? new Set() : new Set(removablePenItems.map((i) => i.fileName)))
-                    }
-                  />
-                  {t('selectAll')}
-                </label>
-                <span>{t('selectedCount', { count: penSelected.size })}</span>
                 <button type="button" className="button" onClick={() => void lib.refreshPen()}>
                   {tCommon('buttons.refresh')}
                 </button>
@@ -508,7 +488,6 @@ export function BookLibraryScreen() {
                         </span>
                       ) : (
                         <label className="recordings-list__label">
-                          <input type="checkbox" checked={penSelected.has(item.fileName)} onChange={() => togglePen(item.fileName)} />
                           <button type="button" className="recordings-list__name-toggle" onClick={() => togglePenExpand(item.fileName)}>
                             {displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}
                           </button>
@@ -548,17 +527,12 @@ export function BookLibraryScreen() {
         </section>
 
         <div className="dual-pane__actions">
-          <button type="button" className="button button--primary" disabled={!penConnected || penSelected.size === 0 || busy} onClick={startRemove}>
-            {t('action.remove')}
-          </button>
           {verifyingNow ? (
             <button type="button" className="button" onClick={() => void lib.cancelVerify()}>
               {t('action.cancelVerify')}
             </button>
           ) : (
-            <button type="button" className="button" disabled={!penConnected || penSelected.size === 0 || busy} onClick={() => void runVerify([...penSelected])}>
-              {t('action.verifySelected')}
-            </button>
+            <span className="hint">{t('verifyHint')}</span>
           )}
           <button
             type="button"
@@ -710,6 +684,21 @@ export function BookLibraryScreen() {
           {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
         </section>
       </div>
+      {writing && (
+        <div className="note-box">
+          <p>{t('transfer.dontUnplug')}</p>
+          <p className="hint">{t('transfer.dontUnplugBody')}</p>
+          <p className="hint">{t('transfer.writing', { name: writing.name })}</p>
+          <progress className="book-progress" value={writing.bytesWritten} max={Math.max(writing.totalBytes, 1)} />
+          <p className="hint">
+            {(() => {
+              const left = remainingMinutes(writing.bytesWritten, writing.totalBytes, Date.now() - writing.startedAtMs);
+              return left > 0 ? t('transfer.remaining', { minutes: left }) : t('transfer.remainingShort');
+            })()}
+          </p>
+        </div>
+      )}
+
       {restartNotice && (
         <div className="note-box">
           <p>{t('done.restartTitle')}</p>
@@ -730,29 +719,6 @@ export function BookLibraryScreen() {
       {fixMessage && <p className="hint">{fixMessage}</p>}
 
       <StatusLegend t={t} showNewBadgeNote={anyNew} />
-
-      {pendingRemove && (
-        <div className="plan-panel">
-          <h2>{t('confirmRemoveTitle')}</h2>
-          <ul className="recordings-list">
-            {pendingRemove.map((item) => (
-              <li key={item.fileName}>
-                {displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}{' '}
-                <span className="hint">({item.fileName})</span> <span className="recordings-list__size">{formatBytes(item.sizeBytes)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="hint">{t('confirmRemoveHint')}</p>
-          <div className="plan-panel__actions">
-            <button type="button" className="button" onClick={() => setPendingRemove(null)}>
-              {t('cancel')}
-            </button>
-            <button type="button" className="button button--primary" onClick={() => void confirmRemove()}>
-              {t('confirmRemoveAction')}
-            </button>
-          </div>
-        </div>
-      )}
 
       {addConflicts && (
         <div className="plan-panel">

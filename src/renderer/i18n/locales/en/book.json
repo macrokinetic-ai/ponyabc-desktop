@@ -31,9 +31,6 @@
   "unknownContentNotice": "This file isn't recognized as catalog BOOK content and can't be changed here.",
   "genericError": "Something went wrong.",
   "cancel": "Cancel",
-  "confirmRemoveTitle": "Remove from pen?",
-  "confirmRemoveHint": "A backup is kept on this computer first.",
-  "confirmRemoveAction": "Remove",
   "confirmAddTitle": "Some selected items differ from the pen",
   "addConflictsHint": "These already exist on the pen with different content. Choose whether to replace each one (a backup is kept first) or leave it as is.",
   "replaceOption": "Replace",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Add selected to your pen",
-    "remove": "Remove from pen",
     "reinstall": "Re-download",
     "cancelDownload": "Cancel",
-    "verifySelected": "Verify selected content",
     "cancelVerify": "Cancel verification",
     "verifyThis": "Verify this file",
     "downloadSelected": "Download selected to App",
@@ -162,5 +157,16 @@
     "doneBody": "All set. Please unplug your pen, then switch it off and on again. The first start may take a little longer.",
     "failed": "That could not be finished just now. Nothing on your pen was changed — please reconnect it and try again.",
     "sidecarNotice": "Some extra files copied by a Mac are also on your pen. They are harmless, but you can delete them from the pen folder if you like."
+  },
+  "verifyHint": "Open a book below to check it, if support asks you to.",
+  "booksManagedNotice": "Books are looked after by the PonyABC library — you can add and update them here.",
+  "transfer": {
+    "estimateBefore": "This will take about {{minutes}} minutes. Please leave your pen plugged in.",
+    "estimateBeforeShort": "This will take a minute or two. Please leave your pen plugged in.",
+    "dontUnplug": "Please don’t unplug your pen",
+    "dontUnplugBody": "Your pen is being written to. Unplugging now could leave a book unfinished.",
+    "remaining": "About {{minutes}} minutes left",
+    "remainingShort": "Nearly done",
+    "writing": "Copying “{{name}}” to your pen…"
   }
 }

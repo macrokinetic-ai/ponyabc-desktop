@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { pipeline } from 'node:stream/promises';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -132,6 +133,41 @@ export function sha256FileWithProgress(filePath: string, opts: { onProgress?: (b
       opts.signal.addEventListener('abort', onAbort, { once: true });
     }
   });
+}
+
+/**
+ * Copies `sourcePath` to `destPath`, reporting progress as it goes.
+ *
+ * Replaces `fs.copyFile(..., COPYFILE_EXCL)`: the exclusivity is kept by opening the destination
+ * with the `wx` flag, which fails if it already exists, and streaming is what makes a
+ * twenty-minute write visible rather than indistinguishable from a hang. `pipeline` propagates
+ * an error from either end and destroys both streams, so a failure cannot leave a dangling
+ * handle on the pen — the same lesson as the cancelled-hash fix.
+ */
+async function copyWithProgress(
+  sourcePath: string,
+  destPath: string,
+  totalBytes: number,
+  onProgress?: (bytesWritten: number, totalBytes: number) => void,
+): Promise<void> {
+  const source = fs.createReadStream(sourcePath);
+  const dest = fs.createWriteStream(destPath, { flags: 'wx' });
+
+  let written = 0;
+  let lastReported = 0;
+  if (onProgress) {
+    source.on('data', (chunk: string | Buffer) => {
+      written += chunk.length;
+      // Roughly per megabyte: at ~1 MB/s that is about one update a second, and it keeps a
+      // 1.1 GB book from producing a thousand IPC messages.
+      if (written - lastReported >= 1_000_000 || written === totalBytes) {
+        lastReported = written;
+        onProgress(written, totalBytes);
+      }
+    });
+  }
+
+  await pipeline(source, dest);
 }
 
 async function unlinkQuiet(p: string): Promise<void> {
@@ -332,8 +368,12 @@ export async function safeWriteFile(params: {
    *  the same path). Must be based on the caller's authoritative identity tracking (a
    *  generation/epoch counter), not solely on this function re-`stat`ing the path itself. */
   verifyStillSameTarget: () => boolean;
+  /** Bytes staged so far. The pen's USB is 1.x — measured at ~1 MB/s — so a single book can take
+   *  twenty minutes, and a copy with no visible progress is indistinguishable from a hang.
+   *  Called roughly once per megabyte, not per chunk. */
+  onProgress?: (bytesWritten: number, totalBytes: number) => void;
 }): Promise<SafeWriteResult> {
-  const { sourcePath, targetDir, targetFileName, backupDir, verifyStillSameTarget } = params;
+  const { sourcePath, targetDir, targetFileName, backupDir, verifyStillSameTarget, onProgress } = params;
   const finalPath = path.join(targetDir, targetFileName);
   const tmpPath = path.join(
     targetDir,
@@ -367,7 +407,7 @@ export async function safeWriteFile(params: {
 
   try {
     const sourceStat = await fs.promises.stat(sourcePath);
-    await fs.promises.copyFile(sourcePath, tmpPath, fs.constants.COPYFILE_EXCL);
+    await copyWithProgress(sourcePath, tmpPath, sourceStat.size, onProgress);
 
     const stagedStat = await fs.promises.stat(tmpPath);
     if (stagedStat.size !== sourceStat.size) {

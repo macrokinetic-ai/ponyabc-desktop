@@ -31,9 +31,6 @@
   "unknownContentNotice": "Diese Datei wird nicht als Katalog-BOOK-Inhalt erkannt und kann hier nicht geändert werden.",
   "genericError": "Etwas ist schiefgelaufen.",
   "cancel": "Abbrechen",
-  "confirmRemoveTitle": "Vom Stift entfernen?",
-  "confirmRemoveHint": "Zuvor wird eine Sicherung auf diesem Computer angelegt.",
-  "confirmRemoveAction": "Entfernen",
   "confirmAddTitle": "Einige ausgewählte Elemente weichen vom Stift ab",
   "addConflictsHint": "Diese existieren bereits auf dem Stift mit anderem Inhalt. Wähle für jedes, ob es ersetzt werden soll (zuvor wird gesichert) oder unverändert bleiben soll.",
   "replaceOption": "Ersetzen",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Auswahl zum Stift hinzufügen",
-    "remove": "Vom Stift entfernen",
     "reinstall": "Erneut herunterladen",
     "cancelDownload": "Abbrechen",
-    "verifySelected": "Ausgewählte Inhalte überprüfen",
     "cancelVerify": "Überprüfung abbrechen",
     "verifyThis": "Diese Datei prüfen",
     "downloadSelected": "Auswahl in die App laden",
@@ -162,5 +157,16 @@
     "doneBody": "Erledigt. Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern.",
     "failed": "Das ließ sich gerade nicht abschließen. An Ihrem Stift wurde nichts geändert — bitte neu verbinden und erneut versuchen.",
     "sidecarNotice": "Auf Ihrem Stift liegen zusätzliche Dateien, die ein Mac beim Kopieren angelegt hat. Sie sind harmlos; Sie können sie bei Bedarf im Ordner löschen."
+  },
+  "verifyHint": "Öffnen Sie unten ein Buch, um es zu prüfen, wenn der Support Sie darum bittet.",
+  "booksManagedNotice": "Die Bücher verwaltet die PonyABC-Bibliothek — hier können Sie sie hinzufügen und aktualisieren.",
+  "transfer": {
+    "estimateBefore": "Das dauert etwa {{minutes}} Minuten. Bitte lassen Sie den Stift angeschlossen.",
+    "estimateBeforeShort": "Das dauert ein bis zwei Minuten. Bitte lassen Sie den Stift angeschlossen.",
+    "dontUnplug": "Bitte den Stift nicht abziehen",
+    "dontUnplugBody": "Auf Ihren Stift wird gerade geschrieben. Jetzt abzuziehen könnte ein Buch unvollständig lassen.",
+    "remaining": "Noch etwa {{minutes}} Minuten",
+    "remainingShort": "Fast fertig",
+    "writing": "„{{name}}“ wird auf Ihren Stift kopiert…"
   }
 }

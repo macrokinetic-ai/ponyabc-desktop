@@ -31,9 +31,6 @@
   "unknownContentNotice": "Este ficheiro não é reconhecido como conteúdo BOOK do catálogo e não pode ser alterado aqui.",
   "genericError": "Algo correu mal.",
   "cancel": "Cancelar",
-  "confirmRemoveTitle": "Remover da caneta?",
-  "confirmRemoveHint": "É guardada primeiro uma cópia de segurança neste computador.",
-  "confirmRemoveAction": "Remover",
   "confirmAddTitle": "Alguns itens selecionados diferem dos da caneta",
   "addConflictsHint": "Estes já existem na caneta com conteúdo diferente. Escolha se substitui cada um (é feita cópia de segurança antes) ou o mantém como está.",
   "replaceOption": "Substituir",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Adicionar os selecionados à caneta",
-    "remove": "Remover da caneta",
     "reinstall": "Descarregar novamente",
     "cancelDownload": "Cancelar",
-    "verifySelected": "Verificar conteúdo selecionado",
     "cancelVerify": "Cancelar verificação",
     "verifyThis": "Verificar este ficheiro",
     "downloadSelected": "Transferir selecionados para a App",
@@ -162,5 +157,16 @@
     "doneBody": "Pronto. Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais.",
     "failed": "Não foi possível concluir agora. Nada foi alterado na sua caneta — volte a ligá-la e tente novamente.",
     "sidecarNotice": "Na sua caneta há também ficheiros extra copiados por um Mac. São inofensivos; pode apagá-los da pasta se quiser."
+  },
+  "verifyHint": "Abra um livro abaixo para o verificar, se o apoio lhe pedir.",
+  "booksManagedNotice": "Os livros são geridos pela biblioteca PonyABC — aqui pode adicioná-los e atualizá-los.",
+  "transfer": {
+    "estimateBefore": "Isto vai demorar cerca de {{minutes}} minutos. Deixe a caneta ligada.",
+    "estimateBeforeShort": "Isto vai demorar um minuto ou dois. Deixe a caneta ligada.",
+    "dontUnplug": "Não desligue a caneta",
+    "dontUnplugBody": "Está a ser escrito na sua caneta. Desligá-la agora pode deixar um livro incompleto.",
+    "remaining": "Faltam cerca de {{minutes}} minutos",
+    "remainingShort": "Quase pronto",
+    "writing": "A copiar «{{name}}» para a sua caneta…"
   }
 }

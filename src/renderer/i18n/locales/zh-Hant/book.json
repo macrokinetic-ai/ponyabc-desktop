@@ -31,9 +31,6 @@
   "unknownContentNotice": "此檔案未能識別為目錄內的 BOOK 內容，不能在此更改。",
   "genericError": "發生錯誤。",
   "cancel": "取消",
-  "confirmRemoveTitle": "從點讀筆移除？",
-  "confirmRemoveHint": "系統會先在此電腦備份原檔。",
-  "confirmRemoveAction": "移除",
   "confirmAddTitle": "部分已選項目與筆內內容不同",
   "addConflictsHint": "這些項目已存在於點讀筆，但內容不同。請為每項選擇取代（會先備份）或保留原狀。",
   "replaceOption": "取代",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "將已選書本加入點讀筆",
-    "remove": "從點讀筆移除",
     "reinstall": "重新下載",
     "cancelDownload": "取消",
-    "verifySelected": "驗證所選內容",
     "cancelVerify": "取消驗證",
     "verifyThis": "校驗此檔案",
     "downloadSelected": "下載所選到 App",
@@ -162,5 +157,16 @@
     "doneBody": "已整理好。請拔出點讀筆，然後關機再開啟。第一次開機可能需要較長時間。",
     "failed": "暫時未能完成，點讀筆沒有任何改動。請重新連接後再試一次。",
     "sidecarNotice": "點讀筆上還有一些由 Mac 複製時產生的額外檔案。它們無害，如有需要可自行在資料夾中刪除。"
+  },
+  "verifyHint": "如客服要求，可展開下面的書本進行檢查。",
+  "booksManagedNotice": "書本由 PonyABC 書庫管理，你可以在此新增和更新。",
+  "transfer": {
+    "estimateBefore": "大約需要 {{minutes}} 分鐘，請保持點讀筆連接電腦。",
+    "estimateBeforeShort": "大約需要一兩分鐘，請保持點讀筆連接電腦。",
+    "dontUnplug": "請勿拔出點讀筆",
+    "dontUnplugBody": "正在寫入點讀筆。此時拔出可能令書本未能完整複製。",
+    "remaining": "尚餘大約 {{minutes}} 分鐘",
+    "remainingShort": "即將完成",
+    "writing": "正在將《{{name}}》複製到點讀筆…"
   }
 }

@@ -29,6 +29,7 @@ import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient'
 import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial } from '../services/bookInstall';
 import { removeFromPen } from '../services/bookRemove';
 import { markBookIndexStale } from './bookIndex';
+import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { sha256FileWithProgress } from '../services/transferService';
@@ -199,6 +200,13 @@ function installDeps(window: BrowserWindow) {
     saveCacheEntry: (e: BookCacheEntry) =>
       cacheManifestStore().update((cur) => (cur.some((c) => c.contentId === e.contentId && c.sha256 === e.sha256) ? cur : [...cur, e])),
     onProgress: (event: import('@shared/types').BookDownloadProgressEvent) => window.webContents.send(IPC.bookDownloadProgress, event),
+    onWriteProgress: (event: import('@shared/types').BookWriteProgressEvent) => {
+      try {
+        window.webContents.send(IPC.bookWriteProgress, event);
+      } catch {
+        // window already gone
+      }
+    },
   };
 }
 
@@ -209,7 +217,16 @@ async function runInstallAction(
 ): Promise<BookActionResult> {
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
-  const result = await action(entry, params.penGeneration, installDeps(window));
+  // A book can take twenty minutes to write at the pen's ~1 MB/s. If the computer sleeps
+  // part-way through, the customer comes back to a half-written book on a FAT volume — so the
+  // write holds the machine awake, and always releases, including on failure.
+  const stopSleepBlock = blockSleepDuringPenWrite('adding or updating a book');
+  let result: BookActionResult;
+  try {
+    result = await action(entry, params.penGeneration, installDeps(window));
+  } finally {
+    stopSleepBlock();
+  }
 
   // The pen's book index is a positional array with no filenames in it, so ADDING a book
   // invalidates it and replacing one under the same name does not. `updateRequiresIndexReset`

@@ -15,6 +15,9 @@ export interface BookInstallDeps {
   getCacheEntries: () => BookCacheEntry[];
   saveCacheEntry: (entry: BookCacheEntry) => void;
   onProgress?: (e: BookDownloadProgressEvent) => void;
+  /** Bytes written to the PEN, as they are written. Separate from the download progress above:
+   *  downloading happens at internet speed, writing happens at the pen's ~1 MB/s. */
+  onWriteProgress?: (e: { contentId: string; filename: string; bytesWritten: number; totalBytes: number }) => void;
   fetchFn?: typeof fetch;
   getFreeBytesFn?: (p: string) => Promise<number>;
 }
@@ -97,6 +100,8 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
       targetFileName: entry.filename,
       backupDir: deps.backupDir,
       verifyStillSameTarget,
+      onProgress: (bytesWritten, totalBytes) =>
+        deps.onWriteProgress?.({ contentId: entry.contentId, filename: entry.filename, bytesWritten, totalBytes }),
     });
     if (!result.ok) {
       const status =

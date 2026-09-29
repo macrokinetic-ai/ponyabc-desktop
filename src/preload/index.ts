@@ -105,6 +105,8 @@ const api: PonyAbcApi = {
   bookDownloadCancel: (contentId: string) => ipcRenderer.invoke(IPC.bookDownloadCancel, contentId) as Promise<{ ok: boolean }>,
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => subscribe(IPC.bookDownloadProgress, listener),
 
+  onBookWriteProgress: (listener: (event: import('@shared/types').BookWriteProgressEvent) => void) =>
+    subscribe(IPC.bookWriteProgress, listener),
   bookIndexStatus: () => ipcRenderer.invoke(IPC.bookIndexStatus),
   bookIndexCommit: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookIndexCommit, params ?? {}),
   bookIndexFix: () => ipcRenderer.invoke(IPC.bookIndexFix),

@@ -31,9 +31,6 @@
   "unknownContentNotice": "Ce fichier n'est pas reconnu comme contenu BOOK du catalogue et ne peut pas être modifié ici.",
   "genericError": "Une erreur s'est produite.",
   "cancel": "Annuler",
-  "confirmRemoveTitle": "Supprimer du stylo ?",
-  "confirmRemoveHint": "Une sauvegarde est d'abord conservée sur cet ordinateur.",
-  "confirmRemoveAction": "Supprimer",
   "confirmAddTitle": "Certains éléments sélectionnés diffèrent de ceux du stylo",
   "addConflictsHint": "Ceux-ci existent déjà sur le stylo avec un contenu différent. Choisissez de remplacer chacun (une sauvegarde est conservée avant) ou de le laisser tel quel.",
   "replaceOption": "Remplacer",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Ajouter la sélection à votre stylo",
-    "remove": "Supprimer du stylo",
     "reinstall": "Retélécharger",
     "cancelDownload": "Annuler",
-    "verifySelected": "Vérifier le contenu sélectionné",
     "cancelVerify": "Annuler la vérification",
     "verifyThis": "Vérifier ce fichier",
     "downloadSelected": "Télécharger la sélection vers l'App",
@@ -162,5 +157,16 @@
     "doneBody": "C'est fait. Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long.",
     "failed": "Cela n'a pas pu être terminé. Rien n'a été modifié sur votre stylo — rebranchez-le et réessayez.",
     "sidecarNotice": "Des fichiers supplémentaires copiés par un Mac se trouvent aussi sur votre stylo. Ils sont inoffensifs ; vous pouvez les supprimer du dossier si vous le souhaitez."
+  },
+  "verifyHint": "Ouvrez un livre ci-dessous pour le vérifier, si le support vous le demande.",
+  "booksManagedNotice": "Les livres sont gérés par la bibliothèque PonyABC — vous pouvez les ajouter et les mettre à jour ici.",
+  "transfer": {
+    "estimateBefore": "Cela prendra environ {{minutes}} minutes. Laissez votre stylo branché.",
+    "estimateBeforeShort": "Cela prendra une minute ou deux. Laissez votre stylo branché.",
+    "dontUnplug": "Ne débranchez pas votre stylo",
+    "dontUnplugBody": "Une écriture est en cours sur votre stylo. Le débrancher maintenant laisserait un livre incomplet.",
+    "remaining": "Environ {{minutes}} minutes restantes",
+    "remainingShort": "Presque terminé",
+    "writing": "Copie de « {{name}} » sur votre stylo…"
   }
 }

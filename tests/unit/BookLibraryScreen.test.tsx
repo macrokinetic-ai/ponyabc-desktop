@@ -89,6 +89,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
         progressListener = null;
       };
     }),
+    onBookWriteProgress: vi.fn(() => () => {}),
     bookIndexStatus: vi.fn(async () => ({ recordCount: 1, bookCount: 1, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'ok', resetPending: false })),
     bookIndexCommit: vi.fn(async () => ({ status: 'not-needed' })),
     bookIndexFix: vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false })),
@@ -379,34 +380,31 @@ describe('BookLibraryScreen — left pane (pen)', () => {
     expect(document.querySelectorAll('.pane')[0].querySelector('.pane__list')?.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
   });
 
-  it('a matched pen file is selectable and shows its catalog display name', async () => {
+  it('shows a pen file under its catalog display name, with nothing to tick', async () => {
     await renderScreen();
-    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
-    expect(checkbox).not.toBeNull();
-    fireEvent.click(checkbox as Element);
-    expect((checkbox as HTMLInputElement).checked).toBe(true);
+    await screen.findAllByText('Book One');
+    // Parents no longer select books on the pen: there is nothing here to do to them but look.
+    expect(document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]')).toBeNull();
   });
 
-  it('a pen file matched by name but with a differing size shows the short "Size differs" status by default, and the full wording only once expanded — stays selectable/removable (never auto-flagged as corrupted)', async () => {
+  it('a pen file matched by name but with a differing size reads as an update, not a fault', async () => {
     await renderScreen(listResult({ penItems: [penItem({ status: 'size-differs' })] }));
     await screen.findByText('Update available'); // short form in the default (collapsed) row
     expect(screen.queryByText(/Size differs from official version/)).toBeNull(); // long form not shown yet
-    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]');
-    expect(checkbox).not.toBeNull(); // still selectable — not treated like unrecognized content
-
-    const nameToggle = document.querySelectorAll('.pane')[0].querySelector('.recordings-list__name-toggle') as HTMLElement;
-    fireEvent.click(nameToggle); // expand
-    await screen.findByText(/Size differs from official version/);
   });
 
-  it('selecting a matched pen file and clicking Remove shows an explicit confirm panel with filename and size', async () => {
-    await renderScreen();
-    const checkbox = document.querySelectorAll('.pane')[0].querySelector('input[type="checkbox"]') as HTMLInputElement;
-    fireEvent.click(checkbox);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove from pen' }));
-    const confirmPanel = await screen.findByText('Remove from pen?');
-    expect(confirmPanel.closest('.plan-panel')?.textContent).toContain('0451.axb'); // filename is visible somewhere in the confirmation
-    expect(confirmPanel.closest('.plan-panel')?.textContent).toContain('1 KB'); // formatBytes(1000) === "1 KB"
+  it('offers a parent NO way to delete a book from the pen', async () => {
+    // Books are governed by the PonyABC library: parents add and update, and removal is not
+    // theirs to do. This asserts the absence of the whole path, not just of one button.
+    await renderScreen(listResult({ penItems: [penItem(), penItem({ fileName: '0452.axb', contentId: 'b2' })] }));
+    await screen.findAllByText('Book One');
+
+    const forbidden = /remove|delete|erase|\bbin\b/i;
+    for (const el of document.querySelectorAll('button, [role="button"], a')) {
+      expect(el.textContent ?? '', el.outerHTML).not.toMatch(forbidden);
+    }
+    expect(document.body.textContent ?? '').not.toMatch(/Remove from pen|Remove\?/i);
+    expect(window.ponyabc.bookRemove).not.toHaveBeenCalled();
   });
 });
 

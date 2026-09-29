@@ -31,9 +31,6 @@
   "unknownContentNotice": "Este archivo no se reconoce como contenido BOOK del catálogo y no se puede modificar aquí.",
   "genericError": "Algo salió mal.",
   "cancel": "Cancelar",
-  "confirmRemoveTitle": "¿Eliminar del lápiz?",
-  "confirmRemoveHint": "Antes se guarda una copia de seguridad en este ordenador.",
-  "confirmRemoveAction": "Eliminar",
   "confirmAddTitle": "Algunos elementos seleccionados difieren de lo que hay en el lápiz",
   "addConflictsHint": "Estos ya existen en el lápiz con contenido diferente. Elige si reemplazar cada uno (se hace copia de seguridad antes) o dejarlo como está.",
   "replaceOption": "Reemplazar",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Añadir lo seleccionado a su lápiz",
-    "remove": "Eliminar del lápiz",
     "reinstall": "Volver a descargar",
     "cancelDownload": "Cancelar",
-    "verifySelected": "Verificar contenido seleccionado",
     "cancelVerify": "Cancelar verificación",
     "verifyThis": "Verificar este archivo",
     "downloadSelected": "Descargar seleccionados a la App",
@@ -162,5 +157,16 @@
     "doneBody": "Hecho. Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más.",
     "failed": "No se pudo terminar ahora. No se cambió nada en su lápiz: vuelva a conectarlo e inténtelo de nuevo.",
     "sidecarNotice": "En su lápiz hay también archivos adicionales copiados por un Mac. Son inofensivos; puede borrarlos de la carpeta si lo desea."
+  },
+  "verifyHint": "Abra un libro abajo para comprobarlo, si el servicio de soporte se lo pide.",
+  "booksManagedNotice": "De los libros se encarga la biblioteca PonyABC: aquí puede añadirlos y actualizarlos.",
+  "transfer": {
+    "estimateBefore": "Esto tardará unos {{minutes}} minutos. Deje el lápiz conectado.",
+    "estimateBeforeShort": "Esto tardará un minuto o dos. Deje el lápiz conectado.",
+    "dontUnplug": "No desconecte el lápiz",
+    "dontUnplugBody": "Se está escribiendo en su lápiz. Desconectarlo ahora podría dejar un libro a medias.",
+    "remaining": "Quedan unos {{minutes}} minutos",
+    "remainingShort": "Casi listo",
+    "writing": "Copiando «{{name}}» en su lápiz…"
   }
 }

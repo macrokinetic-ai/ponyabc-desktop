@@ -31,9 +31,6 @@
   "unknownContentNotice": "Questo file non è riconosciuto come contenuto BOOK del catalogo e non può essere modificato qui.",
   "genericError": "Si è verificato un errore.",
   "cancel": "Annulla",
-  "confirmRemoveTitle": "Rimuovere dalla penna?",
-  "confirmRemoveHint": "Prima viene salvato un backup su questo computer.",
-  "confirmRemoveAction": "Rimuovi",
   "confirmAddTitle": "Alcuni elementi selezionati differiscono da quelli sulla penna",
   "addConflictsHint": "Questi esistono già sulla penna con contenuto diverso. Scegli se sostituire ciascuno (viene prima eseguito un backup) o lasciarlo invariato.",
   "replaceOption": "Sostituisci",
@@ -86,10 +83,8 @@
   },
   "action": {
     "add": "Aggiungi i selezionati alla penna",
-    "remove": "Rimuovi dalla penna",
     "reinstall": "Riscarica",
     "cancelDownload": "Annulla",
-    "verifySelected": "Verifica il contenuto selezionato",
     "cancelVerify": "Annulla verifica",
     "verifyThis": "Verifica questo file",
     "downloadSelected": "Scarica selezionati nell'App",
@@ -162,5 +157,16 @@
     "doneBody": "Fatto. Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo.",
     "failed": "Non è stato possibile completare l’operazione. Sulla penna non è cambiato nulla: ricollegala e riprova.",
     "sidecarNotice": "Sulla penna ci sono anche file aggiuntivi creati da un Mac durante la copia. Sono innocui; puoi eliminarli dalla cartella se vuoi."
+  },
+  "verifyHint": "Apri un libro qui sotto per controllarlo, se l’assistenza te lo chiede.",
+  "booksManagedNotice": "Dei libri si occupa la libreria PonyABC: qui puoi aggiungerli e aggiornarli.",
+  "transfer": {
+    "estimateBefore": "Ci vorranno circa {{minutes}} minuti. Lascia la penna collegata.",
+    "estimateBeforeShort": "Ci vorrà un minuto o due. Lascia la penna collegata.",
+    "dontUnplug": "Non scollegare la penna",
+    "dontUnplugBody": "È in corso la scrittura sulla penna. Scollegarla adesso potrebbe lasciare un libro incompleto.",
+    "remaining": "Mancano circa {{minutes}} minuti",
+    "remainingShort": "Quasi finito",
+    "writing": "Copia di «{{name}}» sulla penna…"
   }
 }
