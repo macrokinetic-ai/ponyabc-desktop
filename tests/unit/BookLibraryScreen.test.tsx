@@ -177,9 +177,11 @@ async function renderScreen(list: BookListResult = listResult({ penItems: [penIt
   window.ponyabc.bookList = vi.fn(async () => list);
   window.ponyabc.bookCatalogRefresh = vi.fn(async () => list);
   renderWithPen(true);
-  // The summary is the one thing every state renders, and book names now appear only inside a
-  // collapsed list, concatenated with their size — so they are the wrong thing to wait for.
-  await screen.findByRole('button', { name: /Sync books|Syncing/ });
+  // Wait for the LOADED state, not merely for the screen to exist. The Sync button renders
+  // immediately with empty data, so waiting on it let assertions run before bookList resolved —
+  // which passed on this machine and failed on a slower Windows runner. "Last checked" only
+  // appears once a fetched catalogue is in hand.
+  await screen.findByText(/Last checked:/);
 }
 
 /**
@@ -377,9 +379,12 @@ describe('BookLibraryScreen — plain language', () => {
   });
 
   it('tells the parent plainly when the check could not reach us', async () => {
-    await renderScreen(
+    // No successful fetch ever, so there is no "Last checked" to wait for — the error line is
+    // itself the loaded state here.
+    window.ponyabc.bookList = vi.fn(async () =>
       listResult({ meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: { state: 'error', atMs: 1, httpStatus: null, itemCount: null, message: 'offline', durationMs: 1 }, penFreeBytes: null } }),
     );
+    renderWithPen(true);
     await screen.findByText("We couldn't reach the PonyABC library. Check your internet connection and try again.");
   });
 });
