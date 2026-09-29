@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build Windows EXE + Store package
 
 on:
   push:
@@ -43,5 +43,395 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: gh release upload "${GITHUB_REF_NAME}" release/*.exe release/*.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================================================================
+      # Microsoft Store package — a SEPARATE artifact from the NSIS .exe above. None of the steps
+      # above are touched; this only adds a second Windows distribution path. Split into clearly
+      # separate steps on purpose: packaging, installation, launch, and a functional probe are
+      # different questions and a failure in one must not be misread as proof about the others.
+      # ============================================================================================
+
+      # --- 1. PACKAGING ---------------------------------------------------------------------
+      - name: "Store package: generate ephemeral test cert + build (.appx)"
+        shell: pwsh
+        run: |
+          # Store submissions themselves need no CA-trusted certificate (Microsoft re-signs on
+          # ingestion — see electron-builder.win-appx.yml's comments), but electron-builder still
+          # needs SOME certificate whose Subject exactly matches the required Partner Center
+          # `publisher` value to produce a validly-signed package at all. This cert exists only
+          # for this CI job (never a secret, never committed, never reused) so the steps below can
+          # actually install and run the package to verify it — not just that packaging exited 0.
+          $certSubject = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $certSubject `
+            -KeyUsage DigitalSignature -FriendlyName 'PonyABC Desktop CI sideload-test cert (ephemeral)' `
+            -CertStoreLocation 'Cert:\CurrentUser\My' `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'ponyabc-appx-test-cert.pfx'
+          $cerPath = Join-Path $env:RUNNER_TEMP 'ponyabc-appx-test-cert.cer'
+          $certPassword = [System.Guid]::NewGuid().ToString()
+          $securePassword = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $securePassword | Out-Null
+          Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
+
+          # electron-builder bundles its own signtool.exe (winCodeSign vendor package), which as
+          # of this runner image fails with "SignTool Error: A required function is not present."
+          # — a known incompatibility between that vendored binary and the current windows-latest
+          # image (confirmed by a real failed run, not assumed). Fix: point electron-builder at
+          # the real Windows SDK signtool.exe already on this runner (via Visual Studio Build
+          # Tools) using its own documented SIGNTOOL_PATH override
+          # (app-builder-lib/out/codeSign/windowsSignToolManager.js reads this env var first,
+          # before falling back to the vendored binary).
+          $sdkSigntool = Get-ChildItem -Path 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like '*\x64\*' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $sdkSigntool) { throw 'Could not find a Windows SDK signtool.exe on this runner (expected under C:\Program Files (x86)\Windows Kits\10\bin\*\x64\).' }
+          Write-Host "Using Windows SDK signtool.exe: $($sdkSigntool.FullName)"
+
+          # electron-builder's Windows signing reads these env vars (scoped to this step only —
+          # never written to $GITHUB_ENV, so they don't leak into later steps/jobs).
+          $env:CSC_LINK = $pfxPath
+          $env:CSC_KEY_PASSWORD = $certPassword
+          $env:SIGNTOOL_PATH = $sdkSigntool.FullName
+          npm run dist:win:appx
+          if ($LASTEXITCODE -ne 0) { throw "npm run dist:win:appx failed with exit code $LASTEXITCODE" }
+
+          # Deliberately NOT importing/trusting the cert here — that's now 1-install.ps1's job
+          # (further down this job), and doing it here first would always make its "already
+          # trusted?" check report true, masking the real not-yet-trusted scenario a fresh tester
+          # machine actually has. Found by a real CI run — this cert stays untrusted until
+          # 1-install.ps1 itself decides whether to import it.
+
+          # Publish the PUBLIC certificate (never the .pfx/private key) alongside the package so
+          # someone downloading this run's artifact — not building it themselves — has a matching
+          # cert to sideload-trust it with. This cert is single-use/ephemeral: a fresh one is
+          # generated every run, tied only to this specific build's .appx.
+          Copy-Item -Path $cerPath -Destination (Join-Path 'release' 'PonyABC-Desktop-test-cert.cer')
+
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'PACKAGING FAILED: no .appx file found in release/ after dist:win:appx.' }
+          Write-Host "PACKAGING OK: $($appx.Name) ($([math]::Round($appx.Length / 1MB, 2)) MB)"
+
+      # --- 1b. Bundle the tester-facing kit alongside the package, and validate the scripts for --
+      #         real before anyone downloads them — not just eyeballed. ---------------------------
+      - name: "Store package: bundle and syntax-check the Windows test kit"
+        shell: pwsh
+        run: |
+          Copy-Item -Path 'store-assets\windows-test-kit\*.ps1', 'store-assets\windows-test-kit\README.md' -Destination 'release\'
+
+          $hadErrors = $false
+          foreach ($script in Get-ChildItem -Path 'release' -Filter '*.ps1') {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $hadErrors = $true
+              Write-Host "::error::Syntax errors in $($script.Name):"
+              $errors | ForEach-Object { Write-Host "::error::  $_" }
+            } else {
+              Write-Host "Syntax OK: $($script.Name)"
+            }
+          }
+          if ($hadErrors) { throw 'One or more test-kit scripts have real PowerShell syntax errors — see above. Not safe to hand to a tester.' }
+
+      # --- 2. PACKAGING VERIFICATION: real manifest content, not an assumption ------------------
+      - name: "Store package: inspect AppxManifest.xml and verify Partner Center identity"
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'No .appx file found in release/' }
+
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($appx.FullName)
+          try {
+            $entry = $zip.Entries | Where-Object { $_.FullName -eq 'AppxManifest.xml' }
+            if (-not $entry) { throw 'AppxManifest.xml was not found inside the .appx package — this is not a valid Appx/MSIX container.' }
+            $reader = New-Object System.IO.StreamReader($entry.Open())
+            $manifestXml = $reader.ReadToEnd()
+            $reader.Close()
+          } finally {
+            $zip.Dispose()
+          }
+
+          Write-Host '----- Real AppxManifest.xml contents (from inside the built package, not a template) -----'
+          Write-Host $manifestXml
+
+          [xml]$manifest = $manifestXml
+          $ns = New-Object System.Xml.XmlNamespaceManager($manifest.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $identityNode = $manifest.SelectSingleNode('//a:Identity', $ns)
+          $propsNode = $manifest.SelectSingleNode('//a:Properties/a:PublisherDisplayName', $ns)
+
+          $expected = @{
+            IdentityName      = 'PonyABC.PonyABCDesktop'
+            IdentityPublisher = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+            PublisherDisplay  = 'PonyABC'
+          }
+          $actual = @{
+            IdentityName      = $identityNode.GetAttribute('Name')
+            IdentityPublisher = $identityNode.GetAttribute('Publisher')
+            PublisherDisplay  = $propsNode.InnerText
+          }
+
+          $mismatches = @()
+          foreach ($key in $expected.Keys) {
+            if ($actual[$key] -ne $expected[$key]) {
+              $mismatches += "  $key`: expected '$($expected[$key])', got '$($actual[$key])'"
+            }
+          }
+          if ($mismatches.Count -gt 0) {
+            $mismatches | ForEach-Object { Write-Host "::error::$_" }
+            throw 'IDENTITY VERIFICATION FAILED — the built package does NOT carry the required Partner Center identity. See mismatches above.'
+          }
+          Write-Host "IDENTITY VERIFIED: Name='$($actual.IdentityName)' Publisher='$($actual.IdentityPublisher)' PublisherDisplayName='$($actual.PublisherDisplay)' — all match Partner Center exactly."
+
+      # --- 2b. TILE ASSET VERIFICATION (Store cert 10.1.1.11): every image the manifest ---------
+      #         references must exist in the package, and none may be electron-builder's -------
+      #         default sample art (identified by the SHA-256 of the v0.3.15 defaults). ---------
+      - name: "Store package: verify tile/logo assets are not the default Electron art"
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          Add-Type -AssemblyName System.Drawing
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          $extract = Join-Path $env:RUNNER_TEMP 'appx-assets-check'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($appx.FullName, $extract)
+
+          [xml]$m = Get-Content (Join-Path $extract 'AppxManifest.xml') -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($m.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $ns.AddNamespace('uap', 'http://schemas.microsoft.com/appx/manifest/uap/windows10')
+          $ve = $m.SelectSingleNode('//uap:VisualElements', $ns)
+          $refs = @($m.SelectSingleNode('//a:Properties/a:Logo', $ns).InnerText, $ve.GetAttribute('Square150x150Logo'), $ve.GetAttribute('Square44x44Logo'))
+          $tile = $m.SelectSingleNode('//uap:DefaultTile', $ns)
+          foreach ($attr in 'Wide310x150Logo', 'Square310x310Logo', 'Square71x71Logo') { $v = $tile.GetAttribute($attr); if ($v) { $refs += $v } }
+          Write-Host "Manifest references: $($refs -join ', ')"
+
+          # SHA-256 of electron-builder's bundled sample assets — the exact files the rejected
+          # v0.3.15 package shipped (extracted from that submitted .appx).
+          $defaultHashes = @{
+            'B6D709BA362DF5EB3FD7BB11616ECAEDE1A8C6228B366D06E8B1DA0DD3E63BDA' = 'SampleAppx.150x150.png'
+            '8BAC33B74A3C76F3E8EB04DE0F0BDB56C439398CCDC9C61811A12C62AC059327' = 'SampleAppx.44x44.png'
+            'EBDA946CECC7A2B3569BE328AB4B785091A2C7C48A28BB719E97AF22575AEB35' = 'SampleAppx.50x50.png'
+            'F93FBE8780CFE89A7AA8065D71765FDA49B48718E4AAE17BBB0E99DA4BAEDB23' = 'SampleAppx.310x150.png'
+          }
+
+          $problems = @()
+          $pkgAssets = Get-ChildItem (Join-Path $extract 'Assets') -Filter '*.png'
+          if (-not (Test-Path (Join-Path $extract 'resources.pri'))) { $problems += 'resources.pri missing (scaled assets not indexed)' }
+          foreach ($f in $pkgAssets) {
+            $h = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
+            if ($defaultHashes.ContainsKey($h)) { $problems += "$($f.Name) is electron-builder default art ($($defaultHashes[$h]))" }
+            $img = [System.Drawing.Image]::FromFile($f.FullName)
+            Write-Host ("  {0,-52} {1,5} x {2,-5}" -f $f.Name, $img.Width, $img.Height)
+            $img.Dispose()
+          }
+          foreach ($r in $refs) {
+            $base = [IO.Path]::GetFileNameWithoutExtension($r)
+            $hit = $pkgAssets | Where-Object { $_.Name -like "$base.*png" -or $_.Name -eq "$base.png" }
+            if (-not $hit) { $problems += "manifest references '$r' but no matching file is packaged" }
+          }
+          if ($problems.Count -gt 0) {
+            $problems | ForEach-Object { Write-Host "::error::$_" }
+            throw 'TILE ASSET VERIFICATION FAILED — see above.'
+          }
+          Write-Host "TILE ASSETS VERIFIED: $($pkgAssets.Count) packaged images, none default art, all manifest references resolve."
+
+      # --- 3. INSTALLATION — runs the ACTUAL delivered 1-install.ps1, not a parallel CI-only ------
+      #        reimplementation, so a passing CI run is real evidence the tester's own script ----
+      #        works, not just that installation is possible in general. --------------------------
+      - name: "Store package: run the real 1-install.ps1 (same script the tester gets)"
+        shell: pwsh
+        run: |
+          # 1-install.ps1 deliberately Set-Location's into its own folder (harmless/a no-op for a
+          # real tester, who has already cd'd there per the README before running it) — but
+          # PowerShell's current directory is process-wide, not scoped to the called script, so
+          # without Push-Location/Pop-Location that change would leak into every relative path
+          # below and silently point them at the wrong place (confirmed by a real CI run: the
+          # script's own log showed it wrote test-kit-state.json successfully, while this
+          # wrapper's own Test-Path for the same file, one line later, reported it missing).
+          Push-Location 'release'
+          try {
+            & '.\1-install.ps1'
+            if ($LASTEXITCODE -ne 0) { throw "1-install.ps1 exited with code $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
+
+          if (-not (Test-Path 'release\test-kit-state.json')) { throw '1-install.ps1 did not write test-kit-state.json.' }
+          $state = Get-Content 'release\test-kit-state.json' -Raw | ConvertFrom-Json
+          Write-Host "State file contents: $($state | ConvertTo-Json -Compress)"
+          if (-not $state.certImportedByUs) {
+            throw "Expected certImportedByUs=true on a clean runner (no prior trust for this run's fresh cert) — got false. The thumbprint-tracking logic may be broken."
+          }
+          if ($state.packageFamilyName -ne 'PonyABC.PonyABCDesktop_f1jemggxjsyxg') {
+            throw "State file's recorded PackageFamilyName '$($state.packageFamilyName)' does not match the Partner Center-registered value."
+          }
+          Write-Host "1-install.ps1 verified end-to-end: checksum, certificate thumbprint tracking, install, and identity all correct."
+
+      # --- 4. LAUNCH ------------------------------------------------------------------------------
+      - name: "Store package: verify the installed app actually launches"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          # NOT `Get-ChildItem -Filter '*.exe'` — a real run showed it finds nothing under
+          # InstallLocation (WindowsApps' restrictive ACLs block a plain, non-`-Force` directory
+          # listing even for an admin). Read the executable's real relative path straight out of
+          # the installed AppxManifest.xml instead — the same source of truth Windows itself uses
+          # to launch the app, not a filesystem guess.
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns2 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns2.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns2).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
+          if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) { throw "LAUNCH FAILED: manifest names executable '$exeRelPath' but no such file exists at '$exePath'." }
+          Write-Host "Resolved real executable from the installed manifest: $exePath"
+
+          $proc = Start-Process -FilePath $exePath -PassThru
+          Start-Sleep -Seconds 8
+          $running = Get-Process -Id $proc.Id -ErrorAction SilentlyContinue
+          if (-not $running) {
+            throw "LAUNCH FAILED: process (PID $($proc.Id)) launched from the installed package is not running 8s later — it exited immediately or crashed on startup."
+          }
+          Write-Host "LAUNCH OK: '$($running.ProcessName)' (PID $($proc.Id)) is running from the installed MSIX package."
+          & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
+
+      # --- 4b. REAL WINDOWS SCREENSHOTS: genuine native captures for the Store listing, replacing
+      #         the macOS-dev-build placeholders for Firmware/Settings (and refreshing the rest
+      #         with real Windows chrome) — same platform-agnostic CDP tool used for the mac
+      #         captures, no separate implementation to maintain. ------------------------------------
+      - name: "Store package: capture real screenshots from the installed package"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns4 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns4.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns4).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
+          New-Item -ItemType Directory -Force -Path 'release\screenshots' | Out-Null
+          node scripts/capture-screenshots.mjs $exePath 'release\screenshots' --label=winx64-msix
+          if ($LASTEXITCODE -ne 0) { throw "capture-screenshots.mjs failed with exit code $LASTEXITCODE" }
+          Get-ChildItem 'release\screenshots' | ForEach-Object { Write-Host "Captured: $($_.Name) ($([math]::Round($_.Length / 1KB)) KB)" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-screenshots
+          path: release/screenshots/*.png
+          if-no-files-found: error
+
+      # --- 5. FUNCTIONAL PROBE: firmware wizard plumbing (elevation / working dir / log / --------
+      #        recovery marker) — harmless stand-in tool, NEVER a real vendor binary or a pen. ----
+      - name: "Store package: firmware wizard plumbing probe (harmless stand-in, no vendor tool/pen)"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          # Same reasoning as the launch-verification step above: resolve the real executable from
+          # the installed manifest, not a directory listing (WindowsApps' ACLs block that).
+          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns3 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
+          $ns3.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns3).GetAttribute('Executable')
+          $exePath = Join-Path $installed.InstallLocation $exeRelPath
+          $probeOutput = Join-Path $env:RUNNER_TEMP 'msix-firmware-probe-result.json'
+          if (Test-Path $probeOutput) { Remove-Item $probeOutput -Force }
+
+          # These are inherited by the child process Start-Process below launches (default Win32
+          # CreateProcess behavior — no special flag needed) — this is the ONLY thing that tells
+          # the packaged app to run the probe instead of its normal startup.
+          $env:PONYABC_MSIX_FIRMWARE_PROBE = '1'
+          $env:PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT = $probeOutput
+
+          Write-Host 'Launching the installed package with the firmware plumbing probe enabled...'
+          Write-Host 'NOTE: this probe triggers a REAL UAC elevation prompt (for a harmless local stand-in script, never a vendor tool). In this non-interactive CI session nothing can click "Yes" — a timeout here is an expected, informative outcome, not a build failure.'
+          $proc = Start-Process -FilePath $exePath -PassThru
+          $exited = $proc.WaitForExit(150000)
+
+          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE -ErrorAction SilentlyContinue
+          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT -ErrorAction SilentlyContinue
+
+          if (-not $exited) {
+            Write-Host '::warning::Probe process did not exit within 150s — most likely a blocked/hung interactive UAC consent prompt with no one able to click it in this CI session. Killing the process tree; this specific question (does the real UAC prompt work under MSIX) needs the real-machine test, not CI.'
+            & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
+          }
+
+          "## Firmware wizard plumbing probe" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if (Test-Path $probeOutput) {
+            $resultJson = Get-Content -Path $probeOutput -Raw
+            Write-Host '----- Probe result JSON -----'
+            Write-Host $resultJson
+            "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```json' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            $resultJson | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          } else {
+            Write-Host '::warning::No probe result file was produced.'
+            "`nNo result file was produced (process exited or was killed before writing output — see the warning above)." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+        # Deliberately not `if: always()`-guarded or fatal: a timeout/inconclusive result here is
+        # real, useful information to report, not a reason to fail the whole workflow run.
+        continue-on-error: true
+
+      # --- 6. CLEANUP — runs the ACTUAL delivered 3-cleanup.ps1, validating its thumbprint-scoped
+      #        removal logic for real (this run's cert should show certImportedByUs=true and get
+      #        removed; a pre-existing cert never would). -------------------------------------------
+      - name: "Store package: run the real 3-cleanup.ps1 (same script the tester gets)"
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'release\3-cleanup.ps1')) {
+            Write-Host '3-cleanup.ps1 not present (an earlier step likely failed before bundling) — falling back to a plain uninstall.'
+            $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue
+            if ($installed) { Remove-AppxPackage -Package $installed.PackageFullName }
+            exit 0
+          }
+          $thumbprintBefore = if (Test-Path 'release\test-kit-state.json') { (Get-Content 'release\test-kit-state.json' -Raw | ConvertFrom-Json).certThumbprint } else { $null }
+
+          & '.\release\3-cleanup.ps1'
+          if ($LASTEXITCODE -ne 0) { throw "3-cleanup.ps1 exited with code $LASTEXITCODE" }
+
+          if (Get-AppxPackage -Name 'PonyABC.PonyABCDesktop' -ErrorAction SilentlyContinue) {
+            throw '3-cleanup.ps1 ran but the package is still installed.'
+          }
+          if ($thumbprintBefore -and (Get-ChildItem 'Cert:\LocalMachine\TrustedPeople' | Where-Object Thumbprint -eq $thumbprintBefore)) {
+            throw "3-cleanup.ps1 ran but certificate thumbprint $thumbprintBefore (which this run imported) is still present."
+          }
+          Write-Host '3-cleanup.ps1 verified end-to-end: package uninstalled, and this run''s own certificate thumbprint removed.'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-appx
+          # dist:win:appx's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar,
+          # same convention as the NSIS .exe artifact above. Scoped to *.appx.sha256 specifically
+          # (not the broader *.sha256) since by this point in the job release/ also contains the
+          # .exe's own checksum from the earlier dist:win step. The .cer is the PUBLIC half of
+          # this run's ephemeral test-signing cert (see the packaging step) — published so anyone
+          # downloading this artifact (not building it themselves) has a matching cert to
+          # sideload-trust it with. Never the .pfx/private key. The .ps1/.md files are the
+          # tester-facing kit (store-assets/windows-test-kit/), bundled and syntax-checked earlier
+          # in this job, and just exercised for real by steps 3 and 6 above using these EXACT
+          # files (not a parallel copy) — test-kit-state.json is deliberately excluded (removed by
+          # 3-cleanup.ps1 already; it's this CI run's own artifact, not something a tester needs).
+          path: |
+            release/*.appx
+            release/*.appx.sha256
+            release/*.cer
+            release/*.ps1
+            release/README.md
+          if-no-files-found: error
+
+      # Same rationale as the .exe's own release-upload step above: land the Store package next
+      # to the .exe and .dmg installers on the tagged GitHub Release, not just as a login-gated
+      # workflow artifact. This is a GitHub Release asset for LOCAL SIDELOAD TESTING only — a
+      # test-certificate-signed package, never a normal customer installer, and NOT the Microsoft
+      # Store listing itself, which is submitted separately via Partner Center.
+      - name: Attach Store test package to the matching GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 release/*.cer --repo "${GITHUB_REPOSITORY}" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

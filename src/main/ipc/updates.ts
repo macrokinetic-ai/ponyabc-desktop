@@ -14,8 +14,15 @@ const LATEST_RELEASE_PAGE_URL = `https://github.com/${REPO}/releases/latest`;
  * NSIS differential update) isn't viable yet either way; "updating" means the user clicks
  * through to the GitHub release page and installs the new build manually, same as any other
  * unsigned desktop app download.
+ *
+ * A Store-installed (MSIX) build never reaches any of that: the Microsoft Store manages its
+ * own updates, and telling a Store user to grab the GitHub .exe over it would fight the
+ * platform's own update mechanism. Short-circuit before the network call entirely.
  */
 export async function checkForUpdates(): Promise<UpdateCheckResult> {
+  if (process.windowsStore === true) {
+    return { status: 'store-managed' };
+  }
   const currentVersion = app.getVersion();
   try {
     const response = await fetch(LATEST_RELEASE_API_URL, {

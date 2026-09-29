@@ -37,7 +37,7 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
     }
   }
 
-  const variant = appInfo ? identifyAppVariant(appInfo.platform, appInfo.arch) : null;
+  const variant = appInfo ? identifyAppVariant(appInfo.platform, appInfo.arch, appInfo.isWindowsStore) : null;
   const variantLabel = variant ? (variant.labelKey ? t(variant.labelKey) : t('about.variantUnknown')) : '';
 
   async function handleCopy() {
@@ -79,24 +79,33 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
           </button>
 
           <div className="update-check">
-            {checkingUpdate && <p className="hint">{t('about.checkingUpdates')}</p>}
-            {!checkingUpdate && updateResult?.status === 'up-to-date' && <p className="hint">{t('about.upToDate')}</p>}
-            {!checkingUpdate && updateResult?.status === 'update-available' && (
+            {/* Store-managed builds never show the manual check/download UI at all — Microsoft
+                Store owns updates for this install, and there is nothing meaningful to "check"
+                or a GitHub build to download here. */}
+            {updateResult?.status === 'store-managed' ? (
+              <p className="hint">{t('about.storeManagedUpdates')}</p>
+            ) : (
               <>
-                <p>{t('about.updateAvailable', { version: updateResult.latestVersion })}</p>
-                <button
-                  type="button"
-                  className="button button--primary"
-                  onClick={() => void window.ponyabc.openLatestReleasePage()}
-                >
-                  {t('about.downloadUpdateButton')}
+                {checkingUpdate && <p className="hint">{t('about.checkingUpdates')}</p>}
+                {!checkingUpdate && updateResult?.status === 'up-to-date' && <p className="hint">{t('about.upToDate')}</p>}
+                {!checkingUpdate && updateResult?.status === 'update-available' && (
+                  <>
+                    <p>{t('about.updateAvailable', { version: updateResult.latestVersion })}</p>
+                    <button
+                      type="button"
+                      className="button button--primary"
+                      onClick={() => void window.ponyabc.openLatestReleasePage()}
+                    >
+                      {t('about.downloadUpdateButton')}
+                    </button>
+                  </>
+                )}
+                {!checkingUpdate && updateResult?.status === 'error' && <p className="hint">{t('about.checkFailed')}</p>}
+                <button type="button" className="button" disabled={checkingUpdate} onClick={() => void handleCheckForUpdates()}>
+                  {t('about.checkUpdatesButton')}
                 </button>
               </>
             )}
-            {!checkingUpdate && updateResult?.status === 'error' && <p className="hint">{t('about.checkFailed')}</p>}
-            <button type="button" className="button" disabled={checkingUpdate} onClick={() => void handleCheckForUpdates()}>
-              {t('about.checkUpdatesButton')}
-            </button>
           </div>
         </>
       )}

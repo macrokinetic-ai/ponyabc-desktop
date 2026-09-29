@@ -10,6 +10,7 @@
     "variantMacArm64": "Mac · Apple Silicon",
     "variantMacX64": "Mac · Intel",
     "variantWinX64": "Windows · x64",
+    "variantWinX64Msix": "Windows · x64 (Microsoft Store)",
     "variantUnknown": "Nicht erkannter Build",
     "copyButton": "Versionsinfo kopieren",
     "copiedConfirmation": "Kopiert!",
@@ -18,7 +19,8 @@
     "upToDate": "Sie verwenden die neueste Version.",
     "updateAvailable": "Eine neue Version ist verfügbar: {{version}}",
     "downloadUpdateButton": "Zur Download-Seite",
-    "checkFailed": "Updates konnten nicht geprüft werden (sind Sie online?)."
+    "checkFailed": "Updates konnten nicht geprüft werden (sind Sie online?).",
+    "storeManagedUpdates": "Aus dem Microsoft Store installiert — Updates werden automatisch verwaltet."
   },
   "diagnostics": {
     "title": "Diagnose",

@@ -10,6 +10,7 @@
     "variantMacArm64": "Mac · Apple Silicon",
     "variantMacX64": "Mac · Intel",
     "variantWinX64": "Windows · x64",
+    "variantWinX64Msix": "Windows · x64 (Microsoft Store)",
     "variantUnknown": "Unrecognized build",
     "copyButton": "Copy version info",
     "copiedConfirmation": "Copied!",
@@ -18,7 +19,8 @@
     "upToDate": "You're on the latest version.",
     "updateAvailable": "A new version is available: {{version}}",
     "downloadUpdateButton": "Go to download page",
-    "checkFailed": "Couldn't check for updates (are you online?)."
+    "checkFailed": "Couldn't check for updates (are you online?).",
+    "storeManagedUpdates": "Installed from Microsoft Store — updates are handled automatically."
   },
   "diagnostics": {
     "title": "Diagnostics",
@@ -38,7 +40,7 @@
     "privacy": {
       "title": "Privacy",
       "versionLine": "Version {{version}} · Last updated {{date}}",
-      "companyLine": "Responsible company: PonyABC (trading name; \"PonyABC\" is a registered trade mark, registered in England). Full legal company name, registration number, and registered address: to be confirmed.",
+      "companyLine": "Responsible company: PonyABC (trading name of MACROKINETIC MEDIATECH LIMITED, company number 16420643; \"PonyABC\" is a registered trade mark, registered in England). Registered office: 128 City Road, London, United Kingdom, EC1V 2NX. Correspondence address (for customer contact, not the registered office): 34 Redbourne Avenue, London, United Kingdom, N3 2BS.",
       "localHeading": "What stays on your computer",
       "localBody": "Your DIY recordings and any BOOK content are copied directly between your pen and this computer by this app. Neither is ever uploaded anywhere by this app.",
       "networkHeading": "What this app sends over the network, and why",

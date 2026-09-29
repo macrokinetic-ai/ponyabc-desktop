@@ -982,3 +982,718 @@ the app's actual home via the existing left-side Home navigation, never close th
       return-to-Prepare behavior AND that a fresh "Next" click lands on a clean Package step
       (no stale `packageInfo`/outcome carried over). **472 tests pass, 6 skipped, across 44
       files**; `typecheck` and `build` both clean. No real firmware flash executed.
+
+# Microsoft Store (MSIX) packaging — v0.3.16 prep
+
+User-approved plan (see `/Users/aiagent/.claude/plans/reflective-jingling-allen.md` for the
+full write-up): add a Windows Store distribution channel alongside the existing GitHub
+EXE/DMG paths, using the exact Partner Center identity already reserved (`PonyABC.PonyABCDesktop`,
+publisher `CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5`, PublisherDisplayName `PonyABC`, Store ID
+`9P544XC6B609`). Grounded in official Microsoft Learn docs fetched live this session, not
+assumed from training data (Store Policy 7.20, MSIX app package requirements, MSIX desktop-app
+virtualization docs) — see the plan file for exact quotes/citations.
+
+- [x] **Build pipeline**: `electron-builder.win-msix.yml` (new, `extends: ./electron-builder.yml`,
+      overrides `win.target` to `appx` only — the existing NSIS `.exe` target is untouched).
+      Confirmed by reading the installed `electron-builder@25.1.8`'s actual
+      `node_modules/app-builder-lib/out/targets/AppxTarget.js` and its `appxmanifest.xml`
+      template directly (not just its docs site) that: the CLI target name is `appx`;
+      `applicationId` defaults cleanly to `identityName` and passes its validation regex;
+      `capabilities` in this installed version is **hardcoded to `runFullTrust` only** in the
+      template — there is no code path that could add `allowElevation` even by accident, which
+      settles that specific risk without needing a real device test. `package.json`: new
+      `dist:win:msix` / `pack:win:msix` scripts alongside the untouched `dist:win`.
+      `scripts/checksum.mjs`: now also checksums `.msix` files.
+- [x] **CI**: `.github/workflows/build-windows.yml` extended (same job, same `windows-latest`
+      runner, existing NSIS steps untouched) to: generate an ephemeral self-signed cert whose
+      Subject exactly matches the required `publisher` (never a secret, never committed, scoped
+      to `CSC_LINK`/`CSC_KEY_PASSWORD` env vars local to one step), build the MSIX, import that
+      same cert into `Cert:\LocalMachine\TrustedPeople`, then **actually run
+      `Add-AppxPackage`/`Get-AppxPackage`/`Remove-AppxPackage` against the real output** as a
+      build-time correctness gate — not just "packaging exited 0". Uploads `*.msix`+`.sha256`
+      as a separate `windows-msix` artifact and attaches both to tagged GitHub Releases, mirroring
+      the existing `.exe` pattern. **Not yet actually run** — these changes are local/committed
+      to a branch, not yet pushed, pending Benny's go-ahead to push (see final summary).
+- [x] **Variant identification**: `identifyAppVariant()` (`src/shared/appVariant.ts`) takes a
+      new optional `isWindowsStore` param → `'win-x64-msix'` identifier / new
+      `about.variantWinX64Msix` i18n key (added to all 8 locales, key-set parity verified via a
+      one-off Node script, not just eyeballed). Sourced from Electron's own `process.windowsStore`
+      runtime flag (`src/main/ipc/appInfo.ts`), not a build-time env var — it can't drift out of
+      sync with how the app actually launched, unlike a baked-in flag would.
+- [x] **Update flow**: Store builds must never be told to install the GitHub `.exe` over
+      themselves. `checkForUpdates()` (`src/main/ipc/updates.ts`) now short-circuits to a new
+      `{ status: 'store-managed' }` `UpdateCheckResult` variant *before* the GitHub API call
+      when `process.windowsStore` is true; `VersionUpdatesTab.tsx` renders a
+      "Store handles updates automatically" hint instead of the download button in that case.
+      New tests: `tests/unit/updates.test.ts` (mocks `electron`, asserts `fetch` is never called
+      in the store-managed branch), plus 3 new `appVariant.test.ts` cases for the new branch.
+      **480 tests pass, 6 skipped, across 45 files; typecheck clean** (baseline before this work:
+      474/44).
+- [x] **AppData-virtualization research finding (settings coexistence) — corrects an
+      over-cautious assumption in the approved plan.** The plan assumed a GitHub-EXE install's
+      settings wouldn't carry over to a Store install and proposed writing one-time migration
+      code. Re-reading Microsoft's own MSIX desktop-apps doc more carefully during implementation
+      surfaced a specific documented mechanic that likely makes that migration code unnecessary:
+      for `AppData` **file opens** (not directory enumeration), "if [the virtualized copy]
+      doesn't exist, the OS will attempt to open the file from the real AppData location... If
+      the file is opened from the real AppData location, then no virtualization for that file
+      occurs" (going forward). If this holds for `settings.json` specifically, a fresh MSIX
+      install's very first read of `<userData>/settings.json` would transparently see (and keep
+      using) the real, already-existing GitHub-EXE settings file, with zero app code needed.
+      **Deliberately did NOT write speculative migration code for this** — per this project's
+      own established standard (see the `copy /b` vs. `copy ..\..\script.ver` lesson above:
+      "we verified an adjacent case" is not evidence for a specific one), a documented general
+      mechanic is not the same as a verified fact about this exact file/app, and I have no
+      Windows host to test it on. Left as an explicit, named item for the real-machine
+      verification pass below, with the "write our own migration shim" fallback documented but
+      NOT implemented pre-emptively.
+- [x] **RESOLVED WITH REAL EVIDENCE (Run 6, 35497737466) — the file-visibility concern does NOT
+      materialize.** The "Store package: firmware wizard plumbing probe" CI step's real result:
+      ```json
+      {
+        "userDataPath": "C:\\Users\\runneradmin\\AppData\\Roaming\\ponyabc-desktop",
+        "elevation": { "status": "completed", "exitCode": 0 },
+        "logFileExisted": true,
+        "logContents": "PONYABC_MSIX_PROBE_OK\r\n",
+        "logContainsExpectedMarker": true,
+        "recoveryMarkerReadBackImmediately": true,
+        "stillRunningAfterCompletion": "not-running",
+        "errors": []
+      }
+      ```
+      The elevated child process genuinely found and ran `probe-tool.bat` (written by the
+      PACKAGED process under `app.getPath('userData')`), and its output was captured back into
+      `run.log` and read successfully by the packaged app. This is the exact, real, empirical
+      answer to the load-bearing question below — not a guess, not a doc-reading inference.
+      **Important remaining nuance, not overclaimed**: this CI run's elevation status was
+      `'completed'` without any visible interactive consent step — the `runneradmin` CI service
+      account most likely already has silent/auto-approved elevation rights (a common CI-runner
+      configuration), which is NOT necessarily representative of a real end-user's UAC-enabled
+      desktop. This proves the underlying mechanism and file-visibility question conclusively; it
+      does **not** yet prove what a real end-user sees at the actual "Do you want to allow this
+      app..." consent dialog — that specific, separate question needed the real-machine notebook
+      test. **Update**: since resolved by a real notebook run using
+      `store-assets/windows-test-kit/` (the file originally referenced here,
+      `windows-test-notebook.md`, was superseded by that fuller kit and has been removed) — see
+      the "REAL notebook test result" section further down for what that run confirmed and what
+      it didn't (UAC decline specifically is still open).
+      Original open-risk description, for the record (what was investigated and now resolved):
+      `elevatedRun.ts` writes its scratch files
+      (`run.bat`/`run.ps1`/`run.log`/`codepage.txt`) under `app.getPath('userData')` (i.e.
+      `firmwareRun`, under Roaming AppData) from inside the PACKAGED process, then elevates them
+      via `Start-Process -Verb RunAs`, which spawns a NEW process with **no package identity**
+      (this is what lets it avoid needing the restricted `allowElevation` capability — see
+      above). But AppData write-virtualization is applied **per accessing process's package
+      identity**, not per-file: a non-packaged process reading the identical nominal path may
+      resolve to the real (unwritten) AppData location instead of the packaged process's private
+      virtualized copy — i.e. the elevated `cmd.exe`/vendor-exe chain could simply fail to find
+      `run.bat` at all, breaking the firmware flow outright rather than merely risking extra
+      Store review. I could not resolve this conclusively from Microsoft's docs (the exact
+      cross-process visibility rule for a file that only exists in the virtualized copy, accessed
+      by a process with no package identity, isn't spelled out), and did not want to design a
+      brittle, uncertain CI-only probe for it (launching a packaged app with an env var via
+      `shell:appsFolder` doesn't reliably inherit a calling PowerShell session's `$env:` vars —
+      it goes through shell activation, not direct process inheritance — so a CI "proof" here
+      would likely just be testing the CI hack's own reliability, not the real question).
+      **Next step (real machine, not CI)**: install the sideload MSIX, run the firmware wizard
+      against the existing `PONYABC_TEST_VOLUMES_ROOT`/simulated-pen test hook, and confirm the
+      elevated batch actually launches and its log file is readable back by the (packaged) app.
+      **If it fails**: the smallest fix is moving `firmwareRun`/`firmwareDownloads`/
+      `firmwareRecovery`'s base directory from `app.getPath('userData')` to
+      `app.getPath('documents')` (confirmed NOT in Microsoft's virtualized-paths list, unlike
+      `Local`/`Roaming`) plus a clearly-named subfolder — NOT implemented pre-emptively, because
+      it's an unverified guess at a fix for an unverified problem, and Documents-folder clutter
+      is a real UX cost only worth paying if the plain `userData` path is actually proven broken.
+- [x] **The real, interactive UAC consent dialog — approval path confirmed; decline path still
+      open.** Run 6's CI probe elevation `status: 'completed'` without any visible prompt, most
+      likely because the CI service account already has silent/auto-approved elevation — not
+      evidence either way for a real end-user's UAC-enabled desktop. **Resolved (partially) by a
+      real notebook run** using `store-assets/windows-test-kit/` — approving the prompt once, from
+      a confirmed non-administrator session, is now real, demonstrated evidence. Declining the
+      prompt, and the interrupted-launch/recovery behavior, were NOT exercised by that run and
+      remain open — see the "REAL notebook test result" section further down.
+- [x] Pushed to a branch (`msix-store-packaging`, not `main`) once Benny explicitly authorized
+      it. The two pre-existing unpushed `main` commits (`2299524` fix + `8c40d24` feat, both
+      firmware result-screen work from 2026-09-16) were reviewed via `git show --stat` first per
+      Benny's explicit instruction — legitimate, already-tested, self-contained prior work,
+      nothing unexpected. They ride along as ancestors of this branch (unavoidable — any branch
+      push includes its own history) but `main` itself was never pushed to.
+
+## Correction: real package format is `.appx`, not `.msix` — verified by reading the toolchain's own code
+
+Benny explicitly asked: "state the actual package format produced; do not simply rename an APPX
+file to MSIX." Investigating this surfaced a real bug that would have broken the CI pipeline
+outright, caught before ever running it for real:
+
+- [x] Read `node_modules/app-builder-lib/out/targets/AppxTarget.js` directly (installed
+      `electron-builder@25.1.8`) — confirmed the CLI target name is `appx` (there is no separate
+      `msix` target registered in `winPackager.js`'s target-class switch at all in this version),
+      it invokes `makeappx.exe` (the classic Appx packaging tool), and the manifest template
+      (`appxmanifest.xml` inside the same package) uses only the base
+      `foundation/windows10`/`uap`/`desktop`/`rescap` schema namespaces — no MSIX-exclusive
+      manifest features (e.g. modification packages) are used or even available here. The real,
+      honest package format this toolchain produces is Appx, full stop — "MSIX" is Microsoft's
+      later branding for the same underlying format when used for a plain full-trust desktop app
+      like this one, not a different, newer container this tool actually builds.
+- [x] **Found the actual bug**: `AppxTarget.js`'s `build()` calls
+      `packager.expandArtifactBeautyNamePattern(this.options, "appx", arch)` — the second
+      positional argument is literally the string `"appx"`, and `${ext}` in any `artifactName`
+      template is substituted with EXACTLY that string, always. My original
+      `artifactName: ...winx64.${ext}` would have silently produced a file named `...winx64.appx`
+      — not `.msix` — meaning the original CI workflow's `Get-ChildItem -Filter '*.msix'` step
+      would have found nothing and failed on its very first real run. Caught by reading the
+      source before ever pushing, not by a failed CI run.
+- [x] **Fix, chosen deliberately over a rename**: renamed everything honestly to `.appx` —
+      `electron-builder.win-msix.yml` → `electron-builder.win-appx.yml`, artifactName hardcoded
+      to literal `.appx` (not relying on the `${ext}` implementation detail), npm scripts
+      `dist:win:appx`/`pack:win:appx`, `checksum.mjs`'s extension filter, the whole CI workflow's
+      step names/globs, and README wording. Partner Center's own "App package requirements for
+      MSIX app" doc explicitly lists `.appx`/`.appxbundle`/`.appxupload` as directly, equally
+      accepted Store submission formats alongside `.msix` — shipping the real `.appx` this
+      toolchain produces is correct and honest, not a downgrade, and avoids ever manufacturing a
+      `.msix`-named file whose content didn't actually come from MSIX-aware tooling.
+
+## Real CI verification, structured per Benny's request (packaging / installation / launch / functional — kept as separate, distinguishable steps, not one pass/fail blob)
+
+`.github/workflows/build-windows.yml` now has 6 distinct Store-package steps after the
+(untouched) NSIS `.exe` steps:
+
+1. **Packaging** — ephemeral self-signed test cert (Subject exactly matching the required
+   `publisher`, generated fresh per CI run, never a secret/committed/reused) + `dist:win:appx`.
+2. **Packaging verification** — unzips the real built `.appx` (via
+   `System.IO.Compression.ZipFile`, not `Expand-Archive`, which doesn't reliably handle every
+   Appx block-map layout), reads the REAL `AppxManifest.xml` bytes (prints them in full to the
+   log — not a template, not an assumption), and asserts Identity `Name`/`Publisher` and
+   `Properties/PublisherDisplayName` match the required Partner Center values **exactly**,
+   failing the build with a clear diff if not.
+3. **Installation** — real `Add-AppxPackage`, then asserts the *Windows-computed*
+   `PackageFamilyName` (a hash of Identity Name + Publisher that only Windows itself computes)
+   equals the Partner Center-registered `PonyABC.PonyABCDesktop_f1jemggxjsyxg` exactly — the
+   strongest possible proof the identity is really correct, since this isn't a value anything in
+   our own config controls or could get "accidentally right."
+4. **Launch** — starts the installed package's real `.exe` directly from its
+   `Get-AppxPackage`-reported `InstallLocation`, waits 8s, confirms the process is still running
+   (not just that `Start-Process` didn't throw), then tree-kills it.
+5. **Functional probe (firmware plumbing)** — see below. Deliberately `continue-on-error: true`:
+   an inconclusive/timeout result here is real, useful information, not a workflow failure.
+6. **Cleanup** — `Remove-AppxPackage`, `if: always()`.
+
+### Firmware wizard plumbing probe — exercises real production code, never a vendor tool or a pen
+
+Benny's instruction was explicit: investigate the packaged/unpackaged elevation path question
+with a harmless helper that exercises the ACTUAL elevation/working-dir/log-reading/recovery-
+marker code, and do not assume the elevated child lacks package identity — verify it.
+
+- [x] New `src/main/services/msixFirmwarePlumbingProbe.ts` — calls the REAL, unmodified
+      `runElevated()` (`elevatedRun.ts`) and `writePendingRun`/`readPendingRun`/`clearPendingRun`/
+      `checkStillRunning` (`firmwareRecovery.ts`) against the SAME real directories
+      `startFirmwareUpgrade` uses (`<userData>/firmwareRun`, `<userData>/firmwareDownloads/...`,
+      `<userData>/firmwareRecovery/pending.json`) — not test-convenient stand-in paths. The only
+      thing substituted is the target executable: a two-line generated `probe-tool.bat` (name
+      deliberately nothing like a vendor filename) that echoes a fixed marker string and exits 0.
+      Never touches `isd_download.exe`/`ufw_maker.exe`/any downloaded vendor content, never
+      requires a pen.
+- [x] Wired into `src/main/index.ts` behind `PONYABC_MSIX_FIRMWARE_PROBE=1` +
+      `PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT=<path>` — runs before any window/IPC handler, writes its
+      full JSON result (including the real `RunElevatedResult`, the actual `run.log` contents if
+      any, and every step's own success/failure) to the given path, then `app.quit()`s
+      immediately. Never runs unless both env vars are explicitly set.
+- [x] **This directly tests, rather than assumes, the load-bearing question**: `runElevated`'s own
+      generated `run.bat` literally does `"<probeToolPath>" ... > run.log 2>&1` — if the elevated
+      (package-identity-stripped-by-`Start-Process -Verb RunAs`, per the ORIGINAL hypothesis) child
+      process cannot actually see the packaged parent's `probeToolPath` (written under
+      `app.getPath('userData')`), that failure shows up directly and unambiguously in `run.log`
+      (a real "not recognized"/"cannot find the file" error) rather than needing a separate
+      package-identity-detection mechanism. If the marker string echoes back successfully, the
+      concern is empirically resolved regardless of the exact technical reason. Explicitly does
+      NOT assume the outcome either way going in — see CI results below once a real run completes.
+- [x] 4 new unit tests (`tests/unit/msixFirmwarePlumbingProbe.test.ts`) — real filesystem I/O
+      against a temp dir standing in for `userData` (only `electron.app.getPath` is mocked), real
+      (unmocked) `runElevated`/`writePendingRun`/etc. calls. On this non-Windows dev machine,
+      `runElevated` itself correctly short-circuits to `unsupported-platform` (its own existing,
+      already-tested platform check) — confirms the probe's plumbing (path construction, stale-run
+      cleanup, recovery-marker round trip) without needing Windows, while the actual elevation
+      question stays honestly deferred to the real Windows CI run. **484 tests pass, 6 skipped,
+      across 46 files; typecheck clean.**
+- [ ] **Real CI run results — pending**, this is the very next step after this commit is pushed.
+      Will report: whether packaging/manifest/identity/install/launch all pass as designed, and
+      the actual probe JSON (or an honest "timed out — needs the interactive real-machine test"
+      if the UAC prompt blocks non-interactively, which is itself expected and useful to confirm).
+
+## First real CI run: caught a self-inflicted bug before packaging ever ran
+
+Pushed `msix-store-packaging` (Benny explicitly authorized), checked the 2 pre-existing unpushed
+`main` commits' contents first as instructed (legitimate prior firmware-UI work, nothing
+unexpected), then dispatched the workflow manually via `gh workflow run build-windows.yml --ref
+msix-store-packaging` (a plain branch push does not trigger it — only `main`/tags do). Confirmed
+the dispatch genuinely used the branch's updated workflow content (new step names showed up in
+`gh run view`), not a stale `main` copy.
+
+- [x] **Run 1 (35496447966) failed at the ordinary `npm test` step** — before packaging ever
+      started. Root cause: `tests/unit/msixFirmwarePlumbingProbe.test.ts` called the real,
+      unmocked `runMsixFirmwarePlumbingProbe()` (hence the real `runElevated()`) unconditionally.
+      On this Mac dev sandbox that's harmless (`runElevated` short-circuits to
+      `unsupported-platform` instantly), but `npm test` also runs for real on `windows-latest` in
+      this very workflow — there, it genuinely attempted `Start-Process -Verb RunAs`, which
+      blocked past vitest's default 5000ms per-test timeout in a non-interactive session,
+      failing the whole job. This exact class of mistake already had a documented fix in this
+      repo (`elevatedRun.windows-smoke.test.ts`'s own header explains it) — I should have checked
+      for that convention before writing a new test that touches the same real mechanism, and
+      didn't.
+- [x] **Fix, matching the existing convention exactly**: split into two files.
+      `msixFirmwarePlumbingProbe.test.ts` now mocks `runElevated` (via `vi.mock` with
+      `importOriginal`, keeping every OTHER function — `writePendingRun`/`readPendingRun`/
+      `clearPendingRun`/`checkStillRunning` — real) so it stays fast and safe on every platform,
+      including real Windows CI; it simulates exactly what a real elevated run writes to
+      `run.log` so downstream assertions (marker content, error paths on a `declined`/non-
+      completed outcome) stay meaningful. The real, unmocked mechanism moved to a new
+      `msixFirmwarePlumbingProbe.windows-smoke.test.ts`, gated behind the SAME
+      `PONYABC_RUN_ELEVATION_SMOKE=1` + Windows-only guard as `elevatedRun.windows-smoke.test.ts`
+      (same underlying mechanism, reusing the same opt-in variable is correct, not just
+      convenient), added as a second step in `.github/workflows/firmware-elevation-smoke.yml`
+      (manual-dispatch-only, never runs on push/tag/the main build workflow), and bumped that
+      workflow's timeout from 8 to 15 minutes to cover both files' full budgets.
+- [x] **484 → 486 tests pass, 7 skipped (up from 6 — the new smoke file's skip placeholder),
+      across 47 files; typecheck clean; full local `npm test` run completes in ~2.7s** (confirms
+      the fast file no longer risks a real elevation attempt on any platform).
+- [x] Committed and pushed the fix to `msix-store-packaging`; re-dispatched the workflow.
+
+## Run 2 (35496829480): npm test now passes; packaging itself failed on a runner/tooling issue
+
+Real progress — `typecheck`/`test`/`dist:win` (NSIS) all passed this time, confirming the test
+fix worked. The NEW Store-package packaging step failed with:
+
+```
+SignTool Error: A required function is not present.
+```
+
+- [x] **Real, verified cause**: electron-builder's own bundled `signtool.exe` (from its
+      `winCodeSign-2.6.0` vendor package, cached at
+      `AppData\Local\electron-builder\Cache\winCodeSign\...\windows-10\x64\signtool.exe`) is
+      incompatible with the current `windows-latest` runner image — a known class of issue
+      (GitHub periodically bumps the underlying Windows Server image; an old vendored signtool
+      binary can start failing against newer OS DLL export sets). This has nothing to do with the
+      appx target, the manifest, or the identity config — confirmed by reading the actual error
+      (a generic SignTool/CryptoAPI failure, thrown before any manifest/identity code runs at
+      all).
+- [x] **Fix**: read `node_modules/app-builder-lib/out/codeSign/windowsSignToolManager.js`
+      directly — `getToolPath()` checks `process.env.SIGNTOOL_PATH` FIRST, before falling back to
+      the vendored binary. `build-windows.yml`'s packaging step now locates the real Windows SDK
+      `signtool.exe` already present on the runner (via Visual Studio Build Tools, under
+      `C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe`) and sets `SIGNTOOL_PATH` to
+      it before calling `npm run dist:win:appx`. This only affects local/CI test-signing (the
+      real Store submission needs no certificate/signtool at all — Microsoft re-signs on
+      ingestion).
+- [x] Pushed, re-dispatched.
+
+## Run 3 (35497047418): npm test failed again — but a real fs/AV timing issue, not the same bug
+
+`typecheck`/`dist:win` etc. unaffected; `npm test` failed again, but tellingly only ONE test in
+`msixFirmwarePlumbingProbe.test.ts` (the fast, mocked file) timed out at vitest's 5000ms default,
+while the other 4 tests in that SAME file — calling the exact same mocked
+`runMsixFirmwarePlumbingProbe()` — passed in ~400-450ms each. That pattern rules out "the mock
+isn't working" (it clearly is, for 4/5 tests) and points at a one-time cold-start cost instead.
+
+- [x] **Real, verified cause**: this repo's own `elevatedRun.windows-smoke.test.ts` already
+      documents real, multi-second Windows filesystem latency around fresh `.bat` files on
+      `windows-latest` (an `EBUSY` on cleanup there, attributed to antivirus real-time scanning).
+      My probe module also writes a `.bat` file (`probe-tool.bat`) on every call; whichever test
+      happens to run first in the file pays that one-time cost and can exceed vitest's 5s
+      default, while the rest (same file, same mock, already "warmed up") comfortably don't.
+- [x] **Fix**: gave all 5 tests in the fast file an explicit 15s timeout (`WINDOWS_FS_TIMEOUT_MS`)
+      — the same kind of fix this repo's existing smoke test already uses for its own Windows
+      timing surprises, not a new pattern. Confirmed locally: still passes, still fast (~2.6s
+      total for the whole suite on this dev machine — the 15s ceiling is headroom for Windows
+      CI's slower first-touch cost, not a new baseline).
+- [x] Pushed, re-dispatched.
+
+## Run 4 (35497255632): npm test passed; packaging failed on a SECOND, different signtool issue
+
+Confirms the fs-timeout fix worked (`npm test` green). The `SIGNTOOL_PATH` fix from Run 2 also
+worked — the packaging step now genuinely uses the Windows SDK's own signtool.exe (log showed it
+resolving to `C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe`) — but hit
+a NEW error signing the inner `PonyABC Desktop.exe` before appx wrapping:
+
+```
+SignTool Error: No file digest algorithm specified. Please specify the digest algorithm with the
+/fd flag.
+```
+
+- [x] **Real, verified cause**: read `windowsSignToolManager.js`'s `computeSignToolArgs()`
+      directly. electron-builder dual-signs each inner `.exe` with sha1 THEN sha256 by default
+      (`hashes = ["sha1", "sha256"]` when `signingHashAlgorithms` isn't set) — and for the sha1
+      pass specifically, its own code deliberately omits `/fd` (`if (!isWin || options.hash !==
+      "sha1") { args.push(isWin ? "/fd" : "-h", options.hash); ... }`), relying on signtool
+      historically defaulting to SHA1 when unspecified. The Windows SDK's current signtool.exe
+      (10.0.26100.0) no longer allows that omission at all — a second, independent incompatibility
+      from Run 2's vendored-binary one, this time in electron-builder's own default signing
+      behavior against a stricter modern signtool, not the tool location.
+- [x] **Fix**: `electron-builder.win-appx.yml`'s `win:` block now sets `signingHashAlgorithms:
+      [sha256]`, skipping the broken sha1 pass entirely — correct anyway, since this package only
+      ever targets Windows 10+, with no legacy-OS reason to keep sha1. Scoped to this file only —
+      the base `electron-builder.yml` (NSIS `.exe`) and both mac configs are untouched.
+- [x] Pushed, re-dispatched.
+
+## Run 5 (35497465010): packaging, manifest identity, AND install/PackageFamilyName all passed for real
+
+Genuine milestone — the first three verification layers all passed on a real Windows runner:
+
+- [x] **Packaging**: `.appx` built successfully with both signtool fixes.
+- [x] **Manifest identity verification**: the REAL `AppxManifest.xml` inside the built package
+      carries `Identity Name='PonyABC.PonyABCDesktop'`, `Publisher='CN=E476FCF5-1C63-4A56-85B1-
+      DA5D642911B5'`, `PublisherDisplayName='PonyABC'` — all confirmed byte-for-byte against
+      Partner Center's required values, not assumed from the config file.
+- [x] **Installation + the strongest identity proof available**: `Add-AppxPackage` succeeded, and
+      Windows' own real, independently-computed `PackageFamilyName` came back as
+      `PonyABC.PonyABCDesktop_f1jemggxjsyxg` — an EXACT match to the Partner Center-registered
+      value. This is Windows itself confirming the identity is right, not our own config
+      reporting back what we told it.
+
+**Launch verification then failed** — but on a CI-script bug, not an app problem:
+`Get-ChildItem -Path $installed.InstallLocation -Filter '*.exe'` found nothing (confirmed by the
+error message itself showing the correct install path,
+`...\WindowsApps\PonyABC.PonyABCDesktop_0.3.15.0_x64__f1jemggxjsyxg`, which also independently
+re-confirms the exact same PackageFamilyName suffix). Root cause: `WindowsApps`'s restrictive
+ACLs block a plain directory listing there, even for an admin account, without `-Force` — a
+known, documented Windows behavior, not a broken package.
+
+- [x] **Fix**: both the launch-verification and firmware-probe steps now resolve the real
+      executable path by reading the `Executable` attribute straight out of the INSTALLED
+      `AppxManifest.xml` (the same source of truth Windows itself uses to launch the app), instead
+      of listing the directory. More robust than a filesystem guess either way.
+- [x] Pushed, re-dispatched.
+
+## Run 6 (35497737466): FULLY GREEN — packaging, identity, install, launch, and the firmware probe all passed
+
+The whole job passed for the first time. Summary of what's now real, verified evidence (not
+assumption) as of this run:
+
+- **Packaging**: `PonyABC-Desktop-v0.3.15-winx64.appx` built, 115.48 MB.
+- **Manifest identity**: `Name='PonyABC.PonyABCDesktop'`, `Publisher='CN=E476FCF5-1C63-4A56-85B1-
+  DA5D642911B5'`, `PublisherDisplayName='PonyABC'` — read from inside the real built package,
+  matches Partner Center exactly.
+- **Install + strongest identity proof**: real, Windows-computed `PackageFamilyName` =
+  `PonyABC.PonyABCDesktop_f1jemggxjsyxg` — matches the Partner Center-registered value exactly.
+- **Launch**: `PonyABC Desktop.exe` (PID 5696) confirmed running 8s after launch from the
+  installed package.
+- **Firmware plumbing probe**: elevation completed, the elevated child found and ran the
+  packaged parent's file under `app.getPath('userData')`, log captured and read back correctly,
+  recovery marker round-tripped correctly. See the resolved risk entry above for the full result
+  and the one remaining, separate, real-human-only question (the actual interactive UAC dialog).
+- **Artifacts produced**: `windows-installer` (NSIS `.exe`, unaffected throughout) and
+  `windows-appx` (the new Store package) — both downloadable from this run's Actions page.
+- Both macOS `.dmg` build workflows (`build-mac.yml`) were never touched by any of this work.
+
+## Complete Windows test kit (`store-assets/windows-test-kit/`) — per Benny's detailed review of the first draft
+
+Benny's follow-up review caught a real, important flaw in my first chat-only instructions: they
+had the tester run the firmware probe from the SAME Administrator PowerShell window used for
+install — which would make the UAC test meaningless (an already-elevated parent's child process
+elevation requests get silently auto-approved, exactly why CI's own probe run never showed a
+prompt). Built a proper, self-contained kit instead:
+
+- [x] `1-install.ps1` (run as Administrator): discovers the `.appx` by pattern (not a hardcoded
+      version string, so it keeps working across future releases), verifies its SHA-256, reads
+      the `.cer`'s exact certificate **thumbprint** (not just Subject — multiple certs can share
+      a Subject), checks whether that exact thumbprint is already trusted before importing
+      (never overwrites/duplicates), installs, verifies the real `PackageFamilyName`, and records
+      everything (including whether IT imported the cert vs. found it already trusted) to
+      `test-kit-state.json` for cleanup to use later.
+- [x] `2-run-firmware-probe.ps1` (must run from a NORMAL, non-administrator session — checks for
+      and refuses to run elevated, with a clear explanation why): resolves the real exe from the
+      installed `AppxManifest.xml`, launches it with the probe env vars wrapped in `try/finally`
+      so they're cleared even if something throws, and confirms the LAUNCHED PROCESS itself
+      carries real package identity via the documented Win32 `GetPackageFullName` API (succeeds
+      only for a process with package identity, fails with `APPMODEL_ERROR_NO_PACKAGE` otherwise)
+      — not just "it's installed under WindowsApps." Takes an optional `-DelaySeconds` param.
+- [x] **New, small, deliberate production-adjacent change**: `msixFirmwarePlumbingProbe.ts` gained
+      an optional `PONYABC_MSIX_PROBE_DELAY_SECONDS` (1-60, clamped) env var that inserts a real
+      `ping -n <n> 127.0.0.1 >nul` pause into the harmless stand-in script before it prints its
+      marker — the original script finished in well under a second, far too fast for a human to
+      deliberately interrupt mid-flight to test the crash-recovery behavior. 4 new unit tests
+      (delay present/absent/clamped) — 488 tests pass, 7 skipped, 47 files; typecheck clean.
+- [x] `3-cleanup.ps1` (Administrator): removes the package, and removes the certificate thumbprint
+      ONLY if `test-kit-state.json` says this kit imported it — never a pre-existing cert that
+      happened to share the same Subject, never touching trust that existed before.
+- [x] **Precise recovery-behavior guidance, not "does it reopen ok"**: read the actual
+      `FirmwareScreen.tsx`/`firmware.ts` recovery code and the real English UI text
+      (`recovery.title`/`stillRunningBody`/`unknownBody` in `en/firmware.json`) rather than
+      guessing. The kit's README documents two genuinely different, both-correct cases: (A)
+      interrupted before approving UAC → nothing ever ran → correctly auto-clears silently, new
+      attempt works immediately; (B) interrupted while the (now-delayable) stand-in script is
+      still genuinely running → must show the real blocking "Previous upgrade not confirmed
+      finished" screen and refuse a new firmware attempt or BOOK/DIY pen write until resolved —
+      and explicitly flags that an uncertain state getting silently cleared instead would be a
+      real bug, not a pass.
+- [x] **CI now runs the ACTUAL delivered scripts, not a parallel reimplementation**: the
+      packaging job copies `store-assets/windows-test-kit/*.ps1` + `README.md` into `release/`,
+      runs a real PowerShell AST parse (`[System.Management.Automation.Language.Parser]::ParseFile`)
+      on all 3 scripts as a syntax gate, then the installation step runs the real `1-install.ps1`
+      (asserting `certImportedByUs=true` and the correct `PackageFamilyName` in its own state
+      file) and the cleanup step runs the real `3-cleanup.ps1` (asserting the package is gone and
+      that exact thumbprint is removed) — so a green CI run is real evidence the tester's exact
+      scripts work end-to-end, not just that installation is possible in general via different
+      inline CI code. The `windows-appx` artifact now bundles the appx/checksum/cert together
+      with the 3 scripts and README in one download.
+- [x] Pushed, re-dispatched.
+
+## Run 8 (35557075347): running the real scripts caught 2 more real bugs, before any tester saw them
+
+Exactly the value of "run the actual delivered scripts in CI" rather than trusting them by
+inspection: `1-install.ps1` printed every success message correctly (checksum OK, identity
+verified, "DONE") — and CI's wrapper still reported it as FAILED.
+
+- [x] **Bug 1 — `$LASTEXITCODE` gotcha**: PowerShell cmdlets (`Add-AppxPackage`,
+      `Import-Certificate`, `Get-FileHash`, ...) never set `$LASTEXITCODE` themselves — only
+      native `.exe` calls or an explicit `exit N` do. Neither script had an explicit `exit 0` on
+      its success path, so `$LASTEXITCODE` stayed `$null` afterward, and `$null -ne 0` evaluates
+      to `$true` in PowerShell — my own CI wrapper's `if ($LASTEXITCODE -ne 0) { throw ... }`
+      fired on a script that had done everything right. **Fix**: explicit `exit 0` added at the
+      end of both `1-install.ps1` and `3-cleanup.ps1`, matching the explicit `exit 1` already used
+      on every failure path.
+- [x] **Bug 2 — double cert trust masked the real scenario**: the packaging step's own leftover
+      `Import-Certificate` call (a holdover from before `1-install.ps1` existed) trusted the cert
+      BEFORE `1-install.ps1` ever ran, so its "already trusted?" check always found `true` —
+      meaning CI could never actually exercise or prove the fresh-machine `certImportedByUs=true`
+      import path a real tester hits. **Fix**: removed that now-redundant import from the
+      packaging step entirely — `1-install.ps1` is the only thing that imports/trusts the cert
+      now, in CI and for a real tester alike.
+- [x] Pushed, re-dispatched.
+
+## Run 9 (35557379008): the exit-code fix worked; a third real bug surfaced right behind it
+
+`1-install.ps1`'s own log now showed every step succeeding, INCLUDING "State recorded to
+test-kit-state.json" — and the wrapper's very next line, `Test-Path 'release\test-kit-state.json'`,
+still reported it missing.
+
+- [x] **Bug 3 — a leaked working-directory change**: `1-install.ps1` deliberately does
+      `Set-Location $scriptDir` near the top (so it works correctly regardless of the caller's
+      current directory — harmless/a no-op for a real tester, who has already `cd`'d into the
+      extracted folder per the README before running it). But PowerShell's current directory is
+      **process-wide**, not scoped to the called script — calling it via `& '.\release\
+      1-install.ps1'` let that `Set-Location` change leak into the REST of the CI wrapper step,
+      so its own subsequent `release\...`-relative paths were now looking one `release\` too
+      deep. This only affects a CI wrapper calling the script from a different starting
+      directory than the script itself lives in — never a real tester following the README.
+      **Fix**: wrapped the invocation in `Push-Location 'release'` / `Pop-Location` so the
+      wrapper's own working directory is restored regardless of what the called script does to
+      it — the standard, correct PowerShell pattern for exactly this situation.
+- [x] Pushed, re-dispatched — run 35557679933 went fully green: syntax check, packaging, manifest
+      identity, `1-install.ps1` end-to-end (checksum, thumbprint import, install, identity), real
+      launch, firmware probe, and `3-cleanup.ps1` end-to-end (uninstall + exact-thumbprint
+      removal) all passed for real on a Windows CI runner.
+
+## REAL notebook test result (Benny's own Windows machine) — scope precisely as reported, not overclaimed
+
+- [x] **What this run actually proves**: `1-install.ps1` matched checksum and `PackageFamilyName`
+      for real. `2-run-firmware-probe.ps1`, run from a **confirmed non-administrator session**,
+      returned `elevation.status: completed`, `exitCode: 0`, `logContainsExpectedMarker: true`,
+      `recoveryMarkerReadBackImmediately: true`, `stillRunningAfterCompletion: not-running`,
+      `errors: []`. `3-cleanup.ps1` removed the package and the exact certificate thumbprint this
+      kit itself imported.
+- [x] **What this run does NOT prove, and must not be conflated with**: this is a real test of the
+      harmless elevation/logging mechanism from a genuine non-admin launch — not a real firmware
+      flash, and not a complete functional test of the app. **UAC cancellation** (clicking "No")
+      and **interrupted-launch recovery behavior** were not exercised by this run and remain
+      separate, not-yet-demonstrated checks (both now have explicit steps in the kit's README).
+
+### Bug found from the real output: `GetPackageFullName` result was silently truncated to "P"
+
+Benny's own review of the actual printed output ("Package identity CONFIRMED for the running
+process: P") caught this — not something I'd have found from code inspection alone.
+
+- [x] **Real, verified root cause**: the `Add-Type`-declared P/Invoke signature for
+      `GetPackageFullName` had no explicit `CharSet`, so .NET defaulted the `StringBuilder`
+      parameter to `CharSet.Ansi`. The real Win32 function returns UTF-16 (`PWSTR`) text — for a
+      name starting with "P" (UTF-16LE bytes `0x50 0x00`), ANSI-reinterpreting those bytes reads
+      `'P'` then immediately hits the `0x00` as a string terminator, truncating everything after
+      the first character. This is exactly what the printed output showed.
+- [x] **Fix**: added `CharSet = System.Runtime.InteropServices.CharSet.Unicode` to the `DllImport`
+      declaration.
+- [x] **Also fixed, per Benny's explicit ask**: the script previously treated "API call returned
+      success" (a non-null string) as sufficient proof of identity. Now it compares the FULL
+      returned string against `$installed.PackageFullName` (already known from `Get-AppxPackage`
+      earlier in the script) and reports a clear MISMATCH in red if they differ, rather than
+      treating any nonempty result as confirmation.
+
+### README corrections
+
+- [x] **Unblock-File, not execution policy**: added an explicit step (individually unblocking
+      each of the 3 downloaded scripts by name via `Unblock-File`, before anything else runs) plus
+      a technical-details explanation of the Mark-of-the-Web/Zone.Identifier mechanism and why a
+      global `Set-ExecutionPolicy` change would be broader and more persistent than this task
+      needs. Never suggests touching execution policy at all.
+- [x] **Stale URL/checksum fixed structurally, not just for today**: the README previously
+      hardcoded one specific past run's URL and a specific checksum value — both go stale the
+      moment CI runs again (a fresh ephemeral build every time). Replaced with a link to the
+      *workflow's runs list* (always current) plus a dated reference to the run this exact kit
+      version was verified against; the checksum table entry now points to the accompanying
+      `.appx.sha256` file (which travels with the download and is checked automatically by
+      `1-install.ps1`) instead of a value that would immediately go stale.
+- [x] Not re-run through the full interactive notebook test for this round, per Benny's
+      instruction not to repeat already-passed testing — CI's syntax-check step is sufficient
+      verification for a P/Invoke marshaling fix and documentation-only changes; the human-only
+      parts (UAC decline, interrupted recovery) remain open items for whenever Benny next has
+      time, not blockers.
+
+## Explicitly deferred, per Benny's instruction: do not move firmware paths to Documents pre-emptively
+
+Benny confirmed: do not pre-emptively move firmware files to `Documents`; if the current
+`userData`-based paths are shown to actually fail (via the probe above or the real-machine test),
+implement and test the smallest suitable fix THEN, accounting for permissions and recovery. No
+speculative path change has been made — `elevatedRun`/`firmwareRecovery`/`firmware.ts` are
+byte-for-byte unchanged from before this MSIX work except for what the probe module calls
+directly (which calls the same public functions, not modified copies).
+
+## Business details finalized + audience framing corrected (Benny's final input)
+
+- [x] Benny provided the confirmed legal company details (MACROKINETIC MEDIATECH LIMITED, company
+      number 16420643, registered office at 128 City Road London EC1V 2NX, correspondence address
+      at 34 Redbourne Avenue London N3 2BS — explicitly NOT the registered office). Filled into
+      `src/renderer/i18n/locales/en/settings.json`'s `legal.privacy.companyLine` (previously "to be
+      confirmed"), the submission-materials privacy notice, and the Category/support table —
+      always keeping the two addresses distinctly labeled, never conflated. The two OTHER,
+      unrelated "to be confirmed" notices in that same file (website registration-data retention
+      period; Terms of Use publication) were left untouched — genuinely still missing, no facts
+      given for them. 488 tests pass (including the existing `SettingsScreen.test.tsx` case that
+      specifically checks "to be confirmed" still appears for the still-unconfirmed items),
+      typecheck clean. Store manifest identity (`PonyABC.PonyABCDesktop` / `PonyABC` display name)
+      deliberately untouched, per Benny's explicit instruction.
+- [x] **Corrected a real framing mistake from an earlier round**: Benny clarified the app's actual
+      audience — parents/teachers/school staff/business users managing pens, NOT children
+      operating the app directly, and NOT a game. My earlier category recommendation had literally
+      said "the app's target use case is a children's talking-pen companion," which is exactly the
+      wrong framing. Rewrote the Store description, short description/tagline, category
+      recommendation (now **Utilities & tools**, not Education — the app manages a device, it
+      doesn't deliver learning directly), certification notes, and age-rating section (added an
+      explicit "Suitable for all ages ≠ an official assigned rating" disclaimer, and a
+      target-audience row) throughout `store-assets/submission-materials.md` and the Claude Docs
+      artifact to reflect this consistently.
+
+## Complete privacy notice, real IARC mapping, and CI screenshot capture
+
+- [x] **Investigated real network/logging facts before writing the privacy notice** (not
+      assumed): grepped every hardcoded host the desktop app's main process ever contacts
+      (`register.ponyabc.uk`, `api.github.com`, `github.com` — exhaustive, confirmed via
+      `grep -rhoE 'https?://...' src/main`). Checked `ponyabc-web/wrangler.jsonc`
+      (`observability.enabled: true` — Cloudflare's own platform-level request logging is on for
+      the backend) and `ponyabc-web/src/lib/ip.ts` (confirms IP addresses are hashed with a salt,
+      never stored raw, and — checked via a repo-wide grep for callers — this hashing applies
+      ONLY to the website's warranty-registration endpoint, never the desktop app's own BOOK/
+      firmware/download requests, which carry no personal identifier at all). Looked up
+      Cloudflare's own documented default Workers Logs retention (3 days Free / 7 days Paid) but
+      explicitly did NOT state which applies to this deployment, since that's an account-level
+      fact I can't see from the codebase — flagged as an open item instead of guessed.
+- [x] **Full privacy notice saved as its own file**: `store-assets/privacy-notice-desktop.md` —
+      complete, not a chat summary. Distinguishes "what our application code sends" from "what
+      Cloudflare/GitHub infrastructure may separately retain," explains local recordings/file
+      paths/diagnostic logs/retention/opt-in support exports accurately, gives full rights/contact
+      info, and deliberately avoids the blanket "no personal information is collected" claim,
+      explaining exactly why. Intended URL `https://register.ponyabc.uk/privacy/desktop` recorded;
+      existing `/privacy` page explicitly not modified. Page itself NOT yet implemented in
+      `ponyabc-web` — that repo has substantial unrelated in-progress changes on disk, and Benny's
+      own instruction was to review wording first.
+- [x] **Age rating rewritten from "None for all" to real IARC category mapping** — Violence, Fear/
+      horror, Sexual content, Language, Controlled substances, Gambling, Users interact, Shares
+      user-generated content (explicitly split into the DIY-recordings-are-local case vs. the
+      BOOK-content-is-curated-not-user-generated case — never conflated), Shares personal info,
+      Shares location, Unrestricted internet access, Digital purchases — each with the real
+      question intent and case-specific reasoning, not a single blanket answer. Explicit note that
+      Partner Center's actual on-screen wording is interactive/adapts to category and couldn't be
+      quoted verbatim without live access — mapped to IARC's own public category structure instead
+      of inventing exact UI text.
+- [x] **CI now captures real Windows screenshots**: new step in `build-windows.yml`, right after
+      launch verification, runs the same platform-agnostic `scripts/capture-screenshots.mjs`
+      (already used for the macOS captures) against the installed package's real resolved exe,
+      uploads all 5 as a `windows-screenshots` artifact. This replaces the 2 remaining
+      macOS-placeholder gaps (Firmware, Settings/About) with genuine native Windows captures, and
+      refreshes the other 3 with real Windows chrome too.
+- [x] Triggered a fresh CI run from commit `ae30717` (includes the companyLine fix and all
+      submission-content commits) — this run also serves as "build the final Store package from
+      the intended final commit" per Benny's request. **Packaging, manifest identity, real
+      `1-install.ps1`, and launch all passed again** on this exact commit — confirms the final
+      build's identity is still correct after all the content changes. The new screenshot-capture
+      step failed, for a real, separate reason (below); the firmware probe and `3-cleanup.ps1`
+      steps never ran as a result (later steps in the same job).
+
+### New bug from this run: `ReferenceError: WebSocket is not defined` in the screenshot script
+
+- [x] **Real, verified cause**: `scripts/capture-screenshots.mjs` (and, latently, the older
+      `scripts/verify-packaged-app.mjs`, same pattern, not yet exercised in CI) uses the global
+      `WebSocket` constructor. That global is only unconditionally available from Node 22+ — this
+      repo's `build-windows.yml` pins `node-version: 20` (deliberately, for reasons unrelated to
+      this), where `WebSocket` is undefined. Worked fine on this dev machine (Node v25.9.0) and
+      was never caught until it ran for real on the pinned CI Node version.
+- [x] **Fix**: added `ws` (+ `@types/ws`) as a devDependency and changed both scripts to
+      `import WebSocket from 'ws'` instead of relying on the global — works identically on every
+      Node version this project actually runs, no CI Node-version bump needed. Verified locally:
+      rebuilt and re-ran the script end-to-end (all 5 screenshots captured correctly with the
+      explicit import). 488 tests pass, typecheck clean.
+- [x] **Re-run (35582371173, commit `4a19da2`) went fully green** — this is the final build:
+      - **Filename**: `PonyABC-Desktop-v0.3.15-winx64.appx`
+      - **Version**: 0.3.15
+      - **Commit**: `4a19da2b5e47f4fa7485ed18c6d0a4241b64a851`
+      - **SHA-256**: `36278c0cbc5d1a600941aefd09867ae5dbe7a525f2ee97f512865df3ee82fcd6`
+        (independently recomputed locally after download — matches exactly)
+      - **Manifest identity re-confirmed on this exact build**: `Name='PonyABC.PonyABCDesktop'`,
+        `Publisher='CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'`, `PublisherDisplayName='PonyABC'`,
+        real Windows-computed `PackageFamilyName='PonyABC.PonyABCDesktop_f1jemggxjsyxg'` — all
+        exact matches, same as every prior green run.
+      - `1-install.ps1`/`3-cleanup.ps1` end-to-end, launch verification, and the firmware probe
+        all passed again on this build too.
+      - **All 5 screenshots captured for real** from the installed Store package on Windows (not
+        a macOS dev build): Home, My Recordings, BOOK Library, Firmware (genuine "Prepare your
+        pen" step — confirmed by viewing the actual PNG, not just a log line), and Settings/About
+        (confirmed reading "Windows · x64 (Microsoft Store)" and "Installed from Microsoft Store
+        — updates are handled automatically"). Downloaded, copied into `store-assets/
+        screenshots/` (replacing the old temporary macOS-mixed set entirely), and
+        `store-assets/README.md`/`submission-materials.md` updated to match.
+- [x] **Partner Center**: no MCP tool, credentials, or browser session available to this
+      environment — cannot prepare or update the actual Partner Center draft. Stated plainly
+      rather than fabricated; all content is ready to paste in once Benny has a session open.
+
+## Desktop privacy page deployed live + final Store-submission folder assembled (2026-09-21)
+
+- [x] **Desktop privacy notice deployed to `https://register.ponyabc.uk/privacy/desktop`.**
+      Built in an isolated fresh `git clone` of `ponyabc-web` (origin/main, commit `c925fe7`) at a
+      scratch path — kept fully separate from the real working directory's unrelated uncommitted
+      admin-content-management changes and its diverged local `main`. New file:
+      `src/app/privacy/desktop/page.tsx`, converting the full reviewed
+      `store-assets/privacy-notice-desktop.md` text into JSX, matching the existing minimal
+      `/privacy/page.tsx` style, plus a new "What we haven't confirmed" section stating
+      Cloudflare's exact log-retention duration for this deployment is not confirmed (cites the
+      documented default range, 3 days Free / 7 days Paid, without claiming which applies).
+      Verified before pushing: `npm ci`, `npm run build` (new static route `/privacy/desktop`
+      alongside unmodified `/privacy`), `npm test` (358/358 passing), `git diff --stat` showing
+      only the one new file. Committed (`1e69fd0`) and pushed as a clean fast-forward to
+      `origin/main` (`c925fe7..1e69fd0`), then deployed via `npm run deploy`
+      (`opennextjs-cloudflare build && opennextjs-cloudflare deploy`) — live under Cloudflare
+      Worker `ponyabc-pen-registration`, version id `6f76a720-4a8b-45d8-af19-28a31f31f270`.
+      **Verified live and public** (`curl`, no auth): `/privacy/desktop` → HTTP 200, contains the
+      new page's heading; `/privacy` → HTTP 200, still shows its original placeholder text,
+      confirming it was untouched.
+      - Note: while confirming Cloudflare's retention config, I mistakenly `cat`+`grep`'d the raw
+        wrangler OAuth token file, printing part of a real token into my own tool output. Flagged
+        immediately to Benny; stopped that investigation path entirely and used only `wrangler`'s
+        own safe subcommands (e.g. `wrangler whoami`) from then on. This constraint carries
+        forward: never cat/grep/print raw credential files, only CLI tools' own subcommands.
+- [x] **Final Store-submission folder assembled**: `store-assets/FINAL-SUBMISSION/` in this repo
+      (local only — added to `.gitignore`, not committed, since it bundles a 121 MB binary).
+      Contains the verified `.appx` from commit `4a19da2b5e47f4fa7485ed18c6d0a4241b64a851`
+      (checksum re-verified after copying: `36278c0c...2fcd6`, matches exactly), its `.sha256`,
+      all 5 real Windows screenshots, and `store-listing.md`/`certification-notes.md`/
+      `age-rating-answers.md` extracted from `submission-materials.md` into standalone files (per
+      Benny's instruction that terminal transcripts were truncating these). `README.md` inside
+      that folder states the exact absolute path, the full untruncated SHA-256, and the origin CI
+      run URL. No stale "2 screenshots missing" language was found anywhere in the repo or the
+      synced Claude Docs artifact — both already correctly stated all 5 as complete; the one
+      genuinely stale item was the Claude Docs artifact's "Remaining requirements" list and
+      section heading still describing the privacy notice as an open item — corrected in place
+      (now reads "published and live").
+- [x] **`submission-materials.md` and the Claude Docs artifact re-synced**: privacy policy URL
+      fields now point to `https://register.ponyabc.uk/privacy/desktop`; "Remaining requirements"
+      trimmed to just age rating, the optional UAC-decline/interrupted-recovery test, final
+      review, and the standing Partner Center access statement.
+- [ ] Benny to enter the submission in Partner Center himself, using
+      `store-assets/FINAL-SUBMISSION/` — **not to be submitted for certification** per his
+      explicit instruction.

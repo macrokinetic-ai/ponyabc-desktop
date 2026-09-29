@@ -10,6 +10,7 @@
     "variantMacArm64": "Mac · Apple Silicon",
     "variantMacX64": "Mac · Intel",
     "variantWinX64": "Windows · x64",
+    "variantWinX64Msix": "Windows · x64（Microsoft Store）",
     "variantUnknown": "無法識別的版本",
     "copyButton": "複製版本資訊",
     "copiedConfirmation": "已複製！",
@@ -18,7 +19,8 @@
     "upToDate": "已是最新版本。",
     "updateAvailable": "有新版本可用：{{version}}",
     "downloadUpdateButton": "前往下載新版",
-    "checkFailed": "無法檢查更新（請確認網絡連接）。"
+    "checkFailed": "無法檢查更新（請確認網絡連接）。",
+    "storeManagedUpdates": "此版本透過 Microsoft Store 安裝，更新會自動處理。"
   },
   "diagnostics": {
     "title": "診斷",
