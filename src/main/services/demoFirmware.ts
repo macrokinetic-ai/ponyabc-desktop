@@ -1,6 +1,6 @@
 import { app } from 'electron';
+import path from 'node:path';
 import type { FirmwarePackageInfo, FirmwareUpgradeOutcome } from '@shared/types';
-import { inspectFirmwarePackage } from './firmwareUpgrade';
 
 /**
  * The firmware wizard's own screens, for the parent manual.
@@ -24,11 +24,17 @@ export function demoFirmwareEnabled(): boolean {
   return !app.isPackaged && (process.env.PONYABC_DEMO_FIRMWARE ?? '') !== '';
 }
 
-/** The stand-in package folder to describe on the Confirm screen. Inspected with the REAL
- *  validator, so the screen shows a package that genuinely passed the app's own check. */
+/**
+ * The package the Confirm screen describes.
+ *
+ * Reported as valid rather than inspected: a real vendor package is ~50 MB of firmware images
+ * that has no business in a screenshot run, and a folder of empty stand-ins fails the real
+ * validator by design. Nothing reads this folder — the demo start below never touches disk —
+ * so the path is here only to be the one a parent would actually see.
+ */
 export function demoFirmwarePackage(): FirmwarePackageInfo {
-  const dir = process.env.PONYABC_DEMO_FIRMWARE_DIR ?? '';
-  return inspectFirmwarePackage(dir);
+  const rootDir = process.env.PONYABC_DEMO_FIRMWARE_DIR || path.join('C:\\Users\\PonyABC\\Downloads', 'P5-firmware-V1.26');
+  return { rootDir, entryBatPath: path.join(rootDir, 'download.bat'), looksValid: true, missingFiles: [] };
 }
 
 export function demoFirmwareOutcome(): FirmwareUpgradeOutcome {

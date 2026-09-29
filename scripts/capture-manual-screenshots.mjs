@@ -212,23 +212,9 @@ function buildFixture(dir, { locale, noPen, staleIndex, firmwarePackage }) {
   const fixture = JSON.parse(res.stdout.trim().split('\n').pop());
 
   if (firmwarePackage) {
-    // A stand-in for the vendor's extracted package: the files the app's own validator looks
-    // for, and nothing else. No vendor tool, no firmware image, nothing runnable.
-    const pkg = path.join(dir, 'firmware-package');
-    for (const rel of [
-      'download.bat',
-      path.join('soundbox', 'standard', 'download.bat'),
-      'isd_download.exe',
-      'ufw_maker.exe',
-      'remove_tailing_zeros.exe',
-      'uboot.boot',
-      'ota.bin',
-    ]) {
-      const full = path.join(pkg, rel);
-      fs.mkdirSync(path.dirname(full), { recursive: true });
-      fs.writeFileSync(full, '');
-    }
-    fixture.firmwarePackageDir = pkg;
+    // Only a path for the screen to show — the demo firmware path never reads it (see
+    // src/main/services/demoFirmware.ts), and no vendor package or firmware image is involved.
+    fixture.firmwarePackageDir = 'C:\\Users\\PonyABC\\Downloads\\P5-firmware-V1.26';
   }
   return fixture;
 }
