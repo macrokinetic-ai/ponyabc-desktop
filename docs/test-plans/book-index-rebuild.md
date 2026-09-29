@@ -96,6 +96,29 @@ does nothing. That would be a new requirement, not a bug in what is built.
 
 ---
 
+## E. Does the pen ignore a hidden folder at the card root?
+
+Needed before the library sync is built (`docs/design/library-sync.md` §1). The app wants to keep
+a small sync record on the card, outside `BOOK/`. The firmware references only `BOOK`, `diy`,
+`RECORD` and `System`, but the card also holds music folders the pen browses somehow, so a new
+root folder is not provably invisible.
+
+1. [ ] With the pen connected, create a folder `.ponyabc` at the **root of the card** and put a
+       small text file in it named `sync.json`.
+2. [ ] Unplug, restart the pen, and use it normally for a minute — books and the music folders.
+
+|                                                  |      |
+| ------------------------------------------------ | ---- |
+| Does anything new appear in the pen's own menus? | ____ |
+| Does the pen announce or try to play it?         | ____ |
+| Do books and recordings still work normally?     | ____ |
+| Is the file still there afterwards, unchanged?   | ____ |
+
+**If anything appears**, the record goes in `BOOK/ponyabc-sync.json` instead — which we know is
+ignored, since the index counts only `.axb` and the scanner reads only five extensions.
+
+---
+
 ## Reporting
 
 Settings → export diagnostics and send the file. It carries a `book-index-reset` entry for every
