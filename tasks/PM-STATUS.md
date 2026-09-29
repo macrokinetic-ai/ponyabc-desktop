@@ -38,7 +38,16 @@ Tiles) for shipping default Electron tile art. Fixed in v0.3.16.
 | `main`     | ✅ contains everything shipped (`v0.3.16` is an ancestor); Store pipeline merged in `9a9e240`                                  |
 | Next       | ⏳ **Waiting on Benny's list of v0.3.17 changes.** Preparation is done; nothing blocks starting.                               |
 
-No feature or firmware changes have been made in 0.3.17 yet.
+### 0.3.17 changes so far
+
+| Phase | What                                                                                                                                                                                                                                                                        | State                                                                                          |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 0     | `/source/` gitignored — vendor firmware zips and `.axb` content (48 MB + 288 MB) can never enter git history                                                                                                                                                                | ✅                                                                                             |
+| 1     | **Pre-flash cleanup**: `1.BIN` + `BOOKFILE.BIN` deleted from the pen's `BOOK` root before every firmware upgrade, before anything is launched. Vendor-confirmed; without it an upgrade reports success and does not take effect. Aborts safely if a file cannot be removed. | ✅ implemented, **not yet tested on a real pen** — `docs/test-plans/firmware-v126-real-pen.md` |
+| 2     | **BOOK status labels**: every status now has a plain-language explanation, shown in the expanded row, as a tooltip, and in a new on-screen legend. Three misleading labels reworded.                                                                                        | ✅                                                                                             |
+| 3     | **DIY recordings v2** — `docs/design/recordings-v2.md`. Design only; needs Benny's approval before any code.                                                                                                                                                                | ⏸ awaiting approval                                                                            |
+
+Gates: typecheck ✅, 512 unit tests ✅, build ✅.
 
 ## 3. Expo readiness — 1–4 Oct
 
@@ -54,15 +63,21 @@ No feature or firmware changes have been made in 0.3.17 yet.
 - **Marketing consent** — recorded properly, and non-consenters are no longer pushed to
   Klaviyo.
 
+### Decided 🟢
+
+| Decision                                               | Detail                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The firmware row stays `inactive` through the expo** | No firmware is published to `ponyabc-web` until 0.3.17 is live in the Microsoft Store. Visitors will see "no update available", and that is the intended state — an upgrade offered to 0.3.16 would run without the pre-flash cleanup and silently not take effect. Sequence: 0.3.17 live in the Store → then publish firmware. |
+| **v0.3.17 scope received**                             | Phases 0–2 implemented (see §2). Phase 3 (DIY recordings) is designed only, awaiting approval.                                                                                                                                                                                                                                  |
+
 ### Needs attention before the expo ⚠️
 
-|                                                                       |                                                                                                                                                                                                                                                                                |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 🛑 **Nobody has registered a pen through the live site in a browser** | The API is verified; the actual customer journey is not. Use the reserved test serial `PABC-PEN-2509-00001-5M`, then delete it.                                                                                                                                                |
-| 🛑 **Nobody has installed the app from the real Store**               | Do it on a clean Windows machine, ideally the expo laptop.                                                                                                                                                                                                                     |
-| ⚠️ **Firmware screen shows no updates**                               | The only firmware row is `status='inactive'` (set deliberately on 27 Sep — it was the vendor toolchain `tools.zip`, not a customer package). Expected behaviour, but **visitors will see "no update available"**. Decide whether that is acceptable or publish a real package. |
-| ⚠️ **Admin dashboard never opened with a real login**                 | Needed if you want to show or check registrations at the expo.                                                                                                                                                                                                                 |
-| ⚠️ **Print and apply the stickers**                                   | Test-print one first, scan the QR, and confirm it validates against production.                                                                                                                                                                                                |
+|                                                                       |                                                                                                                                 |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🛑 **Nobody has registered a pen through the live site in a browser** | The API is verified; the actual customer journey is not. Use the reserved test serial `PABC-PEN-2509-00001-5M`, then delete it. |
+| 🛑 **Nobody has installed the app from the real Store**               | Do it on a clean Windows machine, ideally the expo laptop.                                                                      |
+| ⚠️ **Admin dashboard never opened with a real login**                 | Needed if you want to show or check registrations at the expo.                                                                  |
+| ⚠️ **Print and apply the stickers**                                   | Test-print one first, scan the QR, and confirm it validates against production.                                                 |
 
 ### Known behaviour, not a fault
 
@@ -72,14 +87,11 @@ No feature or firmware changes have been made in 0.3.17 yet.
 
 ## 4. Waiting on Benny
 
-| #   | Item                                                                      | Why it matters                                                                                                                                                                       |
-| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | **Rotate the wrangler OAuth token** (`wrangler logout && wrangler login`) | Part of a real token was printed into tool output on 2026-09-21. ⚠️ **Still valid** — `wrangler whoami` authenticated on 2026-09-29. No revocation or rotation is recorded anywhere. |
-| 2   | **Save the age private key**, then tell me so I delete it from disk       | `ponyabc-web/backups/age-key-PRIVATE.txt`. Verified never committed or pushed (630 blobs scanned). Without it, every backup is undecryptable.                                        |
-| 3   | **4 GitHub secrets** + reset the standby DB password                      | Unblocks the nightly encrypted backup. Production is on Supabase **FREE** — no managed backups at all.                                                                               |
-| 4   | **Cloudflare rate-limit rule** on `/api/public/*`                         | I have `zone (read)` only. Free plan allows one rule — do the `/download` one first (each `.axb` is ~214 MB).                                                                        |
-| 5   | **The v0.3.17 change list**                                               | Preparation is complete and waiting.                                                                                                                                                 |
-| 6   | **Decision: the firmware row**                                            | Leave `inactive`, or publish a real customer package?                                                                                                                                |
+| #   | Item                                                                | Why it matters                                                                                                                                |
+| --- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Save the age private key**, then tell me so I delete it from disk | `ponyabc-web/backups/age-key-PRIVATE.txt`. Verified never committed or pushed (630 blobs scanned). Without it, every backup is undecryptable. |
+| 2   | **4 GitHub secrets** + reset the standby DB password                | Unblocks the nightly encrypted backup. Production is on Supabase **FREE** — no managed backups at all.                                        |
+| 3   | **Cloudflare rate-limit rule** on `/api/public/*`                   | I have `zone (read)` only. Free plan allows one rule — do the `/download` one first (each `.axb` is ~214 MB).                                 |
 
 ## 5. Backlog (after 1 Oct)
 
@@ -101,11 +113,11 @@ No feature or firmware changes have been made in 0.3.17 yet.
 
 | Risk                                                                                            | State                                                                                                                                                                                     |
 | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Production Supabase is FREE tier** — no managed backups, and it auto-pauses after 7 idle days | Uptime monitoring is in place; real traffic from 1 Oct keeps it awake. The nightly backup is built but **not running** (item 4.3).                                                        |
+| **Production Supabase is FREE tier** — no managed backups, and it auto-pauses after 7 idle days | Uptime monitoring is in place; real traffic from 1 Oct keeps it awake. The nightly backup is built but **not running** (item 4.2).                                                        |
 | **Schema and code shipping separately**                                                         | The cause of three separate production failures (`42703` registration, `query_failed` Klaviyo sync, `23514` BOOK saves). Rule: a migration and the code that depends on it ship together. |
 | **Verifying sources instead of the built package**                                              | Caused the 10.1.1.11 rejection. CI now extracts the real `.appx` and fails on identity, version, missing assets, default art, stale checksum or wrong EXE icon.                           |
 | **Green local build ≠ clean install builds**                                                    | A merge to `main` failed CI because `recharts`/`xlsx` were imported but undeclared; local builds passed on a warm `node_modules`. Always `npm ci` in a clean tree.                        |
-| **OAuth token exposure unresolved**                                                             | Item 4.1.                                                                                                                                                                                 |
+| **OAuth token exposure**                                                                        | ✅ **Resolved** — Benny rotated the wrangler OAuth token on 2026-09-29. The exposed token is no longer valid.                                                                             |
 
 ## 7. Key facts
 
