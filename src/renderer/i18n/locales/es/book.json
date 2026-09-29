@@ -208,5 +208,34 @@
     "minutes": "unos {{minutes}} min",
     "short": "alrededor de un minuto"
   },
-  "penRequired": "Conecte su lápiz para ver y añadir libros."
+  "penRequired": "Conecte su lápiz para ver y añadir libros.",
+  "pen": {
+    "connected": "Su lápiz está conectado",
+    "disconnected": "Conecte su lápiz con su cable USB"
+  },
+  "sync": {
+    "has": "Su lápiz tiene {{count}} libro(s) de PonyABC.",
+    "hasNone": "Aún no hay libros de PonyABC en su lápiz.",
+    "available": "Hay {{added}} libro(s) nuevo(s) y {{updated}} actualización(es). Unos {{minutes}} minutos.",
+    "availableShort": "Hay {{added}} libro(s) nuevo(s) y {{updated}} actualización(es). Alrededor de un minuto.",
+    "upToDate": "Todos sus libros están al día.",
+    "button": "Sincronizar libros",
+    "working": "Sincronizando…",
+    "needPen": "Conecte su lápiz para sincronizar.",
+    "stoppedNoSpace": "Su lápiz se llenó, así que paramos. Los libros terminados están en el lápiz."
+  },
+  "space": {
+    "title": "Su lápiz no tiene suficiente espacio",
+    "body": "Faltan unos {{amount}}. Guarde una copia de sus grabaciones, borre las que ya no necesite y sincronice de nuevo.",
+    "goToRecordings": "Ir a Mis grabaciones"
+  },
+  "list": {
+    "toggle": "Ver la lista de libros",
+    "onPen": "En su lápiz",
+    "willAdd": "Se añadirán",
+    "willUpdate": "Se actualizarán",
+    "other": "Otros libros (no de PonyABC)",
+    "otherBody": "Vienen de otro sitio. Esta aplicación nunca los cambia.",
+    "none": "Ninguno"
+  }
 }

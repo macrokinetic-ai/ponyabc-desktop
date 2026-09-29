@@ -53,7 +53,7 @@ interface BookLibraryState {
   cancelDownloadBatch: () => Promise<void>;
 }
 
-const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: null };
+const emptyMeta: BookLibraryMeta = { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: null, penFreeBytes: null };
 
 const BookLibraryContext = createContext<BookLibraryState | null>(null);
 

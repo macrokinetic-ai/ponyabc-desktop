@@ -208,5 +208,34 @@
     "minutes": "etwa {{minutes}} Min.",
     "short": "etwa eine Minute"
   },
-  "penRequired": "Schließen Sie Ihren Stift an, um Bücher zu sehen und hinzuzufügen."
+  "penRequired": "Schließen Sie Ihren Stift an, um Bücher zu sehen und hinzuzufügen.",
+  "pen": {
+    "connected": "Ihr Stift ist angeschlossen",
+    "disconnected": "Bitte schließen Sie Ihren Stift mit dem USB-Kabel an"
+  },
+  "sync": {
+    "has": "Auf Ihrem Stift sind {{count}} PonyABC-Bücher.",
+    "hasNone": "Auf Ihrem Stift sind noch keine PonyABC-Bücher.",
+    "available": "{{added}} neue(s) Buch/Bücher und {{updated}} Aktualisierung(en) verfügbar. Etwa {{minutes}} Minuten.",
+    "availableShort": "{{added}} neue(s) Buch/Bücher und {{updated}} Aktualisierung(en) verfügbar. Etwa eine Minute.",
+    "upToDate": "Alle Ihre Bücher sind aktuell.",
+    "button": "Bücher abgleichen",
+    "working": "Wird abgeglichen…",
+    "needPen": "Schließen Sie Ihren Stift an, um abzugleichen.",
+    "stoppedNoSpace": "Ihr Stift ist voll, daher haben wir aufgehört. Die fertigen Bücher sind darauf."
+  },
+  "space": {
+    "title": "Ihr Stift hat nicht genug Platz",
+    "body": "Es fehlen etwa {{amount}}. Sichern Sie Ihre Aufnahmen, löschen Sie nicht mehr benötigte, und gleichen Sie dann erneut ab.",
+    "goToRecordings": "Zu Meine Aufnahmen"
+  },
+  "list": {
+    "toggle": "Bücherliste ansehen",
+    "onPen": "Auf Ihrem Stift",
+    "willAdd": "Wird hinzugefügt",
+    "willUpdate": "Wird aktualisiert",
+    "other": "Andere Bücher (nicht von PonyABC)",
+    "otherBody": "Diese stammen von woanders. Diese App ändert sie nie.",
+    "none": "Keine"
+  }
 }

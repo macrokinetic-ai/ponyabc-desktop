@@ -12,6 +12,7 @@ interface RawPublicBook {
   sortOrder: unknown;
   updatedAt: unknown;
   updateRequiresIndexReset: unknown;
+  lifecycleState: unknown;
   downloadUrl: unknown;
 }
 
@@ -42,6 +43,10 @@ function toEntry(b: RawPublicBook): BookCatalogEntry {
     // consequence of a wrong `true` is a pointless restart and a wrong `false` is a book that
     // plays the wrong audio. Only an explicit boolean true is allowed to mean yes.
     updateRequiresIndexReset: b.updateRequiresIndexReset === true,
+    // Anything the server does not say — or says wrongly — is an ordinary active book. The
+    // server does not send this field yet; see docs/design/library-sync.md.
+    lifecycleState:
+      b.lifecycleState === 'retired' || b.lifecycleState === 'remove_from_pens' ? b.lifecycleState : 'active',
     downloadUrl: String(b.downloadUrl),
   };
 }

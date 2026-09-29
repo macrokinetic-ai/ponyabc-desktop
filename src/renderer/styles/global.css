@@ -1260,3 +1260,36 @@ body {
   flex-wrap: wrap;
   margin-top: 12px;
 }
+
+/* One-button sync: the whole BOOK screen is a sentence, a button, and a list you can open. */
+.book-summary {
+  margin-top: 8px;
+}
+
+.book-summary__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.book-list {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.book-list > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.book-name-list {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}

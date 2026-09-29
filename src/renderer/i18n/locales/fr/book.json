@@ -208,5 +208,34 @@
     "minutes": "environ {{minutes}} min",
     "short": "environ une minute"
   },
-  "penRequired": "Branchez votre stylo pour voir et ajouter des livres."
+  "penRequired": "Branchez votre stylo pour voir et ajouter des livres.",
+  "pen": {
+    "connected": "Votre stylo est connecté",
+    "disconnected": "Branchez votre stylo avec son câble USB"
+  },
+  "sync": {
+    "has": "Votre stylo a {{count}} livre(s) PonyABC.",
+    "hasNone": "Il n'y a pas encore de livre PonyABC sur votre stylo.",
+    "available": "{{added}} nouveau(x) livre(s) et {{updated}} mise(s) à jour sont disponibles. Environ {{minutes}} minutes.",
+    "availableShort": "{{added}} nouveau(x) livre(s) et {{updated}} mise(s) à jour sont disponibles. Environ une minute.",
+    "upToDate": "Tous vos livres sont à jour.",
+    "button": "Synchroniser les livres",
+    "working": "Synchronisation…",
+    "needPen": "Branchez votre stylo pour synchroniser.",
+    "stoppedNoSpace": "Votre stylo est plein, nous avons arrêté. Les livres terminés sont bien dessus."
+  },
+  "space": {
+    "title": "Votre stylo n'a pas assez de place",
+    "body": "Il manque environ {{amount}}. Sauvegardez vos enregistrements, supprimez ceux dont vous n’avez plus besoin, puis synchronisez à nouveau.",
+    "goToRecordings": "Aller à Mes enregistrements"
+  },
+  "list": {
+    "toggle": "Voir la liste des livres",
+    "onPen": "Sur votre stylo",
+    "willAdd": "Seront ajoutés",
+    "willUpdate": "Seront mis à jour",
+    "other": "Autres livres (pas de PonyABC)",
+    "otherBody": "Ils viennent d'ailleurs. Cette application n'y touche jamais.",
+    "none": "Aucun"
+  }
 }

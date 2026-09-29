@@ -9,6 +9,38 @@ The strings live in `src/renderer/i18n/locales/<locale>/book.json`; the mapping 
 string lives in `src/renderer/screens/bookStatusLabels.ts`, which also drives the in-app legend,
 so nothing here can be shown without being explained.
 
+## The BOOK screen is one button
+
+Since 0.3.17 a parent does not choose books and cannot delete them. The screen is:
+
+```
+Your pen is connected
+Your pen has 30 PonyABC books. 1 new book and 2 updates are available. About 6 minutes.
+[ Sync books ]   Last checked: …   [ Check for new books ]
+▸ See book list
+▸ Advanced details
+```
+
+**Sync** adds every catalogue book the pen lacks and updates every book whose bytes differ, one
+at a time, smallest first, deciding from filenames and sizes only — never by reading a book back
+off the pen, which costs ~19 minutes each. It never deletes anything.
+
+The rules live in `src/shared/bookSyncPlan.ts`, deliberately outside the screen, because what a
+sync does is a property of the product rather than of a component:
+
+| Catalogue state                      | Not on the pen  | Already on the pen                                             |
+| ------------------------------------ | --------------- | -------------------------------------------------------------- |
+| `active` (and anything unrecognised) | added           | updated if it differs                                          |
+| `retired`                            | **never added** | **still updated** — the customer owns the physical cards       |
+| `remove_from_pens`                   | never added     | **ignored in 0.3.17** — nothing in this version deletes a book |
+
+Space is checked **before** anything starts, with 200 MB of headroom, and the message says how
+much more is needed and what to do about it. If the card fills mid-sync it stops cleanly, keeps
+what finished, and resets the index only if something was actually added.
+
+Everything technical — the statuses below, drive letters, manual pen selection, per-book Verify —
+is under **Advanced details**, closed.
+
 ## What the customer sees, and what is underneath
 
 **Our customers are nursery parents.** The main view answers three questions and nothing else:

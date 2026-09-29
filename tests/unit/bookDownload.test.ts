@@ -30,6 +30,7 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     sortOrder: 0,
     updatedAtMs: null,
     updateRequiresIndexReset: false,
+    lifecycleState: 'active',
     downloadUrl: 'https://x.test/download?id=b1',
     ...overrides,
   };

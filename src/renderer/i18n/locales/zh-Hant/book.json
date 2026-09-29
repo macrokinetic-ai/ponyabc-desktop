@@ -208,5 +208,34 @@
     "minutes": "約 {{minutes}} 分鐘",
     "short": "約一分鐘"
   },
-  "penRequired": "請連接點讀筆，以檢視和加入書本。"
+  "penRequired": "請連接點讀筆，以檢視和加入書本。",
+  "pen": {
+    "connected": "點讀筆已連接",
+    "disconnected": "請用 USB 線連接點讀筆"
+  },
+  "sync": {
+    "has": "點讀筆內有 {{count}} 本 PonyABC 書本。",
+    "hasNone": "點讀筆內尚未有 PonyABC 書本。",
+    "available": "有 {{added}} 本新書和 {{updated}} 項更新，約需 {{minutes}} 分鐘。",
+    "availableShort": "有 {{added}} 本新書和 {{updated}} 項更新，約需一分鐘。",
+    "upToDate": "所有書本已是最新。",
+    "button": "同步書本",
+    "working": "同步中…",
+    "needPen": "請先連接點讀筆才能同步。",
+    "stoppedNoSpace": "點讀筆已滿，因此已停止。已完成的書本仍在筆內。"
+  },
+  "space": {
+    "title": "點讀筆空間不足",
+    "body": "尚欠約 {{amount}}。請先備份錄音，刪除不再需要的部分，然後再同步。",
+    "goToRecordings": "前往「我的錄音」"
+  },
+  "list": {
+    "toggle": "查看書本清單",
+    "onPen": "已在點讀筆",
+    "willAdd": "將會加入",
+    "willUpdate": "將會更新",
+    "other": "其他書本（並非來自 PonyABC）",
+    "otherBody": "這些書本來自其他來源，本程式不會作任何改動。",
+    "none": "沒有"
+  }
 }

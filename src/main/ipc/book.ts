@@ -32,6 +32,7 @@ import { markBookIndexStale } from './bookIndex';
 import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
+import { getFreeBytes } from '../services/transferPlanner';
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
@@ -96,6 +97,20 @@ function currentPenBookFiles(): { files: PenBookFile[] | null; bookDirReal: stri
   return { files: listPenBookFiles(fresh.bookDirReal), bookDirReal: fresh.bookDirReal, penVolumeLabel };
 }
 
+/** Free space on the pen, or null if there is no pen or the filesystem would not say. Never
+ *  throws: a sync that cannot read the number proceeds rather than refusing on a failed stat. */
+async function currentPenFreeBytes(): Promise<number | null> {
+  const penRoot = session.getPenRoot();
+  if (!penRoot) return null;
+  const fresh = resolvePenRoot(penRoot.realPath);
+  if (fresh.status !== 'ok') return null;
+  try {
+    return await getFreeBytes(fresh.bookDirReal);
+  } catch {
+    return null;
+  }
+}
+
 /** Fast and hash-free: filenames/sizes/mtimes only (a stat, not a file read), plus whatever a
  *  prior explicit verification already recorded — see bookReconcile.ts. Never blocks on, or
  *  triggers, hashing a pen file's content. */
@@ -121,6 +136,7 @@ async function currentList(): Promise<BookListResult> {
       offline: snapshot === null,
       conflicts: snapshot?.conflicts ?? [],
       lastCheck: lastCatalogCheck,
+      penFreeBytes: await currentPenFreeBytes(),
     },
   };
 }

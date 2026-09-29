@@ -275,8 +275,21 @@ export interface BookCatalogEntry {
    * that publishing it later needs no new app release.
    */
   updateRequiresIndexReset: boolean;
+  /**
+   * What the library says about this book's life, for the states `ponyabc-web` is adding.
+   *
+   * `active` — offered and kept up to date. **The default for anything the server does not
+   * say**, so today's catalogue behaves exactly as it always has.
+   * `retired` — no longer sold, so never added to a pen that lacks it; but a customer owns the
+   * physical cards, so a pen that already has it keeps it AND keeps getting updates.
+   * `remove_from_pens` — reserved. 0.3.17 deliberately ignores it: nothing in this version
+   * deletes a book, and shipping a half-understood deletion is worse than shipping none.
+   */
+  lifecycleState: BookLifecycleState;
   downloadUrl: string;
 }
+
+export type BookLifecycleState = 'active' | 'retired' | 'remove_from_pens';
 
 export interface BookCatalogConflict {
   filenameLower: string;
@@ -392,6 +405,8 @@ export interface BookCatalogItem {
   /** Whether a verified-good copy sits in the App's own local download cache — entirely about
    *  the LOCAL CACHE, never about what's on the pen. Independent of `status`. */
   cached: boolean;
+  /** Mirrors the catalogue entry's state so the screen can group books without re-reading it. */
+  lifecycleState: BookLifecycleState;
   /** true for 'not-on-pen', 'on-pen-present', 'on-pen-differs', and 'on-pen-size-differs' —
    *  declared filename + trustworthy hash, not ambiguous, and not already confirmed current.
    *  Gates "Add"/"Replace" in the UI; bookInstall.ts enforces the same eligibility rule
@@ -430,6 +445,10 @@ export interface BookLibraryMeta {
   conflicts: BookCatalogConflict[];
   /** null only before the very first attempt this run (e.g. this exact call is that attempt). */
   lastCheck: BookCatalogCheck | null;
+  /** Free space on the pen, in bytes, or null when no pen is connected or it could not be
+   *  read. The sync refuses to start if what it would write does not fit — running out of room
+   *  part-way through a twenty-minute copy is a poor way to find out. */
+  penFreeBytes: number | null;
 }
 
 export interface BookListResult {

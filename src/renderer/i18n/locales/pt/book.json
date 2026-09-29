@@ -208,5 +208,34 @@
     "minutes": "cerca de {{minutes}} min",
     "short": "cerca de um minuto"
   },
-  "penRequired": "Ligue a caneta para ver e adicionar livros."
+  "penRequired": "Ligue a caneta para ver e adicionar livros.",
+  "pen": {
+    "connected": "A sua caneta está ligada",
+    "disconnected": "Ligue a caneta com o cabo USB"
+  },
+  "sync": {
+    "has": "A sua caneta tem {{count}} livro(s) PonyABC.",
+    "hasNone": "Ainda não há livros PonyABC na sua caneta.",
+    "available": "Há {{added}} livro(s) novo(s) e {{updated}} atualização(ões). Cerca de {{minutes}} minutos.",
+    "availableShort": "Há {{added}} livro(s) novo(s) e {{updated}} atualização(ões). Cerca de um minuto.",
+    "upToDate": "Todos os seus livros estão atualizados.",
+    "button": "Sincronizar livros",
+    "working": "A sincronizar…",
+    "needPen": "Ligue a caneta para sincronizar.",
+    "stoppedNoSpace": "A caneta encheu, por isso parámos. Os livros concluídos estão na caneta."
+  },
+  "space": {
+    "title": "A sua caneta não tem espaço suficiente",
+    "body": "Faltam cerca de {{amount}}. Faça uma cópia das gravações, apague as que já não precisa e sincronize outra vez.",
+    "goToRecordings": "Ir para As minhas gravações"
+  },
+  "list": {
+    "toggle": "Ver a lista de livros",
+    "onPen": "Na sua caneta",
+    "willAdd": "Vão ser adicionados",
+    "willUpdate": "Vão ser atualizados",
+    "other": "Outros livros (não são da PonyABC)",
+    "otherBody": "Vieram de outro lado. Esta aplicação nunca os altera.",
+    "none": "Nenhum"
+  }
 }

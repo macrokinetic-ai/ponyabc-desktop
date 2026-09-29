@@ -19,6 +19,7 @@ function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem 
     status: 'not-on-pen',
     cached: false,
     actionable: true,
+    lifecycleState: 'active',
     updatedAtMs: null,
     ...overrides,
   };
@@ -176,200 +177,180 @@ async function renderScreen(list: BookListResult = listResult({ penItems: [penIt
   window.ponyabc.bookList = vi.fn(async () => list);
   window.ponyabc.bookCatalogRefresh = vi.fn(async () => list);
   renderWithPen(true);
-  // "Book One" can legitimately appear in both panes at once — wait for at least one.
-  await screen.findAllByText('Book One');
-}
-
-/** The section whose <h2> is `heading` — the layout is one column of named sections now. */
-function sectionByHeading(heading: string): HTMLElement {
-  const h = [...document.querySelectorAll('h2')].find((el) => el.textContent?.trim() === heading);
-  if (!h) throw new Error(`no section headed "${heading}"`);
-  return h.closest('section') as HTMLElement;
+  // The summary is the one thing every state renders, and book names now appear only inside a
+  // collapsed list, concatenated with their size — so they are the wrong thing to wait for.
+  await screen.findByRole('button', { name: /Sync books|Syncing/ });
 }
 
 /**
- * The screen a parent actually uses, top to bottom:
- *   Check for new books → Your books → New books → one footer that says how long and does it.
- *
- * The guarantees that matter most here are absences: a parent can never delete a book, a book
- * already on the pen never appears under "New books", and books we did not put there are never
- * offered an action.
+ * One button. A parent does not choose books and cannot delete them; they press **Sync books**
+ * and the pen ends up matching the library. These tests pin what that button does, what it
+ * refuses to do, and the two things a parent must be told before it runs: how long, and whether
+ * there is room.
  */
 
 describe('BookLibraryScreen — what a parent can and cannot do', () => {
-  it('offers NO way to delete a book, anywhere on the screen', async () => {
+  it('offers NO way to delete a book, and no way to pick one', async () => {
     await renderScreen(
       listResult({
         penItems: [penItem(), penItem({ fileName: '0452.axb', contentId: 'b2', friendlyName: 'Book Two' })],
-        catalogItems: [catalogItem(), catalogItem({ contentId: 'b3', filename: '0453.axb', friendlyName: 'Book Three', status: 'not-on-pen' })],
+        catalogItems: [catalogItem({ contentId: 'b3', filename: '0453.axb', friendlyName: 'Book Three', status: 'not-on-pen' })],
       }),
     );
 
-    const forbidden = /remove|delete|erase|\bbin\b/i;
-    for (const el of document.querySelectorAll('button, [role="button"], a, summary')) {
-      expect(el.textContent ?? '', el.outerHTML).not.toMatch(forbidden);
+    for (const el of document.querySelectorAll('button, [role="button"], a')) {
+      expect(el.textContent ?? '', el.outerHTML).not.toMatch(/remove|delete|erase|\bbin\b/i);
     }
+    // No selection of any kind: no checkboxes, no "select all", no per-book Add.
+    expect(document.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+    expect(screen.queryByText(/select all/i)).toBeNull();
     expect(window.ponyabc.bookRemove).not.toHaveBeenCalled();
   });
 
-  it('never lists a book that is already on the pen under "New books"', async () => {
-    // Same contentId on both sides — the catalogue says on-pen, the pen has the file.
-    await renderScreen(
-      listResult({
-        penItems: [penItem({ contentId: 'b1' })],
-        catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false })],
-      }),
-    );
-
-    const newSection = sectionByHeading('New books');
-    expect(newSection.textContent).toContain('Your pen already has every book we offer.');
-    expect(newSection.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+  it('says in plain words whether the pen is connected', async () => {
+    await renderScreen();
+    await screen.findByText('Your pen is connected');
+    expect(document.body.textContent).not.toMatch(/C:\\|missing the BOOK and DIY folders/);
   });
 
-  it('shows books we did not put there once, counted, with nothing to press', async () => {
+  it('keeps drive letters and per-book checks under Advanced details', async () => {
+    await renderScreen();
+    const advanced = [...document.querySelectorAll('details.advanced-details')];
+    expect(advanced.length).toBeGreaterThan(0);
+    expect(advanced.every((d) => !(d as HTMLDetailsElement).open)).toBe(true);
+    // Verify still exists — for support, one disclosure away rather than gone.
+    expect(document.body.textContent).toContain('Verify this file');
+  });
+});
+
+describe('BookLibraryScreen — the summary', () => {
+  it('counts the books on the pen and what sync would do, with a time', async () => {
     await renderScreen(
       listResult({
-        penItems: [
-          penItem(),
-          penItem({ fileName: 'mystery.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false }),
-          penItem({ fileName: 'other.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false }),
+        penItems: [penItem({ contentId: 'b1' }), penItem({ fileName: '0453.axb', contentId: 'b3', friendlyName: 'Book Three' })],
+        catalogItems: [
+          catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false }),
+          catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen', sizeBytes: 300_000_000 }),
+          catalogItem({ contentId: 'b3', filename: '0453.axb', friendlyName: 'Book Three', status: 'on-pen-differs', sizeBytes: 100_000_000 }),
         ],
       }),
     );
 
-    const yours = sectionByHeading('Your books');
-    await screen.findByText('Other books (not from PonyABC)');
-    expect(yours.textContent).toContain('2 book(s)');
-    expect(yours.textContent).toContain('This app leaves them exactly as they are.');
-    // Named once — not one row each, and no action against any of them.
-    expect(screen.getAllByText('Other books (not from PonyABC)')).toHaveLength(1);
-    expect(yours.textContent).not.toContain('mystery.axb');
+    await screen.findByText(/Your pen has 2 PonyABC book/);
+    await screen.findByText(/1 new book\(s\) and 1 update\(s\) are available\. About \d+ minutes\./);
   });
-});
 
-describe('BookLibraryScreen — Your books', () => {
-  it('says "Up to date" for a book that matches', async () => {
+  it('says everything is up to date, and disables the button, when there is nothing to do', async () => {
     await renderScreen(
       listResult({ penItems: [penItem({ contentId: 'b1' })], catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false })] }),
     );
-    expect(sectionByHeading('Your books').textContent).toContain('Up to date');
+    await screen.findByText(/All your books are up to date\./);
+    expect((screen.getByRole('button', { name: 'Sync books' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('offers Update, and only Update, for a book that differs', async () => {
-    await renderScreen(
-      listResult({
-        penItems: [penItem({ contentId: 'b1', status: 'verified-differs' })],
-        catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-differs', actionable: true })],
-      }),
-    );
-
-    const yours = sectionByHeading('Your books');
-    expect(yours.textContent).toContain('Update available');
-    expect(within(yours).getByRole('button', { name: 'Update' })).toBeTruthy();
-    expect(yours.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
-  });
-
-  it('updating one book goes straight to the Replace/Skip question', async () => {
-    await renderScreen(
-      listResult({
-        penItems: [penItem({ contentId: 'b1', status: 'verified-differs' })],
-        catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-differs', actionable: true })],
-      }),
-    );
-
-    fireEvent.click(within(sectionByHeading('Your books')).getByRole('button', { name: 'Update' }));
-    await screen.findByText('Some selected items differ from the pen');
+  it('shows when the library was last checked', async () => {
+    await renderScreen();
+    expect(document.body.textContent).toMatch(/Last checked:/);
   });
 });
 
-describe('BookLibraryScreen — New books', () => {
-  it('lists an addable book with its size and how long it will take', async () => {
-    await renderScreen(
-      listResult({ penItems: [], catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 300_000_000 })] }),
-    );
-    const section = sectionByHeading('New books');
-    expect(section.textContent).toMatch(/286(\.\d)? MB/);
-    // 300 MB + the 16 MB read-back at 978 kB/s ≈ 5.4 min.
-    expect(section.textContent).toMatch(/about 6 min/);
-  });
-
-  it('the footer counts the selection and totals the time, then adds', async () => {
-    await renderScreen(listResult({ penItems: [], catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 300_000_000 })] }));
-
-    expect(screen.getByText('Tick a book above to add it.')).toBeTruthy();
-    fireEvent.click(sectionByHeading('New books').querySelector('input[type="checkbox"]') as Element);
-
-    await screen.findByText(/1 book\(s\) selected, about 6 minutes/);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to your pen' }));
-    await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalled());
-  });
-});
-
-describe('BookLibraryScreen — the NEW badge', () => {
-  it('badges nothing the first time a catalogue is seen', async () => {
-    localStorage.clear();
-    await renderScreen(listResult({ penItems: [], catalogItems: [catalogItem({ status: 'not-on-pen' })] }));
-    expect(screen.queryByText('NEW')).toBeNull();
-  });
-
-  it('badges a book that arrived since the last look, once, then never again', async () => {
-    localStorage.setItem('ponyabc.book.seenCatalogIds.v1', JSON.stringify(['b1']));
-    const list = listResult({
-      penItems: [],
-      catalogItems: [catalogItem({ contentId: 'b1', status: 'not-on-pen' }), catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen' })],
+describe('BookLibraryScreen — syncing', () => {
+  const twoToDo = () =>
+    listResult({
+      penItems: [penItem({ contentId: 'b1' })],
+      catalogItems: [
+        catalogItem({ contentId: 'b1', status: 'on-pen-differs', sizeBytes: 100_000_000 }),
+        catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen', sizeBytes: 20_000_000 }),
+      ],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
     });
 
-    await renderScreen(list);
-    expect(screen.getAllByText('NEW')).toHaveLength(1);
+  it('adds the missing book and updates the changed one, smallest first', async () => {
+    await renderScreen(twoToDo());
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
-    // Re-open the screen: it has now been seen, so it is an ordinary book.
-    cleanup();
-    await renderScreen(list);
-    expect(screen.queryByText('NEW')).toBeNull();
+    await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalled());
+    await waitFor(() => expect(window.ponyabc.bookUpdate).toHaveBeenCalled());
+    // The 20 MB addition runs before the 100 MB update.
+    expect((window.ponyabc.bookAdd as ReturnType<typeof vi.fn>).mock.calls[0][0].contentId).toBe('b2');
   });
-});
 
-describe('BookLibraryScreen — after a change', () => {
-  it('tells the parent to restart the pen after adding a book', async () => {
-    await renderScreen(listResult({ penItems: [], catalogItems: [catalogItem({ status: 'not-on-pen' })] }));
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false }));
+  it('tells the parent to restart the pen once a book has been added', async () => {
+    await renderScreen(twoToDo());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
-    fireEvent.click(sectionByHeading('New books').querySelector('input[type="checkbox"]') as Element);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to your pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
     await screen.findByText('All done!');
     await screen.findByText(/Please unplug your pen, then switch it off and on again/);
   });
 
-  it('does NOT tell them to restart after updating a book in place', async () => {
+  it('stops cleanly when the pen fills up, keeping what finished', async () => {
+    await renderScreen(twoToDo());
+    window.ponyabc.bookAdd = vi.fn(async () => ({ status: 'no-space' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await screen.findByText('Your pen filled up, so we stopped. The books that finished are on your pen.');
+    // It stopped rather than carrying on to the next book.
+    expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('BookLibraryScreen — not enough space', () => {
+  it('refuses to start, says how much more is needed, and offers the way out', async () => {
     await renderScreen(
       listResult({
-        penItems: [penItem({ contentId: 'b1', status: 'verified-differs' })],
-        catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-differs', actionable: true })],
+        penItems: [],
+        catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 1_000_000_000 })],
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 500_000_000 },
       }),
     );
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'not-needed' }));
 
-    fireEvent.click(within(sectionByHeading('Your books')).getByRole('button', { name: 'Update' }));
-    fireEvent.click((await screen.findAllByRole('radio', { name: 'Replace' }))[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
-    await screen.findByText('All done! Your book has been updated.');
-    expect(screen.queryByText(/switch it off and on again/)).toBeNull();
+    await screen.findByText("Your pen doesn't have enough space");
+    await screen.findByText(/You need about .* more\. Please back up your recordings/);
+    expect(screen.getByRole('button', { name: 'Go to My Recordings' })).toBeTruthy();
+    // Nothing was written.
+    expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();
   });
 
-  it('a failed add leaves the pen list alone and says why', async () => {
-    await renderScreen(listResult({ penItems: [], catalogItems: [catalogItem({ status: 'not-on-pen' })] }));
-    window.ponyabc.bookAdd = vi.fn(async () => ({ status: 'no-space' }));
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'not-needed' }));
-
-    fireEvent.click(sectionByHeading('New books').querySelector('input[type="checkbox"]') as Element);
-    fireEvent.click(screen.getByRole('button', { name: 'Add to your pen' }));
-
-    await screen.findByText('Not enough free space to complete this.');
-    expect(window.ponyabc.bookIndexCommit).not.toHaveBeenCalled();
+  it('proceeds when free space could not be read, rather than refusing on a failed check', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [],
+        catalogItems: [catalogItem({ status: 'not-on-pen', sizeBytes: 1_000_000 })],
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: null },
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+    await waitFor(() => expect(window.ponyabc.bookAdd).toHaveBeenCalled());
   });
+});
 
+describe('BookLibraryScreen — the book list', () => {
+  it('lists what is on the pen, what will be added and updated, with no actions', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' }), penItem({ fileName: 'someone-elses.axb', contentId: null, friendlyName: null, friendlyNameI18n: null, status: 'unknown', removable: false })],
+        catalogItems: [catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen' })],
+      }),
+    );
+
+    const list = document.querySelector('details.book-list') as HTMLDetailsElement;
+    list.open = true;
+    expect(list.textContent).toContain('On your pen');
+    expect(list.textContent).toContain('Will be added');
+    expect(list.textContent).toContain('Will be updated');
+    expect(list.textContent).toContain('Other books (not from PonyABC)');
+    expect(list.textContent).toContain('This app never changes them.');
+    // Nothing in the list is pressable.
+    expect(list.querySelectorAll('button, input')).toHaveLength(0);
+  });
+});
+
+describe('BookLibraryScreen — after a change', () => {
   it('offers to fix a book list that no longer matches the pen, and never does it on its own', async () => {
     window.ponyabc.bookIndexStatus = vi.fn(async () => ({
       recordCount: 2, bookCount: 3, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'mismatch', resetPending: false,
@@ -385,68 +366,20 @@ describe('BookLibraryScreen — after a change', () => {
 });
 
 describe('BookLibraryScreen — plain language', () => {
-  it('never shows a parent a filename, a checksum or a hash in the main view', async () => {
+  it('never shows a parent a filename, a checksum or a drive letter in the main view', async () => {
     await renderScreen(
-      listResult({
-        penItems: [penItem({ contentId: 'b1', status: 'matched-hash-unknown' })],
-        catalogItems: [catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen' })],
-      }),
+      listResult({ penItems: [penItem({ contentId: 'b1', status: 'matched-hash-unknown' })], catalogItems: [catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen' })] }),
     );
-    const text = document.body.textContent ?? '';
-    expect(text).not.toMatch(/checksum|hash|SHA-?256|\.axb|catalog entry/i);
+    // The collapsed list and Advanced details legitimately contain filenames; the main view
+    // above them must not.
+    const main = document.body.textContent?.split('See book list')[0] ?? '';
+    expect(main).not.toMatch(/checksum|hash|SHA-?256|\.axb|C:\\/i);
   });
 
-  it('keeps the technical wording available, inside a closed disclosure', async () => {
-    await renderScreen();
-    await screen.findByText('What do these words mean?');
-    const details = document.querySelector('details.status-legend') as HTMLDetailsElement;
-    details.open = true;
-    fireEvent(details, new Event('toggle'));
-
-    for (const keys of Object.values(SIMPLE_STATE_LABELS)) {
-      expect(screen.getAllByText(i18n.t(keys.help, { ns: 'book' })).length, keys.help).toBeGreaterThan(0);
-    }
-
-    const advanced = document.querySelector('details.status-legend details.advanced-details') as HTMLDetailsElement;
-    advanced.open = true;
-    fireEvent(advanced, new Event('toggle'));
-    for (const keys of [...Object.values(PEN_STATUS_LABELS), ...Object.values(CATALOG_STATUS_LABELS), ...Object.values(CACHE_STATUS_LABELS)]) {
-      expect(screen.getAllByText(i18n.t(keys.help, { ns: 'book' })).length, keys.help).toBeGreaterThan(0);
-    }
-  });
-});
-
-describe('BookLibraryScreen — checking for new books', () => {
-  it('leads with a plain "Check for new books" button and when it last ran', async () => {
-    await renderScreen();
-    expect(screen.getByRole('button', { name: 'Check for new books' })).toBeTruthy();
-    expect(document.body.textContent).toMatch(/Last checked:/);
-  });
-
-  it('checking calls the catalogue refresh, not a pen scan', async () => {
-    await renderScreen();
-    fireEvent.click(screen.getByRole('button', { name: 'Check for new books' }));
-    await waitFor(() => expect(window.ponyabc.bookCatalogRefresh).toHaveBeenCalled());
-  });
-});
-
-describe('BookLibraryScreen — catalogue status', () => {
   it('tells the parent plainly when the check could not reach us', async () => {
     await renderScreen(
-      listResult({ meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: { state: 'error', atMs: 1, httpStatus: null, itemCount: null, message: 'offline', durationMs: 1 } } }),
+      listResult({ meta: { fetchedAtMs: null, source: 'none', offline: true, conflicts: [], lastCheck: { state: 'error', atMs: 1, httpStatus: null, itemCount: null, message: 'offline', durationMs: 1 }, penFreeBytes: null } }),
     );
     await screen.findByText("We couldn't reach the PonyABC library. Check your internet connection and try again.");
-  });
-
-  it('renders an ambiguous-conflict notice when the catalog reports one', async () => {
-    await renderScreen(
-      listResult({ meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [{ filenameLower: 'a.axb', contentIds: ['b1', 'b2'] }], lastCheck: okLastCheck } }),
-    );
-    await screen.findByText(/share a filename/);
-  });
-
-  it('shows the dev-fixture banner only when the catalog source is "fixture"', async () => {
-    await renderScreen(listResult({ meta: { fetchedAtMs: 1, source: 'fixture', offline: false, conflicts: [], lastCheck: okLastCheck } }));
-    await screen.findByText('Development catalog data — not live');
   });
 });

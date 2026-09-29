@@ -208,5 +208,34 @@
     "minutes": "circa {{minutes}} min",
     "short": "circa un minuto"
   },
-  "penRequired": "Collega la penna per vedere e aggiungere i libri."
+  "penRequired": "Collega la penna per vedere e aggiungere i libri.",
+  "pen": {
+    "connected": "La penna è collegata",
+    "disconnected": "Collega la penna con il suo cavo USB"
+  },
+  "sync": {
+    "has": "Sulla penna ci sono {{count}} libri PonyABC.",
+    "hasNone": "Sulla penna non ci sono ancora libri PonyABC.",
+    "available": "Ci sono {{added}} libro/i nuovo/i e {{updated}} aggiornamento/i. Circa {{minutes}} minuti.",
+    "availableShort": "Ci sono {{added}} libro/i nuovo/i e {{updated}} aggiornamento/i. Circa un minuto.",
+    "upToDate": "Tutti i tuoi libri sono aggiornati.",
+    "button": "Sincronizza i libri",
+    "working": "Sincronizzazione…",
+    "needPen": "Collega la penna per sincronizzare.",
+    "stoppedNoSpace": "La penna si è riempita, quindi ci siamo fermati. I libri completati sono sulla penna."
+  },
+  "space": {
+    "title": "La penna non ha spazio a sufficienza",
+    "body": "Mancano circa {{amount}}. Fai un backup delle registrazioni, elimina quelle che non ti servono più, poi sincronizza di nuovo.",
+    "goToRecordings": "Vai a Le mie registrazioni"
+  },
+  "list": {
+    "toggle": "Vedi l’elenco dei libri",
+    "onPen": "Sulla penna",
+    "willAdd": "Verranno aggiunti",
+    "willUpdate": "Verranno aggiornati",
+    "other": "Altri libri (non di PonyABC)",
+    "otherBody": "Vengono da altrove. Questa app non li modifica mai.",
+    "none": "Nessuno"
+  }
 }

@@ -21,7 +21,7 @@ export default function App() {
             <main className="app-content">
               {section === 'home' && <HomeScreen onNavigate={setSection} />}
               {section === 'recordings' && <MyRecordingsScreen />}
-              {section === 'book' && <BookLibraryScreen />}
+              {section === 'book' && <BookLibraryScreen onNavigate={setSection} />}
               {section === 'firmware' && <FirmwareScreen onNavigate={setSection} />}
               {section === 'settings' && <SettingsScreen />}
             </main>
