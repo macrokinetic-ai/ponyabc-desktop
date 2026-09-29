@@ -121,7 +121,7 @@
     "hint": "Este nome fica só neste computador. A caneta usa sempre o número do autocolante."
   },
   "reassign": {
-    "button": "Mudar de autocolante",
+    "button": "Mudar o número do autocolante",
     "prompt": "Novo número do autocolante",
     "hint": "Escreva o número impresso no autocolante, tal e qual.",
     "confirm": "Mover",

@@ -121,7 +121,7 @@
     "hint": "Questo nome resta su questo computer. La penna usa sempre il numero dell’adesivo."
   },
   "reassign": {
-    "button": "Cambia adesivo",
+    "button": "Cambia numero adesivo",
     "prompt": "Nuovo numero adesivo",
     "hint": "Scrivi il numero stampato sull’adesivo, esattamente così.",
     "confirm": "Spostala",

@@ -121,7 +121,7 @@
     "hint": "This name is only on this computer. Your pen always uses the sticker number."
   },
   "reassign": {
-    "button": "Change sticker",
+    "button": "Change sticker number",
     "prompt": "New sticker number",
     "hint": "Type the number printed on the sticker, exactly as it appears.",
     "confirm": "Move it",

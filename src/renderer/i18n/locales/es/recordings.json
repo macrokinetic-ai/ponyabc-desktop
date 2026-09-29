@@ -121,7 +121,7 @@
     "hint": "Este nombre solo está en este ordenador. Su lápiz siempre usa el número de la pegatina."
   },
   "reassign": {
-    "button": "Cambiar de pegatina",
+    "button": "Cambiar el número de pegatina",
     "prompt": "Nuevo número de pegatina",
     "hint": "Escriba el número impreso en la pegatina, exactamente igual.",
     "confirm": "Moverla",

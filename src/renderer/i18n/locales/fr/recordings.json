@@ -121,7 +121,7 @@
     "hint": "Ce nom reste sur cet ordinateur. Votre stylo utilise toujours le numéro de la gommette."
   },
   "reassign": {
-    "button": "Changer de gommette",
+    "button": "Changer le numéro de gommette",
     "prompt": "Nouveau numéro de gommette",
     "hint": "Tapez le numéro imprimé sur la gommette, exactement tel quel.",
     "confirm": "Le déplacer",

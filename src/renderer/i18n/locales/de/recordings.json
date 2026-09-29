@@ -121,7 +121,7 @@
     "hint": "Dieser Name bleibt auf diesem Computer. Ihr Stift verwendet immer die Aufklebernummer."
   },
   "reassign": {
-    "button": "Aufkleber wechseln",
+    "button": "Aufklebernummer ändern",
     "prompt": "Neue Aufklebernummer",
     "hint": "Tippen Sie die Nummer genau so ein, wie sie auf dem Aufkleber steht.",
     "confirm": "Verschieben",

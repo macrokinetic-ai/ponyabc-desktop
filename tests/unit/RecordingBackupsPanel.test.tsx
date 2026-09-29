@@ -154,7 +154,7 @@ describe('recordings — changing a sticker', () => {
   it('explains a wrong-length number instead of silently padding it', async () => {
     // 0451 and 00451 may be different stickers, so "451" must never become "0451" for them.
     await renderPanel({ recordingReassign: vi.fn(async () => ({ status: 'rejected', reason: 'invalid-length' })) });
-    fireEvent.click(screen.getByRole('button', { name: 'Change sticker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Change sticker number' }));
     fireEvent.change(screen.getByLabelText('New sticker number'), { target: { value: '451' } });
     fireEvent.click(screen.getByRole('button', { name: 'Move it' }));
 
@@ -163,7 +163,7 @@ describe('recordings — changing a sticker', () => {
 
   it('sends exactly what was typed', async () => {
     await renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'Change sticker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Change sticker number' }));
     fireEvent.change(screen.getByLabelText('New sticker number'), { target: { value: '00462' } });
     fireEvent.click(screen.getByRole('button', { name: 'Move it' }));
 

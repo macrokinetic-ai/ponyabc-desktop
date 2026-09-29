@@ -1,6 +1,6 @@
 {
   "title": "韌體",
-  "macRequiresWindows": "韌體升級需要喺 Windows 上使用 PonyABC Desktop App。呢個功能喺 Mac 上未能使用。",
+  "macRequiresWindows": "韌體更新需要在 Windows 上使用 PonyABC Desktop App，此功能在 Mac 上無法使用。",
   "back": "返回",
   "steps": {
     "prepare": "準備",
