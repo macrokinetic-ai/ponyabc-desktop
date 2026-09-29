@@ -757,3 +757,28 @@ screen that had rendered but held nothing.
 something that can only appear once the data the test is about has loaded — here "Last checked",
 which needs a fetched catalogue. And when a screen is restructured, re-examine the waits as
 carefully as the assertions: they are the part that silently stops doing its job.
+
+## "The click worked" is not "the app moved"
+
+The screenshot runner clicked its way through the firmware wizard and reported all nineteen
+screens captured. Three of them were the same screen photographed three times: the stand-in
+package folder was missing files the real validator requires, so **Next** was disabled, and
+`element.click()` on a disabled button does nothing while still returning true.
+
+**How to apply:** when a script drives a UI, a step's success is the state that follows it, not
+the element it found. Assert something only the next state can show — a heading, a step marker,
+a control that only exists there — before the screenshot. And when a fixture stands in for real
+data, build it from the same list the code checks against, or do not put it through that check
+at all; a hand-copied subset of a requirement list is a fixture that lies.
+
+## Photograph the screens you think are finished
+
+Capturing every parent-facing screen for the manual, in two languages, found six wording faults
+that months of reading the code had not: a Chinese summary that said "update one update", "(s)"
+plurals on the recordings screen after the BOOK screen had been fixed, a legend telling parents
+to "Select Add" a week after the Add button was replaced by one-button sync, "catalog item(s)"
+and "DIY MP3" on screens a nursery parent meets first.
+
+**How to apply:** rendering a screen as an image is a different review from reading its source.
+Do it before calling a customer-facing change done — the screenshot shows what the customer
+gets, including every string the change left behind.
