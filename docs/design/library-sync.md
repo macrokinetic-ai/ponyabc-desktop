@@ -63,11 +63,11 @@ Decision table per chosen book:
 | nothing                                                     | present, **size differs**         | **update**                              |
 | —                                                           | absent                            | **add**                                 |
 
-The third row is the fallback the owner asked for, and it is a judgement call worth naming: a
-factory-preloaded book whose size matches the catalog is _probably_ that version, and the
-alternative — hashing it — costs nineteen minutes to confirm something that is almost always
-true. If a parent ever reports a book behaving oddly, the existing per-book **Verify** under
-Advanced details does the expensive check on demand, for that one book.
+The third row is **decided** (owner, 2026-09-29): for a factory-preloaded book with no sync
+record, **a size match counts as the correct version.** Hashing it instead would cost nineteen
+minutes per book to confirm something almost always true — about 4½ hours for a 37-book card. If
+a parent ever reports a book behaving oddly, the existing per-book **Verify** under Advanced
+details does the expensive check on demand, for that one book.
 
 **Never delete-and-recopy.** An update is a same-name replace, which also keeps the book's
 position and so needs no index reset (unless `update_requires_index_reset` is set — see
@@ -113,11 +113,11 @@ it is the option we have evidence for rather than hope.
 
 ## 3. Catalog states
 
-| State                | Not on the pen        | Already on the pen                  |
-| -------------------- | --------------------- | ----------------------------------- |
-| **active**           | offered to the parent | kept up to date                     |
-| **retired**          | **not offered**       | **kept, and still updated**         |
-| **remove_from_pens** | not offered           | **removed**, and the parent is told |
+| State                | Not on the pen        | Already on the pen                            |
+| -------------------- | --------------------- | --------------------------------------------- |
+| **active**           | offered to the parent | kept up to date                               |
+| **retired**          | **not offered**       | **kept, and still updated** ✔ owner-confirmed |
+| **remove_from_pens** | not offered           | **removed**, and the parent is told           |
 
 **Retired is the important one.** A customer owns the physical cards; a book leaving the
 catalogue does not make their cards stop existing. Removing it from their pen would break a
@@ -184,13 +184,30 @@ exist.
 - **Resume a large interrupted copy.** The staged file (`.ponyabc-tmp-…​.part`) survives a crash.
   On the next sync, if a staged file exists for the same target and its size is less than the
   expected size, continue appending from its length **and then verify the whole staged file
-  against the catalog hash before renaming**. Resuming is only safe _because_ the final check is
-  a full hash — the one place where reading back is worth the time, since the alternative is
-  re-copying from zero.
+  against the catalog hash before renaming**.
+
+  This is the one place a **full** read-back is still required, and it is deliberate. An ordinary
+  write is verified by its size plus its first and last 8 MB (below), because we watched the bytes
+  go out in a single pass. A resumed file was written by two runs, possibly days apart, with an
+  unknown state at the join — and the edges say nothing about the middle, which is exactly where
+  the join is. Nineteen minutes is worth it when the alternative is re-copying from zero.
+
 - **Free space check** against the 16 GB card before starting, counting only what will actually
   be written (an update of a same-size book frees what it replaces).
 
 ---
+
+### How an ordinary write is verified
+
+Since 0.3.17: **size, plus the first and last 8 MB read back from the pen**, compared with the
+same ranges of the source — about sixteen seconds, against ~19 minutes for a full read-back of a
+1.1 GB book. The full source hash is computed _during_ the write, for free, and is what the sync
+record stores.
+
+That is a weaker guarantee than reading everything back, and it is worth being plain about what
+it gives up: a fault that corrupts the **middle** of a file while leaving both ends and the total
+length intact would not be caught. In exchange every transfer is half as long. A full read-back
+remains available per book, on demand, under Advanced details → Verify.
 
 ## 6. What `ponyabc-web` needs
 

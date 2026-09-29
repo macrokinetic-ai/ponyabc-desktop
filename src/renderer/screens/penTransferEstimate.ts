@@ -15,6 +15,20 @@
 export const PEN_WRITE_BYTES_PER_SECOND = 978_000;
 
 /**
+ * Bytes read back from the pen to verify one book: the first and last 8 MB.
+ *
+ * It used to be the whole file, which doubled every transfer — ~19 minutes of writing followed
+ * by ~19 minutes of reading. Now it is a flat ~16 MB, about sixteen seconds, however large the
+ * book is. A file smaller than 16 MB is verified whole, which costs no more than its own size.
+ */
+export const VERIFY_READBACK_BYTES = 16 * 1024 * 1024;
+
+/** Total bytes moved over USB for a set of books: each one written, then partly read back. */
+export function transferBytesFor(sizesBytes: readonly number[]): number {
+  return sizesBytes.reduce((sum, size) => sum + size + Math.min(size, VERIFY_READBACK_BYTES), 0);
+}
+
+/**
  * Whole minutes, rounded up, for a given number of bytes.
  *
  * Returns 0 for anything under a minute so the caller can offer "a minute or two" instead of a

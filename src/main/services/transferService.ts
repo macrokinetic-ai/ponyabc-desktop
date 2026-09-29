@@ -24,6 +24,10 @@ export interface SafeWriteResult {
    *  replacing one. The pen's book index is a positional array, so an addition invalidates it
    *  and a same-name replacement does not — see bookIndexReset.ts. */
   created?: boolean;
+  /** SHA-256 of the SOURCE, computed while it was being read for the copy, so it costs nothing.
+   *  This is what a later library sync records as "the version currently on the pen" — see
+   *  docs/design/library-sync.md — and it is why the source never needs re-reading. */
+  sourceSha256?: string;
 }
 
 function classifyError(err: unknown): { reason: WriteFailureReason; message: string } {
@@ -136,6 +140,42 @@ export function sha256FileWithProgress(filePath: string, opts: { onProgress?: (b
 }
 
 /**
+ * How much of each end of a written file is read back from the pen to verify it.
+ *
+ * Reading a whole book back costs as long as writing it — measured 978 kB/s, so ~19 minutes for
+ * a 1.1 GB book, doubling every transfer. Checking the first and last 8 MB costs about sixteen
+ * seconds and still catches what actually goes wrong on removable media: a truncated write, a
+ * write that landed at the wrong offset, and a card that fails at the start or the end of a long
+ * transfer. A full read-back remains available on demand, per book, via Verify.
+ */
+export const VERIFY_EDGE_BYTES = 8 * 1024 * 1024;
+
+/** The byte ranges verified for a file of `size`. Overlapping ends collapse to the whole file,
+ *  which for anything at or under 16 MB is the same cost as the two edges anyway. */
+export function verifyRanges(size: number, edge: number = VERIFY_EDGE_BYTES): Array<{ start: number; length: number }> {
+  if (size <= edge * 2) return [{ start: 0, length: size }];
+  return [
+    { start: 0, length: edge },
+    { start: size - edge, length: edge },
+  ];
+}
+
+/** SHA-256 of one byte range of a file. */
+export function sha256Range(filePath: string, start: number, length: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (length <= 0) {
+      resolve(crypto.createHash('sha256').digest('hex'));
+      return;
+    }
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath, { start, end: start + length - 1 });
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('error', reject);
+    stream.on('close', () => resolve(hash.digest('hex')));
+  });
+}
+
+/**
  * Copies `sourcePath` to `destPath`, reporting progress as it goes.
  *
  * Replaces `fs.copyFile(..., COPYFILE_EXCL)`: the exclusivity is kept by opening the destination
@@ -149,25 +189,28 @@ async function copyWithProgress(
   destPath: string,
   totalBytes: number,
   onProgress?: (bytesWritten: number, totalBytes: number) => void,
-): Promise<void> {
+): Promise<string> {
   const source = fs.createReadStream(sourcePath);
   const dest = fs.createWriteStream(destPath, { flags: 'wx' });
+  // The source is being read anyway, so its full hash costs nothing on top of the copy. It is
+  // what a later sync compares against, and it is why the source never has to be re-read.
+  const sourceHash = crypto.createHash('sha256');
 
   let written = 0;
   let lastReported = 0;
-  if (onProgress) {
-    source.on('data', (chunk: string | Buffer) => {
-      written += chunk.length;
-      // Roughly per megabyte: at ~1 MB/s that is about one update a second, and it keeps a
-      // 1.1 GB book from producing a thousand IPC messages.
-      if (written - lastReported >= 1_000_000 || written === totalBytes) {
-        lastReported = written;
-        onProgress(written, totalBytes);
-      }
-    });
-  }
+  source.on('data', (chunk: string | Buffer) => {
+    sourceHash.update(chunk);
+    written += chunk.length;
+    // Roughly per megabyte: at ~1 MB/s that is about one update a second, and it keeps a
+    // 1.1 GB book from producing a thousand IPC messages.
+    if (onProgress && (written - lastReported >= 1_000_000 || written === totalBytes)) {
+      lastReported = written;
+      onProgress(written, totalBytes);
+    }
+  });
 
   await pipeline(source, dest);
+  return sourceHash.digest('hex');
 }
 
 async function unlinkQuiet(p: string): Promise<void> {
@@ -407,18 +450,29 @@ export async function safeWriteFile(params: {
 
   try {
     const sourceStat = await fs.promises.stat(sourcePath);
-    await copyWithProgress(sourcePath, tmpPath, sourceStat.size, onProgress);
+    const sourceSha256 = await copyWithProgress(sourcePath, tmpPath, sourceStat.size, onProgress);
 
+    // 1. Size. Catches a truncated write outright, from a `stat` — no reading at all.
     const stagedStat = await fs.promises.stat(tmpPath);
     if (stagedStat.size !== sourceStat.size) {
       if (verifyStillSameTarget()) await unlinkQuiet(tmpPath);
       return { ok: false, reason: 'hash-mismatch', message: 'Staged file size did not match the source; nothing was replaced.', backupPath };
     }
 
-    const [sourceHash, stagedHash] = await Promise.all([sha256File(sourcePath), sha256File(tmpPath)]);
-    if (sourceHash !== stagedHash) {
-      if (verifyStillSameTarget()) await unlinkQuiet(tmpPath);
-      return { ok: false, reason: 'hash-mismatch', message: 'Staged file did not verify against the source; nothing was replaced.', backupPath };
+    // 2. The first and last 8 MB, read back FROM THE PEN and compared with the same ranges of
+    //    the source. Reading the whole file back would cost as long again as writing it — ~19
+    //    minutes for a 1.1 GB book — for a guarantee that in practice differs only for a fault
+    //    that corrupts the middle of a file while leaving both ends and the length intact. A
+    //    full read-back stays available per book under Verify.
+    for (const range of verifyRanges(sourceStat.size)) {
+      const [sourceRangeHash, stagedRangeHash] = await Promise.all([
+        sha256Range(sourcePath, range.start, range.length),
+        sha256Range(tmpPath, range.start, range.length),
+      ]);
+      if (sourceRangeHash !== stagedRangeHash) {
+        if (verifyStillSameTarget()) await unlinkQuiet(tmpPath);
+        return { ok: false, reason: 'hash-mismatch', message: 'Staged file did not verify against the source; nothing was replaced.', backupPath };
+      }
     }
 
     if (!verifyStillSameTarget()) {
@@ -431,7 +485,7 @@ export async function safeWriteFile(params: {
 
     try {
       await fs.promises.rename(tmpPath, finalPath);
-      return { ok: true, backupPath, created: !existedBefore };
+      return { ok: true, backupPath, created: !existedBefore, sourceSha256 };
     } catch (renameErr) {
       const { reason, message } = classifyError(renameErr);
       if (verifyStillSameTarget()) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PEN_WRITE_BYTES_PER_SECOND, estimateMinutes, remainingMinutes } from '../../src/renderer/screens/penTransferEstimate';
+import { PEN_WRITE_BYTES_PER_SECOND, VERIFY_READBACK_BYTES, estimateMinutes, remainingMinutes, transferBytesFor } from '../../src/renderer/screens/penTransferEstimate';
 
 /**
  * The pen's USB is 1.x — 978 kB/s measured from a full-card image. Without an estimate a parent
@@ -62,5 +62,29 @@ describe('time remaining', () => {
   it('is 0 when there is nothing left', () => {
     expect(remainingMinutes(600 * MB, 600 * MB, 60_000)).toBe(0);
     expect(remainingMinutes(700 * MB, 600 * MB, 60_000)).toBe(0);
+  });
+});
+
+describe('what an estimate has to include', () => {
+  it('counts the write plus the 16 MB read back, not a second full pass', () => {
+    const book = 1_100 * MB;
+    expect(transferBytesFor([book])).toBe(book + VERIFY_READBACK_BYTES);
+    // The change this replaced would have been 2× the book — about forty minutes rather than twenty.
+    expect(transferBytesFor([book])).toBeLessThan(book * 1.05);
+  });
+
+  it('never claims to read back more than the file holds', () => {
+    expect(transferBytesFor([1_000])).toBe(2_000);
+    expect(transferBytesFor([])).toBe(0);
+  });
+
+  it('adds up across a batch', () => {
+    expect(transferBytesFor([100 * MB, 200 * MB])).toBe(300 * MB + 2 * VERIFY_READBACK_BYTES);
+  });
+
+  it('still says about twenty minutes for a 1.1 GB book', () => {
+    // Verification adds ~16 s to ~19 min, so the rounded answer is unchanged — which is the
+    // point: the parent-facing number got honest without getting worse.
+    expect(estimateMinutes(transferBytesFor([1_100 * MB]))).toBe(20);
   });
 });

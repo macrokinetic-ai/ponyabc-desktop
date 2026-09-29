@@ -115,6 +115,23 @@ and first boot, and whether books installed before the upgrade still play afterw
 
 ---
 
+## The pen's USB is 1.x — about 1 MB/s
+
+Measured 2026-09-29: a full-card `dd` image ran at **978 kB/s**.
+
+|                                     |                      |
+| ----------------------------------- | -------------------- |
+| A 1.1 GB book                       | ~19 minutes to write |
+| Reading that book back to verify it | another ~19 minutes  |
+| Re-copying a full 16 GB card        | over 4½ hours        |
+
+This is not a detail — it is the constraint every content feature is designed around. Never
+re-copy or read back a whole book unless there is no alternative. Since 0.3.17 a write is
+verified by its size plus the first and last 8 MB (~16 seconds), not a full read-back; the full
+check stays available per book under Advanced details.
+
+---
+
 ## The book index: `BOOKFILE.BIN` and `1.BIN`
 
 **Settled on real pens, 2026-09-29**, by comparing a pen's index before and after adding a book.

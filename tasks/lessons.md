@@ -727,3 +727,21 @@ release the same handle and need the same wait. And when a test only ever runs o
 OS, the guarantee it claims is only tested on that OS — this one had been green on macOS for
 weeks while the production race existed for every Windows customer who cancelled a verification
 and then removed the book.
+
+## Verification you can afford is worth more than verification you can't
+
+`safeWriteFile` verified a write by hashing the staged file back off the pen. On a normal disk
+that is free. On this pen — USB 1.x, 978 kB/s measured — it read 1.1 GB back at the same speed it
+had just written it, so **every book transfer took twice as long as it needed to**, and nobody
+had noticed because every test fixture is a few kilobytes.
+
+The fix was not to drop verification but to right-size it: size (free, from a `stat`) plus the
+first and last 8 MB read back, ~16 seconds instead of ~19 minutes, with the full source hash
+computed during the write at no cost.
+
+**How to apply:** when a safety check runs against a device rather than local disk, cost it at the
+device's speed before deciding it is cheap. And when a check turns out to be expensive, look for
+the version that keeps most of the guarantee for a fraction of the cost — the honest trade is
+usually available, and it beats both "keep paying" and "drop the check". Say plainly what the
+cheaper check no longer catches; here, a fault that corrupts the middle of a file while leaving
+both ends and the length intact.

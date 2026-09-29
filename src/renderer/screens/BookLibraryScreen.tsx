@@ -25,7 +25,7 @@ import {
   simpleStateForCatalog,
   simpleStateForPen,
 } from './bookStatusLabels';
-import { estimateMinutes, remainingMinutes } from './penTransferEstimate';
+import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 function formatBytes(n: number): string {
@@ -290,8 +290,8 @@ export function BookLibraryScreen() {
     // Say how long this will take BEFORE it starts, not after. A parent deciding whether to begin
     // a twenty-minute copy needs the number while they can still choose.
     const willWrite = targets.filter((i) => !(isOnPen(i.status) && decisions[i.contentId] === 'skip'));
-    const totalBytes = willWrite.reduce((sum, i) => sum + i.sizeBytes, 0);
-    const minutes = estimateMinutes(totalBytes);
+    // Each book is written, then partly read back to verify it — so the estimate counts both.
+    const minutes = estimateMinutes(transferBytesFor(willWrite.map((i) => i.sizeBytes)));
     setMessage(minutes > 0 ? t('transfer.estimateBefore', { minutes }) : t('transfer.estimateBeforeShort'));
 
     try {
