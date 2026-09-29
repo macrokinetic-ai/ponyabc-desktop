@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CollapsibleSection } from '../../components/CollapsibleSection';
+import { formatDate } from '@shared/dateFormat';
 
 // Display copy only — kept in sync with SupportTab's own copy of the same constant rather than
 // sharing a module, so each tab file stays self-contained; the real recipient is hardcoded
@@ -24,7 +25,7 @@ export function PrivacyLegalTab({ privacyVersion, privacyLastUpdated }: { privac
 
       <CollapsibleSection
         title={t('legal.privacy.title')}
-        summary={t('legal.privacy.versionLine', { version: privacyVersion, date: privacyLastUpdated.toLocaleDateString(i18n.language) })}
+        summary={t('legal.privacy.versionLine', { version: privacyVersion, date: formatDate(i18n.language, privacyLastUpdated.getTime()) })}
         readLabel={t('legal.readButton')}
         collapseLabel={t('legal.collapseButton')}
       >

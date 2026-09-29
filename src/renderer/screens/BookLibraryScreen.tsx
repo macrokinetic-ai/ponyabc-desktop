@@ -23,6 +23,7 @@ import {
 } from './bookStatusLabels';
 import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
 import { buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '@shared/bookSyncPlan';
+import { formatDateTime } from '@shared/dateFormat';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 /**
@@ -417,7 +418,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
             {busy ? t('sync.working') : t('sync.button')}
           </button>
           <span className="hint">
-            {lib.meta.fetchedAtMs !== null ? t('check.last', { time: new Date(lib.meta.fetchedAtMs).toLocaleString(i18n.language) }) : t('check.never')}
+            {lib.meta.fetchedAtMs !== null ? t('check.last', { time: formatDateTime(i18n.language, lib.meta.fetchedAtMs) }) : t('check.never')}
           </span>
           <button type="button" className="button" disabled={lib.refreshing || busy} onClick={() => void lib.refreshCatalog()}>
             {lib.refreshing ? t('check.checking') : t('check.button')}

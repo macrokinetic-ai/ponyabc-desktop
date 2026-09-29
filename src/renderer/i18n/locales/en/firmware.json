@@ -71,7 +71,7 @@
   "upgrading": {
     "title": "Upgrading",
     "phasePreparing": "Preparing to upgrade…",
-    "phaseAwaitingAuth": "Waiting for Windows authorization, or starting…",
+    "phaseAwaitingAuth": "Waiting for Windows permission, or starting…",
     "phaseToolRunning": "Updating the pen — keep it connected via USB.",
     "phaseFinishing": "Confirming the result…",
     "noCancelNotice": "Once the update starts it cannot be stopped. Please wait — it usually takes a few minutes.",

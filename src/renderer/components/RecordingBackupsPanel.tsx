@@ -5,6 +5,7 @@ import type { RestoreDecision, RestorePlan } from '../../main/services/recording
 import type { SnapshotSummary } from '../../main/ipc/recordingBackup';
 import { useAudioPreview } from '../hooks/useAudioPreview';
 import { AudioPreviewBar } from './AudioPreviewBar';
+import { formatDateTimeMedium } from '@shared/dateFormat';
 
 /**
  * Recordings, for the person who made them.
@@ -19,7 +20,7 @@ import { AudioPreviewBar } from './AudioPreviewBar';
  */
 
 function formatWhen(ms: number, locale: string): string {
-  return new Date(ms).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' });
+  return formatDateTimeMedium(locale, ms);
 }
 
 export function RecordingBackupsPanel() {

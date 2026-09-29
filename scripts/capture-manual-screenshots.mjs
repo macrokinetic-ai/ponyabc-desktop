@@ -282,7 +282,15 @@ async function capture(ws, file) {
   ).result.value;
   await send(ws, 'Emulation.setDeviceMetricsOverride', { width: 1280, height, deviceScaleFactor: 2, mobile: false });
   await sleep(250);
-  const { data } = await send(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+  // One retry: a busy machine occasionally leaves Page.captureScreenshot past its timeout, and
+  // losing a screenshot to that is not worth a whole re-run.
+  let data;
+  try {
+    ({ data } = await send(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }));
+  } catch {
+    await sleep(1500);
+    ({ data } = await send(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }));
+  }
   fs.writeFileSync(file, Buffer.from(data, 'base64'));
   await send(ws, 'Emulation.setDeviceMetricsOverride', { width: 1280, height: 860, deviceScaleFactor: 2, mobile: false });
   return file;

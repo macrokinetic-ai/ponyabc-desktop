@@ -68,7 +68,7 @@ todo.md`) is complete.
 ## Category
 
 **Recommended: Utilities & tools.** The app's core function is device management and content
-synchronization (firmware updates, SD-card file transfer, downloading/caching official content) —
+synchronisation (firmware updates, SD-card file transfer, downloading/caching official content) —
 the same category of function as other hardware-companion and sync utilities, regardless of who
 uses it or what the content is about. **Education is not recommended as primary**: that category
 is for apps that themselves deliver a learning experience directly to a learner, which this app
@@ -99,10 +99,10 @@ physical pen and cannot be exercised by a reviewer without one.
 **Fully testable without a P5 pen:**
 - App launch, navigation, Settings, and all 8 interface languages
 - "Register your pen" (opens an external browser page — does not require a pen)
-- BOOK library browsing and catalog metadata (network-based; downloading BOOK files to the
+- BOOK library browsing and catalogue metadata (network-based; downloading BOOK files to the
   computer works without a pen — only the final install-onto-pen step needs one)
 - Diagnostics export (About panel and general app diagnostics)
-- Update-check behavior (Store builds show "handled automatically"; this is intentional — see
+- Update-check behaviour (Store builds show "handled automatically"; this is intentional — see
   the app's Settings → About)
 
 **Requires a real P5 pen and cannot be tested by a reviewer:**
@@ -148,7 +148,7 @@ README for exact filenames and the CI run they came from).
 kept at [`store-assets/privacy-notice-desktop.md`](./privacy-notice-desktop.md) in this repo. It
 is grounded in an actual investigation of what the app's own code sends, and separately what
 Cloudflare/GitHub infrastructure may retain as ordinary connection metadata — not assumed, and
-not summarized as "no personal information is collected" (that file explains exactly why not).
+not summarised as "no personal information is collected" (that file explains exactly why not).
 One fact is deliberately left unconfirmed rather than invented: Cloudflare's exact log-retention
 duration for this specific deployment — the page states the documented default range (3 days
 Free / 7 days Paid) without claiming which applies.
@@ -170,7 +170,7 @@ content-disclosure obligations — every answer below is given on its own merits
 | Violence | Depictions of harm to characters/people/animals | None | No such content anywhere in the app or its own UI. |
 | Fear / horror themes | Scary or horror content | None | No such content anywhere in the app's own UI. |
 | Sexual content / nudity | Sexual content or nudity | None | No such content anywhere in the app. |
-| Language / profanity | Strong language, slurs, crude humor | None | No such content anywhere in the app's own UI. |
+| Language / profanity | Strong language, slurs, crude humour | None | No such content anywhere in the app's own UI. |
 | Controlled substances | References to alcohol, tobacco, or drugs | None | No such content anywhere in the app. |
 | Gambling | Real-money or simulated gambling | None | No such content anywhere in the app. |
 | Users interact | Chat, messaging, multiplayer, or other direct interaction between users | None | No chat, messaging, multiplayer, comments, or any user-to-user interaction feature of any kind. |
@@ -192,7 +192,7 @@ section. Only these remain before this draft is submission-ready:
 1. **Age rating (IARC) answers.** Mapped to real IARC categories above — enter these (or your
    own) directly in Partner Center; the actual rating is computed there, not decided here.
 2. **Optional, not blocking**: a UAC-decline run and an interrupted-launch recovery check (steps
-   in the test kit's README) — useful additional evidence, not required to finalize this draft.
+   in the test kit's README) — useful additional evidence, not required to finalise this draft.
 3. **Your final review and explicit go-ahead** — nothing gets submitted to Partner Center until
    then.
 4. **Partner Center itself**: I have no access to Partner Center from this environment (no

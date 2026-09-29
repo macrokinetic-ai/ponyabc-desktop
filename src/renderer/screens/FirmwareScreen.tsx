@@ -13,6 +13,7 @@ import { usePenRoot } from '../state/PenRootContext';
 import { compareOfficialToOnPen } from './firmwareVersionCompare';
 import { CollapsibleSection } from '../components/CollapsibleSection';
 import type { Section } from '../components/NavSidebar';
+import { formatDate, formatDateTime } from '@shared/dateFormat';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
 
@@ -24,7 +25,7 @@ const PHASE_KEY: Record<FirmwareProgressEvent['phase'], string> = {
 };
 
 export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) => void }) {
-  const { t } = useTranslation('firmware');
+  const { t, i18n } = useTranslation('firmware');
   const penRoot = usePenRoot();
   const isMac = window.ponyabc.platform === 'darwin';
   const penConnected = penRoot.result.status === 'ok';
@@ -293,9 +294,9 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
                   : t('recovery.unknownBody')}
             </p>
           </div>
-          <p className="hint">{t('recovery.startedAt', { time: new Date(recovery.pending.startedAtMs).toLocaleString() })}</p>
+          <p className="hint">{t('recovery.startedAt', { time: formatDateTime(i18n.language, recovery.pending.startedAtMs) })}</p>
           {recovery.status !== 'checking' && (
-            <p className="hint">{t('recovery.lastChecked', { time: new Date(recovery.lastCheckedAtMs).toLocaleString() })}</p>
+            <p className="hint">{t('recovery.lastChecked', { time: formatDateTime(i18n.language, recovery.lastCheckedAtMs) })}</p>
           )}
           <button
             type="button"
@@ -362,7 +363,7 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
                   <p className="hint">
                     {t('package.official.packageLabel', {
                       label: officialFetch.release.packageLabel,
-                      date: officialFetch.release.packageDate ? new Date(officialFetch.release.packageDate).toLocaleDateString() : '',
+                      date: officialFetch.release.packageDate ? formatDate(i18n.language, new Date(officialFetch.release.packageDate).getTime()) : '',
                     })}
                   </p>
                 )}

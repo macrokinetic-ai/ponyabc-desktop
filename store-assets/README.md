@@ -13,7 +13,7 @@ from CI run [35582371173](https://github.com/macrokinetic-ai/ponyabc-desktop/act
 | --- | --- |
 | `winx64-msix-home.png` | Home screen |
 | `winx64-msix-my-recordings.png` | DIY recordings manager (two-pane view) |
-| `winx64-msix-book-library.png` | BOOK library (real, live catalog data) |
+| `winx64-msix-book-library.png` | BOOK library (real, live catalogue data) |
 | `winx64-msix-firmware.png` | Firmware wizard's real "Prepare your pen" step — genuine Windows-only content, not the macOS "not available" message a non-Windows capture would show |
 | `winx64-msix-settings.png` | Settings → About, correctly reading "Windows · x64 (Microsoft Store)" / `win-x64-msix` and "Installed from Microsoft Store — updates are handled automatically" |
 
