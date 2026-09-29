@@ -26,16 +26,18 @@ Use the **USB cable** that came with the pen, plugged into your computer.
 A Bluetooth connection is not enough. The pen has to appear as a drive on your computer for the
 app to put anything on it, and only the cable does that.
 
-When it is connected the app says, at the top of the **BOOK Library** page:
+When it is connected, the first page says so:
 
-> **Your pen is connected**
+![The app's first page with the pen connected](screenshots/01-home-en.png)
 
-If it says *"Please connect your pen with its USB cable"*, try a different cable or a different
-USB socket. Some cables are made for charging only and cannot carry data.
+If it says the pen is not connected, try a different cable or a different USB socket. Some cables
+are made for charging only and cannot carry data.
+
+![The first page when no pen is connected](screenshots/02-home-no-pen-en.png)
 
 ## 3. Put books on your pen
 
-![The BOOK Library page, with books ready to sync](screenshots/book-summary-en.png)
+![The BOOK Library page, with books ready to sync](screenshots/03-books-summary-en.png)
 
 Go to **BOOK Library**. The app tells you, in one line, what it would do:
 
@@ -58,7 +60,7 @@ starts, and counts down while it goes. You can leave it and come back.
 
 ### When everything is already up to date
 
-![Nothing to do](screenshots/book-uptodate-en.png)
+![Nothing to do](screenshots/04-books-up-to-date-en.png)
 
 > All your books are up to date.
 
@@ -67,6 +69,8 @@ Nothing to do. Select **Check for new books** any time you want to look again.
 ## 4. Switch your pen off and on
 
 When books have been **added**, the app finishes with:
+
+![The sync has finished](screenshots/07-books-sync-finished-en.png)
 
 > **All done!**
 > Please unplug your pen, then switch it off and on again. The first start may take a little
@@ -83,7 +87,7 @@ for one.*
 
 ## 5. If your pen runs out of space
 
-![Not enough space](screenshots/book-nospace-en.png)
+![Not enough space](screenshots/05-books-not-enough-space-en.png)
 
 > **Your pen doesn't have enough space**
 > You need about 800 MB more. Please back up your recordings and delete some you no longer need,
@@ -95,31 +99,65 @@ precisely so you are not left half-way.
 Select **Go to My Recordings**, back up your recordings to this computer, then delete the ones
 you no longer need from the pen. Your backed-up copies stay on the computer.
 
+Occasionally the app cannot read how much room is left at all. It stops there rather than
+guessing:
+
+![The free space could not be read](screenshots/06-books-space-unknown-en.png)
+
+Unplug the pen, plug it in again, and try once more.
+
 ## 6. Update the pen itself (Windows only)
 
-Occasionally the pen's own software needs updating. Go to **Firmware** and follow the steps.
+Occasionally the pen's own software needs updating. Go to **Firmware** and follow the steps. The
+app walks you through them one at a time.
+
+![Step 1 — getting ready](screenshots/15-firmware-prepare-en.png)
+
+![Step 2 — the update to use](screenshots/16-firmware-package-en.png)
+
+![Step 3 — the last check before anything happens](screenshots/17-firmware-confirm-en.png)
 
 - Windows will ask your permission partway through. Please say yes — it cannot continue
   otherwise.
 - **Do not unplug the pen** while it runs.
 - When it finishes, switch the pen off and on and try one of your books.
 
-If you say no to the Windows prompt, nothing happens to your pen at all and you can try again.
+![The update has finished](screenshots/18-firmware-finished-en.png)
+
+If something stops it before it starts — including saying no to the Windows prompt — the app
+tells you plainly, and your pen has not been touched:
+
+![The update did not start](screenshots/19-firmware-not-started-en.png)
 
 This is not available on a Mac.
 
 ## 7. Your child's recordings
 
-Go to **My Recordings**.
+Go to **My Recordings**. Everything on the pen is on the left; the backups kept on this computer
+are on the right.
+
+![My Recordings](screenshots/10-recordings-en.png)
 
 - **Back up my recordings** copies everything on the pen to this computer. Do this before you
   delete anything.
+
+  ![A backup has been made](screenshots/11-recordings-backed-up-en.png)
+
 - **Put these back on my pen** restores from a backup. If a recording already exists on that
   sticker number, the app plays you both and asks which to keep — it never chooses for you.
+
+  ![Choosing which recording to keep](screenshots/12-recordings-restore-en.png)
+
 - **Rename** gives a recording a name you will recognise. The name stays on this computer; the
   pen always uses the sticker number.
+
+  ![Giving a recording a name](screenshots/14-recordings-label-en.png)
+
 - **Change sticker number** moves a recording to a different sticker. Type the number exactly as
   it is printed, including any zeros at the start.
+
+  ![Moving a recording to another sticker](screenshots/13-recordings-sticker-en.png)
+
 - **Delete from pen** always saves a copy to this computer first.
 
 ## 8. What the words mean
@@ -132,8 +170,10 @@ Go to **My Recordings**.
 | **Other books (not from PonyABC)** | Books that came from somewhere else. The app never changes them. |
 | **All done!** | The sync finished. Unplug and restart the pen. |
 
-There is a **What do these words mean?** section on the BOOK Library page with the same list, and
-an **Advanced details** section below it for anything our support team asks you to open.
+The same list is on the BOOK Library page itself, under **What do these words mean?**, with an
+**Advanced details** section below it for anything our support team asks you to open.
+
+![What the words mean, on the page itself](screenshots/09-books-legend-en.png)
 
 ## 9. If something goes wrong
 
@@ -143,6 +183,8 @@ and a different cable. Charging-only cables are common and will not work.
 **A book I added doesn't play.** Switch the pen off and on and wait for it to finish starting. If
 it still does not play, open the app with the pen connected — if it offers **Fix my pen's book
 list**, select it, then restart the pen again.
+
+![Fix my pen's book list](screenshots/08-books-fix-list-en.png)
 
 **The app says it couldn't check my pen's free space.** Unplug the pen, plug it in again, and try
 again.

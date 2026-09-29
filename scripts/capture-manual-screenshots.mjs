@@ -165,7 +165,9 @@ const GROUPS = [
     steps: [
       { nav: 'firmware' },
       { shot: '15-firmware-prepare', wait: 1200 },
-      { click: '.firmware-wizard__actions .button--primary' },
+      // The first step's Next sits directly in its section; every later one is in the
+      // wizard's own action row.
+      { click: 'section > .button--primary' },
       { shot: '16-firmware-package', wait: 800 },
       { click: '.collapsible__toggle[aria-expanded="false"]' },
       { click: '.collapsible__content .button' },
@@ -184,7 +186,7 @@ const GROUPS = [
     steps: [
       { nav: 'firmware' },
       { wait: 1000 },
-      { click: '.firmware-wizard__actions .button--primary' },
+      { click: 'section > .button--primary' },
       { wait: 600 },
       { click: '.collapsible__toggle[aria-expanded="false"]' },
       { click: '.collapsible__content .button' },
