@@ -39,11 +39,11 @@ INSTALLING IT
 
    Click "More info", then click "Run anyway".
 
-3. The installer opens. Click "Install".
-   If it asks where to install it, the suggested folder is right - just
-   click "Next".
+3. The installer opens on a page headed "Choose Install Location".
+   The folder it suggests is the right one. Click "Install".
 
-4. When it finishes, leave "Run PonyABC Desktop" ticked and click "Finish".
+4. When it finishes, leave "Run PonyABC Desktop" ticked and click
+   "Finish".
 
 That is all. It installs only for you, in your own user account, so
 Windows will not ask for an administrator password.
