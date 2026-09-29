@@ -16,7 +16,8 @@
     "usingOfflineCache": "A usar o último catálogo guardado (atualizado {{time}})",
     "neverLoaded": "Ainda não foi carregado nenhum catálogo com sucesso"
   },
-  "ambiguousNotice": "{{count}} item(ns) do catálogo partilham o mesmo nome de ficheiro com outro item — mostrados apenas como referência até ser resolvido no servidor.",
+  "ambiguousNotice_one": "Por agora deixámos um livro fora desta lista, porque não é claro qual é. Tudo o resto funciona como sempre e nada mudou na caneta.",
+  "ambiguousNotice_other": "Por agora deixámos {{count}} livros fora desta lista, porque não é claro quais são. Tudo o resto funciona como sempre e nada mudou na caneta.",
   "penRequiredForWrite": "Ligue uma caneta para ver e gerir o seu conteúdo BOOK.",
   "selectAll": "Selecionar tudo",
   "selectedCount": "{{count}} selecionado(s)",

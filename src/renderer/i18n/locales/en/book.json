@@ -16,7 +16,8 @@
     "usingOfflineCache": "Using the last saved catalog (updated {{time}})",
     "neverLoaded": "No catalog has been successfully loaded yet"
   },
-  "ambiguousNotice": "{{count}} catalog item(s) share a filename with another item — shown for reference only until this is resolved on the server.",
+  "ambiguousNotice_one": "We've left one book out of this list for now, because it isn't clear which one it is. Everything else works as usual, and nothing on your pen has changed.",
+  "ambiguousNotice_other": "We've left {{count}} books out of this list for now, because it isn't clear which ones they are. Everything else works as usual, and nothing on your pen has changed.",
   "penRequiredForWrite": "Connect a pen to see and manage its BOOK content.",
   "selectAll": "Select all",
   "selectedCount": "{{count}} selected",

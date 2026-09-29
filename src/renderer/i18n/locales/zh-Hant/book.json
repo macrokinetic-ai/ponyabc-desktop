@@ -16,7 +16,7 @@
     "usingOfflineCache": "使用上次儲存的目錄（更新於 {{time}}）",
     "neverLoaded": "尚未成功載入過目錄"
   },
-  "ambiguousNotice": "有 {{count}} 個目錄項目與其他項目使用相同檔名——僅供參考顯示，直至伺服器端解決。",
+  "ambiguousNotice_other": "暫時有 {{count}} 本書未列於此，因為無法確定是哪一本。其餘一切如常，點讀筆內的內容亦沒有改動。",
   "penRequiredForWrite": "請連接點讀筆以查看及管理其 BOOK 內容。",
   "selectAll": "全選",
   "selectedCount": "已選 {{count}} 項",

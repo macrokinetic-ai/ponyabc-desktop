@@ -16,7 +16,8 @@
     "usingOfflineCache": "Utilizzo dell'ultimo catalogo salvato (aggiornato {{time}})",
     "neverLoaded": "Nessun catalogo è ancora stato caricato correttamente"
   },
-  "ambiguousNotice": "{{count}} elemento/i del catalogo condividono un nome file con un altro elemento — mostrati solo a titolo informativo finché non risolto sul server.",
+  "ambiguousNotice_one": "Per ora un libro non compare in questo elenco, perché non è chiaro quale sia. Tutto il resto funziona come sempre e sulla penna non è cambiato nulla.",
+  "ambiguousNotice_other": "Per ora {{count}} libri non compaiono in questo elenco, perché non è chiaro quali siano. Tutto il resto funziona come sempre e sulla penna non è cambiato nulla.",
   "penRequiredForWrite": "Collega una penna per vedere e gestire i suoi contenuti BOOK.",
   "selectAll": "Seleziona tutto",
   "selectedCount": "{{count}} selezionati",

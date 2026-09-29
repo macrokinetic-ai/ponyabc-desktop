@@ -16,7 +16,7 @@
     "usingOfflineCache": "使用上次保存的目录（更新于 {{time}}）",
     "neverLoaded": "尚未成功加载过目录"
   },
-  "ambiguousNotice": "有 {{count}} 个目录项与其他项使用相同文件名——仅供参考显示，直至服务器端解决。",
+  "ambiguousNotice_other": "暂时有 {{count}} 本书未列于此，因为无法确定是哪一本。其余一切如常，点读笔内的内容也没有改动。",
   "penRequiredForWrite": "请连接点读笔以查看和管理其 BOOK 内容。",
   "selectAll": "全选",
   "selectedCount": "已选 {{count}} 项",

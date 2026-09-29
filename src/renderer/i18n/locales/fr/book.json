@@ -16,7 +16,8 @@
     "usingOfflineCache": "Utilisation du dernier catalogue enregistré (mis à jour {{time}})",
     "neverLoaded": "Aucun catalogue n'a encore été chargé avec succès"
   },
-  "ambiguousNotice": "{{count}} élément(s) du catalogue partagent un nom de fichier avec un autre élément — affichés à titre indicatif jusqu'à résolution côté serveur.",
+  "ambiguousNotice_one": "Un livre n'apparaît pas dans cette liste pour le moment, car on ne sait pas de quel livre il s'agit. Tout le reste fonctionne normalement et rien n'a changé sur le stylo.",
+  "ambiguousNotice_other": "{{count}} livres n'apparaissent pas dans cette liste pour le moment, car on ne sait pas de quels livres il s'agit. Tout le reste fonctionne normalement et rien n'a changé sur le stylo.",
   "penRequiredForWrite": "Connectez un stylo pour voir et gérer son contenu BOOK.",
   "selectAll": "Tout sélectionner",
   "selectedCount": "{{count}} sélectionné(s)",

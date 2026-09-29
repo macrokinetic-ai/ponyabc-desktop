@@ -16,7 +16,8 @@
     "usingOfflineCache": "Usando el último catálogo guardado (actualizado {{time}})",
     "neverLoaded": "Todavía no se ha cargado ningún catálogo correctamente"
   },
-  "ambiguousNotice": "{{count}} elemento(s) del catálogo comparten nombre de archivo con otro elemento — se muestran solo como referencia hasta resolverlo en el servidor.",
+  "ambiguousNotice_one": "De momento hemos dejado un libro fuera de esta lista, porque no está claro cuál es. Todo lo demás funciona con normalidad y nada ha cambiado en el lápiz.",
+  "ambiguousNotice_other": "De momento hemos dejado {{count}} libros fuera de esta lista, porque no está claro cuáles son. Todo lo demás funciona con normalidad y nada ha cambiado en el lápiz.",
   "penRequiredForWrite": "Conecta un lápiz para ver y gestionar su contenido BOOK.",
   "selectAll": "Seleccionar todo",
   "selectedCount": "{{count}} seleccionados",

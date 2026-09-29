@@ -16,7 +16,8 @@
     "usingOfflineCache": "Zuletzt gespeicherter Katalog wird verwendet (aktualisiert {{time}})",
     "neverLoaded": "Es wurde noch nie erfolgreich ein Katalog geladen"
   },
-  "ambiguousNotice": "{{count}} Katalogeintrag/-einträge teilen sich einen Dateinamen mit einem anderen Eintrag — werden nur zur Information angezeigt, bis dies serverseitig gelöst ist.",
+  "ambiguousNotice_one": "Ein Buch fehlt vorerst in dieser Liste, weil nicht eindeutig ist, welches es ist. Alles andere funktioniert wie gewohnt, und auf dem Stift hat sich nichts geändert.",
+  "ambiguousNotice_other": "{{count}} Bücher fehlen vorerst in dieser Liste, weil nicht eindeutig ist, welche es sind. Alles andere funktioniert wie gewohnt, und auf dem Stift hat sich nichts geändert.",
   "penRequiredForWrite": "Verbinde einen Stift, um dessen BOOK-Inhalte zu sehen und zu verwalten.",
   "selectAll": "Alle auswählen",
   "selectedCount": "{{count}} ausgewählt",
