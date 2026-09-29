@@ -745,3 +745,15 @@ the version that keeps most of the guarantee for a fraction of the cost — the 
 usually available, and it beats both "keep paying" and "drop the check". Say plainly what the
 cheaper check no longer catches; here, a fault that corrupts the middle of a file while leaving
 both ends and the length intact.
+
+## Wait for the state the assertion needs, not for the component to exist
+
+Changing the BOOK screen's layout, I moved a test helper's wait from a book name to the primary
+button. The button renders immediately with empty data, so every assertion after it could run
+before the IPC data arrived. On this Mac the data always won; Windows CI, slower, failed on a
+screen that had rendered but held nothing.
+
+**How to apply:** a `findBy` that is satisfied by the empty first render is not a wait. Pick
+something that can only appear once the data the test is about has loaded — here "Last checked",
+which needs a fetched catalogue. And when a screen is restructured, re-examine the waits as
+carefully as the assertions: they are the part that silently stops doing its job.
