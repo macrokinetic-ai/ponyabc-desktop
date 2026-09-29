@@ -95,16 +95,17 @@
     "title": "Sicherungen auf diesem Computer",
     "intro": "Eine Sicherung bewahrt eine Kopie jeder Aufnahme, damit Sie sie später zurückspielen können.",
     "button": "Meine Aufnahmen sichern",
-    "done": "{{count}} Aufnahme(n) gesichert.",
     "none": "Noch keine Sicherung. Wählen Sie „Meine Aufnahmen sichern“.",
     "choose": "Zu verwendende Sicherung:",
-    "countLabel": "{{count}} Aufnahme(n)",
-    "missing": "Diese Sicherung wurde nicht gefunden."
+    "missing": "Diese Sicherung wurde nicht gefunden.",
+    "done_one": "{{count}} Aufnahme gesichert.",
+    "done_other": "{{count}} Aufnahmen gesichert.",
+    "countLabel_one": "{{count}} Aufnahme",
+    "countLabel_other": "{{count}} Aufnahmen"
   },
   "restore": {
     "button": "Zurück auf meinen Stift",
     "reviewTitle": "Bevor wir sie zurückspielen",
-    "noClashes": "{{count}} Aufnahme(n) werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
     "clashIntro": "Zu einigen dieser Nummern gibt es bereits eine Aufnahme auf dem Stift. Hören Sie beide an und wählen Sie.",
     "fromBackup": "Aus der Sicherung:",
     "onPen": "Jetzt auf dem Stift:",
@@ -112,8 +113,11 @@
     "keepPen": "Die vom Stift behalten",
     "decideAll": "Bitte wählen Sie für jede oben.",
     "confirm": "Zurückspielen",
-    "done": "{{count}} Aufnahme(n) zurück auf den Stift gespielt.",
-    "nothingToDo": "Alles aus dieser Sicherung ist bereits auf Ihrem Stift."
+    "nothingToDo": "Alles aus dieser Sicherung ist bereits auf Ihrem Stift.",
+    "noClashes_one": "{{count}} Aufnahme wird hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
+    "noClashes_other": "{{count}} Aufnahmen werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
+    "done_one": "{{count}} Aufnahme zurück auf den Stift gespielt.",
+    "done_other": "{{count}} Aufnahmen zurück auf den Stift gespielt."
   },
   "label": {
     "button": "Umbenennen",

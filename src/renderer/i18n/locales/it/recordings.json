@@ -95,16 +95,17 @@
     "title": "Backup su questo computer",
     "intro": "Un backup conserva una copia di ogni registrazione, così puoi rimetterle più avanti.",
     "button": "Fai il backup delle registrazioni",
-    "done": "{{count}} registrazione/i salvate.",
     "none": "Ancora nessun backup. Scegli Fai il backup delle registrazioni.",
     "choose": "Backup da usare:",
-    "countLabel": "{{count}} registrazione/i",
-    "missing": "Backup non trovato."
+    "missing": "Backup non trovato.",
+    "done_one": "{{count}} registrazione salvata.",
+    "done_other": "{{count}} registrazioni salvate.",
+    "countLabel_one": "{{count}} registrazione",
+    "countLabel_other": "{{count}} registrazioni"
   },
   "restore": {
     "button": "Rimettile sulla penna",
     "reviewTitle": "Prima di rimetterle",
-    "noClashes": "Verranno aggiunte {{count}} registrazione/i. Quello che è già sulla penna non cambia.",
     "clashIntro": "Alcuni di questi numeri hanno già una registrazione sulla penna. Ascoltale entrambe e scegli quale tenere.",
     "fromBackup": "Dal backup:",
     "onPen": "Ora sulla penna:",
@@ -112,8 +113,11 @@
     "keepPen": "Tieni quella della penna",
     "decideAll": "Scegli per ognuna qui sopra.",
     "confirm": "Rimettile",
-    "done": "{{count}} registrazione/i rimesse sulla penna.",
-    "nothingToDo": "Tutto quel backup è già sulla penna."
+    "nothingToDo": "Tutto quel backup è già sulla penna.",
+    "noClashes_one": "Verrà aggiunta {{count}} registrazione. Quello che è già sulla penna non cambia.",
+    "noClashes_other": "Verranno aggiunte {{count}} registrazioni. Quello che è già sulla penna non cambia.",
+    "done_one": "{{count}} registrazione rimessa sulla penna.",
+    "done_other": "{{count}} registrazioni rimesse sulla penna."
   },
   "label": {
     "button": "Rinomina",

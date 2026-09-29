@@ -95,16 +95,17 @@
     "title": "Copias en este ordenador",
     "intro": "Una copia guarda cada grabación para que pueda volver a ponerlas más adelante.",
     "button": "Guardar copia de mis grabaciones",
-    "done": "{{count}} grabación(es) guardadas.",
     "none": "Aún no hay copias. Elija Guardar copia de mis grabaciones.",
     "choose": "Copia que se usará:",
-    "countLabel": "{{count}} grabación(es)",
-    "missing": "No se encontró esa copia."
+    "missing": "No se encontró esa copia.",
+    "done_one": "{{count}} grabación guardada.",
+    "done_other": "{{count}} grabaciones guardadas.",
+    "countLabel_one": "{{count}} grabación",
+    "countLabel_other": "{{count}} grabaciones"
   },
   "restore": {
     "button": "Volver a ponerlas en mi lápiz",
     "reviewTitle": "Antes de volver a ponerlas",
-    "noClashes": "Se añadirán {{count}} grabación(es). Nada de lo que ya está en el lápiz cambiará.",
     "clashIntro": "Algunos de estos números ya tienen una grabación en el lápiz. Escuche las dos y elija cuál conservar.",
     "fromBackup": "De la copia:",
     "onPen": "Ahora en el lápiz:",
@@ -112,8 +113,11 @@
     "keepPen": "Conservar la del lápiz",
     "decideAll": "Elija para cada una de arriba.",
     "confirm": "Volver a ponerlas",
-    "done": "{{count}} grabación(es) devueltas a su lápiz.",
-    "nothingToDo": "Todo lo de esa copia ya está en su lápiz."
+    "nothingToDo": "Todo lo de esa copia ya está en su lápiz.",
+    "noClashes_one": "Se añadirá {{count}} grabación. Nada de lo que ya está en el lápiz cambiará.",
+    "noClashes_other": "Se añadirán {{count}} grabaciones. Nada de lo que ya está en el lápiz cambiará.",
+    "done_one": "{{count}} grabación devuelta a su lápiz.",
+    "done_other": "{{count}} grabaciones devueltas a su lápiz."
   },
   "label": {
     "button": "Cambiar el nombre",

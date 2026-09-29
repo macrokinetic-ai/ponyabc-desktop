@@ -92,16 +92,15 @@
     "title": "此电脑的备份",
     "intro": "备份会保存每段录音的副本，以后可以放回点读笔。",
     "button": "备份我的录音",
-    "done": "已备份 {{count}} 段录音。",
     "none": "尚未有备份。点「备份我的录音」建立一个。",
     "choose": "选择备份：",
-    "countLabel": "{{count}} 段录音",
-    "missing": "找不到该备份。"
+    "missing": "找不到该备份。",
+    "done_other": "已备份 {{count}} 段录音。",
+    "countLabel_other": "{{count}} 段录音"
   },
   "restore": {
     "button": "放回点读笔",
     "reviewTitle": "放回之前",
-    "noClashes": "将会加入 {{count}} 段录音，笔内原有的不会改动。",
     "clashIntro": "部分号码在点读笔内已有录音。可先试听两段，再决定保留哪一段。",
     "fromBackup": "备份的一段：",
     "onPen": "点读笔现有的一段：",
@@ -109,8 +108,9 @@
     "keepPen": "保留点读笔内的录音",
     "decideAll": "请为上面每一段作出选择。",
     "confirm": "放回去",
-    "done": "已将 {{count}} 段录音放回点读笔。",
-    "nothingToDo": "该备份的内容已全部在点读笔内。"
+    "nothingToDo": "该备份的内容已全部在点读笔内。",
+    "noClashes_other": "将会加入 {{count}} 段录音，笔内原有的不会改动。",
+    "done_other": "已将 {{count}} 段录音放回点读笔。"
   },
   "label": {
     "button": "改名",

@@ -95,16 +95,17 @@
     "title": "Backups on this computer",
     "intro": "A backup keeps a copy of every recording, so you can put them back later.",
     "button": "Back up my recordings",
-    "done": "Backed up {{count}} recording(s).",
     "none": "No backups yet. Select Back up my recordings to make one.",
     "choose": "Backup to use:",
-    "countLabel": "{{count}} recording(s)",
-    "missing": "That backup could not be found."
+    "missing": "That backup could not be found.",
+    "done_one": "Backed up {{count}} recording.",
+    "done_other": "Backed up {{count}} recordings.",
+    "countLabel_one": "{{count}} recording",
+    "countLabel_other": "{{count}} recordings"
   },
   "restore": {
     "button": "Put these back on my pen",
     "reviewTitle": "Before we put these back",
-    "noClashes": "{{count}} recording(s) will be added to your pen. Nothing already on it will change.",
     "clashIntro": "Some of these numbers already have a recording on your pen. Listen to both and choose which one to keep.",
     "fromBackup": "From the backup:",
     "onPen": "On your pen now:",
@@ -112,8 +113,11 @@
     "keepPen": "Keep the one on my pen",
     "decideAll": "Please choose for each one above.",
     "confirm": "Put them back",
-    "done": "Put {{count}} recording(s) back on your pen.",
-    "nothingToDo": "Everything in that backup is already on your pen."
+    "nothingToDo": "Everything in that backup is already on your pen.",
+    "noClashes_one": "{{count}} recording will be added to your pen. Nothing already on it will change.",
+    "noClashes_other": "{{count}} recordings will be added to your pen. Nothing already on it will change.",
+    "done_one": "Put {{count}} recording back on your pen.",
+    "done_other": "Put {{count}} recordings back on your pen."
   },
   "label": {
     "button": "Rename",

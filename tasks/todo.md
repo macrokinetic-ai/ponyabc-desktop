@@ -29,13 +29,13 @@ order, put them in the manual, and assemble one hand-over folder.
 
 ## Work
 
-- [ ] 1. Fake-pen fixture script: BOOK/ + DIY/ + real mp3s, stale index, temp userData
+- [x] 1. Fake-pen fixture script: BOOK/ + DIY/ + real mp3s, stale index, temp userData
       (settings.json with locale + pen path, recordingLabels.json, a RecordingBackups snapshot)
-- [ ] 2. Demo data: add `nospace-unknown`; make a demo sync complete without network or writes
-- [ ] 3. Demo firmware: package info from a real extracted package dir, canned outcome —
+- [x] 2. Demo data: add `nospace-unknown`; make a demo sync complete without network or writes
+- [x] 3. Demo firmware: package info from a real extracted package dir, canned outcome —
       never launches anything, never runs preflight, off unless the env var is set
-- [ ] 4. Scenario-driven capture script (one Electron launch per state group, both locales)
-- [ ] 5. Capture all 38, look at every one
+- [x] 4. Scenario-driven capture script (one Electron launch per state group, both locales)
+- [x] 5. Capture all 38, look at every one
 - [ ] 6. Put the numbered screenshots into both manuals; regenerate both PDFs
 - [ ] 7. Assemble ~/Documents/AI-Reports/manual-0.3.17/ (screenshots/, 2 PDFs,
       whats-new-0.3.17.md, index.md with a one-line description per shot in both languages)

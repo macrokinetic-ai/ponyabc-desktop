@@ -80,7 +80,7 @@ describe('recordings — backing up', () => {
   it('backs up on one click and says what happened', async () => {
     await renderPanel();
     fireEvent.click(screen.getByRole('button', { name: 'Back up my recordings' }));
-    await screen.findByText('Backed up 3 recording(s).');
+    await screen.findByText('Backed up 3 recordings.');
     expect(api().recordingBackupCreate).toHaveBeenCalled();
   });
 

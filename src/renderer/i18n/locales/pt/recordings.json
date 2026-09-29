@@ -95,16 +95,17 @@
     "title": "Cópias neste computador",
     "intro": "Uma cópia guarda cada gravação, para as poder repor mais tarde.",
     "button": "Guardar cópia das gravações",
-    "done": "{{count}} gravação(ões) guardadas.",
     "none": "Ainda não há cópias. Escolha Guardar cópia das gravações.",
     "choose": "Cópia a usar:",
-    "countLabel": "{{count}} gravação(ões)",
-    "missing": "Essa cópia não foi encontrada."
+    "missing": "Essa cópia não foi encontrada.",
+    "done_one": "{{count}} gravação guardada.",
+    "done_other": "{{count}} gravações guardadas.",
+    "countLabel_one": "{{count}} gravação",
+    "countLabel_other": "{{count}} gravações"
   },
   "restore": {
     "button": "Repor na minha caneta",
     "reviewTitle": "Antes de repor",
-    "noClashes": "Vão ser adicionadas {{count}} gravação(ões). Nada do que já está na caneta muda.",
     "clashIntro": "Alguns destes números já têm uma gravação na caneta. Ouça as duas e escolha qual fica.",
     "fromBackup": "Da cópia:",
     "onPen": "Agora na caneta:",
@@ -112,8 +113,11 @@
     "keepPen": "Manter a da caneta",
     "decideAll": "Escolha para cada uma acima.",
     "confirm": "Repor",
-    "done": "{{count}} gravação(ões) repostas na caneta.",
-    "nothingToDo": "Tudo o que está nessa cópia já está na sua caneta."
+    "nothingToDo": "Tudo o que está nessa cópia já está na sua caneta.",
+    "noClashes_one": "Vai ser adicionada {{count}} gravação. Nada do que já está na caneta muda.",
+    "noClashes_other": "Vão ser adicionadas {{count}} gravações. Nada do que já está na caneta muda.",
+    "done_one": "{{count}} gravação reposta na caneta.",
+    "done_other": "{{count}} gravações repostas na caneta."
   },
   "label": {
     "button": "Mudar o nome",
