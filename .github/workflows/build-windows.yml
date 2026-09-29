@@ -23,6 +23,31 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+
+      # The parent manual's pictures. Here because the firmware wizard renders on Windows only
+      # — on macOS that screen is a single "this needs Windows" banner — and this is the
+      # repo's Windows job. Nothing here touches a device: the app is pointed at a throwaway
+      # pen folder (scripts/make-demo-pen.mjs), and the firmware steps use the demo path in
+      # src/main/services/demoFirmware.ts, which launches nothing and refuses to run at all in
+      # a packaged build. Runs against the dev build, before packaging, so the artifact is
+      # ready early.
+      - name: "Manual: capture every parent-facing screen, both languages"
+        # Documentation, not a build gate: a screen that will not pose must never stop a
+        # release build. What was and was not captured is in capture-report.json.
+        continue-on-error: true
+        run: |
+          npm run build
+          node scripts/capture-manual-screenshots.mjs manual-screenshots --locales=en,zh-Hant
+          Get-Content manual-screenshots/capture-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual-screenshots
+          path: manual-screenshots
+          if-no-files-found: error
+          retention-days: 14
+
       - run: npm run dist:win
 
       - uses: actions/upload-artifact@v4
