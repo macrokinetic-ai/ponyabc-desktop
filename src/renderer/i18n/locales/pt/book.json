@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "Este livro está na sua caneta e pronto a usar.",
-    "updateAvailable": "Existe uma versão mais recente deste livro. Escolha Adicionar para a colocar na caneta — a anterior é guardada primeiro.",
-    "notOnPen": "Este livro ainda não está na sua caneta. Escolha Adicionar para o colocar.",
+    "updateAvailable": "Existe uma versão mais recente deste livro. «Sincronizar livros» substitui-a — a anterior é guardada primeiro.",
+    "notOnPen": "Este livro ainda não está na sua caneta. «Sincronizar livros» coloca-o.",
     "downloading": "O livro está a ser copiado para este computador e depois para a caneta.",
     "checking": "A aplicação está a verificar este livro. Demora só um instante.",
     "needsHelp": "Este precisa de uma vista de olhos — a lista de livros pode estar incompleta. A sua caneta não tem qualquer problema. Abra os detalhes avançados ou contacte o apoio."

@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "Questo libro è sulla penna e pronto da usare.",
-    "updateAvailable": "Di questo libro esiste una versione più recente. Scegli Aggiungi per metterla sulla penna: la vecchia viene prima salvata.",
-    "notOnPen": "Questo libro non è ancora sulla penna. Scegli Aggiungi per metterlo.",
+    "updateAvailable": "Di questo libro esiste una versione più recente. «Sincronizza i libri» la sostituisce: la vecchia viene prima salvata.",
+    "notOnPen": "Questo libro non è ancora sulla penna. «Sincronizza i libri» lo mette.",
     "downloading": "Il libro viene copiato su questo computer e poi sulla penna.",
     "checking": "L'app sta controllando questo libro. Ci vuole solo un attimo.",
     "needsHelp": "Questo richiede un controllo: l'elenco dei libri potrebbe essere incompleto. La penna non ha alcun problema. Apri i dettagli avanzati o contatta l'assistenza."

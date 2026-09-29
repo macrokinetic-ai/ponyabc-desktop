@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "This book is on your pen and ready to use.",
-    "updateAvailable": "A newer version of this book is available. Select Add to put the new one on your pen — the old one is kept as a backup first.",
-    "notOnPen": "This book is not on your pen yet. Select Add to put it on.",
+    "updateAvailable": "A newer version of this book is available. Sync books replaces it — the old one is kept as a backup first.",
+    "notOnPen": "This book is not on your pen yet. Sync books puts it on.",
     "downloading": "The book is being copied to this computer, and then to your pen.",
     "checking": "The app is checking this book. It only takes a moment.",
     "needsHelp": "This one needs a closer look — the book list may be incomplete. Nothing is wrong with your pen. Open Advanced details, or contact support."

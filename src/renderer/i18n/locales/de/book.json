@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "Dieses Buch ist auf Ihrem Stift und einsatzbereit.",
-    "updateAvailable": "Von diesem Buch gibt es eine neuere Fassung. Wählen Sie Hinzufügen — die alte wird vorher gesichert.",
-    "notOnPen": "Dieses Buch ist noch nicht auf Ihrem Stift. Wählen Sie Hinzufügen.",
+    "updateAvailable": "Von diesem Buch gibt es eine neuere Fassung. „Bücher abgleichen“ ersetzt sie — die alte wird vorher gesichert.",
+    "notOnPen": "Dieses Buch ist noch nicht auf Ihrem Stift. „Bücher abgleichen“ bringt es darauf.",
     "downloading": "Das Buch wird auf diesen Computer und dann auf Ihren Stift kopiert.",
     "checking": "Die App prüft dieses Buch. Das dauert nur einen Moment.",
     "needsHelp": "Hier lohnt ein genauerer Blick — die Bücherliste ist möglicherweise unvollständig. Mit Ihrem Stift ist alles in Ordnung. Öffnen Sie die erweiterten Details oder wenden Sie sich an den Support."

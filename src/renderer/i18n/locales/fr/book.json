@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "Ce livre est sur votre stylo et prêt à être utilisé.",
-    "updateAvailable": "Une version plus récente de ce livre est disponible. Choisissez Ajouter pour la mettre sur le stylo — l'ancienne est d'abord sauvegardée.",
-    "notOnPen": "Ce livre n'est pas encore sur votre stylo. Choisissez Ajouter pour l'y mettre.",
+    "updateAvailable": "Une version plus récente de ce livre est disponible. « Synchroniser les livres » la remplace — l'ancienne est d'abord sauvegardée.",
+    "notOnPen": "Ce livre n'est pas encore sur votre stylo. « Synchroniser les livres » l'y met.",
     "downloading": "Le livre est copié sur cet ordinateur, puis sur votre stylo.",
     "checking": "L'application vérifie ce livre. Cela ne prend qu'un instant.",
     "needsHelp": "Celui-ci demande un coup d'œil — la liste des livres est peut-être incomplète. Votre stylo n'a aucun problème. Ouvrez les détails avancés ou contactez le support."

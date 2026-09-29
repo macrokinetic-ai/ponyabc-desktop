@@ -134,8 +134,8 @@
   },
   "simpleHelp": {
     "onPen": "Este libro está en su lápiz y listo para usar.",
-    "updateAvailable": "Hay una versión más reciente de este libro. Elija Añadir para ponerla en el lápiz; antes se guarda una copia de la anterior.",
-    "notOnPen": "Este libro aún no está en su lápiz. Elija Añadir para ponerlo.",
+    "updateAvailable": "Hay una versión más reciente de este libro. «Sincronizar libros» la sustituye; antes se guarda una copia de la anterior.",
+    "notOnPen": "Este libro aún no está en su lápiz. «Sincronizar libros» lo pone.",
     "downloading": "El libro se está copiando a este ordenador y luego al lápiz.",
     "checking": "La aplicación está comprobando este libro. Solo tarda un momento.",
     "needsHelp": "Este necesita una revisión: la lista de libros puede estar incompleta. Su lápiz no tiene ningún problema. Abra los detalles avanzados o contacte con soporte."
