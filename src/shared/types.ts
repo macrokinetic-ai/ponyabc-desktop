@@ -174,6 +174,9 @@ export interface TransferToPenSummary {
     | 'no-computer-folder-selected'
     | 'device-disconnected'
     | 'no-space'
+    /** The pen's own copies could not be kept, so nothing was overwritten. Replacing a recording
+     *  without a backup can destroy the only copy of a child's voice. */
+    | 'backup-failed'
     | 'error';
   added: string[];
   replaced: Array<{ fileName: string; backupPath: string }>;
@@ -959,6 +962,8 @@ export interface PonyAbcApi {
   recordingBackupList: () => Promise<import('../main/ipc/recordingBackup').SnapshotSummary[]>;
   /** Every recording inside one backup, so the screen can list what it is offering to put back. */
   recordingBackupContents: (params: { snapshotId: string }) => Promise<import('../main/ipc/recordingBackup').SnapshotContents>;
+  /** Pick the .mp3 files to put on the pen. Their folder becomes the app's computer folder. */
+  chooseRecordingFiles: () => Promise<import('../main/ipc/computerFolder').ChooseRecordingFilesResult>;
   recordingRestorePlan: (params: { snapshotId: string; fileNames?: string[] }) => Promise<import('../main/ipc/recordingBackup').RestorePlanResult>;
   recordingRestoreExecute: (params: {
     snapshotId: string;

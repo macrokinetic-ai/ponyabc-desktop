@@ -31,6 +31,7 @@ export const IPC = {
   recordingBackupCreate: 'ponyabc:recordingBackup:create',
   recordingBackupList: 'ponyabc:recordingBackup:list',
   recordingBackupContents: 'ponyabc:recordingBackup:contents',
+  chooseRecordingFiles: 'ponyabc:recordings:chooseFiles',
   recordingRestorePlan: 'ponyabc:recordingBackup:restore:plan',
   recordingRestoreExecute: 'ponyabc:recordingBackup:restore:execute',
   recordingDeleteFromPen: 'ponyabc:recordingBackup:deletePen',

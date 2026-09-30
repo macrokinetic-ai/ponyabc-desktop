@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { isEligibleMp3FileName } from './pathSecurity';
 import { createSnapshot, readManifest, MANIFEST_FILENAME, type SnapshotManifest } from './recordingSnapshot';
+import { STICKER_DIGIT_LENGTHS, STICKER_DIGITS_IN_USE, stickerFileName } from '@shared/stickerNumber';
 
 /**
  * Deleting recordings, renaming them to a different sticker, and the friendly labels.
@@ -26,25 +27,16 @@ import { createSnapshot, readManifest, MANIFEST_FILENAME, type SnapshotManifest 
  * are two different name spaces, not two spellings of one: **`0451` and `00451` may be different
  * stickers**, so this code never pads, trims or otherwise converts between the two lengths.
  */
-export const STICKER_DIGIT_LENGTHS = [4, 5] as const;
-/** The only length in use on printed stickers today. Five-digit numbers are accepted and warned about. */
-export const STICKER_DIGITS_IN_USE = 4;
-
-export interface StickerNumber {
-  /** The digits exactly as they appear, leading zeros included. */
-  digits: string;
-  /** 4 or 5. Never normalised — see the comment above. */
-  length: number;
-}
-
-/** Parses a DIY filename as a sticker number, or null if it is not one. */
-export function parseStickerNumber(fileName: string): StickerNumber | null {
-  const match = /^(\d{4,5})\.mp3$/i.exec(fileName);
-  if (!match) return null;
-  return { digits: match[1], length: match[1].length };
-}
-
-export const stickerFileName = (digits: string): string => `${digits}.mp3`;
+// The sticker-number rule itself lives in shared/, because the screens need it too — see
+// src/shared/stickerNumber.ts for why it must not be reached for from here. Re-exported so the
+// existing imports of this module keep working.
+export {
+  STICKER_DIGIT_LENGTHS,
+  STICKER_DIGITS_IN_USE,
+  parseStickerNumber,
+  stickerFileName,
+  type StickerNumber,
+} from '@shared/stickerNumber';
 
 export type ReassignCheck =
   | { status: 'ok'; fileName: string; warnings: ReassignWarning[] }

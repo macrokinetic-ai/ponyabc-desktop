@@ -163,5 +163,27 @@
   },
   "advancedTools": {
     "title": "Advanced tools"
+  },
+  "addFromComputer": {
+    "title": "Add recordings from this computer",
+    "intro": "Put your own .mp3 recordings onto the pen. Name each file with the sticker number it belongs to — four digits, like 0451.mp3, or five.",
+    "choose": "Choose recordings…",
+    "chosenFrom": "From {{folder}}",
+    "mixedFolders": "Please choose recordings from one folder at a time.",
+    "noneChosen": "No recordings chosen yet.",
+    "rejected": "These were not .mp3 recordings and have been left out: {{names}}",
+    "badName": "Not a sticker number — rename it to four digits, like 0451.mp3",
+    "willAdd": "New",
+    "willReplace": "WILL REPLACE the recording on your pen",
+    "previewChosen": "Play the one on this computer",
+    "previewPen": "Play the one on the pen",
+    "copyButton": "Copy to my pen",
+    "copying": "Copying to your pen…",
+    "backupFirst": "The pen’s own copies are backed up first, automatically. You will find them under Backups on this computer.",
+    "done_one": "Copied {{count}} recording to your pen.",
+    "done_other": "Copied {{count}} recordings to your pen.",
+    "backupFailed": "Your pen’s own recordings could not be backed up, so nothing was changed. Please try again.",
+    "manyPens": "Sending the same set to several pens one after another is coming in a later version. For now, choose the recordings again for each pen.",
+    "noSpace": "There is not enough room on your pen for all of these. Please delete some recordings you no longer need, then choose them again."
   }
 }

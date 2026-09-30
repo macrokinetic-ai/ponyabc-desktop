@@ -155,5 +155,26 @@
   },
   "advancedTools": {
     "title": "进阶工具"
+  },
+  "addFromComputer": {
+    "title": "从这台电脑加入录音",
+    "intro": "把您自己的 .mp3 录音放到录音笔上。每个文件请用它对应的贴纸号码命名——四位数，例如 0451.mp3，或五位数。",
+    "choose": "选择录音…",
+    "chosenFrom": "来自 {{folder}}",
+    "mixedFolders": "请一次从同一个文件夹选择录音。",
+    "noneChosen": "尚未选择任何录音。",
+    "rejected": "以下不是 .mp3 录音，已略过：{{names}}",
+    "badName": "不是贴纸号码——请改成四位数，例如 0451.mp3",
+    "willAdd": "新增",
+    "willReplace": "将替换录音笔上的录音",
+    "previewChosen": "播放这台电脑上的",
+    "previewPen": "播放录音笔上的",
+    "copyButton": "复制到我的录音笔",
+    "copying": "正在复制到录音笔…",
+    "backupFirst": "录音笔上原本的录音会先自动备份，您可以在“这台电脑上的备份”中找到。",
+    "done_other": "已复制 {{count}} 个录音到您的录音笔。",
+    "backupFailed": "无法备份录音笔上原本的录音，因此没有做任何更改。请再试一次。",
+    "manyPens": "把同一组录音接连传到多支录音笔的功能会在之后的版本推出。目前请为每支录音笔重新选择录音。",
+    "noSpace": "录音笔的空间不足以放入全部录音。请先删除一些不再需要的录音，然后重新选择。"
   }
 }

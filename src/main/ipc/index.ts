@@ -7,7 +7,7 @@ import { openPrivacyPolicyPage, openRegistrationPage } from './registration';
 import { openSupportEmail } from './support';
 import { chooseCandidatePenRoot, scanPenRoot, selectPenRoot } from './penRoot';
 import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
-import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
+import { chooseRecordingFiles, listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
 import {
@@ -111,6 +111,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.recordingsList, () => listDiyRecordings());
 
   ipcMain.handle(IPC.computerFolderSelect, () => selectComputerFolder(getWindow(), store));
+  ipcMain.handle(IPC.chooseRecordingFiles, () => chooseRecordingFiles(getWindow(), store));
   ipcMain.handle(IPC.computerFolderRestore, () => restoreComputerFolder(store));
   ipcMain.handle(IPC.computerFolderList, () => listComputerFolder());
 

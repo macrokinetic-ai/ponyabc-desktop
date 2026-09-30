@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import * as internal from '@internal';
 import { dialog, type BrowserWindow } from 'electron';
 import type { ComputerFile, ComputerFolderListResult, ComputerFolderResult } from '@shared/types';
@@ -91,4 +92,47 @@ export function listComputerFolder(): ComputerFolderListResult {
   }
 
   return { status: 'ok', files, folderPath: resolved.realPath };
+}
+
+export type ChooseRecordingFilesResult =
+  | { status: 'cancelled' }
+  | { status: 'mixed-folders' }
+  | { status: 'invalid'; reason: string }
+  | { status: 'ok'; folder: string; fileNames: string[]; rejected: string[] };
+
+/**
+ * "Choose MP3 files" — the teacher's way in, rather than asking them to think about folders.
+ *
+ * The files' own folder becomes the app's computer folder, and the chosen names come back to be
+ * ticked. That is what keeps this change small and safe: every existing check stays exactly as
+ * it is, because the write path still resolves each name inside one confirmed folder
+ * (`resolveContainedFile`), and nothing here hands it an absolute path from the renderer.
+ *
+ * Files from two different folders in one go are refused rather than silently half-copied — one
+ * folder is what the rest of the pipeline is built on, and "some of them worked" is the worst
+ * possible answer for someone loading a set of recordings.
+ */
+export async function chooseRecordingFiles(window: BrowserWindow, store: SettingsStore): Promise<ChooseRecordingFilesResult> {
+  const { canceled, filePaths } = await dialog.showOpenDialog(window, {
+    title: 'Choose the recordings to put on your pen',
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Recordings', extensions: ['mp3'] }],
+  });
+  if (canceled || filePaths.length === 0) return { status: 'cancelled' };
+
+  const folders = new Set(filePaths.map((p) => path.dirname(p)));
+  if (folders.size > 1) return { status: 'mixed-folders' };
+
+  const resolved = resolveFolder([...folders][0]);
+  if (resolved.status !== 'ok') return { status: 'invalid', reason: resolved.status };
+
+  // The same eligibility rule the listing and every transfer entry point use, applied here too
+  // so a name that will be refused later is refused now, while the teacher is still looking.
+  const names = filePaths.map((p) => path.basename(p));
+  const fileNames = names.filter(isEligibleMp3FileName);
+  const rejected = names.filter((n) => !isEligibleMp3FileName(n));
+
+  session.setComputerFolder(resolved.realPath);
+  store.update({ lastComputerFolderPath: resolved.realPath });
+  return { status: 'ok', folder: resolved.realPath, fileNames, rejected };
 }

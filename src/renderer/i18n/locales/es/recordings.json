@@ -163,5 +163,27 @@
   },
   "advancedTools": {
     "title": "Herramientas avanzadas"
+  },
+  "addFromComputer": {
+    "title": "Añadir grabaciones desde este ordenador",
+    "intro": "Ponga sus propias grabaciones .mp3 en el lápiz. Nombre cada archivo con el número de la pegatina a la que pertenece: cuatro dígitos, como 0451.mp3, o cinco.",
+    "choose": "Elegir grabaciones…",
+    "chosenFrom": "Desde {{folder}}",
+    "mixedFolders": "Elija grabaciones de una sola carpeta cada vez.",
+    "noneChosen": "Aún no ha elegido ninguna grabación.",
+    "rejected": "Estas no son grabaciones .mp3 y se han dejado fuera: {{names}}",
+    "badName": "No es un número de pegatina: renómbrelo a cuatro dígitos, como 0451.mp3",
+    "willAdd": "Nueva",
+    "willReplace": "SUSTITUIRÁ la grabación de su lápiz",
+    "previewChosen": "Escuchar la de este ordenador",
+    "previewPen": "Escuchar la del lápiz",
+    "copyButton": "Copiar a mi lápiz",
+    "copying": "Copiando a su lápiz…",
+    "backupFirst": "Primero se guarda automáticamente una copia de las grabaciones del lápiz. Las encontrará en Copias de seguridad en este ordenador.",
+    "done_one": "{{count}} grabación copiada a su lápiz.",
+    "done_other": "{{count}} grabaciones copiadas a su lápiz.",
+    "backupFailed": "No se han podido guardar las grabaciones de su lápiz, así que no se ha cambiado nada. Inténtelo de nuevo.",
+    "manyPens": "Enviar el mismo conjunto a varios lápices uno tras otro llegará en una versión posterior. Por ahora, elija las grabaciones de nuevo para cada lápiz.",
+    "noSpace": "No hay espacio suficiente en su lápiz para todas. Borre algunas grabaciones que ya no necesite y vuelva a elegirlas."
   }
 }

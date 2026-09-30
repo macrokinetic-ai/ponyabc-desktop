@@ -163,5 +163,27 @@
   },
   "advancedTools": {
     "title": "Ferramentas avançadas"
+  },
+  "addFromComputer": {
+    "title": "Adicionar gravações deste computador",
+    "intro": "Coloque as suas próprias gravações .mp3 na caneta. Dê a cada ficheiro o número do autocolante a que pertence — quatro dígitos, como 0451.mp3, ou cinco.",
+    "choose": "Escolher gravações…",
+    "chosenFrom": "De {{folder}}",
+    "mixedFolders": "Escolha gravações de uma pasta de cada vez.",
+    "noneChosen": "Ainda não escolheu gravações.",
+    "rejected": "Estes não são gravações .mp3 e ficaram de fora: {{names}}",
+    "badName": "Não é um número de autocolante — mude o nome para quatro dígitos, como 0451.mp3",
+    "willAdd": "Nova",
+    "willReplace": "VAI SUBSTITUIR a gravação na sua caneta",
+    "previewChosen": "Ouvir a deste computador",
+    "previewPen": "Ouvir a da caneta",
+    "copyButton": "Copiar para a minha caneta",
+    "copying": "A copiar para a sua caneta…",
+    "backupFirst": "As gravações da caneta são guardadas primeiro, automaticamente. Encontra-as em Cópias de segurança neste computador.",
+    "done_one": "{{count}} gravação copiada para a sua caneta.",
+    "done_other": "{{count}} gravações copiadas para a sua caneta.",
+    "backupFailed": "Não foi possível guardar as gravações da sua caneta, por isso nada foi alterado. Tente novamente.",
+    "manyPens": "Enviar o mesmo conjunto para várias canetas uma após outra chegará numa versão posterior. Por agora, escolha as gravações outra vez para cada caneta.",
+    "noSpace": "Não há espaço suficiente na sua caneta para todas. Elimine gravações de que já não precisa e volte a escolhê-las."
   }
 }

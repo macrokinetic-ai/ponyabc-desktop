@@ -163,5 +163,27 @@
   },
   "advancedTools": {
     "title": "Outils avancés"
+  },
+  "addFromComputer": {
+    "title": "Ajouter des enregistrements depuis cet ordinateur",
+    "intro": "Mettez vos propres enregistrements .mp3 sur le stylo. Nommez chaque fichier avec le numéro de l’autocollant auquel il appartient — quatre chiffres, comme 0451.mp3, ou cinq.",
+    "choose": "Choisir des enregistrements…",
+    "chosenFrom": "Depuis {{folder}}",
+    "mixedFolders": "Veuillez choisir des enregistrements d’un seul dossier à la fois.",
+    "noneChosen": "Aucun enregistrement choisi pour le moment.",
+    "rejected": "Ceux-ci ne sont pas des enregistrements .mp3 et ont été écartés : {{names}}",
+    "badName": "Pas un numéro d’autocollant — renommez-le en quatre chiffres, comme 0451.mp3",
+    "willAdd": "Nouveau",
+    "willReplace": "REMPLACERA l’enregistrement sur votre stylo",
+    "previewChosen": "Écouter celui de cet ordinateur",
+    "previewPen": "Écouter celui du stylo",
+    "copyButton": "Copier sur mon stylo",
+    "copying": "Copie sur votre stylo…",
+    "backupFirst": "Les enregistrements du stylo sont sauvegardés automatiquement d’abord. Vous les trouverez sous Sauvegardes sur cet ordinateur.",
+    "done_one": "{{count}} enregistrement copié sur votre stylo.",
+    "done_other": "{{count}} enregistrements copiés sur votre stylo.",
+    "backupFailed": "Les enregistrements de votre stylo n’ont pas pu être sauvegardés, donc rien n’a été modifié. Veuillez réessayer.",
+    "manyPens": "Envoyer le même ensemble à plusieurs stylos l’un après l’autre arrivera dans une version ultérieure. Pour l’instant, choisissez les enregistrements à nouveau pour chaque stylo.",
+    "noSpace": "Il n’y a pas assez de place sur votre stylo pour tout cela. Supprimez des enregistrements dont vous n’avez plus besoin, puis choisissez-les à nouveau."
   }
 }

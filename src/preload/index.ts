@@ -83,6 +83,7 @@ const api: PonyAbcApi = {
   recordingBackupCreate: () => ipcRenderer.invoke(IPC.recordingBackupCreate),
   recordingBackupList: () => ipcRenderer.invoke(IPC.recordingBackupList),
   recordingBackupContents: (params: { snapshotId: string }) => ipcRenderer.invoke(IPC.recordingBackupContents, params),
+  chooseRecordingFiles: () => ipcRenderer.invoke(IPC.chooseRecordingFiles),
   recordingRestorePlan: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestorePlan, params),
   recordingRestoreExecute: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestoreExecute, params),
   recordingDeleteFromPen: (params: unknown) => ipcRenderer.invoke(IPC.recordingDeleteFromPen, params),

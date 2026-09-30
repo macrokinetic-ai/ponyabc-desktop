@@ -192,4 +192,33 @@ describe('no screen formats a date on its own', () => {
     walk(path.join(REPO, 'src/renderer'));
     expect(offences).toEqual([]);
   });
+
+  /**
+   * A screen must not reach into the main process for anything but a type.
+   *
+   * How this went wrong: a new panel needed the sticker-number rule and imported it from
+   * `main/services/recordingManage`, which pulled `node:fs`, `node:crypto` and
+   * `node:stream/promises` into the renderer bundle. The build failed, loudly, because the
+   * renderer has no Node — but only because those modules happened to touch the filesystem. A
+   * pure helper would have been bundled twice in silence. Shared logic belongs in `src/shared/`.
+   */
+  it('no renderer file imports main process code, except as a type', () => {
+    const offences: string[] = [];
+    const walk = (dir: string): void => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(entry.name)) {
+          for (const line of fs.readFileSync(full, 'utf8').split('\n')) {
+            if (!/from\s+['"][^'"]*\/main\//.test(line)) continue;
+            // `import type { X } from '../../main/...'` is erased at compile time and fine.
+            if (/^\s*import\s+type\s/.test(line)) continue;
+            offences.push(`${path.relative(REPO, full)}: ${line.trim()}`);
+          }
+        }
+      }
+    };
+    walk(path.join(REPO, 'src/renderer'));
+    expect(offences).toEqual([]);
+  });
 });

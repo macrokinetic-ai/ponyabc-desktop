@@ -37,9 +37,12 @@ again. The commit belongs at the boundary, in main.
       entries. Add a contents call; list sticker number, friendly name, size, Play; tick boxes
       and Select all; "Put selected recordings back on my pen" with one line of explanation;
       say plainly that each backup is its own snapshot and older ones are kept.
-- [ ] 3. Promote "Add recordings from this computer" to the main screen: choose MP3 files
-      (name = sticker number, 4 or 5 digits), show new vs REPLACE, Preview both, automatic
-      backup of the pen's copy first, progress bar. Batch to many pens is 0.3.18 — design note.
+- [x] 3. Promoted, with a real file picker (the files' own folder becomes the app's computer
+      folder, so every existing containment check is untouched). New vs REPLACE comes from the
+      main process's own plan, not a guess; both takes can be played; the pen's copies are kept
+      in a snapshot a teacher can actually see and restore — the old per-file copies went to a
+      folder that never appeared in the backups list. Batch to many pens is said out loud as
+      later, on the screen.
 
 ## BOOKS
 

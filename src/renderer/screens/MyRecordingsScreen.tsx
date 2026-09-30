@@ -19,6 +19,7 @@ import { ReplaceStickerPanel } from '../components/ReplaceStickerPanel';
 import { AudioPreviewBar } from '../components/AudioPreviewBar';
 import { RecordingBackupsPanel } from '../components/RecordingBackupsPanel';
 import { PenStorageBar } from '../components/PenStorageBar';
+import { AddRecordingsPanel } from '../components/AddRecordingsPanel';
 import { usePenRoot } from '../state/PenRootContext';
 import { useComputerFolder } from '../state/ComputerFolderContext';
 import { useTransferProgress } from '../hooks/useCopyProgress';
@@ -320,6 +321,10 @@ export function MyRecordingsScreen() {
         bookSizes={penSpace.bookSizes}
         recordingSizes={penFileList.map((f) => f.sizeBytes)}
       />
+
+      {/* Out of Advanced tools and onto the screen: this is what teachers use the app for
+          (owner, testing rc5). The folder-to-folder file manager it replaces is still below. */}
+      <AddRecordingsPanel penReady={penReady} penIdentityKey={penIdentityKey} onCopied={() => void refreshPenFiles()} />
 
       <RecordingBackupsPanel />
 

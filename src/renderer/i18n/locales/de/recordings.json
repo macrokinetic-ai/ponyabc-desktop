@@ -163,5 +163,27 @@
   },
   "advancedTools": {
     "title": "Erweiterte Werkzeuge"
+  },
+  "addFromComputer": {
+    "title": "Aufnahmen von diesem Computer hinzufügen",
+    "intro": "Legen Sie Ihre eigenen .mp3-Aufnahmen auf den Stift. Benennen Sie jede Datei mit der Stickernummer, zu der sie gehört — vier Ziffern, etwa 0451.mp3, oder fünf.",
+    "choose": "Aufnahmen auswählen…",
+    "chosenFrom": "Aus {{folder}}",
+    "mixedFolders": "Bitte wählen Sie Aufnahmen aus jeweils einem Ordner.",
+    "noneChosen": "Noch keine Aufnahmen ausgewählt.",
+    "rejected": "Diese sind keine .mp3-Aufnahmen und wurden weggelassen: {{names}}",
+    "badName": "Keine Stickernummer — benennen Sie sie in vier Ziffern um, etwa 0451.mp3",
+    "willAdd": "Neu",
+    "willReplace": "ERSETZT die Aufnahme auf Ihrem Stift",
+    "previewChosen": "Die von diesem Computer abspielen",
+    "previewPen": "Die vom Stift abspielen",
+    "copyButton": "Auf meinen Stift kopieren",
+    "copying": "Wird auf Ihren Stift kopiert…",
+    "backupFirst": "Die Aufnahmen des Stifts werden zuerst automatisch gesichert. Sie finden sie unter Backups auf diesem Computer.",
+    "done_one": "{{count}} Aufnahme auf Ihren Stift kopiert.",
+    "done_other": "{{count}} Aufnahmen auf Ihren Stift kopiert.",
+    "backupFailed": "Die Aufnahmen Ihres Stifts konnten nicht gesichert werden, deshalb wurde nichts geändert. Bitte versuchen Sie es noch einmal.",
+    "manyPens": "Denselben Satz nacheinander auf mehrere Stifte zu schicken kommt in einer späteren Version. Wählen Sie die Aufnahmen vorerst für jeden Stift neu aus.",
+    "noSpace": "Auf Ihrem Stift ist nicht genug Platz für alle. Löschen Sie Aufnahmen, die Sie nicht mehr brauchen, und wählen Sie sie dann erneut aus."
   }
 }
