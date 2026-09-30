@@ -46,6 +46,16 @@ export interface SnapshotEntry {
   label: string | null;
 }
 
+/**
+ * Why this snapshot exists.
+ *
+ * A backup the owner asked for and a backup the app took by itself, a second before replacing
+ * something, are not the same kind of thing, and a list that shows them identically makes the
+ * automatic ones look like clutter the person does not remember making. `manual` is the button;
+ * everything else is the app protecting something, and `protecting` says what.
+ */
+export type SnapshotReason = 'manual' | 'before-replace' | 'before-delete' | 'before-restore' | 'before-reassign' | 'migration';
+
 export interface SnapshotManifest {
   version: number;
   snapshotId: string;
@@ -53,6 +63,11 @@ export interface SnapshotManifest {
   /** Which pen this came from, so snapshots from two pens are never confused. */
   penVolumeLabel: string | null;
   entries: SnapshotEntry[];
+  /** Absent in snapshots written before rc6; treated as 'manual' when read. */
+  reason?: SnapshotReason;
+  /** The recording this backup was taken to protect, e.g. "0451.mp3". Only for the automatic
+   *  reasons, and only when one recording was at stake. */
+  protecting?: string | null;
 }
 
 export interface CreateSnapshotResult {
@@ -158,6 +173,8 @@ export async function createSnapshot(params: {
   backupRootDir: string;
   penVolumeLabel: string | null;
   labels?: Record<string, string>;
+  reason?: SnapshotReason;
+  protecting?: string | null;
   now?: Date;
   onProgress?: (event: { fileIndex: number; fileCount: number; fileName: string }) => void;
 }): Promise<CreateSnapshotResult> {
@@ -183,10 +200,12 @@ export async function createSnapshotFromFiles(params: {
   backupRootDir: string;
   penVolumeLabel: string | null;
   labels?: Record<string, string>;
+  reason?: SnapshotReason;
+  protecting?: string | null;
   now?: Date;
   onProgress?: (event: { fileIndex: number; fileCount: number; fileName: string }) => void;
 }): Promise<CreateSnapshotResult> {
-  const { files, backupRootDir, penVolumeLabel, labels = {}, now, onProgress } = params;
+  const { files, backupRootDir, penVolumeLabel, labels = {}, reason = 'manual', protecting = null, now, onProgress } = params;
 
   const snapshotId = makeSnapshotId(now);
   const snapshotDir = path.join(backupRootDir, snapshotId);
@@ -236,6 +255,8 @@ export async function createSnapshotFromFiles(params: {
     createdAtMs: (now ?? new Date()).getTime(),
     penVolumeLabel,
     entries,
+    reason,
+    protecting,
   };
   fs.writeFileSync(path.join(snapshotDir, MANIFEST_FILENAME), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 

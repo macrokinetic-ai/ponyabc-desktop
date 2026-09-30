@@ -101,10 +101,26 @@
     "done_one": "{{count}} Aufnahme gesichert.",
     "done_other": "{{count}} Aufnahmen gesichert.",
     "countLabel_one": "{{count}} Aufnahme",
-    "countLabel_other": "{{count}} Aufnahmen"
+    "countLabel_other": "{{count}} Aufnahmen",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Automatisches Backup vor dem Ersetzen von {{name}}",
+    "labelBeforeReplaceMany": "Automatisches Backup vor dem Ersetzen von Aufnahmen",
+    "labelBeforeDelete": "Automatisches Backup vor dem Löschen von {{name}}",
+    "labelBeforeDeleteMany": "Automatisches Backup vor dem Löschen von Aufnahmen",
+    "labelBeforeRestore": "Automatisches Backup vor dem Zurücklegen von Aufnahmen",
+    "labelBeforeReassign": "Automatisches Backup, bevor {{name}} auf eine andere Nummer kommt",
+    "labelMigration": "Backup aus einer älteren Version übernommen",
+    "keptSeparately": "Jedes Backup ist eine eigene Kopie Ihrer Aufnahmen, so wie sie in dem Moment waren. Ältere bleiben erhalten — ein neues Backup ersetzt sie nie.",
+    "contentsTitle": "In diesem Backup",
+    "contentsEmpty": "Dieses Backup enthält keine Aufnahmen.",
+    "contentsLoading": "Backup wird geöffnet…",
+    "working": "Ihre Aufnahmen werden gesichert…",
+    "selectAll": "Alle auswählen",
+    "selectedCount_one": "{{count}} ausgewählt",
+    "selectedCount_other": "{{count}} ausgewählt"
   },
   "restore": {
-    "button": "Zurück auf meinen Stift",
+    "button": "Ausgewählte Aufnahmen zurück auf den Stift legen",
     "reviewTitle": "Bevor wir sie zurückspielen",
     "clashIntro": "Zu einigen dieser Nummern gibt es bereits eine Aufnahme auf dem Stift. Hören Sie beide an und wählen Sie.",
     "fromBackup": "Aus der Sicherung:",
@@ -117,7 +133,8 @@
     "noClashes_one": "{{count}} Aufnahme wird hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
     "noClashes_other": "{{count}} Aufnahmen werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
     "done_one": "{{count}} Aufnahme zurück auf den Stift gespielt.",
-    "done_other": "{{count}} Aufnahmen zurück auf den Stift gespielt."
+    "done_other": "{{count}} Aufnahmen zurück auf den Stift gespielt.",
+    "buttonNote": "Nur die oben angehakten Aufnahmen werden zurückkopiert. Alles andere auf Ihrem Stift bleibt unberührt."
   },
   "label": {
     "button": "Umbenennen",

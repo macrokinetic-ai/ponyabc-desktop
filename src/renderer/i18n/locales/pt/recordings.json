@@ -101,10 +101,26 @@
     "done_one": "{{count}} gravação guardada.",
     "done_other": "{{count}} gravações guardadas.",
     "countLabel_one": "{{count}} gravação",
-    "countLabel_other": "{{count}} gravações"
+    "countLabel_other": "{{count}} gravações",
+    "labelManual": "Cópia de segurança",
+    "labelBeforeReplace": "Cópia automática antes de substituir {{name}}",
+    "labelBeforeReplaceMany": "Cópia automática antes de substituir gravações",
+    "labelBeforeDelete": "Cópia automática antes de eliminar {{name}}",
+    "labelBeforeDeleteMany": "Cópia automática antes de eliminar gravações",
+    "labelBeforeRestore": "Cópia automática antes de repor gravações na caneta",
+    "labelBeforeReassign": "Cópia automática antes de passar {{name}} para outro número",
+    "labelMigration": "Cópia trazida de uma versão anterior",
+    "keptSeparately": "Cada cópia de segurança é uma cópia separada das suas gravações tal como estavam nesse momento. As anteriores são mantidas — criar uma nova nunca as substitui.",
+    "contentsTitle": "Nesta cópia",
+    "contentsEmpty": "Esta cópia não contém gravações.",
+    "contentsLoading": "A ver o conteúdo desta cópia…",
+    "working": "A guardar as suas gravações…",
+    "selectAll": "Selecionar tudo",
+    "selectedCount_one": "{{count}} selecionada",
+    "selectedCount_other": "{{count}} selecionadas"
   },
   "restore": {
-    "button": "Repor na minha caneta",
+    "button": "Repor na caneta as gravações selecionadas",
     "reviewTitle": "Antes de repor",
     "clashIntro": "Alguns destes números já têm uma gravação na caneta. Ouça as duas e escolha qual fica.",
     "fromBackup": "Da cópia:",
@@ -117,7 +133,8 @@
     "noClashes_one": "Vai ser adicionada {{count}} gravação. Nada do que já está na caneta muda.",
     "noClashes_other": "Vão ser adicionadas {{count}} gravações. Nada do que já está na caneta muda.",
     "done_one": "{{count}} gravação reposta na caneta.",
-    "done_other": "{{count}} gravações repostas na caneta."
+    "done_other": "{{count}} gravações repostas na caneta.",
+    "buttonNote": "Só as gravações assinaladas acima são copiadas de volta. O resto da caneta fica intacto."
   },
   "label": {
     "button": "Mudar o nome",

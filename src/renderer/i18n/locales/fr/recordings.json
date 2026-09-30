@@ -101,10 +101,26 @@
     "done_one": "{{count}} enregistrement sauvegardé.",
     "done_other": "{{count}} enregistrements sauvegardés.",
     "countLabel_one": "{{count}} enregistrement",
-    "countLabel_other": "{{count}} enregistrements"
+    "countLabel_other": "{{count}} enregistrements",
+    "labelManual": "Sauvegarde",
+    "labelBeforeReplace": "Sauvegarde automatique avant le remplacement de {{name}}",
+    "labelBeforeReplaceMany": "Sauvegarde automatique avant le remplacement d’enregistrements",
+    "labelBeforeDelete": "Sauvegarde automatique avant la suppression de {{name}}",
+    "labelBeforeDeleteMany": "Sauvegarde automatique avant la suppression d’enregistrements",
+    "labelBeforeRestore": "Sauvegarde automatique avant la remise en place d’enregistrements",
+    "labelBeforeReassign": "Sauvegarde automatique avant le déplacement de {{name}} vers un autre numéro",
+    "labelMigration": "Sauvegarde reprise d’une ancienne version",
+    "keptSeparately": "Chaque sauvegarde est une copie distincte de vos enregistrements tels qu’ils étaient à ce moment-là. Les anciennes sont conservées : en créer une nouvelle ne les remplace jamais.",
+    "contentsTitle": "Dans cette sauvegarde",
+    "contentsEmpty": "Cette sauvegarde ne contient aucun enregistrement.",
+    "contentsLoading": "Consultation de cette sauvegarde…",
+    "working": "Sauvegarde de vos enregistrements…",
+    "selectAll": "Tout sélectionner",
+    "selectedCount_one": "{{count}} sélectionné",
+    "selectedCount_other": "{{count}} sélectionnés"
   },
   "restore": {
-    "button": "Les remettre sur mon stylo",
+    "button": "Remettre les enregistrements sélectionnés sur mon stylo",
     "reviewTitle": "Avant de les remettre",
     "clashIntro": "Certains de ces numéros ont déjà un enregistrement sur votre stylo. Écoutez les deux et choisissez lequel garder.",
     "fromBackup": "Depuis la sauvegarde :",
@@ -117,7 +133,8 @@
     "noClashes_one": "{{count}} enregistrement sera ajouté. Rien de ce qui est déjà sur le stylo ne changera.",
     "noClashes_other": "{{count}} enregistrements seront ajoutés. Rien de ce qui est déjà sur le stylo ne changera.",
     "done_one": "{{count}} enregistrement remis sur votre stylo.",
-    "done_other": "{{count}} enregistrements remis sur votre stylo."
+    "done_other": "{{count}} enregistrements remis sur votre stylo.",
+    "buttonNote": "Seuls les enregistrements cochés ci-dessus sont recopiés. Le reste de votre stylo n’est pas touché."
   },
   "label": {
     "button": "Renommer",

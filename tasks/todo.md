@@ -28,12 +28,12 @@ again. The commit belongs at the boundary, in main.
 
 ## RECORDINGS
 
-- [ ] 1. `reason` on the snapshot manifest (`manual` | `before-replace` | `before-delete` |
+- [x] 1. `reason` on the snapshot manifest (`manual` | `before-replace` | `before-delete` |
       `before-restore` | `migration`), with the thing it was protecting. Labels read
       "Backup — 30 September 2026, 21:10" vs "Automatic backup before replacing 0451".
-- [ ] 1. "Back up my recordings" single-shot: disabled while running, so a double click cannot
+- [x] 1. "Back up my recordings" single-shot: disabled while running, so a double click cannot
       make two backups.
-- [ ] 2. BUG: a backup says "20 recordings" and lists none — `SnapshotSummary` never carries the
+- [x] 2. BUG: a backup says "20 recordings" and lists none — `SnapshotSummary` never carries the
       entries. Add a contents call; list sticker number, friendly name, size, Play; tick boxes
       and Select all; "Put selected recordings back on my pen" with one line of explanation;
       say plainly that each backup is its own snapshot and older ones are kept.

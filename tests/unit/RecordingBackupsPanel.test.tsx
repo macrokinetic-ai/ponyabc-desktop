@@ -31,7 +31,20 @@ function mockApi(overrides: Record<string, unknown> = {}) {
       diyFolderName: 'DIY',
       files: [{ name: '0451.mp3', sizeBytes: 1000, mtimeMs: 0 }],
     })),
-    recordingBackupList: vi.fn(async () => [{ snapshotId: 's1', createdAtMs: 1_790_000_000_000, penVolumeLabel: 'PEN', recordingCount: 2 }]),
+    recordingBackupList: vi.fn(async () => [
+      { snapshotId: 's1', createdAtMs: 1_790_000_000_000, penVolumeLabel: 'PEN', recordingCount: 2, reason: 'manual', protecting: null },
+    ]),
+    recordingBackupContents: vi.fn(async () => ({
+      status: 'ok',
+      snapshotId: 's1',
+      createdAtMs: 1_790_000_000_000,
+      reason: 'manual',
+      protecting: null,
+      entries: [
+        { fileName: '0451.mp3', label: 'Grandma reading', sizeBytes: 1_500_000, mtimeMs: 0 },
+        { fileName: '0452.mp3', label: null, sizeBytes: 900_000, mtimeMs: 0 },
+      ],
+    })),
     recordingLabelsGet: vi.fn(async () => ({})),
     recordingLabelSet: vi.fn(async () => ({})),
     recordingBackupCreate: vi.fn(async () => ({ status: 'ok', snapshotId: 's2', recordingCount: 3, dedupedCount: 1, failedCount: 0 })),
@@ -100,7 +113,7 @@ describe('recordings — putting them back', () => {
         missingFromBackup: [],
       })),
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Put these back on my pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Put selected recordings back on my pen' }));
     await screen.findByText('Everything in that backup is already on your pen.');
     expect(api().recordingRestoreExecute).not.toHaveBeenCalled();
   });
@@ -114,7 +127,7 @@ describe('recordings — putting them back', () => {
         missingFromBackup: [],
       })),
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Put these back on my pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Put selected recordings back on my pen' }));
 
     await screen.findByText('Some of these numbers already have a recording on your pen. Listen to both and choose which one to keep.');
     // Both takes can be heard before deciding — only the person who recorded them can tell.
@@ -140,7 +153,7 @@ describe('recordings — putting them back', () => {
         missingFromBackup: [],
       })),
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Put these back on my pen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Put selected recordings back on my pen' }));
     await screen.findByText('From the backup:');
 
     const dialog = within(document.querySelector('.plan-panel') as HTMLElement);
@@ -203,5 +216,131 @@ describe('recordings — plain language', () => {
     await renderPanel();
     const text = document.body.textContent ?? '';
     expect(text).not.toMatch(/\.mp3|checksum|hash|SHA-?256|manifest|snapshot|DIY/i);
+  });
+});
+
+/**
+ * What the owner found testing rc5 on a real Windows PC:
+ *
+ *   "a backup's title says 20 recordings but nothing is listed under it"
+ *
+ * The count came from the summary; the recordings themselves never left the main process. These
+ * tests fail if the list ever goes back to being a promise of contents nobody can see.
+ */
+describe('recordings — what is inside a backup', () => {
+  it('lists every recording in the chosen backup, with its name and size', async () => {
+    await renderPanel();
+
+    await screen.findByText('In this backup');
+    // The sticker number, because that is what is written on the sticker in their hand.
+    expect(screen.getAllByText('0451').length).toBeGreaterThan(0);
+    await screen.findByText('0452');
+    // The name they gave it, where they gave it one.
+    await screen.findByText('Grandma reading');
+    await screen.findByText('1.4 MB');
+    await screen.findByText('879 KB');
+  });
+
+  it('starts with everything ticked, and Select all clears and restores the lot', async () => {
+    await renderPanel();
+    await screen.findByText('In this backup');
+
+    await screen.findByText('2 chosen');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    await screen.findByText('0 chosen');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    await screen.findByText('2 chosen');
+  });
+
+  it('puts back only what is ticked', async () => {
+    await renderPanel();
+    await screen.findByText('In this backup');
+
+    // Untick the first recording, leaving one.
+    const rows = screen.getAllByRole('checkbox');
+    const firstRecording = rows.find((r) => r.closest('li')?.textContent?.includes('Grandma reading'));
+    expect(firstRecording).toBeDefined();
+    fireEvent.click(firstRecording as HTMLElement);
+    await screen.findByText('1 chosen');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Put selected recordings back on my pen' }));
+
+    await waitFor(() =>
+      expect(api().recordingRestorePlan).toHaveBeenCalledWith({ snapshotId: 's1', fileNames: ['0452.mp3'] }),
+    );
+  });
+
+  it('cannot put anything back when nothing is ticked', async () => {
+    await renderPanel();
+    await screen.findByText('In this backup');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    await screen.findByText('0 chosen');
+
+    expect((screen.getByRole('button', { name: 'Put selected recordings back on my pen' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('says the older backups are kept, so the list does not look like clutter', async () => {
+    await renderPanel();
+    await screen.findByText(/Older backups are kept/);
+  });
+});
+
+describe('recordings — telling the two kinds of backup apart', () => {
+  it('names a backup the owner asked for, and one the app took by itself, differently', async () => {
+    await renderPanel({
+      recordingBackupList: vi.fn(async () => [
+        { snapshotId: 's1', createdAtMs: 1_790_000_000_000, penVolumeLabel: 'PEN', recordingCount: 2, reason: 'manual', protecting: null },
+        {
+          snapshotId: 's2',
+          createdAtMs: 1_790_000_100_000,
+          penVolumeLabel: 'PEN',
+          recordingCount: 2,
+          reason: 'before-replace',
+          protecting: '0451.mp3',
+        },
+      ]),
+    });
+
+    const options = await screen.findAllByRole('option');
+    const text = options.map((o) => o.textContent ?? '');
+    expect(text.some((o) => o.startsWith('Backup ·'))).toBe(true);
+    expect(text.some((o) => o.includes('Automatic backup before replacing 0451'))).toBe(true);
+  });
+
+  it('a backup from before rc6, which carries no reason, reads as one the owner made', async () => {
+    await renderPanel({
+      recordingBackupList: vi.fn(async () => [
+        // No `reason` key at all — exactly what is on disk from rc5 and earlier.
+        { snapshotId: 's1', createdAtMs: 1_790_000_000_000, penVolumeLabel: 'PEN', recordingCount: 2 },
+      ]),
+    });
+
+    const options = await screen.findAllByRole('option');
+    expect(options[0].textContent ?? '').toContain('Backup ·');
+  });
+});
+
+describe('recordings — backing up cannot happen twice', () => {
+  it('a double click on Back up my recordings makes one backup, not two', async () => {
+    let release: (() => void) | null = null;
+    const create = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ status: 'ok', snapshotId: 's9', recordingCount: 3, dedupedCount: 0, failedCount: 0 });
+        }),
+    );
+    await renderPanel({ recordingBackupCreate: create });
+
+    const button = screen.getByRole('button', { name: 'Back up my recordings' });
+    fireEvent.click(button);
+    // The second half of the double click, while the first is still running.
+    fireEvent.click(screen.getByRole('button', { name: 'Backing up your recordings…' }));
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect((screen.getByRole('button', { name: 'Backing up your recordings…' }) as HTMLButtonElement).disabled).toBe(true);
+
+    release?.();
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
   });
 });

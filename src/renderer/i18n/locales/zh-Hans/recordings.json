@@ -96,10 +96,25 @@
     "choose": "选择备份：",
     "missing": "找不到该备份。",
     "done_other": "已备份 {{count}} 段录音。",
-    "countLabel_other": "{{count}} 段录音"
+    "countLabel_other": "{{count}} 段录音",
+    "labelManual": "备份",
+    "labelBeforeReplace": "替换 {{name}} 前的自动备份",
+    "labelBeforeReplaceMany": "替换录音前的自动备份",
+    "labelBeforeDelete": "删除 {{name}} 前的自动备份",
+    "labelBeforeDeleteMany": "删除录音前的自动备份",
+    "labelBeforeRestore": "放回录音前的自动备份",
+    "labelBeforeReassign": "把 {{name}} 换到其他号码前的自动备份",
+    "labelMigration": "从旧版本移入的备份",
+    "keptSeparately": "每个备份都是当下录音的独立副本。旧的备份会保留，新增备份不会替换它们。",
+    "contentsTitle": "这个备份包含",
+    "contentsEmpty": "这个备份没有任何录音。",
+    "contentsLoading": "正在查看这个备份…",
+    "working": "正在备份您的录音…",
+    "selectAll": "全选",
+    "selectedCount_other": "已选 {{count}} 个"
   },
   "restore": {
-    "button": "放回点读笔",
+    "button": "把选中的录音放回录音笔",
     "reviewTitle": "放回之前",
     "clashIntro": "部分号码在点读笔内已有录音。可先试听两段，再决定保留哪一段。",
     "fromBackup": "备份的一段：",
@@ -110,7 +125,8 @@
     "confirm": "放回去",
     "nothingToDo": "该备份的内容已全部在点读笔内。",
     "noClashes_other": "将会加入 {{count}} 段录音，笔内原有的不会改动。",
-    "done_other": "已将 {{count}} 段录音放回点读笔。"
+    "done_other": "已将 {{count}} 段录音放回点读笔。",
+    "buttonNote": "只有您在上面勾选的录音会被复制回去，录音笔上的其他内容不会变动。"
   },
   "label": {
     "button": "改名",

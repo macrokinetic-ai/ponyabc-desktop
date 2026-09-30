@@ -101,10 +101,26 @@
     "done_one": "Backed up {{count}} recording.",
     "done_other": "Backed up {{count}} recordings.",
     "countLabel_one": "{{count}} recording",
-    "countLabel_other": "{{count}} recordings"
+    "countLabel_other": "{{count}} recordings",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Automatic backup before replacing {{name}}",
+    "labelBeforeReplaceMany": "Automatic backup before replacing recordings",
+    "labelBeforeDelete": "Automatic backup before deleting {{name}}",
+    "labelBeforeDeleteMany": "Automatic backup before deleting recordings",
+    "labelBeforeRestore": "Automatic backup before putting recordings back",
+    "labelBeforeReassign": "Automatic backup before moving {{name}} to another number",
+    "labelMigration": "Backup brought in from an older version",
+    "keptSeparately": "Each backup is a separate copy of your recordings as they were at that moment. Older backups are kept — making a new one never replaces them.",
+    "contentsTitle": "In this backup",
+    "contentsEmpty": "This backup holds no recordings.",
+    "contentsLoading": "Looking inside this backup…",
+    "working": "Backing up your recordings…",
+    "selectAll": "Select all",
+    "selectedCount_one": "{{count}} chosen",
+    "selectedCount_other": "{{count}} chosen"
   },
   "restore": {
-    "button": "Put these back on my pen",
+    "button": "Put selected recordings back on my pen",
     "reviewTitle": "Before we put these back",
     "clashIntro": "Some of these numbers already have a recording on your pen. Listen to both and choose which one to keep.",
     "fromBackup": "From the backup:",
@@ -117,7 +133,8 @@
     "noClashes_one": "{{count}} recording will be added to your pen. Nothing already on it will change.",
     "noClashes_other": "{{count}} recordings will be added to your pen. Nothing already on it will change.",
     "done_one": "Put {{count}} recording back on your pen.",
-    "done_other": "Put {{count}} recordings back on your pen."
+    "done_other": "Put {{count}} recordings back on your pen.",
+    "buttonNote": "Only the recordings you have ticked above are copied back. Anything else on your pen is left alone."
   },
   "label": {
     "button": "Rename",

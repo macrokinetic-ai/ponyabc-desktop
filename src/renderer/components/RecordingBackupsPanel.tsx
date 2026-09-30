@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RecordingsListResult } from '@shared/types';
 import type { RestoreDecision, RestorePlan } from '../../main/services/recordingRestore';
-import type { SnapshotSummary } from '../../main/ipc/recordingBackup';
+import type { SnapshotContents, SnapshotSummary } from '../../main/ipc/recordingBackup';
 import { useAudioPreview } from '../hooks/useAudioPreview';
 import { AudioPreviewBar } from './AudioPreviewBar';
 import { formatDateTimeMedium } from '@shared/dateFormat';
+import { backupLabel, formatSize, stickerName } from './backupLabel';
 
 /**
  * Recordings, for the person who made them.
@@ -33,6 +34,13 @@ export function RecordingBackupsPanel() {
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /** What is inside the chosen backup, and which of those the person wants back. rc5 never
+   *  fetched this, so a backup could say "20 recordings" above an empty panel. */
+  const [contents, setContents] = useState<SnapshotContents | null>(null);
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  /** Separate from `busy`: the backup button must go dead the instant it is pressed, before
+   *  any await, so a quick double click cannot make two backups. */
+  const [backingUp, setBackingUp] = useState(false);
 
   const [plan, setPlan] = useState<RestorePlan | null>(null);
   const [decisions, setDecisions] = useState<Record<string, RestoreDecision>>({});
@@ -67,6 +75,32 @@ export function RecordingBackupsPanel() {
     void refresh();
   }, [refresh]);
 
+  // The chosen backup's contents, refetched when the choice changes. Everything in it starts
+  // ticked: putting a whole backup back is the common case, and a list that starts empty makes
+  // the primary button look broken.
+  useEffect(() => {
+    if (!selectedBackupId) {
+      setContents(null);
+      setChosen(new Set());
+      return;
+    }
+    let cancelled = false;
+    setContents(null);
+    void window.ponyabc
+      .recordingBackupContents({ snapshotId: selectedBackupId })
+      .then((result) => {
+        if (cancelled) return;
+        setContents(result);
+        setChosen(result.status === 'ok' ? new Set(result.entries.map((e) => e.fileName)) : new Set());
+      })
+      .catch(() => {
+        if (!cancelled) setContents({ status: 'no-such-backup' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBackupId]);
+
   const penList = penFiles?.status === 'ok' ? penFiles.files : [];
   const penReady = penFiles?.status === 'ok';
   const nameOf = (fileName: string) => labels[fileName] ?? fileName.replace(/\.mp3$/i, '');
@@ -85,19 +119,26 @@ export function RecordingBackupsPanel() {
     }
   }
 
-  const backUpNow = () =>
-    run(
-      () => window.ponyabc.recordingBackupCreate(),
-      (result) => {
-        if (result.status === 'no-pen-selected') setMessage(t('noPenSelected'));
-        else setMessage(t('backup.done', { count: result.recordingCount }));
-      },
-    );
+  async function backUpNow() {
+    if (backingUp) return;
+    setBackingUp(true);
+    try {
+      await run(
+        () => window.ponyabc.recordingBackupCreate(),
+        (result) => {
+          if (result.status === 'no-pen-selected') setMessage(t('noPenSelected'));
+          else setMessage(t('backup.done', { count: result.recordingCount }));
+        },
+      );
+    } finally {
+      setBackingUp(false);
+    }
+  }
 
   const startRestore = () =>
     selectedBackupId &&
     run(
-      () => window.ponyabc.recordingRestorePlan({ snapshotId: selectedBackupId }),
+      () => window.ponyabc.recordingRestorePlan({ snapshotId: selectedBackupId, fileNames: [...chosen] }),
       (result) => {
         if (result.status !== 'ok') {
           setMessage(result.status === 'no-pen-selected' ? t('noPenSelected') : t('backup.missing'));
@@ -171,8 +212,15 @@ export function RecordingBackupsPanel() {
           <div className="pane__header">
             <h2>{t('onPen.title')}</h2>
             <p className="hint">{t('onPen.intro')}</p>
-            <button type="button" className="button button--primary" disabled={busy || !penReady} onClick={() => void backUpNow()}>
-              {t('backup.button')}
+            {/* Single-shot: `backingUp` is set before the first await, so the second half of a
+                double click finds the button already disabled and makes no second backup. */}
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={busy || backingUp || !penReady}
+              onClick={() => void backUpNow()}
+            >
+              {backingUp ? t('backup.working') : t('backup.button')}
             </button>
           </div>
           <div className="pane__list">
@@ -268,13 +316,17 @@ export function RecordingBackupsPanel() {
           <div className="pane__header">
             <h2>{t('backup.title')}</h2>
             <p className="hint">{t('backup.intro')}</p>
+            {/* Said plainly, because a list of backups looks like clutter until you know none of
+                them is going to be thrown away. */}
+            <p className="hint">{t('backup.keptSeparately')}</p>
             {backups.length > 0 && (
               <label>
                 {t('backup.choose')}
                 <select value={selectedBackupId ?? ''} onChange={(e) => setSelectedBackupId(e.target.value)}>
                   {backups.map((b) => (
                     <option key={b.snapshotId} value={b.snapshotId}>
-                      {formatWhen(b.createdAtMs, i18n.language)} — {t('backup.countLabel', { count: b.recordingCount })}
+                      {backupLabel(b, t)} · {formatWhen(b.createdAtMs, i18n.language)} ·{' '}
+                      {t('backup.countLabel', { count: b.recordingCount })}
                     </option>
                   ))}
                 </select>
@@ -283,11 +335,82 @@ export function RecordingBackupsPanel() {
           </div>
           <div className="pane__list">
             {backups.length === 0 && <p className="hint">{t('backup.none')}</p>}
+
+            {/* The bug the owner found: the count was shown and the recordings never were. */}
+            {backups.length > 0 && contents === null && <p className="hint">{t('backup.contentsLoading')}</p>}
+            {contents?.status === 'no-such-backup' && <p className="error-text">{t('backup.missing')}</p>}
+            {contents?.status === 'ok' && contents.entries.length === 0 && <p className="hint">{t('backup.contentsEmpty')}</p>}
+            {contents?.status === 'ok' && contents.entries.length > 0 && (
+              <>
+                <div className="pane__toolbar">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={chosen.size === contents.entries.length}
+                      onChange={() =>
+                        setChosen(
+                          chosen.size === contents.entries.length
+                            ? new Set()
+                            : new Set(contents.entries.map((e) => e.fileName)),
+                        )
+                      }
+                    />
+                    {t('backup.selectAll')}
+                  </label>
+                  <span>{t('backup.selectedCount', { count: chosen.size })}</span>
+                </div>
+                <h3>{t('backup.contentsTitle')}</h3>
+                <ul className="recordings-list">
+                  {contents.entries.map((entry) => (
+                    <li key={entry.fileName} className="recordings-list__row">
+                      <label className="recordings-list__label">
+                        <input
+                          type="checkbox"
+                          checked={chosen.has(entry.fileName)}
+                          onChange={() =>
+                            setChosen((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(entry.fileName)) next.delete(entry.fileName);
+                              else next.add(entry.fileName);
+                              return next;
+                            })
+                          }
+                        />
+                        {/* The sticker number always, and the name they gave it if they gave it
+                            one — the number is what is written on the sticker in their hand. */}
+                        <span className="recordings-list__name">{stickerName(entry.fileName)}</span>
+                        {entry.label && <span className="hint">{entry.label}</span>}
+                      </label>
+                      <span className="recordings-list__size">{formatSize(entry.sizeBytes, i18n.language)}</span>
+                      <button
+                        type="button"
+                        className="button recordings-list__preview"
+                        onClick={() =>
+                          preview.state?.source === 'backup' && preview.state.fileName === entry.fileName
+                            ? preview.stop()
+                            : void preview.play('backup', entry.fileName, contents.snapshotId)
+                        }
+                      >
+                        {preview.state?.source === 'backup' && preview.state.fileName === entry.fileName
+                          ? t('preview.buttonPlaying')
+                          : t('actions.play')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
           <div className="pane__footer">
-            <button type="button" className="button button--primary" disabled={busy || !selectedBackupId || !penReady} onClick={() => void startRestore()}>
+            <button
+              type="button"
+              className="button button--primary"
+              disabled={busy || !selectedBackupId || !penReady || chosen.size === 0}
+              onClick={() => void startRestore()}
+            >
               {t('restore.button')}
             </button>
+            <p className="hint">{t('restore.buttonNote')}</p>
           </div>
         </section>
       </div>

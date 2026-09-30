@@ -4,7 +4,7 @@ import { IPC } from '@shared/ipcChannels';
 import { resolvePenRoot } from '../services/pathSecurity';
 import * as session from '../services/session';
 import { createJsonStore } from '../services/bookStore';
-import { createSnapshot, listSnapshots, readManifest, type SnapshotManifest } from '../services/recordingSnapshot';
+import { createSnapshot, listSnapshots, readManifest, type SnapshotManifest, type SnapshotReason } from '../services/recordingSnapshot';
 import { executeRestore, planRestore, type RestoreDecision, type RestorePlan, type RestoreResult } from '../services/recordingRestore';
 import {
   deleteFromPen,
@@ -59,14 +59,62 @@ export interface SnapshotSummary {
   createdAtMs: number;
   penVolumeLabel: string | null;
   recordingCount: number;
+  /** Snapshots written before rc6 carry no reason; they were all made by the button. */
+  reason: SnapshotReason;
+  /** The recording this backup was protecting, for the automatic reasons. */
+  protecting: string | null;
 }
+
+/** One recording inside a backup, as the screen needs to show it. */
+export interface SnapshotEntrySummary {
+  fileName: string;
+  /** The friendly name as it was when the backup was taken, if one had been set. */
+  label: string | null;
+  sizeBytes: number;
+  mtimeMs: number;
+}
+
+export type SnapshotContents =
+  | { status: 'no-such-backup' }
+  | {
+      status: 'ok';
+      snapshotId: string;
+      createdAtMs: number;
+      reason: SnapshotReason;
+      protecting: string | null;
+      entries: SnapshotEntrySummary[];
+    };
 
 const summarise = (manifest: SnapshotManifest): SnapshotSummary => ({
   snapshotId: manifest.snapshotId,
   createdAtMs: manifest.createdAtMs,
   penVolumeLabel: manifest.penVolumeLabel,
   recordingCount: manifest.entries.length,
+  reason: manifest.reason ?? 'manual',
+  protecting: manifest.protecting ?? null,
 });
+
+/**
+ * What is actually inside one backup.
+ *
+ * rc5 could tell you a backup held twenty recordings and then show you nothing, because the
+ * summary above was the only thing the screen ever received — the entries never left the main
+ * process. The owner found exactly that.
+ */
+export function getRecordingBackupContents(params: { snapshotId: string }): SnapshotContents {
+  const found = snapshotDirFor(params.snapshotId);
+  if (!found) return { status: 'no-such-backup' };
+  return {
+    status: 'ok',
+    snapshotId: found.manifest.snapshotId,
+    createdAtMs: found.manifest.createdAtMs,
+    reason: found.manifest.reason ?? 'manual',
+    protecting: found.manifest.protecting ?? null,
+    entries: found.manifest.entries
+      .map((e) => ({ fileName: e.fileName, label: e.label, sizeBytes: e.sizeBytes, mtimeMs: e.mtimeMs }))
+      .sort((a, b) => a.fileName.localeCompare(b.fileName)),
+  };
+}
 
 export function listRecordingBackups(): SnapshotSummary[] {
   return listSnapshots(recordingBackupRootDir()).map((s) => summarise(s.manifest));
@@ -98,6 +146,7 @@ export async function createRecordingBackup(window: BrowserWindow): Promise<Back
     backupRootDir: recordingBackupRootDir(),
     penVolumeLabel: pen.volumeLabel,
     labels: getRecordingLabels(),
+    reason: 'manual',
     onProgress: (event) => {
       try {
         window.webContents.send(IPC.recordingBackupProgress, event);

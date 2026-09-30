@@ -24,6 +24,7 @@ import {
   deleteRecordingsFromPen,
   executeRecordingRestore,
   getRecordingLabels,
+  getRecordingBackupContents,
   listRecordingBackups,
   migrateLegacyRecordingBackups,
   planRecordingRestore,
@@ -140,6 +141,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   // Recordings v2. Every one of these re-resolves the pen itself; none trusts a stored path.
   ipcMain.handle(IPC.recordingBackupCreate, () => createRecordingBackup(getWindow()));
   ipcMain.handle(IPC.recordingBackupList, () => listRecordingBackups());
+  ipcMain.handle(IPC.recordingBackupContents, (_event, params) => getRecordingBackupContents(params));
   ipcMain.handle(IPC.recordingRestorePlan, (_event, params) => planRecordingRestore(params));
   ipcMain.handle(IPC.recordingRestoreExecute, (_event, params) => executeRecordingRestore(getWindow(), params));
   ipcMain.handle(IPC.recordingDeleteFromPen, (_event, params) => deleteRecordingsFromPen(params));

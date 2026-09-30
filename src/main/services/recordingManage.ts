@@ -113,7 +113,14 @@ export async function reassignStickerNumber(params: {
 
   let backupSnapshotId: string;
   try {
-    const snap = await createSnapshot({ diyDirReal, backupRootDir, penVolumeLabel, labels });
+    const snap = await createSnapshot({
+      diyDirReal,
+      backupRootDir,
+      penVolumeLabel,
+      labels,
+      reason: 'before-reassign',
+      protecting: currentFileName,
+    });
     backupSnapshotId = snap.snapshotId;
   } catch (err) {
     return { status: 'backup-failed', error: err instanceof Error ? err.message : String(err) };
@@ -157,7 +164,16 @@ export async function deleteFromPen(params: {
   if (fileNames.length === 0) return result;
 
   try {
-    const snap = await createSnapshot({ diyDirReal, backupRootDir, penVolumeLabel, labels });
+    const snap = await createSnapshot({
+      diyDirReal,
+      backupRootDir,
+      penVolumeLabel,
+      labels,
+      reason: 'before-delete',
+      // Only when one recording is at stake: "before deleting 0451" is useful, "before deleting
+      // 0451 and 11 others" is not a label, it is a sentence.
+      protecting: fileNames.length === 1 ? fileNames[0] : null,
+    });
     result.backupSnapshotId = snap.snapshotId;
   } catch (err) {
     return { status: 'backup-failed', error: err instanceof Error ? err.message : String(err) };

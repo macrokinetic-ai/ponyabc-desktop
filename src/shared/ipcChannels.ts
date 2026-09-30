@@ -30,6 +30,7 @@ export const IPC = {
   // Recordings v2 — snapshot backups, restore, per-side delete, sticker reassign, labels.
   recordingBackupCreate: 'ponyabc:recordingBackup:create',
   recordingBackupList: 'ponyabc:recordingBackup:list',
+  recordingBackupContents: 'ponyabc:recordingBackup:contents',
   recordingRestorePlan: 'ponyabc:recordingBackup:restore:plan',
   recordingRestoreExecute: 'ponyabc:recordingBackup:restore:execute',
   recordingDeleteFromPen: 'ponyabc:recordingBackup:deletePen',

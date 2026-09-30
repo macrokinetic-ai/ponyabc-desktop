@@ -101,10 +101,26 @@
     "done_one": "{{count}} registrazione salvata.",
     "done_other": "{{count}} registrazioni salvate.",
     "countLabel_one": "{{count}} registrazione",
-    "countLabel_other": "{{count}} registrazioni"
+    "countLabel_other": "{{count}} registrazioni",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Backup automatico prima di sostituire {{name}}",
+    "labelBeforeReplaceMany": "Backup automatico prima di sostituire delle registrazioni",
+    "labelBeforeDelete": "Backup automatico prima di eliminare {{name}}",
+    "labelBeforeDeleteMany": "Backup automatico prima di eliminare delle registrazioni",
+    "labelBeforeRestore": "Backup automatico prima di rimettere delle registrazioni sulla penna",
+    "labelBeforeReassign": "Backup automatico prima di spostare {{name}} su un altro numero",
+    "labelMigration": "Backup importato da una versione precedente",
+    "keptSeparately": "Ogni backup è una copia a sé delle tue registrazioni come erano in quel momento. I backup più vecchi restano: crearne uno nuovo non li sostituisce mai.",
+    "contentsTitle": "In questo backup",
+    "contentsEmpty": "Questo backup non contiene registrazioni.",
+    "contentsLoading": "Sto guardando dentro questo backup…",
+    "working": "Sto salvando le tue registrazioni…",
+    "selectAll": "Seleziona tutto",
+    "selectedCount_one": "{{count}} selezionata",
+    "selectedCount_other": "{{count}} selezionate"
   },
   "restore": {
-    "button": "Rimettile sulla penna",
+    "button": "Rimetti sulla penna le registrazioni selezionate",
     "reviewTitle": "Prima di rimetterle",
     "clashIntro": "Alcuni di questi numeri hanno già una registrazione sulla penna. Ascoltale entrambe e scegli quale tenere.",
     "fromBackup": "Dal backup:",
@@ -117,7 +133,8 @@
     "noClashes_one": "Verrà aggiunta {{count}} registrazione. Quello che è già sulla penna non cambia.",
     "noClashes_other": "Verranno aggiunte {{count}} registrazioni. Quello che è già sulla penna non cambia.",
     "done_one": "{{count}} registrazione rimessa sulla penna.",
-    "done_other": "{{count}} registrazioni rimesse sulla penna."
+    "done_other": "{{count}} registrazioni rimesse sulla penna.",
+    "buttonNote": "Vengono ricopiate solo le registrazioni spuntate sopra. Tutto il resto sulla penna resta com’è."
   },
   "label": {
     "button": "Rinomina",

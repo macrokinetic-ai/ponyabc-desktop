@@ -151,7 +151,15 @@ export async function executeRestore(params: {
   // Anything about to be overwritten is backed up first — the pen's copy may be the only one in
   // existence, and "restore" must never be a way to lose a recording.
   if (willOverwrite) {
-    const penBackup = await createSnapshot({ diyDirReal, backupRootDir, penVolumeLabel, labels });
+    const overwritten = plan.items.filter((i) => i.state === 'clash');
+    const penBackup = await createSnapshot({
+      diyDirReal,
+      backupRootDir,
+      penVolumeLabel,
+      labels,
+      reason: 'before-restore',
+      protecting: overwritten.length === 1 ? overwritten[0].fileName : null,
+    });
     result.penBackupSnapshotId = penBackup.snapshotId;
   }
 

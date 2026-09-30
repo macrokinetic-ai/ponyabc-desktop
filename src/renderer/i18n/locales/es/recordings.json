@@ -101,10 +101,26 @@
     "done_one": "{{count}} grabación guardada.",
     "done_other": "{{count}} grabaciones guardadas.",
     "countLabel_one": "{{count}} grabación",
-    "countLabel_other": "{{count}} grabaciones"
+    "countLabel_other": "{{count}} grabaciones",
+    "labelManual": "Copia de seguridad",
+    "labelBeforeReplace": "Copia automática antes de sustituir {{name}}",
+    "labelBeforeReplaceMany": "Copia automática antes de sustituir grabaciones",
+    "labelBeforeDelete": "Copia automática antes de borrar {{name}}",
+    "labelBeforeDeleteMany": "Copia automática antes de borrar grabaciones",
+    "labelBeforeRestore": "Copia automática antes de devolver grabaciones al lápiz",
+    "labelBeforeReassign": "Copia automática antes de pasar {{name}} a otro número",
+    "labelMigration": "Copia traída de una versión anterior",
+    "keptSeparately": "Cada copia de seguridad es una copia aparte de sus grabaciones tal y como estaban en ese momento. Las anteriores se conservan: crear una nueva nunca las sustituye.",
+    "contentsTitle": "En esta copia",
+    "contentsEmpty": "Esta copia no contiene grabaciones.",
+    "contentsLoading": "Revisando esta copia…",
+    "working": "Guardando una copia de sus grabaciones…",
+    "selectAll": "Seleccionar todo",
+    "selectedCount_one": "{{count}} seleccionada",
+    "selectedCount_other": "{{count}} seleccionadas"
   },
   "restore": {
-    "button": "Volver a ponerlas en mi lápiz",
+    "button": "Devolver al lápiz las grabaciones seleccionadas",
     "reviewTitle": "Antes de volver a ponerlas",
     "clashIntro": "Algunos de estos números ya tienen una grabación en el lápiz. Escuche las dos y elija cuál conservar.",
     "fromBackup": "De la copia:",
@@ -117,7 +133,8 @@
     "noClashes_one": "Se añadirá {{count}} grabación. Nada de lo que ya está en el lápiz cambiará.",
     "noClashes_other": "Se añadirán {{count}} grabaciones. Nada de lo que ya está en el lápiz cambiará.",
     "done_one": "{{count}} grabación devuelta a su lápiz.",
-    "done_other": "{{count}} grabaciones devueltas a su lápiz."
+    "done_other": "{{count}} grabaciones devueltas a su lápiz.",
+    "buttonNote": "Solo se copian las grabaciones marcadas arriba. Lo demás que haya en el lápiz no se toca."
   },
   "label": {
     "button": "Cambiar el nombre",

@@ -154,6 +154,6 @@ export async function migrateLegacyBackups(params: {
   }
 
   files.sort((a, b) => a.fileName.localeCompare(b.fileName));
-  const result = await createSnapshotFromFiles({ files, backupRootDir, penVolumeLabel, now });
+  const result = await createSnapshotFromFiles({ files, backupRootDir, penVolumeLabel, now, reason: 'migration' });
   return { ...result, status: 'ok' };
 }

@@ -933,6 +933,8 @@ export interface PonyAbcApi {
   // drifts: a recording's filename IS its sticker number, and that fact has to stay exact.
   recordingBackupCreate: () => Promise<import('../main/ipc/recordingBackup').BackupCreateResult>;
   recordingBackupList: () => Promise<import('../main/ipc/recordingBackup').SnapshotSummary[]>;
+  /** Every recording inside one backup, so the screen can list what it is offering to put back. */
+  recordingBackupContents: (params: { snapshotId: string }) => Promise<import('../main/ipc/recordingBackup').SnapshotContents>;
   recordingRestorePlan: (params: { snapshotId: string; fileNames?: string[] }) => Promise<import('../main/ipc/recordingBackup').RestorePlanResult>;
   recordingRestoreExecute: (params: {
     snapshotId: string;
