@@ -20,15 +20,6 @@
   },
   "package": {
     "title": "Firmware package",
-    "devModeNotice": "Test/support only: pick an already-extracted vendor package folder yourself. Most people should use the official download above instead.",
-    "selectButton": "Test/support: select a local folder…",
-    "advanced": {
-      "title": "Advanced / support",
-      "readButton": "Show",
-      "collapseButton": "Hide"
-    },
-    "selectedPath": "Selected: {{path}}",
-    "looksValid": "This folder has the files the confirmed upgrade path needs.",
     "invalid": "This folder is missing files the upgrade needs. Nothing will be run.",
     "nextButton": "Next",
     "official": {

@@ -285,11 +285,24 @@ export interface BookCatalogEntry {
    * `remove_from_pens` — reserved. 0.3.17 deliberately ignores it: nothing in this version
    * deletes a book, and shipping a half-understood deletion is worse than shipping none.
    */
-  lifecycleState: BookLifecycleState;
+  state: ContentState;
+  /** Lowest app version the server says may be told about this item, or null. */
+  minAppVersion: string | null;
   downloadUrl: string;
 }
 
-export type BookLifecycleState = 'active' | 'retired' | 'remove_from_pens';
+/**
+ * The four content states, named exactly as `ponyabc-web` names them in
+ * `src/lib/content/visibility.ts` and sends them in `/api/public/books`. Both sides use one
+ * vocabulary so a change on either is visible as a change on the other, rather than as a
+ * silent mismatch between "lifecycleState" here and "state" there.
+ *
+ *   active            on sale; every app sees it
+ *   retired           no longer sold; never added to a pen, still updated on one that has it
+ *   remove_from_pens  should come off the pens at the next sync
+ *   hidden            visible only to an internal build carrying the tester key
+ */
+export type ContentState = 'active' | 'retired' | 'remove_from_pens' | 'hidden';
 
 export interface BookCatalogConflict {
   filenameLower: string;
@@ -406,7 +419,9 @@ export interface BookCatalogItem {
    *  the LOCAL CACHE, never about what's on the pen. Independent of `status`. */
   cached: boolean;
   /** Mirrors the catalogue entry's state so the screen can group books without re-reading it. */
-  lifecycleState: BookLifecycleState;
+  state: ContentState;
+  /** Lowest app version the server says may be told about this item, or null. */
+  minAppVersion: string | null;
   /** true for 'not-on-pen', 'on-pen-present', 'on-pen-differs', and 'on-pen-size-differs' —
    *  declared filename + trustworthy hash, not ambiguous, and not already confirmed current.
    *  Gates "Add"/"Replace" in the UI; bookInstall.ts enforces the same eligibility rule
@@ -940,6 +955,12 @@ export interface PonyAbcApi {
 
   /** The pen's book index: whether it still matches what is on the pen, finishing a batch, and
    *  the explicit "Fix my pen's book list" action. */
+  /** Testing mode — the Internal build only. In a Store build these resolve to the "off"
+   *  answer, because the main process's own handlers come from the stub. */
+  testingModeGet: () => Promise<{ enabled: boolean; testCatalogueFolder: string | null; testerKey: string | null }>;
+  testingModeSet: (patch: Record<string, unknown>) => Promise<{ enabled: boolean; testCatalogueFolder: string | null; testerKey: string | null }>;
+  testingModeChooseFolder: () => Promise<string | null>;
+
   bookIndexStatus: () => Promise<import('../main/ipc/bookIndex').BookIndexStatus | { status: 'no-pen-selected' }>;
   bookIndexCommit: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookIndexFix: () => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;

@@ -220,7 +220,8 @@ remains available per book, on demand, under Advanced details → Verify.
 | `shop_url`                                                      | `content_items`    | §4. Nullable; absent means no link.                                                                |
 | `min_app_version`                                               | `content_versions` | Same reasoning as firmware: a book needing a newer app must not be offered to an older one.        |
 
-`GET /api/public/books` gains `lifecycleState`, `catalogVersionId`, `shopUrl`, and continues to
+`GET /api/public/books` gains `state` (the web contract's own name — active, retired,
+remove_from_pens, hidden), `minAppVersion`, `catalogVersionId`, `shopUrl`, and continues to
 omit anything the app does not need. **Retired books must still be returned** — the app needs them
 to keep an already-installed copy updated — with their state, so the app can decline to offer
 them. That is the one API change that is easy to get wrong.

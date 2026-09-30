@@ -8,6 +8,7 @@ import { MyRecordingsScreen } from './screens/MyRecordingsScreen';
 import { BookLibraryScreen } from './screens/BookLibraryScreen';
 import { FirmwareScreen } from './screens/FirmwareScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { InternalBanner } from '@internal-ui';
 
 export default function App() {
   const [section, setSection] = useState<Section>('home');
@@ -16,6 +17,9 @@ export default function App() {
     <PenRootProvider>
       <ComputerFolderProvider>
         <BookLibraryProvider>
+          {/* Nothing in a Store build: the component it resolves to renders null and carries
+              no words. In the Internal build it is the first thing anyone sees. */}
+          <InternalBanner />
           <div className="app-shell">
             <NavSidebar active={section} onSelect={setSection} />
             <main className="app-content">

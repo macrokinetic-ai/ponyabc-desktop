@@ -33,11 +33,12 @@ import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
 import { getVolumeInfo } from '../services/transferPlanner';
-import { demoBookList, demoDataEnabled, demoVariant, markDemoSyncComplete } from '../services/demoBookData';
+
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
 import { appendDiagnostic } from '../services/diagnostics';
+import * as internal from '@internal';
 
 // Hardcoded — the renderer has no way to influence which host this reads from. Secret-free
 // public endpoint (Option A): no Authorization header, nothing embedded to protect.
@@ -119,7 +120,8 @@ async function currentPenVolume(): Promise<{ freeBytes: number | null; totalByte
  *  triggers, hashing a pen file's content. */
 async function currentList(): Promise<BookListResult> {
   // Screenshots and the manual only. Never set in a shipped build — see demoBookData.ts.
-  if (demoDataEnabled()) return demoBookList(demoVariant());
+  const demo = internal.demoBookList();
+  if (demo) return demo;
 
   const snapshot = catalogStore().get();
   const cacheEntries = cacheManifestStore().get();
@@ -164,7 +166,11 @@ export function bookList(): Promise<BookListResult> {
  *  finishes (and clears the "refreshing" busy state) as soon as that one HTTP request settles,
  *  regardless of how many or how large the files on the pen are. */
 export async function bookCatalogRefresh(): Promise<BookListResult> {
-  const client = createHttpBookCatalogClient({ baseUrl: BOOK_API_BASE_URL });
+  const client = createHttpBookCatalogClient({
+    baseUrl: BOOK_API_BASE_URL,
+    appVersion: app.getVersion(),
+    testerKey: internal.testerKeyForRequests(),
+  });
   const requestUrl = `${BOOK_API_BASE_URL}/api/public/books`;
   const startedAtMs = Date.now();
   const outcome = await client.fetchCatalog();
@@ -244,11 +250,8 @@ async function runInstallAction(
   // Screenshots and the manual only — see demoBookData.ts. The demo catalogue is not a real
   // catalogue, so there is nothing to download and nowhere to write: report the completion the
   // real path would report, and let the screen show what a parent sees when a sync finishes.
-  if (demoDataEnabled()) {
-    markDemoSyncComplete();
-    markBookIndexStale('written');
-    return { status: 'completed', createdNewFile: true };
-  }
+  const demoResult = internal.demoInstallResult();
+  if (demoResult) return demoResult;
 
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };

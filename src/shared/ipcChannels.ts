@@ -56,6 +56,12 @@ export const IPC = {
   // The pen's book index — reset after adds/removes, and the self-heal check.
   bookWriteProgress: 'ponyabc:book:writeProgress',
   bookIndexStatus: 'ponyabc:book:index:status',
+
+  // Testing mode — the Internal build only. The Store build registers no handler for these,
+  // so an invoke resolves to the stub's "off" answer rather than doing anything.
+  testingModeGet: 'ponyabc:testing:get',
+  testingModeSet: 'ponyabc:testing:set',
+  testingModeChooseFolder: 'ponyabc:testing:chooseFolder',
   bookIndexCommit: 'ponyabc:book:index:commit',
   bookIndexFix: 'ponyabc:book:index:fix',
   bookDownloadBatchCancel: 'ponyabc:book:downloadBatchCancel',

@@ -30,13 +30,14 @@ import {
   summarizeRestore,
 } from '../services/firmwarePreflight';
 import { decodeLogBytes } from '../services/logEncoding';
-import { demoFirmwareEnabled, demoFirmwareOutcome, demoFirmwarePackage } from '../services/demoFirmware';
+
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
 import { appendDiagnostic, redactText } from '../services/diagnostics';
 import { diagnosticsStore } from './book';
 import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
 import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
+import * as internal from '@internal';
 import {
   listFirmwareSessions,
   readFullFirmwareSession,
@@ -47,15 +48,13 @@ import {
 } from '../services/firmwareSessionLog';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
-  // Screenshots only, and never in a packaged build — see demoFirmware.ts.
-  if (demoFirmwareEnabled()) return { status: 'selected', info: demoFirmwarePackage() };
+  // Screenshots only, and only in the Internal build — see src/main/internal/.
+  const demoPackage = internal.demoFirmwarePackage();
+  if (demoPackage) return { status: 'selected', info: demoPackage };
 
-  const result = await dialog.showOpenDialog(window, {
-    properties: ['openDirectory'],
-    title: 'Select the extracted firmware package folder (the one containing download.bat)',
-  });
-  if (result.canceled || result.filePaths.length === 0) return { status: 'cancelled' };
-  return { status: 'selected', info: inspectFirmwarePackage(result.filePaths[0]) };
+  const folder = await internal.pickFirmwareFolder(window);
+  if (!folder) return { status: 'cancelled' };
+  return { status: 'selected', info: inspectFirmwarePackage(folder) };
 }
 
 export async function isFirmwareInProgress(): Promise<boolean> {
@@ -178,8 +177,9 @@ export async function startFirmwareUpgrade(
   // Screenshots only, and never in a packaged build — see demoFirmware.ts. Deliberately the
   // first thing here: no lock is taken, no session log is written, no preflight deletion runs
   // and nothing is launched. The wizard simply receives the outcome it would have received.
-  if (demoFirmwareEnabled()) {
-    const outcome = demoFirmwareOutcome();
+  const demoOutcome = internal.demoFirmwareOutcome();
+  if (demoOutcome) {
+    const outcome = demoOutcome;
     setTimeout(() => {
       try {
         window.webContents.send(IPC.firmwareOutcome, outcome);

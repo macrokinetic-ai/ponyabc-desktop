@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import path from 'node:path';
+import { IS_INTERNAL_BUILD } from '@shared/buildFlavour';
 import type { FirmwarePackageInfo, FirmwareUpgradeOutcome } from '@shared/types';
 
 /**
@@ -21,7 +22,9 @@ import type { FirmwarePackageInfo, FirmwareUpgradeOutcome } from '@shared/types'
 export type DemoFirmwareOutcomeName = 'success' | 'not-started';
 
 export function demoFirmwareEnabled(): boolean {
-  return !app.isPackaged && (process.env.PONYABC_DEMO_FIRMWARE ?? '') !== '';
+  // Three conditions now, and the first is decided when the bundle is built: a Store build
+  // does not contain this path at all.
+  return IS_INTERNAL_BUILD && !app.isPackaged && (process.env.PONYABC_DEMO_FIRMWARE ?? '') !== '';
 }
 
 /**

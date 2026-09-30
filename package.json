@@ -8,14 +8,17 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.store.json && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "dist:mac": "npm run build && npm run pack:mac:arm64 && npm run pack:mac:x64",
     "pack:mac:arm64": "electron-builder --mac --arm64 -c electron-builder.mac-arm64.yml && node scripts/checksum.mjs",
     "pack:mac:x64": "electron-builder --mac --x64 -c electron-builder.mac-x64.yml && node scripts/checksum.mjs",
     "dist:win": "npm run build && electron-builder --win && node scripts/checksum.mjs",
     "dist:win:appx": "npm run build && npm run pack:win:appx",
-    "pack:win:appx": "electron-builder --win --config electron-builder.win-appx.yml && node scripts/checksum.mjs"
+    "pack:win:appx": "electron-builder --win --config electron-builder.win-appx.yml && node scripts/checksum.mjs",
+    "build:store": "node scripts/build-flavour.mjs store",
+    "build:internal": "node scripts/build-flavour.mjs internal",
+    "dist:win:internal": "npm run build:internal && electron-builder --win --config electron-builder.win-internal.yml && node scripts/checksum.mjs"
   },
   "dependencies": {
     "extract-zip": "^2.0.1",

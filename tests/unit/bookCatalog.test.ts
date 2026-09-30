@@ -17,7 +17,8 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     sortOrder: 0,
     updatedAtMs: null,
     updateRequiresIndexReset: false,
-    lifecycleState: 'active',
+    state: 'active',
+    minAppVersion: null,
     downloadUrl: 'https://register.ponyabc.uk/api/public/books/download?id=b1',
     ...overrides,
   };
@@ -35,12 +36,17 @@ describe('createFixtureBookCatalogClient', () => {
 describe('createHttpBookCatalogClient', () => {
   const baseUrl = 'https://register.ponyabc.uk';
 
-  it('reports kind "live" and sends no Authorization header (Option A is secret-free)', async () => {
+  it('reports kind "live", says which version it is, and still sends no Authorization header', async () => {
     const fetchFn = vi.fn(async (_url: string, init?: RequestInit) => {
-      expect(init?.headers).toBeUndefined();
+      const headers = init?.headers as Record<string, string>;
+      // The version the server needs in order to decide what we may be told. Still nothing
+      // secret: the public catalogue takes no credential, and a Store build sends no tester key.
+      expect(headers['X-PonyABC-App-Version']).toBe('0.3.17');
+      expect(headers['X-PonyABC-Tester-Key']).toBeUndefined();
+      expect(headers.Authorization).toBeUndefined();
       return new Response(JSON.stringify({ books: [] }), { status: 200 });
     });
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     expect(client.kind).toBe('live');
     const outcome = await client.fetchCatalog();
     expect(outcome).toEqual({ status: 'ok', entries: [] });
@@ -65,7 +71,7 @@ describe('createHttpBookCatalogClient', () => {
       ],
     };
     const fetchFn = vi.fn(async () => new Response(JSON.stringify(raw), { status: 200 }));
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     const outcome = await client.fetchCatalog();
     expect(outcome).toEqual({ status: 'ok', entries: [entry({ updatedAtMs: Date.parse('2026-09-01T00:00:00.000Z') })] });
   });
@@ -78,7 +84,7 @@ describe('createHttpBookCatalogClient', () => {
       ],
     };
     const fetchFn = vi.fn(async () => new Response(JSON.stringify(raw), { status: 200 }));
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     const outcome = await client.fetchCatalog();
     expect(outcome.status).toBe('ok');
     if (outcome.status !== 'ok') return;
@@ -88,7 +94,7 @@ describe('createHttpBookCatalogClient', () => {
   it('marks an entry with no declared filename as filenameSource "fallback-storage-key"', async () => {
     const raw = { books: [{ id: 'b1', originalFileName: '', friendlyName: 'x', friendlyNameI18n: null, contentLanguages: [], sizeBytes: 1, sha256: null, sortOrder: 0, downloadUrl: 'x' }] };
     const fetchFn = vi.fn(async () => new Response(JSON.stringify(raw), { status: 200 }));
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     const outcome = await client.fetchCatalog();
     expect(outcome.status).toBe('ok');
     if (outcome.status !== 'ok') return;
@@ -98,13 +104,13 @@ describe('createHttpBookCatalogClient', () => {
 
   it('returns a typed error on a non-2xx response, without throwing', async () => {
     const fetchFn = vi.fn(async () => new Response('', { status: 503 }));
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     await expect(client.fetchCatalog()).resolves.toEqual({ status: 'error', message: 'Server returned 503.', httpStatus: 503 });
   });
 
   it('returns a typed error on malformed JSON / a missing "books" array', async () => {
     const fetchFn = vi.fn(async () => new Response(JSON.stringify({ nope: true }), { status: 200 }));
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     const outcome = await client.fetchCatalog();
     expect(outcome.status).toBe('error');
   });
@@ -113,7 +119,7 @@ describe('createHttpBookCatalogClient', () => {
     const fetchFn = vi.fn(async () => {
       throw new Error('network down');
     });
-    const client = createHttpBookCatalogClient({ baseUrl, fetchFn: fetchFn as unknown as typeof fetch });
+    const client = createHttpBookCatalogClient({ baseUrl, appVersion: '0.3.17', fetchFn: fetchFn as unknown as typeof fetch });
     await expect(client.fetchCatalog()).resolves.toEqual({ status: 'error', message: 'network down' });
   });
 });

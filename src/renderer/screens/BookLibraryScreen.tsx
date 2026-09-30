@@ -212,10 +212,19 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
    * deliberately outside this file: what a sync does is a rule about the product, not a detail
    * of a screen.
    */
-  const plan = buildSyncPlan({ catalogItems: lib.catalogItems, penItems: lib.penItems });
+  // Our own version, so a book that asks for a newer app is skipped here too — the server
+  // filters by what we send, and this is the guard for when it does not.
+  const [appVersion, setAppVersion] = useState('0.0.0');
+  useEffect(() => {
+    void window.ponyabc.getAppInfo().then((info) => setAppVersion(info.version));
+  }, []);
+
+  const plan = buildSyncPlan({ catalogItems: lib.catalogItems, penItems: lib.penItems, appVersion });
   const ourBooks = ourBooksOnPen(penItems);
   const otherBooks = otherBooksOnPen(penItems);
-  const hasWork = plan.toAdd.length > 0 || plan.toUpdate.length > 0;
+  // A pen that only needs books taken off still has work to do: without this it would say
+  // "all up to date" and offer a disabled button while still holding 2 GB it should not.
+  const hasWork = plan.toAdd.length > 0 || plan.toUpdate.length > 0 || plan.toRemove.length > 0;
   const syncMinutes = estimateMinutes(transferBytesFor([...plan.toAdd, ...plan.toUpdate].map((i) => i.sizeBytes)));
 
   // Assembled from plural-aware parts rather than one string with two counts in it: i18next can
@@ -264,8 +273,22 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
 
     try {
       const written: string[] = [];
+      let removed = 0;
       let ranOutOfSpace = false;
       let lastMessage: string | null = null;
+
+      // Removals first: they free the room the adds may need, and the space check counted them
+      // that way. Each one is a catalogue book the server flagged, matched on the pen by
+      // filename AND size — buildSyncPlan will not put anything else in this list.
+      for (const removal of plan.toRemove) {
+        const result = await lib.remove(removal.fileName);
+        if (result.status === 'completed') {
+          removed += 1;
+          continue;
+        }
+        lastMessage = resultMessage(t, result);
+        break;
+      }
 
       for (const item of [...plan.toAdd, ...plan.toUpdate]) {
         const isAdd = plan.toAdd.includes(item);
@@ -286,7 +309,9 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
       // What was actually written, not what the plan hoped to write: a sync that filled the card
       // half-way through still wrote books, and still owes the pen a rebuilt list. A sync that
       // wrote nothing — nothing to do, or the first book failed — leaves the pen alone.
-      if (written.length > 0) await finishBookBatch(written);
+      // A removal shifts every later book's position in the pen's list, exactly as an addition
+      // does, so it owes the same rebuild. One reset, at the end, for the whole batch.
+      if (written.length > 0 || removed > 0) await finishBookBatch(written);
       if (ranOutOfSpace) setMessage(t('sync.stoppedNoSpace'));
       else if (lastMessage) setMessage(lastMessage);
     } finally {
@@ -428,6 +453,22 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
         {!penConnected && <p className="hint">{t('sync.needPen')}</p>}
         {lib.meta.lastCheck?.state === 'error' && <p className="hint">{t('check.failed')}</p>}
       </div>
+
+      {/* What a sync would take OFF the pen, said before it is pressed rather than after. A
+          parent who presses Sync books must already know the answer to "will this delete
+          anything of mine?" — and the answer names the books. */}
+      {plan.toRemove.length > 0 && (
+        <div className="note-box">
+          <p>{t('remove.title', { count: plan.toRemove.length })}</p>
+          <p className="hint">{t('remove.body', { size: formatFriendlySize(plan.freedBytes) })}</p>
+          <BookNameList
+            items={plan.toRemove.map((r) =>
+              displayNameFor({ friendlyName: r.friendlyName, friendlyNameI18n: r.friendlyNameI18n, filename: r.fileName }, i18n.language),
+            )}
+            emptyLabel={t('list.none')}
+          />
+        </div>
+      )}
 
       {/* Not enough room. Said before anything starts, with the number and what to do about
           it — a parent who is told only "not enough space" has no way to act. */}

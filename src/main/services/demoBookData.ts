@@ -1,4 +1,5 @@
 import type { BookListResult } from '@shared/types';
+import { IS_INTERNAL_BUILD } from '@shared/buildFlavour';
 
 /**
  * Fixed, obviously-fake book data for screenshots and the manual.
@@ -72,7 +73,8 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
         cached: true,
         actionable: false,
         updatedAtMs: now - 40 * 24 * 3600 * 1000,
-        lifecycleState: 'active',
+        state: 'active',
+        minAppVersion: null,
       },
       {
         contentId: 'demo-art',
@@ -84,7 +86,8 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
         cached: false,
         actionable: true,
         updatedAtMs: now - 3 * 24 * 3600 * 1000,
-        lifecycleState: 'active',
+        state: 'active',
+        minAppVersion: null,
       },
       {
         contentId: 'demo-rhymes',
@@ -96,7 +99,8 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
         cached: false,
         actionable: true,
         updatedAtMs: now - 200 * 24 * 3600 * 1000,
-        lifecycleState: 'active',
+        state: 'active',
+        minAppVersion: null,
       },
       {
         contentId: 'demo-dinosaurs',
@@ -108,7 +112,8 @@ export function demoBookList(variant: DemoVariant = 'summary'): BookListResult {
         cached: false,
         actionable: true,
         updatedAtMs: now - 1 * 24 * 3600 * 1000,
-        lifecycleState: 'active',
+        state: 'active',
+        minAppVersion: null,
       },
     ],
     meta: {
@@ -170,4 +175,7 @@ export const demoVariant = (): DemoVariant => {
   return VARIANTS.includes(v as DemoVariant) ? (v as DemoVariant) : 'summary';
 };
 
-export const demoDataEnabled = (): boolean => (process.env.PONYABC_DEMO_DATA ?? '') !== '';
+// Internal build only. In a Store build this is the literal `false`, so every demo branch
+// behind it — and the fixture data itself — is removed by the bundler.
+export const demoDataEnabled = (): boolean =>
+  IS_INTERNAL_BUILD && (process.env.PONYABC_DEMO_DATA ?? '') !== '';

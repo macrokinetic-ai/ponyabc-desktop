@@ -19,7 +19,8 @@ function catalogItem(overrides: Partial<BookCatalogItem> = {}): BookCatalogItem 
     status: 'not-on-pen',
     cached: false,
     actionable: true,
-    lifecycleState: 'active',
+    state: 'active',
+    minAppVersion: null,
     updatedAtMs: null,
     ...overrides,
   };
@@ -563,5 +564,64 @@ describe('BookLibraryScreen — plain language', () => {
     );
     renderWithPen(true);
     await screen.findByText("We couldn't reach the PonyABC library. Check your internet connection and try again.");
+  });
+});
+
+/**
+ * The one destructive thing this app does. A parent must know, before pressing anything, that a
+ * sync will take books off their pen — which books, and what it frees.
+ */
+describe('BookLibraryScreen — books coming off the pen', () => {
+  const beingRemoved = () =>
+    listResult({
+      penItems: [penItem({ contentId: 'gone', fileName: '0451.axb', sizeBytes: 900_000_000 })],
+      catalogItems: [
+        catalogItem({
+          contentId: 'gone',
+          filename: '0451.axb',
+          friendlyName: '汉语拼音卡',
+          friendlyNameI18n: { en: 'Mandarin Pinyin Cards' },
+          state: 'remove_from_pens',
+          sizeBytes: 900_000_000,
+          status: 'on-pen-current',
+          actionable: true,
+        }),
+      ],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+    });
+
+  it('names the books that will go, and what that frees, before anything is pressed', async () => {
+    await renderScreen(beingRemoved());
+    await screen.findByText('One book will be taken off your pen');
+    await screen.findByText(/frees about 900 MB/);
+    await screen.findByText('Mandarin Pinyin Cards');
+    // Nothing has happened yet.
+    expect(window.ponyabc.bookRemove).not.toHaveBeenCalled();
+  });
+
+  it('removes it as part of Sync books, before anything is written', async () => {
+    await renderScreen(beingRemoved());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await waitFor(() => expect(window.ponyabc.bookRemove).toHaveBeenCalled());
+    expect((window.ponyabc.bookRemove as ReturnType<typeof vi.fn>).mock.calls[0][0]).toMatchObject({
+      fileName: '0451.axb',
+    });
+    // A removal moves every later book in the pen's list, so the list is rebuilt and the
+    // parent is asked to restart — exactly as after an addition.
+    await screen.findByText('All done!');
+  });
+
+  it('says nothing about removals when there are none', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' })],
+        catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false })],
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+      }),
+    );
+    expect(screen.queryByText(/will be taken off your pen/)).toBeNull();
   });
 });

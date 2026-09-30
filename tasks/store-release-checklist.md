@@ -1,5 +1,21 @@
 # Releases: what gets published, where, and when
 
+## Two builds, and only one of them is ever submitted (owner, 2026-09-30)
+
+Every commit produces two Windows builds:
+
+| | |
+|---|---|
+| **Store build** — `PonyABC-Desktop-vX.Y.Z-winx64.exe` and the `.appx` | The **only** build ever submitted to the Microsoft Store. No testing mode, no support tools, no developer switches — excluded when the bundle is built, not hidden at run time. |
+| **Internal build** — `PonyABC-Desktop-Internal-vX.Y.Z-winx64.exe` | The same code plus testing mode and the support tools. Its own name, its own application id, its own installer, and a permanent **INTERNAL TEST BUILD** banner. Installs beside the Store app. |
+
+**Never submit the Internal build.** It cannot be submitted by accident — CI fails if an
+internal package carries the Store identity — but the rule is written here because a check that
+nobody understands is a check somebody will eventually route around.
+
+`tests/unit/storeBuildHasNoDevPaths.test.ts` builds a Store bundle and reads it, so "the Store
+build contains none of it" is a fact about the artefact rather than an intention.
+
 ## The record rule (owner, 2026-09-30)
 
 **Every version is stored on GitHub as the permanent record. Nothing important may live only on

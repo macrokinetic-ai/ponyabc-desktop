@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "etwa {{size}}"
+  },
+  "remove": {
+    "title_one": "Ein Buch wird vom Stift entfernt",
+    "title_other": "{{count}} Bücher werden vom Stift entfernt",
+    "body": "Diese Bücher gehören nicht mehr zur PonyABC-Bibliothek. Das Entfernen schafft etwa {{size}} Platz auf dem Stift. Alles andere bleibt unverändert."
   }
 }

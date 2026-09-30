@@ -10,6 +10,7 @@ import { SYNC_MARGIN_MIN_BYTES, buildSyncPlan, checkSpace, onDiskBytes, otherBoo
  */
 
 const MB = 1_000_000;
+const GB = 1_000_000_000;
 
 function item(o: Partial<BookCatalogItem> = {}): BookCatalogItem {
   return {
@@ -19,7 +20,8 @@ function item(o: Partial<BookCatalogItem> = {}): BookCatalogItem {
     friendlyNameI18n: null,
     sizeBytes: 100 * MB,
     status: 'not-on-pen',
-    lifecycleState: 'active',
+    state: 'active',
+    minAppVersion: null,
     cached: false,
     actionable: true,
     updatedAtMs: null,
@@ -43,14 +45,14 @@ function pen(o: Partial<BookPenItem> = {}): BookPenItem {
 
 describe('what one press of Sync would do', () => {
   it('adds every catalogue book the pen does not have', () => {
-    const plan = buildSyncPlan({ catalogItems: [item({ contentId: 'a' }), item({ contentId: 'b' })], penItems: [] });
+    const plan = buildSyncPlan({ catalogItems: [item({ contentId: 'a', appVersion: '0.3.17' }), item({ contentId: 'b' })], penItems: [] });
     expect(plan.toAdd.map((i) => i.contentId)).toEqual(['a', 'b']);
     expect(plan.addsBooks).toBe(true);
   });
 
   it('updates a book whose bytes differ, and leaves an identical one alone', () => {
     const plan = buildSyncPlan({
-      catalogItems: [item({ contentId: 'a', status: 'on-pen-differs' }), item({ contentId: 'b', status: 'on-pen-current', actionable: false })],
+      catalogItems: [item({ contentId: 'a', status: 'on-pen-differs', appVersion: '0.3.17' }), item({ contentId: 'b', status: 'on-pen-current', actionable: false })],
       penItems: [pen({ contentId: 'a' }), pen({ contentId: 'b', fileName: '0452.axb' })],
     });
     expect(plan.toUpdate.map((i) => i.contentId)).toEqual(['a']);
@@ -60,35 +62,37 @@ describe('what one press of Sync would do', () => {
   });
 
   it('treats a size difference as needing an update, without reading the pen', () => {
-    const plan = buildSyncPlan({ catalogItems: [item({ status: 'on-pen-size-differs' })], penItems: [pen()] });
+    const plan = buildSyncPlan({ catalogItems: [item({ status: 'on-pen-size-differs', appVersion: '0.3.17' })], penItems: [pen()] });
     expect(plan.toUpdate).toHaveLength(1);
   });
 
   it('does the smallest first, so something finishes early', () => {
     const plan = buildSyncPlan({
-      catalogItems: [item({ contentId: 'big', sizeBytes: 900 * MB }), item({ contentId: 'small', sizeBytes: 40 * MB }), item({ contentId: 'mid', sizeBytes: 300 * MB })],
+      catalogItems: [item({ contentId: 'big', sizeBytes: 900 * MB, appVersion: '0.3.17' }), item({ contentId: 'small', sizeBytes: 40 * MB }), item({ contentId: 'mid', sizeBytes: 300 * MB })],
       penItems: [],
     });
     expect(plan.toAdd.map((i) => i.contentId)).toEqual(['small', 'mid', 'big']);
     expect(plan.totalBytes).toBe(1_240 * MB);
   });
 
-  it('never proposes deleting anything, whatever is on the pen', () => {
+  it('removes nothing that the catalogue has not flagged, whatever is on the pen', () => {
     const plan = buildSyncPlan({
       catalogItems: [],
       penItems: [pen({ contentId: 'gone' }), pen({ contentId: null, fileName: 'someone-elses.axb', status: 'unknown', removable: false })],
+      appVersion: '0.3.17',
     });
-    expect(plan).toMatchObject({ toAdd: [], toUpdate: [], totalBytes: 0, addsBooks: false });
-    expect(Object.keys(plan)).not.toContain('toRemove');
+    // A book the catalogue no longer lists at all, and a book we did not put there: neither is
+    // ours to delete. Only an explicit remove_from_pens flag removes anything.
+    expect(plan).toMatchObject({ toRemove: [], toAdd: [], toUpdate: [], totalBytes: 0, addsBooks: false });
   });
 
   it('does nothing at all without a pen', () => {
-    expect(buildSyncPlan({ catalogItems: [item()], penItems: null })).toMatchObject({ toAdd: [], toUpdate: [] });
+    expect(buildSyncPlan({ catalogItems: [item()], penItems: null, appVersion: '0.3.17' })).toMatchObject({ toAdd: [], toUpdate: [] });
   });
 
   it('skips a book the catalogue cannot describe properly', () => {
     const plan = buildSyncPlan({
-      catalogItems: [item({ status: 'metadata-incomplete', actionable: false }), item({ contentId: 'amb', status: 'ambiguous', actionable: false })],
+      catalogItems: [item({ status: 'metadata-incomplete', actionable: false, appVersion: '0.3.17' }), item({ contentId: 'amb', status: 'ambiguous', actionable: false })],
       penItems: [],
     });
     expect(plan.toAdd).toEqual([]);
@@ -97,32 +101,35 @@ describe('what one press of Sync would do', () => {
 
 describe('lifecycle states', () => {
   it('never ADDS a retired book to a pen that does not have it', () => {
-    const plan = buildSyncPlan({ catalogItems: [item({ lifecycleState: 'retired' })], penItems: [] });
+    const plan = buildSyncPlan({ catalogItems: [item({ state: 'retired', appVersion: '0.3.17' })], penItems: [] });
     expect(plan.toAdd).toEqual([]);
   });
 
   it('still UPDATES a retired book the pen already has — the customer owns the cards', () => {
     const plan = buildSyncPlan({
-      catalogItems: [item({ lifecycleState: 'retired', status: 'on-pen-differs' })],
+      catalogItems: [item({ state: 'retired', minAppVersion: null, status: 'on-pen-differs', appVersion: '0.3.17' })],
       penItems: [pen()],
     });
     expect(plan.toUpdate.map((i) => i.contentId)).toEqual(['b1']);
   });
 
-  it('ignores remove_from_pens entirely — 0.3.17 deletes nothing', () => {
-    const notOnPen = buildSyncPlan({ catalogItems: [item({ lifecycleState: 'remove_from_pens' })], penItems: [] });
+  it('takes a remove_from_pens book off the pen, and never adds one', () => {
+    const notOnPen = buildSyncPlan({ catalogItems: [item({ state: 'remove_from_pens' })], penItems: [], appVersion: '0.3.17' });
     expect(notOnPen.toAdd).toEqual([]);
 
     const onPen = buildSyncPlan({
-      catalogItems: [item({ lifecycleState: 'remove_from_pens', status: 'on-pen-differs' })],
+      catalogItems: [item({ state: 'remove_from_pens', status: 'on-pen-differs' })],
       penItems: [pen()],
+      appVersion: '0.3.17',
     });
-    // Not deleted. Still kept correct, because a half-understood deletion is worse than none.
-    expect(onPen.toUpdate).toHaveLength(1);
+    // On its way off: removed, and neither added nor updated on the way.
+    expect(onPen.toRemove.map((r) => r.contentId)).toEqual(['b1']);
+    expect(onPen.toUpdate).toEqual([]);
+    expect(onPen.toAdd).toEqual([]);
   });
 
   it('treats a book with no state as active — todays catalogue sends none', () => {
-    const plan = buildSyncPlan({ catalogItems: [item({ lifecycleState: 'active' })], penItems: [] });
+    const plan = buildSyncPlan({ catalogItems: [item({ state: 'active', appVersion: '0.3.17' })], penItems: [] });
     expect(plan.toAdd).toHaveLength(1);
   });
 });
@@ -136,11 +143,16 @@ describe('grouping what is on the pen', () => {
 });
 
 describe('will it fit — measured at the peak, not the net', () => {
-  const GB = 1_000_000_000;
-  const plan = (toAdd: BookCatalogItem[] = [], toUpdate: BookCatalogItem[] = []) => ({
+  const plan = (
+    toAdd: BookCatalogItem[] = [],
+    toUpdate: BookCatalogItem[] = [],
+    toRemove: BookRemoval[] = [],
+  ) => ({
+    toRemove,
     toAdd,
     toUpdate,
     totalBytes: [...toAdd, ...toUpdate].reduce((n, i) => n + i.sizeBytes, 0),
+    freedBytes: toRemove.reduce((n, r) => n + r.sizeBytes, 0),
     addsBooks: toAdd.length > 0,
   });
 
@@ -248,5 +260,94 @@ describe('will it fit — measured at the peak, not the net', () => {
   it('an empty plan needs nothing but still respects the margin', () => {
     expect(checkSpace({ plan: plan(), penItems: [], freeBytes: 0, penTotalBytes: 16 * GB }).ok).toBe(false);
     expect(checkSpace({ plan: plan(), penItems: [], freeBytes: 10 * GB, penTotalBytes: 16 * GB }).ok).toBe(true);
+  });
+});
+
+/**
+ * Taking a book off somebody's pen is the one thing in this app that destroys something. These
+ * are the conditions under which it is allowed to happen, and the conditions under which it
+ * must not.
+ */
+describe('remove_from_pens — what may be deleted, and what may not', () => {
+  const removable = (overrides: Partial<BookCatalogItem> = {}) =>
+    item({ contentId: 'old', state: 'remove_from_pens', sizeBytes: 200 * MB, status: 'on-pen-current', ...overrides });
+
+  it('removes the book when the pen has it at exactly the catalogue size', () => {
+    const p = buildSyncPlan({
+      catalogItems: [removable()],
+      penItems: [pen({ contentId: 'old', fileName: '0451.axb', sizeBytes: 200 * MB })],
+      appVersion: '0.3.17',
+    });
+    expect(p.toRemove).toEqual([
+      expect.objectContaining({ fileName: '0451.axb', sizeBytes: 200 * MB, contentId: 'old' }),
+    ]);
+    expect(p.freedBytes).toBe(200 * MB);
+  });
+
+  it('leaves it alone when the size on the pen is not the size in the catalogue', () => {
+    // Same name, different bytes: this is not the book the catalogue is talking about.
+    const p = buildSyncPlan({
+      catalogItems: [removable()],
+      penItems: [pen({ contentId: 'old', fileName: '0451.axb', sizeBytes: 199 * MB })],
+      appVersion: '0.3.17',
+    });
+    expect(p.toRemove).toEqual([]);
+  });
+
+  it('never touches a book we did not put there', () => {
+    const p = buildSyncPlan({
+      catalogItems: [removable()],
+      penItems: [pen({ contentId: null, fileName: 'grandma.axb', sizeBytes: 200 * MB, status: 'unknown', removable: false })],
+      appVersion: '0.3.17',
+    });
+    expect(p.toRemove).toEqual([]);
+  });
+
+  it('never removes a book whose flag this version is too old to act on', () => {
+    const p = buildSyncPlan({
+      catalogItems: [removable({ minAppVersion: '0.3.18' })],
+      penItems: [pen({ contentId: 'old', fileName: '0451.axb', sizeBytes: 200 * MB })],
+      appVersion: '0.3.17',
+    });
+    expect(p.toRemove).toEqual([]);
+    expect(p.toUpdate).toEqual([]);
+  });
+
+  it('frees the biggest first, so room appears as early as it can', () => {
+    const p = buildSyncPlan({
+      catalogItems: [
+        removable({ contentId: 'small', sizeBytes: 10 * MB }),
+        removable({ contentId: 'big', sizeBytes: 900 * MB }),
+      ],
+      penItems: [
+        pen({ contentId: 'small', fileName: 'a.axb', sizeBytes: 10 * MB }),
+        pen({ contentId: 'big', fileName: 'b.axb', sizeBytes: 900 * MB }),
+      ],
+      appVersion: '0.3.17',
+    });
+    expect(p.toRemove.map((r) => r.contentId)).toEqual(['big', 'small']);
+  });
+
+  it('counts the room the removals free, so a sync that only fits afterwards is allowed', () => {
+    const freeing = buildSyncPlan({
+      catalogItems: [
+        removable({ contentId: 'old', sizeBytes: 900 * MB }),
+        item({ contentId: 'new', sizeBytes: 800 * MB, status: 'not-on-pen' }),
+      ],
+      penItems: [pen({ contentId: 'old', fileName: 'old.axb', sizeBytes: 900 * MB })],
+      appVersion: '0.3.17',
+    });
+    // 800 MB wanted, 900 MB freed first: it fits in a gap far smaller than 800 MB.
+    const check = checkSpace({
+      plan: freeing,
+      penItems: [pen({ contentId: 'old', fileName: 'old.axb', sizeBytes: 900 * MB })],
+      freeBytes: 300 * MB,
+      penTotalBytes: 16 * GB,
+    });
+    expect(check.ok).toBe(true);
+    // The card is never asked to hold more than it holds now — the 900 MB goes before the
+    // 800 MB arrives — so the peak is nothing at all, and the card ends up 100 MB emptier.
+    expect(check.peakBytes).toBe(0);
+    expect(check.netBytes).toBe(-100 * MB);
   });
 });

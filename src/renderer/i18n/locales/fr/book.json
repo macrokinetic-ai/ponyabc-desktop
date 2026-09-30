@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "environ {{size}}"
+  },
+  "remove": {
+    "title_one": "Un livre va être retiré de votre stylo",
+    "title_other": "{{count}} livres vont être retirés de votre stylo",
+    "body": "Ces livres ne font plus partie de la bibliothèque PonyABC. Les retirer libère environ {{size}} sur votre stylo. Tout le reste est conservé tel quel."
   }
 }
