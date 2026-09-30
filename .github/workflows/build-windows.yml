@@ -53,13 +53,47 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # Which candidate this build is. A tag decides it — v0.3.17-rc2 means rc2 — because a tag
+      # build re-uploads the installer over the release's existing one, and taking the answer
+      # from a dispatch input would silently replace a stamped .exe with an unstamped one.
+      # That happened once; this is why it cannot happen again.
+      - name: Work out the release candidate
+        id: rc
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/*-rc* ]]; then
+            echo "value=${GITHUB_REF_NAME##*-}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.rc }}" >> "$GITHUB_OUTPUT"
+          fi
+
       # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
       # built by a separate command without them, so it shows a plain version number — see
       # formatBuildLabel in src/shared/appVariant.ts.
       - run: npm run dist:win
         env:
-          PONYABC_BUILD_TAG: ${{ inputs.rc }}
+          PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
           PONYABC_BUILD_COMMIT: ${{ github.sha }}
+
+      # The stamp is invisible from outside the installer, so it is checked where it is still
+      # readable: the unpacked app's own main bundle. `strings` on the finished .exe proves
+      # nothing — compressed bytes match anything — and a build that quietly lost its stamp is
+      # a build a tester cannot identify.
+      - name: "Installer: check the build stamped itself"
+        shell: pwsh
+        run: |
+          $rc = '${{ steps.rc.outputs.value }}'
+          $main = 'release/win-unpacked/resources/app.asar'
+          if (-not (Test-Path $main)) { throw "no unpacked app at $main" }
+          $stamped = Select-String -Path $main -Pattern "$($env:GITHUB_SHA.Substring(0,7))" -Encoding utf8 -Quiet
+          if ($rc -eq '') {
+            Write-Host "No candidate for this build; nothing to stamp."
+          } elseif (-not $stamped) {
+            throw "This build should carry the stamp $rc / $($env:GITHUB_SHA.Substring(0,7)), and does not."
+          } else {
+            Write-Host "Stamped $rc / $($env:GITHUB_SHA.Substring(0,7))."
+          }
 
       # Copied INTO release/ rather than listed from store-assets/ in the upload below:
       # upload-artifact roots the zip at the least common ancestor of its paths, so mixing the
@@ -541,6 +575,46 @@ jobs:
       # --- 6. CLEANUP — runs the ACTUAL delivered 3-cleanup.ps1, validating its thumbprint-scoped
       #        removal logic for real (this run's cert should show certImportedByUs=true and get
       #        removed; a pre-existing cert never would). -------------------------------------------
+      # Everything this version is, in one place. The owner's rule (2026-09-30) is that no
+      # record of a version may live only on the Mac mini, so a dispatched candidate build
+      # publishes the installer, the Store package, both checksums, the tester's README, the
+      # four manual PDFs and the Store text as Release assets. Binaries are assets, never
+      # git history.
+      - name: "Release: publish this candidate with all of its records"
+        if: github.event_name == 'workflow_dispatch' && inputs.rc != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}-${{ inputs.rc }}"
+          COMMIT="${GITHUB_SHA:0:7}"
+
+          sed -e "s/{{VERSION}}/${VERSION}/g" \
+              -e "s/{{RC}}/${{ inputs.rc }}/g" \
+              -e "s/{{COMMIT}}/${COMMIT}/g" \
+              -e "s/{{RUN}}/${GITHUB_RUN_ID}/g" \
+              store-assets/rc-release-notes.md > /tmp/notes.md
+
+          ASSETS=(release/*.exe release/*.exe.sha256 release/*.appx release/*.appx.sha256
+                  release/READ-ME-FIRST.txt docs/manual/pdf/*.pdf
+                  store-assets/whats-new-${VERSION}.md store-assets/store-listing-${VERSION}.md)
+          for f in "${ASSETS[@]}"; do
+            [ -e "$f" ] || { echo "missing asset: $f"; exit 1; }
+          done
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file /tmp/notes.md \
+              --prerelease --latest=false
+            gh release upload "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TAG — test build" --notes-file /tmp/notes.md \
+              --prerelease --latest=false "${ASSETS[@]}"
+          fi
+          echo "Published $TAG with ${#ASSETS[@]} assets."
+
       - name: "Store package: run the real 3-cleanup.ps1 (same script the tester gets)"
         if: always()
         shell: pwsh
