@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-30 00:20 BST** · by Claude Code · after the British-English round
+Last updated: **2026-09-30 09:50 BST** · by Claude Code · after the book-index rule change
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -68,7 +68,7 @@ Anything else goes to 0.3.18. The open test plans are:
 | 3 / B               | **Recordings v2 built**: snapshot backups with a manifest and hard-link dedupe, restore under original filenames with a listen-to-both conflict dialog, per-side delete with a backup first, friendly labels, sticker reassign, and migration of old "(1)" backups.                                                                                                                                                         | ✅                                                                                             |
 | A3/C3               | Every technical term removed from customer-facing screens in all 8 locales — no index filenames, no vendor tool, no checksum, no Task Manager.                                                                                                                                                                                                                                                                              | ✅                                                                                             |
 | Wording             | zh-Hant rewritten in standard written Chinese (書面語) — colloquial Cantonese had reached shipped strings; zh-Hans matched for meaning. A test now fails if either comes back.                                                                                                                                                                                                                                              | ✅                                                                                             |
-| Book index          | **The pen's book list is rebuilt after adding or removing a book** — the list is positional with no filenames, so a stale one makes the pen read the WRONG book aloud. Same-name replacements leave it alone. Plus a self-heal prompt when a parent changes books outside the app.                                                                                                                                          | ✅                                                                                             |
+| Book index          | **The pen's book list is rebuilt after ANY sync that wrote a book** — added or replaced — and after a removal. The list is positional with no filenames, so a stale one makes the pen read the WRONG book aloud. One reset per batch, at the end, including a sync that stopped part-way after writing something. A sync that wrote nothing touches nothing. Owner decision 2026-09-30, replacing the same-name-replace exception; `update_requires_index_reset` no longer decides anything. Plus a self-heal prompt when a parent changes books outside the app.                    | ✅                                                                                             |
 | Books policy        | **Parents add and update only — no parent-facing way to delete a book.** Books are governed by the PonyABC library; the removal service stays for self-heal and the coming sync.                                                                                                                                                                                                                                            | ✅                                                                                             |
 | Slow USB            | The pen's USB is 1.x (**978 kB/s measured**): a 1.1 GB book is ~19 min. Time estimate before starting, live progress with time remaining, "don't unplug" notice, and the computer kept awake while writing.                                                                                                                                                                                                                 | ✅                                                                                             |
 | Verification        | Writes are verified by **size + the first and last 8 MB** read back (~16 s), not a full read-back (~19 min on a 1.1 GB book). The full source hash is computed during the write, for free. Full read-back stays on demand per book under Advanced details; a resumed copy (future sync) still gets one.                                                                                                                     | ✅                                                                                             |
@@ -86,7 +86,7 @@ firmware rebuilds them** (`app.bin` contains `storage/sd0/C/BOOK/1.bin` and the 
 outcome is as the vendor described; the timing is not — they reappear after the pen reboots, not
 when the PC tool finishes. Full evidence in `docs/vendor-notes.md`.
 
-Gates: typecheck ✅, 688 unit tests ✅, build ✅, Windows CI package verification ✅.
+Gates: typecheck ✅, 696 unit tests ✅, build ✅, Windows CI package verification ✅.
 
 ## 3. Expo readiness — 1–4 Oct
 
