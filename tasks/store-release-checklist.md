@@ -1,5 +1,33 @@
 # Releases: what gets published, where, and when
 
+## The record rule (owner, 2026-09-30)
+
+**Every version is stored on GitHub as the permanent record. Nothing important may live only on
+the Mac mini.** GitHub stays private; the Microsoft Store is the only public channel.
+
+A version's Release carries **all** of it:
+
+| | |
+|---|---|
+| `…-winx64.exe` + `.sha256` | the installer a tester runs |
+| `…-winx64.appx` + `.sha256` | the Store package built from the same commit |
+| `READ-ME-FIRST.txt` | install steps in plain English |
+| `PonyABC-Desktop-User-Guide-*.pdf` | the parent manual, EN + 繁體中文 |
+| `PonyABC-Quick-Start-A4-Fold-*.pdf` | the box quick start, both languages |
+| `whats-new-<version>.md`, `store-listing-<version>.md` | the Store text for that version |
+| release notes | what it is, how to install it, what to look at |
+
+**Binaries are Release assets and never enter git history.** A repository that has swallowed a
+100 MB package carries it in every clone for ever.
+
+Dispatching **Build Windows EXE + Store package** with an `rc` input does all of this by itself:
+it builds, checks, and creates or updates `v<version>-<rc>` with every asset above. The manual
+PDFs and the Store text come from the repository, where they are versioned with the code.
+
+Records that are not a version — the vendor firmware packages, the SD-card image, the reports —
+have their own homes, listed in `macrokinetic-ai/ponyabc-reports`.
+
+
 **The rule, owner decision 2026-09-30.** A version number becomes a GitHub Release in two
 stages, and the second one waits for Microsoft.
 

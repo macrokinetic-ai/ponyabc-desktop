@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-30 13:20 BST** · by Claude Code · after the GitHub Releases round
+Last updated: **2026-09-30 14:10 BST** · by Claude Code · after the GitHub archive round
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -40,6 +40,15 @@ Test builds now live on the repo's Releases page, members only:
 **A final `v0.3.17` Release is created only after Microsoft Store approval** — never before, so
 the newest thing in the repository is never software nobody can install. Each further test build
 is the next `rcN`, published the same way. Nothing is submitted to Partner Center from here.
+
+**Every version is stored on GitHub as the permanent record (owner, 2026-09-30).** Nothing
+important may live only on the Mac mini. A candidate build dispatched with an `rc` input now
+publishes its own Release automatically, carrying the installer, the Store package, a checksum
+for each, the tester's README, the four manual PDFs and the Store what's-new and listing text.
+Binaries are Release assets, never git history. The vendor firmware packages have their own
+`firmware-archive` Release; the reports live in the private `macrokinetic-ai/ponyabc-reports`;
+the 15.9 GB SD-card image stays on the external drive with its location and checksum recorded in
+that repository's README.
 
 Since rc2, a test build **stamps itself**: Settings → Version shows `0.3.17 (rc2, <commit>)`,
 while the Store build, built without the stamp, shows a plain `0.3.17`. rc1 predates this.
