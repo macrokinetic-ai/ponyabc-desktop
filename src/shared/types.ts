@@ -614,6 +614,30 @@ export interface BookWriteProgressEvent {
  * writes, the index is reset, and the pen has to be restarted. `'not-needed'` means the action
  * ran inside a batch that will settle it, or that nothing on the pen changed.
  */
+/**
+ * One step, as it happened, for the Internal build's technical log.
+ *
+ * Structured rather than a sentence on purpose: the wording lives in the Internal renderer, so
+ * the Store build carries neither the panel nor a single line of its phrasing. `detail` is a
+ * path or a version — never anything a customer would have to read.
+ */
+export interface TechnicalLogEntry {
+  atMs: number;
+  kind:
+    | 'file-deleted'
+    | 'file-written'
+    | 'index-reset-requested'
+    | 'index-reset-done'
+    | 'index-reset-failed'
+    | 'firmware-preflight'
+    | 'firmware-step'
+    | 'recording-restored'
+    | 'recording-backed-up';
+  detail: string;
+  /** Bytes, where the step moved some. */
+  sizeBytes?: number;
+}
+
 export type PenIndexOutcome = 'reset' | 'still-pending' | 'not-needed' | 'no-pen-selected';
 
 export interface BookActionResult {
@@ -984,6 +1008,10 @@ export interface PonyAbcApi {
    *  A write outside a batch settles itself in the main process. */
   bookBatchBegin: () => Promise<{ ok: boolean }>;
   bookBatchEnd: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
+  /** Internal build only. In the Store build these resolve to nothing and no panel calls them. */
+  technicalLogGet: () => Promise<TechnicalLogEntry[]>;
+  technicalLogClear: () => Promise<{ ok: boolean }>;
+  onTechnicalLogEntry: (listener: (entry: TechnicalLogEntry) => void) => () => void;
   bookIndexFix: () => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookDownloadBatch: (params: { contentIds: string[] }) => Promise<BookDownloadBatchStartResult>;
   bookDownloadBatchCancel: () => Promise<{ ok: boolean }>;

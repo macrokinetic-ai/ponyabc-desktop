@@ -6,6 +6,7 @@ import { cacheFilePath, downloadToCache } from './bookDownload';
 import { acquirePenLock } from './penOperationLock';
 import { getFreeBytes } from './transferPlanner';
 import * as session from './session';
+import * as internal from '@internal';
 
 export interface BookInstallDeps {
   cacheDir: string;
@@ -116,6 +117,7 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
     }
     // `created` is what decides whether the pen's book index is now stale: an added file
     // changes every later book's position, a same-name replacement changes nothing.
+    internal.technical('file-written', `BOOK/${entry.filename}`, entry.sizeBytes);
     return { status: 'completed', backupPath: result.backupPath, createdNewFile: result.created === true };
   } finally {
     release();

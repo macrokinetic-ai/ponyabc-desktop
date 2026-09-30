@@ -10,7 +10,7 @@
  * Every export here must match ./index.ts exactly, or the Store build will not compile — which
  * is the point: the two cannot drift apart silently.
  */
-import type { BookActionResult, BookListResult, FirmwarePackageInfo, FirmwareUpgradeOutcome } from '@shared/types';
+import type { BookActionResult, BookListResult, FirmwarePackageInfo, FirmwareUpgradeOutcome, TechnicalLogEntry } from '@shared/types';
 
 export const INTERNAL_BUILD = false;
 
@@ -54,3 +54,11 @@ export const TESTER_KEY_HEADER = '';
 
 /** No dialog in a Store build. */
 export const chooseTestCatalogueFolder = async (_window: unknown): Promise<string | null> => null;
+
+/* -- the technical log -- */
+// Nothing is recorded and nothing is kept: the calls scattered through the book and firmware
+// code compile down to an empty function, and the Store build has no panel to show it in.
+export const onTechnicalLogEntry = (_listener: ((entry: TechnicalLogEntry) => void) | null): void => {};
+export const technical = (_kind: TechnicalLogEntry['kind'], _detail: string, _sizeBytes?: number): void => {};
+export const technicalLogEntries = (): TechnicalLogEntry[] => [];
+export const clearTechnicalLog = (): void => {};

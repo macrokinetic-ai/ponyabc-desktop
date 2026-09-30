@@ -95,6 +95,11 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     bookIndexStatus: vi.fn(async () => ({ recordCount: 1, bookCount: 1, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'ok', resetPending: false })),
     bookIndexCommit: vi.fn(async () => ({ status: 'not-needed' })),
     bookBatchBegin: vi.fn(async () => ({ ok: true })),
+    // The Internal build's technical log. These tests render the internal surface, because
+    // vitest resolves @internal-ui to the real module; the Store build has the stub.
+    technicalLogGet: vi.fn(async () => []),
+    technicalLogClear: vi.fn(async () => ({ ok: true })),
+    onTechnicalLogEntry: vi.fn(() => () => {}),
     bookBatchEnd: vi.fn(async () => ({ status: 'not-needed' })),
     bookIndexFix: vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false })),
     bookDownloadBatch: vi.fn(async () => ({ status: 'started' })),

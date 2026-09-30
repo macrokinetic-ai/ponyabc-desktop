@@ -53,7 +53,7 @@ again. The commit belongs at the boundary, in main.
 
 ## INTERNAL BUILD ONLY
 
-- [ ] 8. A Technical log panel listing each step as it happens: files deleted
+- [x] 8. A Technical log panel listing each step as it happens: files deleted
       ("Deleted BOOK/1.BIN"), files written, index reset requested, firmware preflight,
       restores. Test that the Store build contains none of it.
 

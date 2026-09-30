@@ -123,6 +123,22 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
 
   ipcMain.handle(IPC.bookIndexStatus, () => getBookIndexStatus());
 
+  // The technical log. In a Store build `internal` is the stub: the getter answers with an
+  // empty list, the clear does nothing, and nothing is ever pushed because `technical()` is an
+  // empty function — there is no panel asking for any of it either.
+  ipcMain.handle(IPC.technicalLogGet, () => internal.technicalLogEntries());
+  ipcMain.handle(IPC.technicalLogClear, () => {
+    internal.clearTechnicalLog();
+    return { ok: true };
+  });
+  internal.onTechnicalLogEntry((entry) => {
+    try {
+      getWindow().webContents.send(IPC.technicalLogEntry, entry);
+    } catch {
+      // No window yet, or it has gone. The entry is still in the buffer for the next fetch.
+    }
+  });
+
   // Testing mode. `internal` is the stub in a Store build, so these answer "off" and the
   // folder picker returns null — there is no dialog and no stored key to reach.
   ipcMain.handle(IPC.testingModeGet, () => internal.getTestingMode());

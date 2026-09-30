@@ -115,6 +115,13 @@ const api: PonyAbcApi = {
   bookIndexCommit: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookIndexCommit, params ?? {}),
   bookBatchBegin: () => ipcRenderer.invoke(IPC.bookBatchBegin),
   bookBatchEnd: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookBatchEnd, params ?? {}),
+  technicalLogGet: () => ipcRenderer.invoke(IPC.technicalLogGet),
+  technicalLogClear: () => ipcRenderer.invoke(IPC.technicalLogClear),
+  onTechnicalLogEntry: (listener: (entry: import('@shared/types').TechnicalLogEntry) => void) => {
+    const handler = (_e: unknown, entry: import('@shared/types').TechnicalLogEntry) => listener(entry);
+    ipcRenderer.on(IPC.technicalLogEntry, handler);
+    return () => ipcRenderer.removeListener(IPC.technicalLogEntry, handler);
+  },
   bookIndexFix: () => ipcRenderer.invoke(IPC.bookIndexFix),
   bookDownloadBatch: (params: { contentIds: string[] }) => ipcRenderer.invoke(IPC.bookDownloadBatch, params) as Promise<BookDownloadBatchStartResult>,
   bookDownloadBatchCancel: () => ipcRenderer.invoke(IPC.bookDownloadBatchCancel) as Promise<{ ok: boolean }>,

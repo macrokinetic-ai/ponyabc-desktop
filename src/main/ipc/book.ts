@@ -251,7 +251,6 @@ async function runInstallAction(
   // catalogue, so there is nothing to download and nowhere to write: report the completion the
   // real path would report, and let the screen show what a parent sees when a sync finishes.
   const demoResult = internal.demoInstallResult();
-  if (demoResult) return demoResult;
 
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
@@ -261,7 +260,9 @@ async function runInstallAction(
   const stopSleepBlock = blockSleepDuringPenWrite('adding or updating a book');
   let result: BookActionResult;
   try {
-    result = await action(entry, params.penGeneration, installDeps(window));
+    // The demonstration catalogue writes nothing and downloads nothing, and then goes through
+    // exactly the same ending as a real write below — which is the point of it.
+    result = demoResult ?? (await action(entry, params.penGeneration, installDeps(window)));
   } finally {
     stopSleepBlock();
   }

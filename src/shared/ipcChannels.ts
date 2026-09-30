@@ -71,6 +71,11 @@ export const IPC = {
   // finishPenBookMutation in main/ipc/bookIndex.ts.
   bookBatchBegin: 'ponyabc:book:batch:begin',
   bookBatchEnd: 'ponyabc:book:batch:end',
+  // The Internal build's technical log. The Store build registers no handler and has no panel;
+  // its recorder compiles to an empty function (src/main/internal/stub.ts).
+  technicalLogGet: 'ponyabc:technical:get',
+  technicalLogClear: 'ponyabc:technical:clear',
+  technicalLogEntry: 'ponyabc:technical:entry',
   bookIndexFix: 'ponyabc:book:index:fix',
   bookDownloadBatchCancel: 'ponyabc:book:downloadBatchCancel',
   bookDownloadBatchSummary: 'ponyabc:book:downloadBatchSummary',

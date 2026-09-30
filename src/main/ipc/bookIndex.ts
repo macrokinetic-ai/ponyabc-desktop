@@ -7,6 +7,7 @@ import { appendDiagnostic } from '../services/diagnostics';
 import type { DiagnosticEntry } from '@shared/types';
 import { checkBookIndexHealth, cleanMacSidecars, resetBookIndex, type BookIndexHealth } from '../services/bookIndexReset';
 import { ejectPen } from '../services/penEject';
+import * as internal from '@internal';
 
 /**
  * Deciding when the pen's book index has to be thrown away, and making sure it actually is.
@@ -76,6 +77,7 @@ export function markBookIndexStale(reason: 'written' | 'removed'): void {
   const current = pending().get();
   if (current[pen.penKey]) return; // already pending; keep the original timestamp
   pending().set({ ...current, [pen.penKey]: { requestedAtMs: Date.now() } });
+  internal.technical('index-reset-requested', reason);
   appendDiagnostic(diagnosticsStore(), 'book-index-reset', { event: 'marked-stale', reason, pen: pen.penKey });
 }
 

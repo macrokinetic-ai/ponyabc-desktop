@@ -53,6 +53,19 @@ const CHECKS = [
   // Not the bare words "Choose folder…" — the recordings screen has its own, for customers.
   // These two strings belong to the by-hand vendor-package picker and to nothing else.
   ['the by-hand firmware picker', ['Select the extracted firmware package folder', 'Internal: choose a firmware folder'], [main, renderer]],
+  // The technical log: the panel, its heading and its step wording. None of it is translated, so
+  // these exact strings are the whole of it — if any appears, the panel shipped.
+  //
+  // Deliberately NOT the `ponyabc:technical:*` channel names. Those live in the shared channel
+  // table and the Store build does register handlers for them, wired to the stub: the getter
+  // answers with an empty list and nothing is ever recorded, because `technical()` compiles to an
+  // empty function. Same as testing mode's channels. A name with no panel, no recorder and no
+  // caller is not a feature that shipped; the wording below is what would prove one had.
+  [
+    'the technical log',
+    ['Technical log', 'Deleted BOOK/', 'Index reset requested', 'Index reset FAILED', 'Nothing yet. Sync a book'],
+    [main, renderer],
+  ],
   ['an unresolved build flag', ['__PONYABC_INTERNAL__'], [main, renderer]],
 ];
 
@@ -70,5 +83,6 @@ if (found.length > 0) {
   process.exit(1);
 }
 
-console.log(`Store build checked: none of ${SWITCHES.length} developer switches, no demonstration`);
-console.log('catalogue, no testing mode, no by-hand firmware picker, no unresolved build flag.');
+const total = CHECKS.reduce((n, [, needles]) => n + needles.length, 0);
+console.log(`Store build checked — ${total} strings, none present:`);
+for (const [what, needles] of CHECKS) console.log(`  ${what} (${needles.length})`);

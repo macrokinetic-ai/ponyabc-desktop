@@ -12,14 +12,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { app, dialog, type BrowserWindow } from 'electron';
-import type { BookActionResult, BookListResult, FirmwarePackageInfo, FirmwareUpgradeOutcome } from '@shared/types';
+import type { BookActionResult, BookListResult, FirmwarePackageInfo, FirmwareUpgradeOutcome, TechnicalLogEntry } from '@shared/types';
 import { demoBookList as buildDemoBookList, demoDataEnabled as demoOn, demoVariant, markDemoSyncComplete } from '../services/demoBookData';
 import {
   demoFirmwareEnabled as fwOn,
   demoFirmwareOutcome as fwOutcome,
   demoFirmwarePackage as fwPackage,
 } from '../services/demoFirmware';
-import { markBookIndexStale } from '../ipc/bookIndex';
 import { runMsixFirmwarePlumbingProbe } from '../services/msixFirmwarePlumbingProbe';
 
 export const INTERNAL_BUILD = true;
@@ -27,11 +26,12 @@ export const INTERNAL_BUILD = true;
 export const demoDataEnabled = (): boolean => demoOn();
 export const demoBookList = (): BookListResult | null => (demoOn() ? buildDemoBookList(demoVariant()) : null);
 
-/** A demo sync completes without a network or a write, and reports what a real one reports. */
+/** A demo sync completes without a network or a write, and reports what a real one reports.
+ *  The caller treats it like any other completed write — including marking the pen's book index
+ *  stale — so the demonstration ends with the same screens a real sync ends with. */
 export const demoInstallResult = (): BookActionResult | null => {
   if (!demoOn()) return null;
   markDemoSyncComplete();
-  markBookIndexStale('written');
   return { status: 'completed', createdNewFile: true };
 };
 
@@ -86,6 +86,40 @@ export async function pickFirmwareFolder(window: BrowserWindow): Promise<string 
 }
 
 /** The tester channel's header. Named here so a Store bundle does not contain it at all. */
+/* -- the technical log: every step, as it happens, for the owner -- */
+
+/**
+ * The owner asked to be able to watch the .BIN files being deleted without taking the SD card
+ * out and looking at it. This is that: a short, in-memory record of the steps the app actually
+ * took, in the order it took them.
+ *
+ * In memory only, and capped. It is a window onto a run, not a record to keep — `Export
+ * diagnostics` is what keeps things.
+ */
+const TECHNICAL_LOG_LIMIT = 500;
+const technicalLog: TechnicalLogEntry[] = [];
+let technicalLogListener: ((entry: TechnicalLogEntry) => void) | null = null;
+
+export const onTechnicalLogEntry = (listener: ((entry: TechnicalLogEntry) => void) | null): void => {
+  technicalLogListener = listener;
+};
+
+export const technical = (kind: TechnicalLogEntry['kind'], detail: string, sizeBytes?: number): void => {
+  const entry: TechnicalLogEntry = { atMs: Date.now(), kind, detail, ...(sizeBytes === undefined ? {} : { sizeBytes }) };
+  technicalLog.push(entry);
+  if (technicalLog.length > TECHNICAL_LOG_LIMIT) technicalLog.splice(0, technicalLog.length - TECHNICAL_LOG_LIMIT);
+  try {
+    technicalLogListener?.(entry);
+  } catch {
+    // The window went away mid-step. The step itself is what matters.
+  }
+};
+
+export const technicalLogEntries = (): TechnicalLogEntry[] => [...technicalLog];
+export const clearTechnicalLog = (): void => {
+  technicalLog.length = 0;
+};
+
 export const TESTER_KEY_HEADER = 'X-PonyABC-Tester-Key';
 
 /** Choose the local test-catalogue folder. */

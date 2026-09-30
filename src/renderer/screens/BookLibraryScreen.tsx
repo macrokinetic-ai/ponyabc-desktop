@@ -25,6 +25,7 @@ import {
 import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
 import { buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '@shared/bookSyncPlan';
 import { formatDateTime } from '@shared/dateFormat';
+import { TechnicalLogPanel } from '@internal-ui';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 /**
@@ -623,6 +624,10 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
           </ul>
         )}
       </AdvancedDetails>
+
+      {/* Internal build only — `@internal-ui` is the empty stub in a Store build, so this
+          renders nothing and none of its wording is in the bundle. */}
+      <TechnicalLogPanel />
 
     </div>
   );

@@ -19,3 +19,8 @@ export function FirmwareFolderPicker(): null {
 export function TestingModeSection(): null {
   return null;
 }
+
+/** No panel, and none of its wording, in a Store build. */
+export function TechnicalLogPanel(): null {
+  return null;
+}

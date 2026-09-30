@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { TechnicalLogEntry } from '@shared/types';
 
 /**
  * The Internal build's own screens and controls.
@@ -164,5 +165,92 @@ export function TestingModeSection() {
         yet.
       </p>
     </div>
+  );
+}
+
+/**
+ * The technical log — Internal build only.
+ *
+ * The owner asked to be able to watch the .BIN files being deleted without taking the SD card
+ * out of the pen and looking at it. Every step the app takes is listed here as it happens, in
+ * the order it happened, newest last.
+ *
+ * All of the wording lives in this file rather than in the shared locales, so the Store build
+ * carries neither the panel nor a single line of it. That is checked against the built bundle
+ * by scripts/check-store-build.mjs.
+ */
+export function TechnicalLogPanel() {
+  const [entries, setEntries] = useState<TechnicalLogEntry[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    void window.ponyabc.technicalLogGet().then(setEntries);
+    return window.ponyabc.onTechnicalLogEntry((entry) => setEntries((prev) => [...prev, entry].slice(-500)));
+  }, []);
+
+  // Built from the parts rather than toLocaleTimeString: the renderer formats dates through
+  // @shared/dateFormat with the app's chosen locale, and this panel is neither a date nor
+  // customer-facing — it is a stopwatch for whoever is watching a sync happen.
+  const clockTime = (ms: number): string => {
+    const d = new Date(ms);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const describe = (entry: TechnicalLogEntry): string => {
+    switch (entry.kind) {
+      case 'file-deleted':
+        return `Deleted ${entry.detail}`;
+      case 'file-written':
+        return `Wrote ${entry.detail}${entry.sizeBytes ? ` (${Math.round(entry.sizeBytes / 1_000_000)} MB)` : ''}`;
+      case 'index-reset-requested':
+        return `Index reset requested (${entry.detail})`;
+      case 'index-reset-done':
+        return `Index reset done — ${entry.detail}`;
+      case 'index-reset-failed':
+        return `Index reset FAILED — ${entry.detail}`;
+      case 'firmware-preflight':
+        return `Firmware preflight: ${entry.detail}`;
+      case 'firmware-step':
+        return `Firmware: ${entry.detail}`;
+      case 'recording-restored':
+        return `Restored ${entry.detail}`;
+      case 'recording-backed-up':
+        return `Backed up ${entry.detail}`;
+      default:
+        return entry.detail;
+    }
+  };
+
+  return (
+    <details className="advanced-details" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Technical log ({entries.length})</summary>
+      <p className="hint">
+        Every step this build took, as it happened. Internal build only — the Store build has no
+        such panel.
+      </p>
+      <div className="pane__toolbar">
+        <button
+          type="button"
+          className="button"
+          onClick={() => void window.ponyabc.technicalLogClear().then(() => setEntries([]))}
+        >
+          Clear
+        </button>
+      </div>
+      {entries.length === 0 ? (
+        <p className="hint">Nothing yet. Sync a book, re-download one, or run a firmware update.</p>
+      ) : (
+        <ul className="recordings-list">
+          {entries.map((entry, i) => (
+            <li key={`${entry.atMs}-${i}`} className="recordings-list__row">
+              <span className="recordings-list__name" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                {clockTime(entry.atMs)} {describe(entry)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
   );
 }

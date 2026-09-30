@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { isEligibleAxbFileName, resolvePenRoot } from './pathSecurity';
 import { runFirmwarePreflight, summarizePreflight } from './firmwarePreflight';
+import * as internal from '@internal';
 
 /**
  * The pen's book index, and when it has to be thrown away.
@@ -66,7 +67,16 @@ export type IndexResetOutcome =
 export function resetBookIndex(penRootPath: string): IndexResetOutcome {
   const result = runFirmwarePreflight(penRootPath, BOOK_INDEX_FILES);
   const summary = summarizePreflight(result.deletions);
-  if (!result.ok) return { ok: false, reason: result.reason, summary: `${summary} — ${result.detail}` };
+  // The owner wanted to watch these two go without taking the card out. Internal build only —
+  // in the Store build `technical` is an empty function and this line disappears.
+  for (const deletion of result.deletions) {
+    if (deletion.status === 'deleted') internal.technical('file-deleted', `BOOK/${deletion.matched ?? deletion.requested}`);
+  }
+  if (!result.ok) {
+    internal.technical('index-reset-failed', result.reason);
+    return { ok: false, reason: result.reason, summary: `${summary} — ${result.detail}` };
+  }
+  internal.technical('index-reset-done', summary);
   return { ok: true, deleted: result.deletions.filter((d) => d.status === 'deleted').map((d) => d.matched ?? d.requested), summary };
 }
 
