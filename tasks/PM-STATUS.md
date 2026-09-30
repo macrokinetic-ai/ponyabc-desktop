@@ -57,8 +57,18 @@ Binaries are Release assets, never git history. The vendor firmware packages hav
 the 15.9 GB SD-card image stays on the external drive with its location and checksum recorded in
 that repository's README.
 
-Since rc2, a test build **stamps itself**: Settings → Version shows `0.3.17 (rc2, <commit>)`,
-while the Store build, built without the stamp, shows a plain `0.3.17`. rc1 predates this.
+Since rc2, a test build **stamps itself**: Settings → Version shows `0.3.17 (rc5, <commit>)`,
+while the Store build submitted to Microsoft, built without the stamp, shows a plain `0.3.17`.
+rc1 predates this, and **rc4 lost its stamp** — a later packaging step rebuilt the installer over
+the checked one, so rc4's Store build also shows a plain `0.3.17`. rc4 is marked Superseded;
+install **rc5**. Each installer's hash is now recorded when it is built and compared again
+before publishing, so an installer nobody checked cannot reach the Releases page.
+
+Every candidate publishes **two** installers: the Store build, which is what customers get, and
+the Internal build, which carries testing mode and the support tools, says
+`INTERNAL TEST BUILD — not for customers` across the top, and installs beside the Store app
+under its own name and application id. Only the Store build is ever submitted, and CI refuses
+to publish an internal package carrying the Store identity.
 
 ## 2. Current development
 

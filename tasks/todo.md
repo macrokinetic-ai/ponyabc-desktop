@@ -31,7 +31,10 @@ Never log in to Partner Center, submit, or publish.
 - [x] docs/test-plans/internal-testing.md with a ready manifest.json
 
 ## D. Gates
-- [ ] typecheck, vitest, build, Windows CI for both builds
-- [ ] Release v0.3.17-rc4 with both builds
-- [ ] PM-STATUS and store-release-checklist: only the Store build is ever submitted
-- [ ] report, INDEX, push to ponyabc-reports
+- [x] typecheck, vitest, build, Windows CI for both builds — run 36746198871, green
+- [x] Release with both builds — **`v0.3.17-rc5`**, not rc4: rc4 published a Store installer
+      that a later packaging step had rebuilt over the stamped one, so it showed a plain
+      `0.3.17` and was indistinguishable from the Store version. rc4 marked Superseded; the
+      installers are now hashed when built and re-checked before publishing.
+- [x] PM-STATUS and store-release-checklist: only the Store build is ever submitted
+- [x] report, INDEX, push to ponyabc-reports

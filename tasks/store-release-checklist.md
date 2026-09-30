@@ -65,7 +65,13 @@ hand.
 
 1. Push to `release/X.Y.Z` and wait for **Build Windows EXE + Store package** to go green.
    Dispatch it with the `rc` input set to the candidate number — `rc2`, `rc3` — so the build
-   stamps itself. The app then shows `0.3.17 (rc2, <commit>)` in **Settings → Version**, and
+   stamps itself. A candidate number is spent once it publishes a Release: a build that fails
+   before publishing has not used its number, and the same one is dispatched again.
+
+   The stamp is checked twice, and the second check is the one that matters. Each installer's
+   SHA-256 is recorded when it is built, and compared again immediately before publishing —
+   because `release/` is scratch space that later packaging steps write to, and rc4 shipped an
+   installer that a later step had rebuilt on top of the checked one. The app then shows `0.3.17 (rc2, <commit>)` in **Settings → Version**, and
    the Store build still shows a plain `0.3.17`.
 2. Download the run's `windows-installer` artifact. It holds three files:
    the `.exe`, its `.sha256` and `READ-ME-FIRST.txt`.
@@ -102,5 +108,8 @@ Only once Partner Center reports the submission as **published**:
 | `v0.3.16` | The Microsoft Store version, live since 2026-09-28. Latest. Archive of the submitted `.appx`. |
 | `v0.3.17-rc1` | The first 0.3.17 test build, from `69e4412`. Pre-release. Predates the build stamp, so it shows a plain `0.3.17` in Settings. |
 | `v0.3.17-rc2` | From `2ad7a0b`. Pre-release. The first build that names itself: Settings shows `0.3.17 (rc2, 2ad7a0b)`. |
+| `v0.3.17-rc3` | From `9e02f4e`. Pre-release. |
+| `v0.3.17-rc4` | From `ae94b07`. Pre-release, **Superseded** — its Store installer lost its stamp before publishing and shows a plain `0.3.17`, so a tester cannot tell it from the Store version. Left in place as the record; do not hand it to anyone. |
+| `v0.3.17-rc5` | From `dbfb545`. Pre-release. **The build to test.** Two installers: the Store build and the Internal build, both stamped `0.3.17 (rc5, dbfb545)`. |
 
 `v0.3.17` itself does not exist yet, and must not until the Store has approved 0.3.17.
