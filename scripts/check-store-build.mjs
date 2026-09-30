@@ -61,9 +61,15 @@ const CHECKS = [
   // answers with an empty list and nothing is ever recorded, because `technical()` compiles to an
   // empty function. Same as testing mode's channels. A name with no panel, no recorder and no
   // caller is not a feature that shipped; the wording below is what would prove one had.
+  //
+  // Every needle below is checked to be PRESENT in the Internal bundle by
+  // tests/unit/technicalLogNeedles.test.ts. 'Deleted BOOK/' was here first and could never have
+  // fired: the panel builds that line as `Deleted ${detail}`, so the literal in the bundle is
+  // 'Deleted ' and the longer needle matched nothing in either build. A check that cannot fail
+  // is worse than no check, because it reads like one that passed.
   [
     'the technical log',
-    ['Technical log', 'Deleted BOOK/', 'Index reset requested', 'Index reset FAILED', 'Nothing yet. Sync a book'],
+    ['Technical log', 'Index reset requested', 'Index reset FAILED', 'Index reset done', 'Nothing yet. Sync a book'],
     [main, renderer],
   ],
   ['an unresolved build flag', ['__PONYABC_INTERNAL__'], [main, renderer]],
