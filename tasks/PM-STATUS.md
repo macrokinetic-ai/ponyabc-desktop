@@ -36,6 +36,10 @@ Test builds now live on the repo's Releases page, members only:
 | --- | --- |
 | **`v0.3.16`** | The Microsoft Store version, marked **Latest**, with the submitted `.appx` archived on it |
 | **`v0.3.17-rc1`** | The first 0.3.17 test build, from `69e4412`, marked **Pre-release** — `.exe`, `.sha256`, `READ-ME-FIRST.txt` |
+| `v0.3.17-rc2` … `rc3` | Further test builds. Pre-release. |
+| `v0.3.17-rc4` | **Superseded.** Its Store installer lost its stamp before publishing, so Settings showed a plain `0.3.17` and a tester could not tell it from the Store version. Left as the record; not to be handed to anyone. |
+| `v0.3.17-rc5` | From `dbfb545`. The build the owner tested on a real Windows PC. |
+| **`v0.3.17-rc6`** | From `40290da`. **The build to test now** — everything the owner found in rc5, fixed. |
 
 **A final `v0.3.17` Release is created only after Microsoft Store approval** — never before, so
 the newest thing in the repository is never software nobody can install. Each further test build
@@ -47,6 +51,43 @@ checked against the built bundle by a test. The **Internal build** is the same c
 mode, with its own name, application id and banner, so it installs beside the Store app and
 cannot be submitted by mistake — CI refuses an internal package carrying the Store identity.
 Every rc Release carries both.
+
+### What rc6 fixes, from the owner's rc5 test on a real pen (2026-09-30)
+
+**The book index was only being reset after a full sync.** Re-download, Add, Replace, Remove and
+Restore each marked the pen as needing its book list rebuilt and then left both `.BIN` files on
+the card, because the one line that deleted them lived in the sync screen and nothing else called
+it. The owner found them still there after a Re-download. That decision now belongs to the main
+process: any write outside a batch settles itself, a sync is one batch that settles once, and a
+new writing path gets the rule without having to remember it. `Restore` marked nothing at all
+before, so a restored book could have played from the wrong position.
+
+**"Re-download" is now "Get a fresh copy and put it on my pen"**, with a line saying the pen is
+written to and will need restarting. It always did write to the pen; the label read as though it
+only touched this computer, which is what the owner reasonably expected of it.
+
+**A backup said "20 recordings" and listed none** — the count was in the summary and the
+recordings never left the main process. A backup's contents are now listed with tick boxes,
+Select all, sizes and Play, and only what is ticked is put back. Backups also say why they exist,
+so "Backup · 30 Sept 2026, 21:10" and "Automatic backup before replacing 0451" no longer look
+like the same thing. Backing up is single-shot.
+
+**Adding your own recordings is on the screen**, not inside Advanced tools: a real file picker,
+new versus replace from the main process's own plan, both takes playable, and the pen's copies
+kept in a backup a teacher can actually see — the old per-file copies went somewhere that never
+appeared in the backups list.
+
+**The pen's books and its free space are shown**, not hidden behind a disclosure, on BOOK and My
+Recordings. **Every long action** says what it is doing and always ends with something; the
+backup progress channel had existed all along with nothing listening to it.
+
+**The Internal build has a Technical log**, so the `.BIN` files can be watched going without
+taking the SD card out. The Store build has neither the panel nor a word of its wording.
+
+**The pen cannot report its firmware version** — traced again through the vendor toolkit, where
+every scripted path is write-only. The screen says so plainly and always, and adds the one thing
+the app knows for certain: the version it installed itself, labelled as that and not as a reading
+from the pen.
 
 **Every version is stored on GitHub as the permanent record (owner, 2026-09-30).** Nothing
 important may live only on the Mac mini. A candidate build dispatched with an `rc` input now
