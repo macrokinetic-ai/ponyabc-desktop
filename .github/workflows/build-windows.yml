@@ -122,6 +122,37 @@ jobs:
           PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
           PONYABC_BUILD_COMMIT: ${{ github.sha }}
 
+      # Both installers exist and are freshly built at this point: the Store one was stamp-checked
+      # when it was made, and release/win-unpacked now holds the Internal one, so its stamp can be
+      # read the same way. Recording both hashes here is what lets the step further down prove
+      # that the files finally published are these ones and not something rebuilt over them.
+      - name: "Installers: check the internal stamp, and record both files"
+        shell: pwsh
+        run: |
+          $rc = '${{ steps.rc.outputs.value }}'
+          $short = $env:GITHUB_SHA.Substring(0, 7)
+          $asar = 'release/win-unpacked/resources/app.asar'
+          if (-not (Test-Path $asar)) { throw "no unpacked internal app at $asar" }
+          if ($rc -eq '') {
+            Write-Host 'No candidate for this build; nothing to stamp.'
+          } elseif (-not (Select-String -Path $asar -Pattern $short -Encoding utf8 -Quiet)) {
+            throw "The internal build should carry the stamp $rc / $short, and does not."
+          } else {
+            Write-Host "Internal build stamped $rc / $short."
+          }
+
+          $exes = @(Get-ChildItem 'release/*.exe' | Where-Object { $_.Name -notlike '*uninstaller*' })
+          if ($exes.Count -ne 2) {
+            throw "expected 2 installers in release/, found $($exes.Count): $($exes.Name -join ', ')"
+          }
+          $hashes = [ordered]@{}
+          foreach ($exe in $exes) {
+            $hashes[$exe.Name] = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash
+            Write-Host "$($exe.Name)  $($hashes[$exe.Name])"
+          }
+          # RUNNER_TEMP, not release/ — release/ is what gets uploaded, and this is scaffolding.
+          $hashes | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'installer-hashes.json')
+
       # An internal package carrying the Store identity could be submitted by mistake, and
       # would replace the customers' app on any machine that installed it. Refuse to go on.
       - name: "Internal: prove this is not the Store identity"
@@ -587,27 +618,30 @@ jobs:
       # assets — and reads the stamp back out of the app.asar inside each. A tester who cannot
       # tell a candidate from the Store version by looking at Settings has no way to report a
       # bug against the right build, so an unstamped candidate is a failed build, not a warning.
-      - name: "Installers: read the stamp back out of the finished files"
+      # The stamp checks above read release/win-unpacked, which is scratch space that every
+      # later packaging command rewrites — and one of them used to rewrite the installers too,
+      # which is how rc4 shipped unstamped with every step green. Opening the finished .exe
+      # files here to re-read the stamp was the obvious answer and does not work: 7-Zip on the
+      # runner cannot parse an NSIS installer.
+      #
+      # So this asks the stronger question instead, and asks it of the bytes: are the files
+      # about to be published still the files that were checked? A rebuild cannot change the
+      # contents without changing the hash.
+      - name: "Installers: prove nothing rebuilt them after they were checked"
         if: steps.rc.outputs.value != ''
         shell: pwsh
         run: |
-          $rc = '${{ steps.rc.outputs.value }}'
-          $short = $env:GITHUB_SHA.Substring(0, 7)
-          # Both installers, whatever they are called: the Store build and the Internal build.
-          $exes = @(Get-ChildItem 'release/*.exe' | Where-Object { $_.Name -notlike '*uninstaller*' })
-          if ($exes.Count -ne 2) {
-            throw "expected 2 installers in release/, found $($exes.Count): $($exes.Name -join ', ')"
-          }
-          foreach ($exe in $exes) {
-            $dir = Join-Path $env:RUNNER_TEMP ("stampcheck-" + $exe.BaseName)
-            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
-            & 7z x -o"$dir" $exe.FullName 'resources/app.asar' -y | Out-Null
-            $asar = Join-Path $dir 'resources/app.asar'
-            if (-not (Test-Path $asar)) { throw "could not read the packaged app out of $($exe.Name)" }
-            if (-not (Select-String -Path $asar -Pattern $short -Encoding utf8 -Quiet)) {
-              throw "$($exe.Name) does not carry the stamp $rc / $short, so Settings would show a plain version number — which is what the Microsoft Store build shows. A tester could not tell the two apart."
+          $recorded = Join-Path $env:RUNNER_TEMP 'installer-hashes.json'
+          if (-not (Test-Path $recorded)) { throw "no recorded installer hashes — the recording step did not run" }
+          $before = Get-Content $recorded -Raw | ConvertFrom-Json
+          foreach ($name in $before.PSObject.Properties.Name) {
+            $path = "release/$name"
+            if (-not (Test-Path $path)) { throw "$name was built and checked, and is no longer in release/" }
+            $now = (Get-FileHash $path -Algorithm SHA256).Hash
+            if ($now -ne $before.$name) {
+              throw "$name changed after it was checked: was $($before.$name), now $now. Something rebuilt it, and whatever it now contains has not been checked — rc4 shipped this way, with a Settings screen showing a plain version number."
             }
-            Write-Host "$($exe.Name) carries $rc / $short."
+            Write-Host "$name unchanged since it was checked ($now)."
           }
 
       # Everything this version is, in one place. The owner's rule (2026-09-30) is that no
