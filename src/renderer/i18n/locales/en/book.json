@@ -147,8 +147,7 @@
   "catalogIntro": "Bought a new book? Find it in this list and select Add.",
   "done": {
     "restartTitle": "All done!",
-    "restartBody": "Please unplug your pen, then switch it off and on again. The first start may take a little longer while your pen gets its books ready.",
-    "updatedOnly": "All done! Your book has been updated."
+    "restartBody": "Please unplug your pen, then switch it off and on again. The first start may take a little longer while your pen gets its books ready."
   },
   "fix": {
     "title": "Your pen's book list needs a moment",

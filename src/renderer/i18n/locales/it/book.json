@@ -147,8 +147,7 @@
   "catalogIntro": "Hai comprato un libro nuovo? Cercalo in questo elenco e scegli Aggiungi.",
   "done": {
     "restartTitle": "Fatto!",
-    "restartBody": "Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo mentre la penna prepara i libri.",
-    "updatedOnly": "Fatto! Il libro è stato aggiornato."
+    "restartBody": "Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo mentre la penna prepara i libri."
   },
   "fix": {
     "title": "L’elenco dei libri della penna ha bisogno di un momento",

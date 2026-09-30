@@ -6,7 +6,9 @@ answer, because the answers change what the app should tell a parent.
 Background, established 2026-09-29: `BOOK/BOOKFILE.BIN` is written by the pen itself on
 power-on, one 44-byte record per `.axb`, and a book is found by its **position** in that list.
 `BOOK/1.BIN` is a zero-byte marker; while both exist the pen trusts the list and does not rebuild
-it. The app now deletes both after any add or removal, so the pen rebuilds on its next start.
+it. The app deletes both after **any sync that wrote a book at all** — added or replaced — and
+after a removal, so the pen rebuilds on its next start. (Owner decision, 2026-09-30; until then a
+same-name replacement left the list alone.)
 
 Use a pen you can afford to reset, and note its firmware version before you start.
 
@@ -16,6 +18,11 @@ Use a pen you can afford to reset, and note its firmware version before you star
 
 With about 38 books on the pen — this is the number that decides whether "may take a little
 longer" is honest or an understatement.
+
+**This now matters for every sync, not just for an added book.** Since 2026-09-30 an
+update-only sync ends the same way, so whatever this rebuild costs, a parent pays it every time
+they sync anything at all. If it turns out to be slow, that is an argument about the wording, and
+possibly about the rule — report the number either way.
 
 1. [ ] Connect the pen, and in the app add one book. Wait for "All done!".
 2. [ ] Unplug, then switch the pen **off and on**.
@@ -27,6 +34,22 @@ longer" is honest or an understatement.
 | Time from power-on to first response         | ____ |
 | Any sound, light or sign that it is working? | ____ |
 | Does it look broken while it happens?        | ____ |
+
+### A2. The same, after an update-only sync
+
+The new case. Nothing was added; one book was replaced under its own name.
+
+1. [ ] With every catalogue book already on the pen, make one of them need updating (ask for a
+       re-issued edition, or use a build where one book's size differs) and sync.
+2. [ ] Check the app said **"All done!"** and asked for a restart — an update-only sync must no
+       longer end quietly.
+3. [ ] Unplug, power-cycle, and time it exactly as in A.
+
+|                                                       |      |
+| ----------------------------------------------------- | ---- |
+| Time from power-on to first response                  | ____ |
+| Same as A, or noticeably different?                   | ____ |
+| Do all books still play, including the updated one?   | ____ |
 
 **If this is more than about 20 seconds**, the message needs to say so plainly, and the answer
 belongs in the wording rather than in a doc.

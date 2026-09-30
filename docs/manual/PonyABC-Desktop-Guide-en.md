@@ -68,7 +68,8 @@ Nothing to do. Select **Check for new books** any time you want to look again.
 
 ## 4. Switch your pen off and on
 
-When books have been **added**, the app finishes with:
+Whenever a sync has put anything on your pen — a new book or a newer version of one you already
+had — it finishes with:
 
 ![The sync has finished](screenshots/07-books-sync-finished-en.png)
 
@@ -76,14 +77,14 @@ When books have been **added**, the app finishes with:
 > Please unplug your pen, then switch it off and on again. The first start may take a little
 > longer while your pen gets its books ready.
 
-Please do this. The pen builds its own list of books when it starts, and until it has, a new book
-will not play.
+Please do this every time you see it. The pen builds its own list of books when it starts, and
+until it has, what the app just put there will not play properly.
 
-**The first start after adding books is slower than usual.** The pen is working, not stuck. Leave
-it on until it responds.
+**That first start is slower than usual.** The pen is working, not stuck. Leave it on until it
+responds.
 
-*If you only **updated** a book you already had, no restart is needed and the app will not ask
-for one.*
+*If there was nothing to sync, nothing happens to your pen and you will not be asked to restart
+it.*
 
 ## 5. If your pen runs out of space
 

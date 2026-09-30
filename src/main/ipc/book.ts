@@ -246,7 +246,7 @@ async function runInstallAction(
   // real path would report, and let the screen show what a parent sees when a sync finishes.
   if (demoDataEnabled()) {
     markDemoSyncComplete();
-    markBookIndexStale('added');
+    markBookIndexStale('written');
     return { status: 'completed', createdNewFile: true };
   }
 
@@ -263,13 +263,14 @@ async function runInstallAction(
     stopSleepBlock();
   }
 
-  // The pen's book index is a positional array with no filenames in it, so ADDING a book
-  // invalidates it and replacing one under the same name does not. `updateRequiresIndexReset`
-  // is the catalog's escape hatch for an edition whose OID range changed — it defaults to
-  // false and the server does not send it yet.
-  if (result.status === 'completed' && (result.createdNewFile === true || entry.updateRequiresIndexReset)) {
-    markBookIndexStale('added');
-  }
+  // Owner decision, 2026-09-30: ANY write to the pen's BOOK folder — an addition or a
+  // replacement under the same name — makes the index stale, and the batch resets it once at
+  // the end. The old rule reset only on an addition, on the reasoning that a same-name
+  // replacement leaves every book in the same position; that is true of the positions and not
+  // dependable of the contents, and the cost of being wrong is the pen reading the wrong book
+  // aloud with nothing visibly broken. The catalogue's `updateRequiresIndexReset` is still
+  // parsed and still harmless, but nothing decides anything by it any more.
+  if (result.status === 'completed') markBookIndexStale('written');
 
   appendDiagnostic(diagnosticsStore(), 'book-download', {
     contentId: entry.contentId,

@@ -147,8 +147,7 @@
   "catalogIntro": "Vous avez acheté un nouveau livre ? Trouvez-le dans cette liste et choisissez Ajouter.",
   "done": {
     "restartTitle": "Terminé !",
-    "restartBody": "Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long, le temps que le stylo prépare ses livres.",
-    "updatedOnly": "Terminé ! Votre livre a été mis à jour."
+    "restartBody": "Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long, le temps que le stylo prépare ses livres."
   },
   "fix": {
     "title": "La liste des livres de votre stylo a besoin d’un instant",

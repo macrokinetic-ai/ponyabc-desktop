@@ -190,21 +190,20 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
   const penItems = lib.penItems ?? [];
 
   /**
-   * Ends a sync. The pen's book list is rebuilt only when something was ADDED — the main
-   * process decides that, because only it knows whether a write created a file or replaced one.
+   * Ends a sync that wrote something. The pen's book list is rebuilt whatever was written — a
+   * new book or a replacement of one already there — so there is one ending for a parent to
+   * learn: unplug it and switch it off and on again.
    */
   async function finishBookBatch(writtenFileNames: string[]) {
     try {
       const result = await window.ponyabc.bookIndexCommit({ writtenFileNames });
       await refreshIndexStatus();
-      if (result.status === 'reset' || result.status === 'still-pending') {
-        setRestartNotice(true);
-        return null;
-      }
-      return t('done.updatedOnly');
+      // 'still-pending' shows the same notice on purpose: the reset is owed and happens on the
+      // next connection, and restarting the pen is the right thing to do either way. The two
+      // remaining statuses mean the pen is no longer there, and the screen says so by itself.
+      if (result.status === 'reset' || result.status === 'still-pending') setRestartNotice(true);
     } catch {
       setRestartNotice(true);
-      return null;
     }
   }
 
@@ -264,7 +263,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
     setRestartNotice(false);
 
     try {
-      let added = 0;
+      const written: string[] = [];
       let ranOutOfSpace = false;
       let lastMessage: string | null = null;
 
@@ -273,7 +272,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
         const result = isAdd ? await lib.add(item.contentId) : await lib.replaceWithOfficial(item.contentId);
 
         if (result.status === 'completed') {
-          if (isAdd) added += 1;
+          written.push(item.filename);
           continue;
         }
         if (result.status === 'no-space') {
@@ -284,8 +283,10 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
         break;
       }
 
-      // Only an addition moves a book's position, so only an addition invalidates the index.
-      if (added > 0 || plan.toUpdate.length > 0) await finishBookBatch([]);
+      // What was actually written, not what the plan hoped to write: a sync that filled the card
+      // half-way through still wrote books, and still owes the pen a rebuilt list. A sync that
+      // wrote nothing — nothing to do, or the first book failed — leaves the pen alone.
+      if (written.length > 0) await finishBookBatch(written);
       if (ranOutOfSpace) setMessage(t('sync.stoppedNoSpace'));
       else if (lastMessage) setMessage(lastMessage);
     } finally {

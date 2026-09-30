@@ -11,13 +11,14 @@ import { ejectPen } from '../services/penEject';
 /**
  * Deciding when the pen's book index has to be thrown away, and making sure it actually is.
  *
- * The rule (see bookIndexReset.ts for why): adding or removing a book invalidates the index,
- * replacing one under the same name does not, and a batch that does any adding or removing gets
- * exactly one reset at the end.
+ * The rule (see bookIndexReset.ts for why): writing or removing a book invalidates the index —
+ * an addition, a replacement under the same name, a reinstall, all of them — and a batch that
+ * wrote or removed anything gets exactly one reset at the end. A batch that wrote nothing gets
+ * nothing.
  *
  * Two things make this survive reality rather than only the happy path:
  *
- * 1. The "this pen needs a reset" flag is **persisted the moment the first add or remove
+ * 1. The "this pen needs a reset" flag is **persisted the moment the first write or remove
  *    succeeds**, not when the batch finishes. If the app is closed, crashes or loses the pen
  *    half-way through, the flag is already on disk and the next connection finishes the job.
  * 2. The reset is the **last** step, after every book operation has succeeded. Deleting the
@@ -59,10 +60,10 @@ function resolvePen(): { ok: true; realPath: string; bookDirReal: string; penKey
 }
 
 /**
- * Records that the connected pen's index no longer describes its books. Called as soon as an add
- * or a remove succeeds — before the batch is over, so an interrupted batch still heals.
+ * Records that the connected pen's index no longer describes its books. Called as soon as a
+ * write or a remove succeeds — before the batch is over, so an interrupted batch still heals.
  */
-export function markBookIndexStale(reason: 'added' | 'removed'): void {
+export function markBookIndexStale(reason: 'written' | 'removed'): void {
   const pen = resolvePen();
   if (!pen.ok) return;
   const current = pending().get();
@@ -86,7 +87,7 @@ export type BookIndexCommitResult =
   | { status: 'still-pending'; reason: string };
 
 /**
- * Finishes a batch: deletes the index if anything was added or removed, tidies up after macOS,
+ * Finishes a batch: deletes the index if anything was written or removed, tidies up after macOS,
  * and ejects so the customer can unplug straight away.
  *
  * `writtenFileNames` scopes the macOS cleanup to files this batch actually wrote — everything
@@ -124,7 +125,7 @@ export async function commitBookIndexReset(params: { writtenFileNames?: string[]
 
 /**
  * Runs on connection. A reset WE already decided on is completed silently — the decision was
- * made when the customer added or removed a book, and asking again would be asking them to
+ * made when the customer synced or removed a book, and asking again would be asking them to
  * confirm something they already did.
  */
 export async function completePendingBookIndexReset(): Promise<BookIndexCommitResult> {

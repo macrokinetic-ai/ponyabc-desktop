@@ -69,9 +69,10 @@ minutes per book to confirm something almost always true — about 4½ hours for
 a parent ever reports a book behaving oddly, the existing per-book **Verify** under Advanced
 details does the expensive check on demand, for that one book.
 
-**Never delete-and-recopy.** An update is a same-name replace, which also keeps the book's
-position and so needs no index reset (unless `update_requires_index_reset` is set — see
-`book-index-reset-catalog.md`).
+**Never delete-and-recopy.** An update is a same-name replace, which keeps the book's position
+on the card. It still ends with the index reset: since 2026-09-30 any sync that wrote a book at
+all deletes `1.BIN` and `BOOKFILE.BIN` once at the end, whether it added or replaced — see
+`docs/vendor-notes.md`, "The owner's rule".
 
 ### Where the record lives
 

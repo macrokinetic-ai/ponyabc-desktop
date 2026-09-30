@@ -147,8 +147,7 @@
   "catalogIntro": "¿Ha comprado un libro nuevo? Búsquelo en esta lista y elija Añadir.",
   "done": {
     "restartTitle": "¡Listo!",
-    "restartBody": "Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más mientras el lápiz prepara sus libros.",
-    "updatedOnly": "¡Listo! Su libro se ha actualizado."
+    "restartBody": "Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más mientras el lápiz prepara sus libros."
   },
   "fix": {
     "title": "La lista de libros de su lápiz necesita un momento",

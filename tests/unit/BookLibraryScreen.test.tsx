@@ -299,6 +299,128 @@ describe('BookLibraryScreen — syncing', () => {
   });
 });
 
+/**
+ * Owner decision, 2026-09-30. Any sync that wrote a book — added or replaced — ends by throwing
+ * the pen's book list away, and says so. A sync that wrote nothing leaves the pen alone.
+ *
+ * The cost of getting this wrong is not cosmetic: the list is positional and carries no
+ * filenames, so a stale one makes the pen read the WRONG book aloud with nothing visibly broken.
+ */
+describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
+  const updateOnly = () =>
+    listResult({
+      penItems: [penItem({ contentId: 'b1' })],
+      catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-differs', sizeBytes: 100_000_000 })],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+    });
+
+  const addOnly = () =>
+    listResult({
+      penItems: [],
+      catalogItems: [catalogItem({ contentId: 'b2', filename: '0452.axb', status: 'not-on-pen', sizeBytes: 20_000_000 })],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+    });
+
+  /** One book to add (20 MB) and one to update (100 MB): the addition runs first. */
+  const oneOfEach = () =>
+    listResult({
+      penItems: [penItem({ contentId: 'b1' })],
+      catalogItems: [
+        catalogItem({ contentId: 'b1', status: 'on-pen-differs', sizeBytes: 100_000_000 }),
+        catalogItem({ contentId: 'b2', filename: '0452.axb', friendlyName: 'Book Two', status: 'not-on-pen', sizeBytes: 20_000_000 }),
+      ],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+    });
+
+  const nothingToDo = () =>
+    listResult({
+      penItems: [penItem({ contentId: 'b1' })],
+      catalogItems: [catalogItem({ contentId: 'b1', status: 'on-pen-current', actionable: false })],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
+    });
+
+  const commitMock = () => window.ponyabc.bookIndexCommit as ReturnType<typeof vi.fn>;
+
+  it('resets after a sync that only UPDATED a book, and asks for a restart', async () => {
+    await renderScreen(updateOnly());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await waitFor(() => expect(window.ponyabc.bookUpdate).toHaveBeenCalled());
+    await waitFor(() => expect(commitMock()).toHaveBeenCalledTimes(1));
+    await screen.findByText('All done!');
+    await screen.findByText(/Please unplug your pen, then switch it off and on again/);
+    expect(window.ponyabc.bookAdd).not.toHaveBeenCalled();
+  });
+
+  it('never tells a parent that an update needs no restart', async () => {
+    await renderScreen(updateOnly());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await screen.findByText('All done!');
+    expect(screen.queryByText(/Your book has been updated/)).toBeNull();
+  });
+
+  it('resets after a sync that ADDED a book', async () => {
+    await renderScreen(addOnly());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await waitFor(() => expect(commitMock()).toHaveBeenCalledTimes(1));
+    await screen.findByText('All done!');
+  });
+
+  it('leaves the pen alone when there was nothing to sync', async () => {
+    await renderScreen(nothingToDo());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+
+    // The button is disabled with nothing to do; clicking it must stay a no-op either way.
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await waitFor(() => expect(window.ponyabc.bookAdd).not.toHaveBeenCalled());
+    expect(commitMock()).not.toHaveBeenCalled();
+    expect(screen.queryByText('All done!')).toBeNull();
+  });
+
+  it('resets when the card filled up AFTER one book had been written', async () => {
+    await renderScreen(oneOfEach());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    // The 20 MB addition goes first and succeeds; the 100 MB update then runs out of room.
+    window.ponyabc.bookUpdate = vi.fn(async () => ({ status: 'no-space' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await screen.findByText('Your pen filled up, so we stopped. The books that finished are on your pen.');
+    await waitFor(() => expect(commitMock()).toHaveBeenCalledTimes(1));
+    await screen.findByText('All done!');
+  });
+
+  it('leaves the pen alone when the very first write failed', async () => {
+    await renderScreen(oneOfEach());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookAdd = vi.fn(async () => ({ status: 'no-space' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await screen.findByText('Your pen filled up, so we stopped. The books that finished are on your pen.');
+    expect(commitMock()).not.toHaveBeenCalled();
+    expect(screen.queryByText('All done!')).toBeNull();
+  });
+
+  it('names the books it wrote, so the tidy-up only touches those', async () => {
+    await renderScreen(addOnly());
+    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
+
+    await waitFor(() => expect(commitMock()).toHaveBeenCalledWith({ writtenFileNames: ['0452.axb'] }));
+  });
+});
+
 describe('BookLibraryScreen — not enough space', () => {
   it('refuses to start, says how much more is needed, and offers the way out', async () => {
     await renderScreen(

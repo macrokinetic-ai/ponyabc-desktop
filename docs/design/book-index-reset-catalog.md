@@ -1,7 +1,12 @@
-# Design — a catalog flag for "this update also needs the book list rebuilt"
+# Design — a catalogue flag for "this update also needs the book list rebuilt"
 
-**Status: app side implemented and live, defaulting to `false`. The server side is design only —
-`ponyabc-web` sends nothing, and the app is correct without it.**
+**Status: SUPERSEDED as a decision, 2026-09-30, and kept for the record.**
+
+The owner's rule is now simpler than any flag: **any sync that writes a book at all — added or
+replaced — rebuilds the pen's book list.** The flag is therefore never the thing that decides.
+The app still parses `updateRequiresIndexReset` and ignores whatever it says; the server still
+sends nothing. Nothing below needs building, and nothing below is wrong — it is the reasoning
+that the new rule makes unnecessary.
 
 ## Why a flag at all
 
@@ -14,7 +19,10 @@ by its **position** in that array. So:
 | Removed a book                 | **Yes** — every later book shifts down, and the pen reads the _wrong_ story |
 | Replaced a book, same filename | **No** — same position, same order. Verified on a real pen.                 |
 
-The app applies exactly that rule today and needs no help from the server to do it.
+That third row is why a flag was ever considered, and it is exactly the row the new rule stops
+relying on. Position is not the only thing that matters about a book, and the cost of being
+wrong is the pen reading the wrong book aloud, so since 2026-09-30 a replacement resets the list
+like anything else.
 
 The gap is a **future edition of an existing book** that keeps its filename but changes its OID
 code range — or its record type. (We have seen a type byte differ already: the 37 books on the
@@ -49,11 +57,15 @@ Exposed on `GET /api/public/books` as a sibling of the existing fields:
 
 ## What the app already does with it
 
-`src/main/services/bookCatalog/httpClient.ts` reads it as `updateRequiresIndexReset`, and
-`src/main/ipc/book.ts` treats a completed write as index-invalidating when **either** the write
-created a new file **or** this flag is set:
+`src/main/services/bookCatalog/httpClient.ts` still reads it as `updateRequiresIndexReset`, and
+still parses it strictly. `src/main/ipc/book.ts` no longer consults it — every completed write
+invalidates the index:
 
 ```ts
+// what it is now
+if (result.status === "completed") markBookIndexStale("written");
+
+// what it was until 2026-09-30
 if (
   result.status === "completed" &&
   (result.createdNewFile === true || entry.updateRequiresIndexReset)
@@ -62,7 +74,8 @@ if (
 }
 ```
 
-Two deliberate choices:
+The parsing choices below still hold for the field as data, and are worth keeping if the flag is
+ever given a different job:
 
 - **`b.updateRequiresIndexReset === true`, strictly.** A missing field, a string `"true"`, a `1`
   — all mean false. The cost of a wrong `true` is one unnecessary restart; the cost of a wrong

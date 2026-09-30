@@ -147,8 +147,7 @@
   "catalogIntro": "Comprou um livro novo? Encontre-o nesta lista e escolha Adicionar.",
   "done": {
     "restartTitle": "Tudo pronto!",
-    "restartBody": "Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais enquanto a caneta prepara os livros.",
-    "updatedOnly": "Tudo pronto! O seu livro foi atualizado."
+    "restartBody": "Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais enquanto a caneta prepara os livros."
   },
   "fix": {
     "title": "A lista de livros da sua caneta precisa de um momento",

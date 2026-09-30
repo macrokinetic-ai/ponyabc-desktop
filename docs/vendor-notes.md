@@ -172,24 +172,33 @@ its own purpose and is not a book.
 The record type byte differing (`0x03` for `phonics card`) may mean a newer book format that
 needs V1.26. **Not yet tested** — see `docs/test-plans/book-index-rebuild.md` section D.
 
-### The owner's rule (decided by Benny, 2026-09-29)
+### The owner's rule (decided by Benny, 2026-09-30 — replaces the 2026-09-29 version)
 
 ```
-add a book        -> delete 1.BIN and BOOKFILE.BIN
-remove a book     -> delete 1.BIN and BOOKFILE.BIN
-same-name replace -> leave them alone
-a batch with any add or remove -> delete once, even if it also replaced books
+wrote any book (added OR replaced under the same name) -> delete 1.BIN and BOOKFILE.BIN
+removed a book                                         -> delete 1.BIN and BOOKFILE.BIN
+wrote nothing                                          -> touch nothing
+a batch that wrote anything -> delete once, at the end, even if it stopped part-way
 ```
+
+**What changed, and why.** The 2026-09-29 rule left the index alone for a same-name replacement,
+on the reasoning that no book moves position. That is true of the positions. It is not
+dependable of the contents — a re-issued edition can keep its filename and change what is inside
+it, including its OID range — and when it is wrong the pen reads the **wrong book aloud** with
+nothing visibly broken. The old rule also had to be explained to parents ("no restart needed if
+you only updated a book"), which is a sentence nobody should have to read. One rule, one ending.
 
 Implemented in `src/main/services/bookIndexReset.ts` and `src/main/ipc/bookIndex.ts`, reusing the
-firmware preflight's guards. The deletion is the **last** step of a batch, after every book
-operation has succeeded — doing it first would leave the pen with neither a valid index nor the
-books the new one should describe. The "this pen owes a reset" flag is persisted the moment the
-first add or remove succeeds, so an interrupted batch still heals on the next connection.
+firmware preflight's guards. The decision itself is one line in `runInstallAction`
+(`src/main/ipc/book.ts`): any `completed` write marks the index stale. The deletion is the
+**last** step of a batch, after every book operation has finished — doing it first would leave
+the pen with neither a valid index nor the books the new one should describe. The "this pen owes
+a reset" flag is persisted the moment the first write or removal succeeds, so a batch that is
+interrupted, or that stops because the card filled up, still heals on the next connection.
 
-A future edition that keeps its filename but changes its OID range would defeat the same-name
-rule; `docs/design/book-index-reset-catalog.md` has the catalog flag for that, already read by
-the app and defaulting to false.
+The catalogue's per-book `update_requires_index_reset` flag is now redundant for this decision.
+It is still parsed (`bookCatalog/httpClient.ts`) and still harmless; nothing reads it to decide
+anything. See `docs/design/book-index-reset-catalog.md`.
 
 ---
 

@@ -60,12 +60,12 @@ async function load() {
 }
 
 describe('the rule', () => {
-  it('ADD: the index is deleted, once, at the end of the batch', async () => {
+  it('WRITE: the index is deleted, once, at the end of the batch', async () => {
     fs.writeFileSync(path.join(bookDir, 'old.axb'), 'a');
     writeIndex(1);
     const { bookIndex } = await load();
 
-    bookIndex.markBookIndexStale('added');
+    bookIndex.markBookIndexStale('written');
     expect(indexPresent()).toBe(true); // not yet — books first, index last
 
     const result = await bookIndex.commitBookIndexReset();
@@ -83,13 +83,30 @@ describe('the rule', () => {
     expect(indexPresent()).toBe(false);
   });
 
-  it('REPLACE ONLY: the index is left completely alone', async () => {
+  // Owner decision, 2026-09-30. This used to assert the opposite: a replacement under the same
+  // name left the index alone, because no book moved position. The positions were the argument;
+  // the contents are the risk, and a wrong index makes the pen read the wrong book aloud.
+  it('REPLACE: the index is deleted too, same as an addition', async () => {
     fs.writeFileSync(path.join(bookDir, 'a.axb'), 'replaced');
+    writeIndex(1);
+    const { bookIndex } = await load();
+
+    bookIndex.markBookIndexStale('written'); // what runInstallAction now does for ANY write
+
+    const result = await bookIndex.commitBookIndexReset();
+
+    expect(result.status).toBe('reset');
+    expect(indexPresent()).toBe(false);
+    expect(fs.existsSync(path.join(bookDir, 'a.axb'))).toBe(true); // the book itself is untouched
+  });
+
+  it('WROTE NOTHING: the index is left completely alone', async () => {
+    fs.writeFileSync(path.join(bookDir, 'a.axb'), 'unchanged');
     writeIndex(1);
     const before = fs.readFileSync(path.join(bookDir, 'BOOKFILE.BIN'));
     const { bookIndex } = await load();
 
-    // Nothing marked the index stale, because no position changed.
+    // A sync with nothing to do never marks anything, so the end of the batch does nothing.
     const result = await bookIndex.commitBookIndexReset();
 
     expect(result.status).toBe('not-needed');
@@ -101,9 +118,9 @@ describe('the rule', () => {
     writeIndex(2);
     const { bookIndex } = await load();
 
-    bookIndex.markBookIndexStale('added'); // a new book
+    bookIndex.markBookIndexStale('written'); // a new book
     bookIndex.markBookIndexStale('removed'); // and one taken away
-    bookIndex.markBookIndexStale('added'); // and another new one
+    bookIndex.markBookIndexStale('written'); // and one replaced
 
     expect((await bookIndex.commitBookIndexReset()).status).toBe('reset');
     expect(indexPresent()).toBe(false);
@@ -134,7 +151,7 @@ describe('when things go wrong', () => {
   it.skipIf(!canBlockDeletes)('a failed deletion keeps the reset pending instead of forgetting it', async () => {
     writeIndex(1);
     const { bookIndex } = await load();
-    bookIndex.markBookIndexStale('added');
+    bookIndex.markBookIndexStale('written');
 
     fs.chmodSync(bookDir, 0o500); // can list, cannot unlink
     const result = await bookIndex.commitBookIndexReset();
@@ -152,7 +169,7 @@ describe('when things go wrong', () => {
     // The app is closed (or the pen pulled) straight after the add, before the batch could
     // finish. No chmod needed: the point is that the flag was persisted at the add, not at the
     // end of the batch, so it survives to the next session.
-    bookIndex.markBookIndexStale('added');
+    bookIndex.markBookIndexStale('written');
 
     vi.resetModules();
     const again = await load();
@@ -164,7 +181,7 @@ describe('when things go wrong', () => {
   it('keeps each pen\'s pending reset to itself', async () => {
     writeIndex(1);
     const { session, bookIndex } = await load();
-    bookIndex.markBookIndexStale('added');
+    bookIndex.markBookIndexStale('written');
 
     const other = path.join(tmp, 'OTHER-PEN');
     fs.mkdirSync(path.join(other, 'BOOK'), { recursive: true });
@@ -221,7 +238,7 @@ describe('the firmware upgrade', () => {
   it('settles a reset we owed, because it deletes the same two files', async () => {
     writeIndex(1);
     const { bookIndex } = await load();
-    bookIndex.markBookIndexStale('added');
+    bookIndex.markBookIndexStale('written');
 
     bookIndex.noteFirmwareClearedBookIndex();
 

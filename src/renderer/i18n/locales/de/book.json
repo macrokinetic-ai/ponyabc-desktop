@@ -147,8 +147,7 @@
   "catalogIntro": "Ein neues Buch gekauft? Suchen Sie es in dieser Liste und wählen Sie Hinzufügen.",
   "done": {
     "restartTitle": "Fertig!",
-    "restartBody": "Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern, während der Stift seine Bücher vorbereitet.",
-    "updatedOnly": "Fertig! Ihr Buch wurde aktualisiert."
+    "restartBody": "Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern, während der Stift seine Bücher vorbereitet."
   },
   "fix": {
     "title": "Die Bücherliste Ihres Stifts braucht einen Moment",
