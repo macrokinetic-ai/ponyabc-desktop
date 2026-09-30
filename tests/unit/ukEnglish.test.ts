@@ -76,9 +76,24 @@ describe('the English a customer reads is British English', () => {
     });
   }
 
-  for (const doc of ['docs/manual/PonyABC-Desktop-Guide-en.md', 'store-assets/whats-new-0.3.17.md']) {
+  // The printed manual and the quick start are the English source for both documents — the
+  // 繁體中文 versions are generated from them — so American spelling here reaches print.
+  const PRINTED = [
+    'docs/manual/design/user-guide.en.html',
+    'docs/manual/design/quick-start.en.html',
+    'store-assets/whats-new-0.3.17.md',
+    'store-assets/store-listing-0.3.17.md',
+  ];
+
+  for (const doc of PRINTED) {
     it(`${doc} uses no American spellings`, () => {
-      const text = withoutAllowedPhrases(fs.readFileSync(path.join(REPO, doc), 'utf8'));
+      const raw = fs.readFileSync(path.join(REPO, doc), 'utf8');
+      // Strip CSS and markup: `color`, `center` and `text-align` are properties, not prose.
+      const prose = raw
+        .replace(/<style>[\s\S]*?<\/style>/g, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<[^>]+>/g, ' ');
+      const text = withoutAllowedPhrases(prose);
       const offences = AMERICAN.flatMap(([pattern, better]) => {
         const hit = pattern.exec(text);
         return hit ? [`${doc} — "${hit[0]}" (use ${better})`] : [];
@@ -86,6 +101,41 @@ describe('the English a customer reads is British English', () => {
       expect(offences).toEqual([]);
     });
   }
+
+  it('the printed documents say the version and date, and point at the website', () => {
+    // Owner's rule in the design kit: every printed page carries the app version, and says
+    // that a printed guide may not show the newest one.
+    for (const doc of PRINTED.slice(0, 2)) {
+      const text = fs.readFileSync(path.join(REPO, doc), 'utf8');
+      expect(text).toContain('0.3.17');
+      expect(text).toContain('ponyabc.co.uk');
+    }
+  });
+
+  it('the printed documents never show a technical term to a parent', () => {
+    const FORBIDDEN = /\b(1\.BIN|BOOKFILE|checksum|SHA-?256|manifest|preflight|catalogue entry|OID)\b/i;
+    for (const doc of PRINTED.slice(0, 2)) {
+      const text = fs.readFileSync(path.join(REPO, doc), 'utf8');
+      const hit = FORBIDDEN.exec(text);
+      expect(hit ? `${doc}: ${hit[0]}` : null).toBeNull();
+    }
+  });
+
+  it('every visible English string in the printed documents has a 繁體中文 translation', () => {
+    const strings = JSON.parse(fs.readFileSync(path.join(REPO, 'docs/manual/design/strings.zh-Hant.json'), 'utf8'));
+    const ignorable = /^[\s\d.,:;·—→&%/()[\]\u00a0-]*$/;
+    for (const doc of PRINTED.slice(0, 2)) {
+      const raw = fs.readFileSync(path.join(REPO, doc), 'utf8')
+        .replace(/<style>[\s\S]*?<\/style>/g, ' ')
+        .replace(/<!--[\s\S]*?-->/g, ' ');
+      const missing = raw
+        .split(/<[^>]+>/)
+        .map((t) => t.replace(/&amp;/g, '&').replace(/&nbsp;/g, '\u00a0').trim())
+        .filter((t) => t && !ignorable.test(t))
+        .filter((t) => !(t in strings));
+      expect(missing).toEqual([]);
+    }
+  });
 });
 
 describe('dates and times', () => {

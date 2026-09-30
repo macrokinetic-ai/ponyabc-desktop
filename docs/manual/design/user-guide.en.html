@@ -1,0 +1,279 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><style>
+@font-face{font-family:Nunito;src:url(assets/Nunito-Regular.ttf);font-weight:400}
+@font-face{font-family:Nunito;src:url(assets/Nunito-Bold.ttf);font-weight:700}
+@font-face{font-family:Nunito;src:url(assets/Nunito-ExtraBold.ttf);font-weight:800}
+@font-face{font-family:Baloo;src:url(assets/Baloo2-ExtraBold.ttf);font-weight:800}
+@page{size:A4;margin:16mm 17mm 18mm;
+  @bottom-left{content:"PonyABC Desktop User Guide · App v0.3.17 · September 2026";font-family:Nunito;font-size:7.5pt;color:#9a8c7f}
+  @bottom-right{content:"Page " counter(page);font-family:Nunito;font-size:7.5pt;color:#9a8c7f}}
+@page cover{margin:0;@bottom-left{content:none}@bottom-right{content:none}}
+*{box-sizing:border-box}
+body{font-family:Nunito,sans-serif;color:#3a322b;font-size:10.2pt;line-height:1.5;margin:0}
+h1{font-family:Baloo;margin:0;line-height:1}
+h2{font-family:Baloo;font-size:17pt;margin:0 0 3mm;display:flex;align-items:center;gap:3mm;line-height:1.1;page-break-after:avoid}
+h3{font-family:Baloo;font-size:12pt;margin:5mm 0 1.5mm;page-break-after:avoid}
+.badge{display:inline-flex;width:10mm;height:10mm;border-radius:50%;color:#fff;align-items:center;justify-content:center;font-size:14pt;flex:none}
+.b1{background:#e8452c}.b2{background:#7b4b9a}.b3{background:#00a56e}.b4{background:#1ba9dc}.b5{background:#f5a623}
+section{page-break-before:always;position:relative}
+section.cont{page-break-before:auto;margin-top:9mm}
+p{margin:1.5mm 0}
+.lead{font-size:11pt}
+.btn{display:inline-block;border:1px solid #d9c5ae;background:#fff;border-radius:3mm;padding:0 1.8mm;font-weight:800;font-size:9pt;white-space:nowrap}
+.btnr{display:inline-block;background:#e8452c;color:#fff;border-radius:3mm;padding:0 1.9mm;font-weight:800;font-size:9pt;white-space:nowrap}
+.shot{display:block;width:84%;margin-left:auto!important;margin-right:auto!important;border-radius:3mm;border:1px solid #e6d8c6;margin:3mm 0 1mm}
+.shot.s{width:66%}
+.shot.xs{width:56%}
+.two .shot{width:100%}
+.cap{font-size:8.5pt;color:#8a7d71;text-align:center;margin-bottom:2mm}
+.tip{position:relative;border-radius:4mm;padding:3mm 4mm 3mm 19mm;margin:3.5mm 0;page-break-inside:avoid}
+.tip img{position:absolute;left:3.5mm;top:50%;transform:translateY(-50%);width:12mm}
+.tip b.t{font-family:Baloo;font-size:11pt;display:block;line-height:1.1;margin-bottom:.5mm}
+.cream{background:#fdf6ec}.pink{background:#fff0ec}.blue{background:#ecf7fc}.green{background:#eef8f2}.lilac{background:#f5effa}.peach{background:#fff6e6}
+ol,ul{margin:1.5mm 0;padding-left:6mm} li{margin:1.2mm 0}
+.say{border-left:1.2mm solid #e8452c;background:#fdf6ec;border-radius:0 3mm 3mm 0;padding:2mm 3.5mm;margin:2.5mm 0;font-weight:700}
+table{width:100%;border-collapse:separate;border-spacing:0 1.4mm;margin-top:2mm}
+td{padding:2mm 3mm;vertical-align:top;background:#fdf6ec}
+td:first-child{border-radius:3mm 0 0 3mm;font-weight:800;width:38%}
+td:last-child{border-radius:0 3mm 3mm 0}
+.qa{page-break-inside:avoid;margin:3mm 0}
+.qa b.q{font-family:Baloo;font-size:11.5pt;display:block;line-height:1.15}
+.qr{width:28mm;height:28mm;background:#fff;border-radius:3mm;padding:1.5mm}
+.qrl{font-size:8pt;font-weight:800;text-align:center}
+.two{display:flex;gap:6mm;align-items:flex-start}
+.two>div{flex:1}
+.paw{position:absolute;opacity:.9}
+/* cover */
+.cover{page:cover;position:relative;width:210mm;height:297mm;background:#fdf6ec;overflow:hidden}
+.contents{counter-reset:c}
+.contents div{display:flex;align-items:center;gap:2.5mm;margin:1.6mm 0;font-weight:700}
+.contents span{display:inline-flex;width:6.5mm;height:6.5mm;border-radius:50%;color:#fff;align-items:center;justify-content:center;font-family:Baloo;font-size:9pt}
+.helpcard{flex:1;position:relative;border-radius:5mm;padding:9mm 3mm 4mm;text-align:center}
+.hani{position:absolute;top:-6mm;left:50%;transform:translateX(-50%)}
+.ht{font-family:Baloo;font-size:12.5pt;margin-bottom:2mm}
+.helpcard .qr{width:32mm;height:32mm;padding:2mm}
+.hu{font-weight:800;color:#e8452c;font-size:11pt;margin-top:2mm;line-height:1.25}
+.hd{font-size:8.6pt;color:#6b5f55;margin-top:1.5mm;line-height:1.35}
+</style></head><body>
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <img class="paw" src="assets/paw-p.svg" style="width:16mm;left:150mm;top:20mm;transform:rotate(-15deg)">
+  <img class="paw" src="assets/paw-g.svg" style="width:13mm;left:172mm;top:40mm;transform:rotate(12deg)">
+  <img class="paw" src="assets/paw-b.svg" style="width:12mm;left:18mm;top:258mm;transform:rotate(-8deg)">
+  <img class="paw" src="assets/paw-o.svg" style="width:11mm;left:36mm;top:272mm;transform:rotate(18deg)">
+  <div style="position:absolute;left:20mm;top:26mm;right:20mm">
+    <img src="assets/logo-t.png" style="width:52mm;margin-left:-4mm">
+    <h1 style="font-size:40pt;margin-top:6mm">PonyABC Desktop</h1>
+    <h1 style="font-size:30pt;color:#e8452c;margin-top:1mm">User Guide</h1>
+    <div style="font-size:14pt;margin-top:5mm;font-weight:700">Books, recordings and pen updates — made simple.</div>
+    <div style="margin-top:3mm;color:#6b5f55">For the PonyABC P5 reading pen · App version 0.3.17 · September 2026</div>
+    <div style="margin-top:9mm;background:#fff;border-radius:5mm;padding:5mm 6mm;width:112mm">
+      <div style="font-family:Baloo;font-size:13pt;margin-bottom:2mm">What's inside</div>
+      <div class="contents">
+        <div><span class="b1">1</span>Getting started</div>
+        <div><span class="b2">2</span>Register your pen</div>
+        <div><span class="b3">3</span>Adding books to your pen</div>
+        <div><span class="b4">4</span>Switching your pen off and on</div>
+        <div><span class="b5">5</span>When your pen is running out of space</div>
+        <div><span class="b1">6</span>Your child's recordings</div>
+        <div><span class="b2">7</span>Updating your pen (Windows)</div>
+        <div><span class="b3">8</span>What the words mean</div>
+        <div><span class="b4">9</span>If something goes wrong</div>
+      </div>
+    </div>
+    <div style="margin-top:7mm;width:112mm;font-size:9.5pt;color:#6b5f55">The newest version of this guide is always at <b style="color:#e8452c">ponyabc.co.uk</b>. If your app looks a little different, you probably have a newer version — lucky you!</div>
+  </div>
+  <img src="assets/pony.svg" style="position:absolute;width:62mm;right:16mm;bottom:40mm">
+  <img src="assets/chick.svg" style="position:absolute;width:20mm;right:74mm;bottom:34mm">
+</div>
+
+<!-- ===== 1 ===== -->
+<section style="page-break-before:auto">
+  <h2><span class="badge b1">1</span>Getting started</h2>
+  <p class="lead">Hello! PonyABC Desktop helps you look after your P5 reading pen. It puts new books on the pen, keeps a safe copy of your child's recordings and keeps the pen itself up to date. You don't need any technical know-how.</p>
+  <div class="two" style="margin-top:4mm">
+    <div>
+      <h3 style="margin-top:0">Install the app</h3>
+      <ol>
+        <li>Open the <b>Microsoft Store</b> on your Windows computer.</li>
+        <li>Search for <b>PonyABC Desktop</b>, or scan the code.</li>
+        <li>Select <b>Get</b>, then <b>Open</b>. There's nothing else to set up.</li>
+      </ol>
+    </div>
+    <div style="flex:none;text-align:center"><img class="qr" src="assets/qr-store.png" style="border:1px solid #eee"><div class="qrl">Microsoft Store</div></div>
+  </div>
+  <h3>Connect your pen</h3>
+  <p>Plug the pen into your computer with the <b>USB cable</b> that came with it. Bluetooth on its own isn't enough: the pen needs to show up as a drive on your computer, and only a cable can do that. When everything's ready, the Home page says <b>“P5 pen connected”</b>.</p>
+  <img class="shot" src="screenshots/s-000.png">
+  <div class="tip pink"><img src="assets/chick.svg"><b class="t">Says “not connected”?</b>Try another USB socket or another cable. Some cables can only charge and can't carry data. Then click <span class="btn">Rescan</span>.</div>
+</section>
+
+<!-- ===== 2 ===== -->
+<section class="cont">
+  <h2><span class="badge b2">2</span>Register your pen</h2>
+  <div class="two" style="align-items:center">
+    <div>
+      <p>Your P5 pen is covered by a <b>1-year warranty</b> from the date of purchase. Registering takes a minute and helps us look after you if anything goes wrong.</p>
+      <p>Scan the code, visit <b style="color:#e8452c">register.ponyabc.uk</b>, or click <span class="btnr">Register your pen</span> on the app's Home page.</p>
+    </div>
+    <div style="flex:none;text-align:center"><img class="qr" src="assets/qr-reg.png" style="border:1px solid #eee"><div class="qrl">Scan to register</div></div>
+  </div>
+</section>
+
+<!-- ===== 3 ===== -->
+<section>
+  <h2><span class="badge b3">3</span>Adding books to your pen</h2>
+  <p>Open <span class="btn">BOOK Library</span>. One friendly line tells you what's waiting for your pen, for example:</p>
+  <div class="say">Your pen has 2 PonyABC books. 2 new books and 1 update are available. About 14 minutes.</div>
+  <p>Click <span class="btnr">Sync books</span>. That's all there is to it — there's no need to pick books, and books can't be removed by accident.</p>
+  <img class="shot" src="screenshots/s-002.png">
+  <p>While it works, keep the pen plugged in. The app shows <b>“Please don't unplug your pen”</b>, a progress bar and the time remaining.</p>
+  <div class="tip green"><img src="assets/cat.svg"><b class="t">Why does it take a while?</b>The pen copies at about 1 MB a second, so a large book can take around 20 minutes. The app tells you how long before it starts and counts down as it goes. Your computer won't nod off in the meantime, so feel free to put the kettle on.</div>
+  <h3>Already up to date?</h3>
+  <p>You'll see <b>“All your books are up to date.”</b> Nothing to do! Click <span class="btn">Check for new books</span> whenever you like.</p>
+  <img class="shot s" src="screenshots/s-003.png">
+</section>
+
+<!-- ===== 4 ===== -->
+<section>
+  <h2><span class="badge b4">4</span>Switching your pen off and on</h2>
+  <p>When books have been added or updated, the app finishes with <b>“All done!”</b>.</p>
+  <img class="shot s" src="screenshots/s-004.png">
+  <ol>
+    <li>Unplug the pen.</li>
+    <li>Switch it <b>off and on again</b>.</li>
+    <li>Leave it on until it responds. The first start after a sync takes a little longer while the pen gets its books ready — it's working, not stuck.</li>
+  </ol>
+  <p>Until the pen has restarted, new or updated books may not play.</p>
+  <div class="tip blue"><img src="assets/bunny.svg"><b class="t">Why every time?</b>Whenever books are added or updated, your pen rebuilds its list of books the next time it starts. Switching it off and on makes sure every book plays properly.</div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section class="cont">
+  <h2><span class="badge b5">5</span>When your pen is running out of space</h2>
+  <p>The app checks the space <b>before</b> it copies anything, so you're never left halfway. If there isn't enough room, it tells you exactly how much is needed.</p>
+  <img class="shot s" src="screenshots/s-005.png">
+  <ol>
+    <li>Click <span class="btn">Go to My Recordings</span>.</li>
+    <li>Back up your recordings to this computer.</li>
+    <li>Delete the ones you no longer need from the pen. Your backed-up copies stay safely on the computer.</li>
+    <li>Come back and click <span class="btnr">Sync books</span> again.</li>
+  </ol>
+  <div class="tip peach"><img src="assets/chick.svg"><b class="t">“We couldn't check your pen's free space”</b>Just unplug the pen, plug it in again and have another go. The app stops rather than guessing.</div>
+</section>
+
+<!-- ===== 6 ===== -->
+<section>
+  <h2><span class="badge b1">6</span>Your child's recordings</h2>
+  <p>Open <span class="btn">My Recordings</span>. The recordings on your pen are on the left; the backups kept on this computer are on the right.</p>
+  <h3>Back up my recordings</h3>
+  <p>Click <span class="btnr">Back up my recordings</span> to copy everything on the pen to this computer. It's a good idea to do this before deleting anything.</p>
+  <img class="shot s" src="screenshots/s-013.png">
+  <h3>Put them back on the pen</h3>
+  <p>Choose a backup and click <span class="btnr">Put these back on my pen</span>. If a sticker already has a recording, the app lets you listen to both and choose which to keep — it never decides for you.</p>
+  <img class="shot xs" src="screenshots/s-014.png">
+  <div class="two">
+    <div>
+      <h3>Rename</h3>
+      <p>Give a recording a name you'll recognise, such as “Mum's bedtime story”. The name is kept on this computer; the pen always uses the sticker number.</p>
+      <img class="shot" src="screenshots/s-015.png">
+    </div>
+    <div>
+      <h3>Change sticker number</h3>
+      <p>Move a recording to a different sticker. Type the number exactly as it's printed, including any zeros at the start.</p>
+      <img class="shot" src="screenshots/s-016.png">
+    </div>
+  </div>
+  <div class="tip lilac"><img src="assets/bunny.svg"><b class="t">Delete from pen</b>Don't worry — the app always saves a copy to this computer first.</div>
+</section>
+
+<!-- ===== 7 ===== -->
+<section>
+  <h2><span class="badge b2">7</span>Updating your pen (Windows)</h2>
+  <p>Every so often, the pen's own software gets an update. Open <span class="btn">Firmware</span> and follow the steps — the app takes you through them one at a time.</p>
+  <img class="shot s" src="screenshots/s-007.png">
+  <ul>
+    <li>Windows will ask for your permission part of the way through. Please choose <b>Yes</b> — the update can't continue otherwise.</li>
+    <li><b>Please don't unplug the pen or close the app</b> while it's updating.</li>
+    <li>When it has finished, switch the pen off and on, then try one of your books.</li>
+  </ul>
+  <img class="shot s" src="screenshots/s-010.png">
+  <div class="tip pink"><img src="assets/cat.svg"><b class="t">“The update did not start”</b>If something stops it before it begins — for example, choosing <b>No</b> at the Windows prompt — the app tells you plainly, and nothing on your pen has changed. Check it's still plugged in and try again.</div>
+</section>
+
+<!-- ===== 8 ===== -->
+<section>
+  <h2><span class="badge b3">8</span>What the words mean</h2>
+  <table>
+    <tr><td>Your pen is connected</td><td>The app can see your pen and can put books on it.</td></tr>
+    <tr><td>On your pen / Up to date</td><td>This book is on your pen and ready to use. Nothing to do.</td></tr>
+    <tr><td>Update available</td><td>There's a newer version of this book. <b>Sync books</b> replaces it, keeping the old one as a backup first.</td></tr>
+    <tr><td>Not on your pen yet</td><td>A PonyABC book that <b>Sync books</b> will add.</td></tr>
+    <tr><td>Downloading…</td><td>The book is being copied to this computer, then to your pen.</td></tr>
+    <tr><td>Checking…</td><td>The app is checking this book. It only takes a moment.</td></tr>
+    <tr><td>Something's not right — open for help</td><td>This one needs a closer look. Nothing is wrong with your pen; open it for help, or contact us.</td></tr>
+    <tr><td>Other books (not from PonyABC)</td><td>Books that came from somewhere else. The app never changes them.</td></tr>
+    <tr><td>All done!</td><td>The sync has finished. Unplug the pen and switch it off and on.</td></tr>
+  </table>
+  <p style="margin-top:3mm">You'll find the same list in the app under <b>What do these words mean?</b> on the BOOK Library page. <b>Advanced details</b> is there for our support team, if they ever ask you to open it.</p>
+</section>
+
+<!-- ===== 9 ===== -->
+<section class="cont">
+  <h2><span class="badge b4">9</span>If something goes wrong</h2>
+  <div class="qa"><b class="q">The app says my pen isn't connected.</b>Try the other end of the cable, a different USB socket and a different cable. Charge-only cables are very common and won't work.</div>
+  <div class="qa"><b class="q">A book I added doesn't play.</b>Switch the pen off and on and wait for it to finish starting. If it still won't play, open the app with the pen connected. If it offers <span class="btnr">Fix my pen's book list</span>, click it, then restart the pen again.
+    <img class="shot s" src="screenshots/s-018.png"></div>
+  <div class="qa"><b class="q">It says it couldn't check my pen's free space.</b>Unplug the pen, plug it in again and try once more.</div>
+  <div class="qa"><b class="q">It has been copying for a long time.</b>That's usually normal — a large book takes about 20 minutes. The progress bar moves slowly, but it does move.</div>
+  <div class="qa"><b class="q">Something else?</b>Go to <span class="btn">Settings</span> → <span class="btn">Export diagnostics</span> and email us the file it saves. It's a record of what the app did, which helps us work out what happened.</div>
+</section>
+
+<!-- ===== HELP ===== -->
+<section style="position:relative;height:255mm">
+  <img class="paw" src="assets/paw-p.svg" style="width:10mm;left:4mm;top:2mm;transform:rotate(-12deg)">
+  <img class="paw" src="assets/paw-o.svg" style="width:8mm;left:16mm;top:12mm;transform:rotate(14deg)">
+  <img class="paw" src="assets/paw-b.svg" style="width:9mm;right:6mm;top:6mm;transform:rotate(10deg)">
+  <div style="text-align:center;margin-top:8mm">
+    <img src="assets/logo-t.png" style="width:38mm">
+    <div style="font-family:Baloo;font-size:24pt;line-height:1.1;margin-top:2mm">We're here to help!</div>
+    <div style="font-size:11pt;margin-top:1.5mm;color:#6b5f55">Scan a code with your phone camera, or type the address.</div>
+  </div>
+
+  <div style="display:flex;gap:5mm;margin-top:9mm">
+    <div class="helpcard" style="background:#ecf7fc">
+      <img class="hani" src="assets/bunny.svg" style="width:13mm">
+      <div class="ht">Official website</div>
+      <img class="qr" src="assets/qr-web.png">
+      <div class="hu">ponyabc.co.uk</div>
+      <div class="hd">The latest app, this guide in 8 languages, news and help.</div>
+    </div>
+    <div class="helpcard" style="background:#fff0ec">
+      <img class="hani" src="assets/chick.svg" style="width:12mm">
+      <div class="ht">Register your pen</div>
+      <img class="qr" src="assets/qr-reg.png">
+      <div class="hu">register.ponyabc.uk</div>
+      <div class="hd">Activate your 1-year warranty. It only takes a minute.</div>
+    </div>
+    <div class="helpcard" style="background:#eef8f2">
+      <img class="hani" src="assets/cat.svg" style="width:13mm">
+      <div class="ht">Get the app</div>
+      <img class="qr" src="assets/qr-store.png">
+      <div class="hu" style="font-size:9.5pt">apps.microsoft.com/detail/<br>9P544XC6B609</div>
+      <div class="hd">PonyABC Desktop, free from the Microsoft Store for Windows.</div>
+    </div>
+  </div>
+
+  <div style="margin:8mm auto 0;width:120mm;background:#fdf6ec;border-radius:5mm;padding:4mm 5mm;text-align:center">
+    <div style="font-family:Baloo;font-size:13pt">Still stuck? Drop us a line</div>
+    <div style="font-weight:800;color:#e8452c;font-size:12pt;margin-top:1mm">marketing@ponyabc.co.uk</div>
+    <div style="font-size:9pt;color:#6b5f55;margin-top:1mm">Tip: attach the file from <b>Settings → Export diagnostics</b> and we can help much faster.</div>
+  </div>
+
+  <img src="assets/pony.svg" style="position:absolute;width:40mm;left:8mm;bottom:10mm">
+  <img class="paw" src="assets/paw-g.svg" style="width:9mm;left:52mm;bottom:14mm;transform:rotate(20deg)">
+  <img class="paw" src="assets/paw-r.svg" style="width:8mm;left:62mm;bottom:24mm;transform:rotate(-8deg)">
+  <div style="position:absolute;right:0;bottom:12mm;width:105mm;text-align:right;font-size:7.8pt;color:#9a8c7f">‘PonyABC’ is a registered trade mark.<br>© 2026 MACROKINETIC MEDIATECH LIMITED.<br>PonyABC Desktop User Guide · App version 0.3.17 · September 2026</div>
+</section>
+
+</body></html>

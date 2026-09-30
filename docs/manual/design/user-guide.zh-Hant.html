@@ -1,0 +1,286 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><style>
+@font-face{font-family:Nunito;src:url(assets/Nunito-Regular.ttf);font-weight:400}
+@font-face{font-family:Nunito;src:url(assets/Nunito-Bold.ttf);font-weight:700}
+@font-face{font-family:Nunito;src:url(assets/Nunito-ExtraBold.ttf);font-weight:800}
+@font-face{font-family:Baloo;src:url(assets/Baloo2-ExtraBold.ttf);font-weight:800}
+@page{size:A4;margin:16mm 17mm 18mm;
+  @bottom-left{content:"PonyABC Desktop User Guide · App v0.3.17 · September 2026";font-family:Nunito;font-size:7.5pt;color:#9a8c7f}
+  @bottom-right{content:"Page " counter(page);font-family:Nunito;font-size:7.5pt;color:#9a8c7f}}
+@page cover{margin:0;@bottom-left{content:none}@bottom-right{content:none}}
+*{box-sizing:border-box}
+body{font-family:Nunito,sans-serif;color:#3a322b;font-size:10.2pt;line-height:1.5;margin:0}
+h1{font-family:Baloo;margin:0;line-height:1}
+h2{font-family:Baloo;font-size:17pt;margin:0 0 3mm;display:flex;align-items:center;gap:3mm;line-height:1.1;page-break-after:avoid}
+h3{font-family:Baloo;font-size:12pt;margin:5mm 0 1.5mm;page-break-after:avoid}
+.badge{display:inline-flex;width:10mm;height:10mm;border-radius:50%;color:#fff;align-items:center;justify-content:center;font-size:14pt;flex:none}
+.b1{background:#e8452c}.b2{background:#7b4b9a}.b3{background:#00a56e}.b4{background:#1ba9dc}.b5{background:#f5a623}
+section{page-break-before:always;position:relative}
+section.cont{page-break-before:auto;margin-top:9mm}
+p{margin:1.5mm 0}
+.lead{font-size:11pt}
+.btn{display:inline-block;border:1px solid #d9c5ae;background:#fff;border-radius:3mm;padding:0 1.8mm;font-weight:800;font-size:9pt;white-space:nowrap}
+.btnr{display:inline-block;background:#e8452c;color:#fff;border-radius:3mm;padding:0 1.9mm;font-weight:800;font-size:9pt;white-space:nowrap}
+.shot{display:block;width:84%;margin-left:auto!important;margin-right:auto!important;border-radius:3mm;border:1px solid #e6d8c6;margin:3mm 0 1mm}
+.shot.s{width:66%}
+.shot.xs{width:56%}
+.two .shot{width:100%}
+.cap{font-size:8.5pt;color:#8a7d71;text-align:center;margin-bottom:2mm}
+.tip{position:relative;border-radius:4mm;padding:3mm 4mm 3mm 19mm;margin:3.5mm 0;page-break-inside:avoid}
+.tip img{position:absolute;left:3.5mm;top:50%;transform:translateY(-50%);width:12mm}
+.tip b.t{font-family:Baloo;font-size:11pt;display:block;line-height:1.1;margin-bottom:.5mm}
+.cream{background:#fdf6ec}.pink{background:#fff0ec}.blue{background:#ecf7fc}.green{background:#eef8f2}.lilac{background:#f5effa}.peach{background:#fff6e6}
+ol,ul{margin:1.5mm 0;padding-left:6mm} li{margin:1.2mm 0}
+.say{border-left:1.2mm solid #e8452c;background:#fdf6ec;border-radius:0 3mm 3mm 0;padding:2mm 3.5mm;margin:2.5mm 0;font-weight:700}
+table{width:100%;border-collapse:separate;border-spacing:0 1.4mm;margin-top:2mm}
+td{padding:2mm 3mm;vertical-align:top;background:#fdf6ec}
+td:first-child{border-radius:3mm 0 0 3mm;font-weight:800;width:38%}
+td:last-child{border-radius:0 3mm 3mm 0}
+.qa{page-break-inside:avoid;margin:3mm 0}
+.qa b.q{font-family:Baloo;font-size:11.5pt;display:block;line-height:1.15}
+.qr{width:28mm;height:28mm;background:#fff;border-radius:3mm;padding:1.5mm}
+.qrl{font-size:8pt;font-weight:800;text-align:center}
+.two{display:flex;gap:6mm;align-items:flex-start}
+.two>div{flex:1}
+.paw{position:absolute;opacity:.9}
+/* cover */
+.cover{page:cover;position:relative;width:210mm;height:297mm;background:#fdf6ec;overflow:hidden}
+.contents{counter-reset:c}
+.contents div{display:flex;align-items:center;gap:2.5mm;margin:1.6mm 0;font-weight:700}
+.contents span{display:inline-flex;width:6.5mm;height:6.5mm;border-radius:50%;color:#fff;align-items:center;justify-content:center;font-family:Baloo;font-size:9pt}
+.helpcard{flex:1;position:relative;border-radius:5mm;padding:9mm 3mm 4mm;text-align:center}
+.hani{position:absolute;top:-6mm;left:50%;transform:translateX(-50%)}
+.ht{font-family:Baloo;font-size:12.5pt;margin-bottom:2mm}
+.helpcard .qr{width:32mm;height:32mm;padding:2mm}
+.hu{font-weight:800;color:#e8452c;font-size:11pt;margin-top:2mm;line-height:1.25}
+.hd{font-size:8.6pt;color:#6b5f55;margin-top:1.5mm;line-height:1.35}
+
+@page{@bottom-left{content:"PonyABC Desktop 使用說明書 · 程式版本 0.3.17 · 2026 年 9 月"}
+      @bottom-right{content:"第 " counter(page) " 頁"}}
+@font-face{font-family:NotoTC;src:url(assets/NotoSansTC-Regular.ttf);font-weight:400}
+@font-face{font-family:NotoTC;src:url(assets/NotoSansTC-Bold.ttf);font-weight:700}
+body{font-family:NotoTC,sans-serif}
+h1,h2,h3,.big,.ht,.qa b.q,.tip b.t,.num,.badge,.contents span,.hu,.cap,.btn,.btnr{font-family:NotoTC;font-weight:700}
+</style></head><body>
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <img class="paw" src="assets/paw-p.svg" style="width:16mm;left:150mm;top:20mm;transform:rotate(-15deg)">
+  <img class="paw" src="assets/paw-g.svg" style="width:13mm;left:172mm;top:40mm;transform:rotate(12deg)">
+  <img class="paw" src="assets/paw-b.svg" style="width:12mm;left:18mm;top:258mm;transform:rotate(-8deg)">
+  <img class="paw" src="assets/paw-o.svg" style="width:11mm;left:36mm;top:272mm;transform:rotate(18deg)">
+  <div style="position:absolute;left:20mm;top:26mm;right:20mm">
+    <img src="assets/logo-t.png" style="width:52mm;margin-left:-4mm">
+    <h1 style="font-size:40pt;margin-top:6mm">PonyABC Desktop</h1>
+    <h1 style="font-size:30pt;color:#e8452c;margin-top:1mm">使用說明書</h1>
+    <div style="font-size:14pt;margin-top:5mm;font-weight:700">書本、錄音與點讀筆更新——簡單易用。</div>
+    <div style="margin-top:3mm;color:#6b5f55">適用於 PonyABC P5 點讀筆 · 程式版本 0.3.17 · 2026 年 9 月</div>
+    <div style="margin-top:9mm;background:#fff;border-radius:5mm;padding:5mm 6mm;width:112mm">
+      <div style="font-family:Baloo;font-size:13pt;margin-bottom:2mm">目錄</div>
+      <div class="contents">
+        <div><span class="b1">1</span>開始使用</div>
+        <div><span class="b2">2</span>註冊您的點讀筆</div>
+        <div><span class="b3">3</span>把書本放進點讀筆</div>
+        <div><span class="b4">4</span>將點讀筆關機再開啟</div>
+        <div><span class="b5">5</span>點讀筆空間不足時</div>
+        <div><span class="b1">6</span>孩子的錄音</div>
+        <div><span class="b2">7</span>更新點讀筆（Windows）</div>
+        <div><span class="b3">8</span>各個用語的意思</div>
+        <div><span class="b4">9</span>遇到問題時</div>
+      </div>
+    </div>
+    <div style="margin-top:7mm;width:112mm;font-size:9.5pt;color:#6b5f55">本說明書的最新版本，永遠可在 <b style="color:#e8452c">ponyabc.co.uk</b>取得。如果您的程式畫面稍有不同，多數是因為您用的是更新的版本。</div>
+  </div>
+  <img src="assets/pony.svg" style="position:absolute;width:62mm;right:16mm;bottom:40mm">
+  <img src="assets/chick.svg" style="position:absolute;width:20mm;right:74mm;bottom:34mm">
+</div>
+
+<!-- ===== 1 ===== -->
+<section style="page-break-before:auto">
+  <h2><span class="badge b1">1</span>開始使用</h2>
+  <p class="lead">歡迎使用。PonyABC Desktop 協助您照顧 P5 點讀筆：把新書放進點讀筆、為孩子的錄音保存副本，並讓點讀筆本身保持最新。使用時不需要任何技術知識。</p>
+  <div class="two" style="margin-top:4mm">
+    <div>
+      <h3 style="margin-top:0">安裝程式</h3>
+      <ol>
+        <li>開啟 <b>Microsoft Store</b> （Windows 電腦內）。</li>
+        <li>搜尋 <b>PonyABC Desktop</b>，或掃描右方二維碼。</li>
+        <li>按 <b>取得</b>，然後按 <b>開啟</b>。之後不需要任何設定。</li>
+      </ol>
+    </div>
+    <div style="flex:none;text-align:center"><img class="qr" src="assets/qr-store.png" style="border:1px solid #eee"><div class="qrl">Microsoft Store</div></div>
+  </div>
+  <h3>連接點讀筆</h3>
+  <p>請用點讀筆隨附的 <b>USB 線</b> 接到電腦。只用藍牙並不足夠：點讀筆必須在電腦上顯示為一個磁碟，而這只有用線連接才做得到。連接成功後，首頁會顯示 <b>「P5 點讀筆已連接」</b>。</p>
+  <img class="shot" src="screenshots/s-000.png">
+  <div class="tip pink"><img src="assets/chick.svg"><b class="t">顯示「未連接」？</b>請換一個 USB 插口或換一條線。有些線只供充電，無法傳輸資料。然後按 <span class="btn">重新偵測</span>。</div>
+</section>
+
+<!-- ===== 2 ===== -->
+<section class="cont">
+  <h2><span class="badge b2">2</span>註冊您的點讀筆</h2>
+  <div class="two" style="align-items:center">
+    <div>
+      <p>您的 P5 點讀筆享有 <b>一年保養</b> ，由購買日起計。登記只需一分鐘，日後如有問題，我們也能更快為您跟進。</p>
+      <p>請掃描二維碼、前往 <b style="color:#e8452c">register.ponyabc.uk</b>，或在程式首頁按 <span class="btnr">註冊您的點讀筆</span> 。</p>
+    </div>
+    <div style="flex:none;text-align:center"><img class="qr" src="assets/qr-reg.png" style="border:1px solid #eee"><div class="qrl">掃描即可登記</div></div>
+  </div>
+</section>
+
+<!-- ===== 3 ===== -->
+<section>
+  <h2><span class="badge b3">3</span>把書本放進點讀筆</h2>
+  <p>開啟 <span class="btn">BOOK 資料庫</span>。程式會用一句話說明點讀筆有甚麼可以更新，例如：</p>
+  <div class="say">點讀筆內有 2 本 PonyABC 書本。可加入 2 本新書，另有 1 項更新。約需 14 分鐘。</div>
+  <p>按 <span class="btnr">同步書本</span>，這樣就可以了。您不需要逐本挑選，也不會誤刪任何書本。</p>
+  <img class="shot" src="screenshots/s-002.png">
+  <p>進行期間，請保持點讀筆連接電腦。程式會顯示 <b>「請勿拔出點讀筆」</b>、進度列和剩餘時間。</p>
+  <div class="tip green"><img src="assets/cat.svg"><b class="t">為甚麼需要一段時間？</b>點讀筆每秒只能寫入約 1 MB，所以一本較大的書本可能需要二十分鐘左右。程式會在開始前告訴您大約需時多久，過程中也會倒數。期間電腦不會進入睡眠，您可以先做別的事。</div>
+  <h3>如果全部已是最新</h3>
+  <p>畫面會顯示 <b>「所有書本已是最新。」</b> 不需要任何操作。想再檢查一次，隨時可按 <span class="btn">檢查有沒有新書</span> 。</p>
+  <img class="shot s" src="screenshots/s-003.png">
+</section>
+
+<!-- ===== 4 ===== -->
+<section>
+  <h2><span class="badge b4">4</span>將點讀筆關機再開啟</h2>
+  <p>只要同步有把書本加入或更新，完成後都會顯示 <b>「完成！」</b>。</p>
+  <img class="shot s" src="screenshots/s-004.png">
+  <ol>
+    <li>拔出點讀筆。</li>
+    <li>將它 <b>關機再開啟</b>。</li>
+    <li>讓它開著，直到有反應為止。同步後的第一次開機會比平時慢，因為點讀筆正在準備書本，並非當機。</li>
+  </ol>
+  <p>在重新開機之前，新加入或剛更新的書本可能無法正常播放。</p>
+  <div class="tip blue"><img src="assets/bunny.svg"><b class="t">為甚麼每次都要？</b>每當有書本加入或更新，點讀筆都會在下次開機時重新整理自己的書本清單。關機再開啟，就能確保每本書都正常播放。</div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section class="cont">
+  <h2><span class="badge b5">5</span>點讀筆空間不足時</h2>
+  <p>程式會在複製任何內容 <b>之前</b> 先檢查空間，避免做到一半才出問題。空間不足時，程式會明確告訴您尚欠多少。</p>
+  <img class="shot s" src="screenshots/s-005.png">
+  <ol>
+    <li>按 <span class="btn">前往「我的錄音」</span>。</li>
+    <li>把錄音備份到這部電腦。</li>
+    <li>從點讀筆刪除不再需要的錄音。已備份的副本會安全保留在電腦上。</li>
+    <li>回到此頁，再按一次 <span class="btnr">同步書本</span> 。</li>
+  </ol>
+  <div class="tip peach"><img src="assets/chick.svg"><b class="t">「無法檢查點讀筆的剩餘空間」</b>請拔出點讀筆，重新插入後再試一次。程式寧可停下來，也不會憑猜測繼續。</div>
+</section>
+
+<!-- ===== 6 ===== -->
+<section>
+  <h2><span class="badge b1">6</span>孩子的錄音</h2>
+  <p>開啟 <span class="btn">我的錄音</span>。左邊是點讀筆內的錄音，右邊是保存在這部電腦的備份。</p>
+  <h3>備份我的錄音</h3>
+  <p>按 <span class="btnr">備份我的錄音</span> ，把點讀筆內的錄音全部複製到這部電腦。刪除任何錄音前，建議先做這一步。</p>
+  <img class="shot s" src="screenshots/s-013.png">
+  <h3>放回點讀筆</h3>
+  <p>選擇一個備份，然後按 <span class="btnr">放回點讀筆</span>。如果該貼紙號碼已有錄音，程式會讓您試聽兩段再選擇保留哪一段，不會代您決定。</p>
+  <img class="shot xs" src="screenshots/s-014.png">
+  <div class="two">
+    <div>
+      <h3>改名</h3>
+      <p>為錄音改一個您認得的名稱，例如「媽媽唸的晚安故事」。名稱只儲存在這部電腦，點讀筆一律使用貼紙號碼。</p>
+      <img class="shot" src="screenshots/s-015.png">
+    </div>
+    <div>
+      <h3>更改貼紙號碼</h3>
+      <p>把錄音移到另一張貼紙。請照貼紙上印的號碼準確輸入，包括開頭的 0。</p>
+      <img class="shot" src="screenshots/s-016.png">
+    </div>
+  </div>
+  <div class="tip lilac"><img src="assets/bunny.svg"><b class="t">從點讀筆刪除</b>不用擔心：程式一定會先在電腦保存副本，才會刪除。</div>
+</section>
+
+<!-- ===== 7 ===== -->
+<section>
+  <h2><span class="badge b2">7</span>更新點讀筆（Windows）</h2>
+  <p>點讀筆本身的軟件偶爾需要更新。請開啟 <span class="btn">韌體</span> ，然後按指示操作，程式會逐步引導您完成。</p>
+  <img class="shot s" src="screenshots/s-007.png">
+  <ul>
+    <li>過程中 Windows 會要求您授權，請選擇 <b>是</b> ，否則更新無法繼續。</li>
+    <li><b>更新期間請勿拔出點讀筆，也不要關閉程式</b> 。</li>
+    <li>完成後，請將點讀筆關機再開啟，並試播一本書。</li>
+  </ul>
+  <img class="shot s" src="screenshots/s-010.png">
+  <div class="tip pink"><img src="assets/cat.svg"><b class="t">「更新未有開始」</b>如果更新在開始前就停下來——例如在 Windows 的提示中選了 <b>否</b> ——程式會清楚告訴您，而點讀筆不會有任何改動。請確認點讀筆仍然連接，然後再試一次。</div>
+</section>
+
+<!-- ===== 8 ===== -->
+<section>
+  <h2><span class="badge b3">8</span>各個用語的意思</h2>
+  <table>
+    <tr><td>點讀筆已連接</td><td>程式可以看到點讀筆，並可寫入書本。</td></tr>
+    <tr><td>已在點讀筆內／已是最新</td><td>這本書已在點讀筆內，可以使用，不需處理。</td></tr>
+    <tr><td>有更新版本</td><td>這本書有較新版本。按 <b>同步書本</b> 即會更換，原有檔案會先備份。</td></tr>
+    <tr><td>尚未放進點讀筆</td><td>一本 PonyABC 書本，按 <b>同步書本</b> 即會加入。</td></tr>
+    <tr><td>下載中⋯</td><td>正在把書本複製到這部電腦，然後放進點讀筆。</td></tr>
+    <tr><td>檢查中⋯</td><td>程式正在檢查這本書，只需片刻。</td></tr>
+    <tr><td>有點不對勁——展開以取得協助</td><td>這一項需要進一步查看。您的點讀筆沒有問題；請展開查看說明，或與我們聯絡。</td></tr>
+    <tr><td>其他書本（並非來自 PonyABC）</td><td>來自其他來源的書本，程式不會作任何改動。</td></tr>
+    <tr><td>完成！</td><td>同步已完成。請拔出點讀筆，並關機再開啟。</td></tr>
+  </table>
+  <p style="margin-top:3mm">程式內也有同一份說明，位於 BOOK 資料庫頁面的 <b>這些字是甚麼意思？</b> 一節。 <b>進階資料</b> 則供客服請您展開時使用。</p>
+</section>
+
+<!-- ===== 9 ===== -->
+<section class="cont">
+  <h2><span class="badge b4">9</span>遇到問題時</h2>
+  <div class="qa"><b class="q">程式顯示未連接點讀筆。</b>請試換線的另一端、換一個 USB 插口，或換一條線。市面上有不少只供充電的線，無法傳輸資料。</div>
+  <div class="qa"><b class="q">新加入的書本無法播放。</b>請將點讀筆關機再開啟，並等它完成啟動。若仍然無法播放，請在連接點讀筆的情況下開啟程式；如果出現 <span class="btnr">整理點讀筆的書本清單</span>，請按下它，然後再次重新開機。
+    <img class="shot s" src="screenshots/s-018.png"></div>
+  <div class="qa"><b class="q">程式顯示無法檢查剩餘空間。</b>請拔出點讀筆，重新插入後再試一次。</div>
+  <div class="qa"><b class="q">複製了很久仍未完成。</b>這通常是正常的，一本較大的書本約需二十分鐘。進度列移動得慢，但確實在移動。</div>
+  <div class="qa"><b class="q">其他問題？</b>請前往 <span class="btn">設定</span> → <span class="btn">匯出診斷紀錄</span> ，並把儲存的檔案電郵給我們。檔案記錄了程式做過的事，有助我們判斷發生了甚麼。</div>
+</section>
+
+<!-- ===== HELP ===== -->
+<section style="position:relative;height:255mm">
+  <img class="paw" src="assets/paw-p.svg" style="width:10mm;left:4mm;top:2mm;transform:rotate(-12deg)">
+  <img class="paw" src="assets/paw-o.svg" style="width:8mm;left:16mm;top:12mm;transform:rotate(14deg)">
+  <img class="paw" src="assets/paw-b.svg" style="width:9mm;right:6mm;top:6mm;transform:rotate(10deg)">
+  <div style="text-align:center;margin-top:8mm">
+    <img src="assets/logo-t.png" style="width:38mm">
+    <div style="font-family:Baloo;font-size:24pt;line-height:1.1;margin-top:2mm">我們樂意為您提供協助</div>
+    <div style="font-size:11pt;margin-top:1.5mm;color:#6b5f55">用手機相機掃描二維碼，或直接輸入網址。</div>
+  </div>
+
+  <div style="display:flex;gap:5mm;margin-top:9mm">
+    <div class="helpcard" style="background:#ecf7fc">
+      <img class="hani" src="assets/bunny.svg" style="width:13mm">
+      <div class="ht">官方網站</div>
+      <img class="qr" src="assets/qr-web.png">
+      <div class="hu">ponyabc.co.uk</div>
+      <div class="hd">最新程式、八種語言的完整說明書、消息與支援。</div>
+    </div>
+    <div class="helpcard" style="background:#fff0ec">
+      <img class="hani" src="assets/chick.svg" style="width:12mm">
+      <div class="ht">註冊您的點讀筆</div>
+      <img class="qr" src="assets/qr-reg.png">
+      <div class="hu">register.ponyabc.uk</div>
+      <div class="hd">啟用一年保養，只需一分鐘。</div>
+    </div>
+    <div class="helpcard" style="background:#eef8f2">
+      <img class="hani" src="assets/cat.svg" style="width:13mm">
+      <div class="ht">下載程式</div>
+      <img class="qr" src="assets/qr-store.png">
+      <div class="hu" style="font-size:9.5pt">apps.microsoft.com/detail/<br>9P544XC6B609</div>
+      <div class="hd">PonyABC Desktop，可於 Windows 的 Microsoft Store 免費下載。</div>
+    </div>
+  </div>
+
+  <div style="margin:8mm auto 0;width:120mm;background:#fdf6ec;border-radius:5mm;padding:4mm 5mm;text-align:center">
+    <div style="font-family:Baloo;font-size:13pt">仍然未能解決？歡迎聯絡我們</div>
+    <div style="font-weight:800;color:#e8452c;font-size:12pt;margin-top:1mm">marketing@ponyabc.co.uk</div>
+    <div style="font-size:9pt;color:#6b5f55;margin-top:1mm">小提示：請附上 <b>設定 → 匯出診斷紀錄</b> 所儲存的檔案，我們可以更快為您跟進。</div>
+  </div>
+
+  <img src="assets/pony.svg" style="position:absolute;width:40mm;left:8mm;bottom:10mm">
+  <img class="paw" src="assets/paw-g.svg" style="width:9mm;left:52mm;bottom:14mm;transform:rotate(20deg)">
+  <img class="paw" src="assets/paw-r.svg" style="width:8mm;left:62mm;bottom:24mm;transform:rotate(-8deg)">
+  <div style="position:absolute;right:0;bottom:12mm;width:105mm;text-align:right;font-size:7.8pt;color:#9a8c7f">「PonyABC」為註冊商標。<br>© 2026 MACROKINETIC MEDIATECH LIMITED.<br>PonyABC Desktop 使用說明書 · 程式版本 0.3.17 · 2026 年 9 月</div>
+</section>
+
+</body></html>
