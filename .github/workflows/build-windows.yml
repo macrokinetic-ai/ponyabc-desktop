@@ -70,7 +70,11 @@ jobs:
 
       # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
       # built by a separate command without them, so it shows a plain version number — see
-      # formatBuildLabel in src/shared/appVariant.ts.
+      # formatBuildLabel in src/shared/appVariant.ts. That package build must not rebuild this
+      # installer: `pack:win:appx` is pinned to `--win appx` because `--win` alone also rebuilt
+      # the NSIS .exe, from an unstamped bundle, on top of the stamped one already sitting in
+      # release/ (and refreshed its checksum to match). rc4 shipped that way. See the stamp
+      # check on the finished installers further down, which is what now catches it.
       # Read the bytes that would ship, and refuse if anything internal is in them.
       - name: "Store build: prove it contains no developer path"
         run: |
@@ -561,61 +565,51 @@ jobs:
           path: release/screenshots/*.png
           if-no-files-found: error
 
-      # --- 5. FUNCTIONAL PROBE: firmware wizard plumbing (elevation / working dir / log / --------
-      #        recovery marker) — harmless stand-in tool, NEVER a real vendor binary or a pen. ----
-      - name: "Store package: firmware wizard plumbing probe (harmless stand-in, no vendor tool/pen)"
-        shell: pwsh
-        run: |
-          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          # Same reasoning as the launch-verification step above: resolve the real executable from
-          # the installed manifest, not a directory listing (WindowsApps' ACLs block that).
-          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
-          $ns3 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
-          $ns3.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
-          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns3).GetAttribute('Executable')
-          $exePath = Join-Path $installed.InstallLocation $exeRelPath
-          $probeOutput = Join-Path $env:RUNNER_TEMP 'msix-firmware-probe-result.json'
-          if (Test-Path $probeOutput) { Remove-Item $probeOutput -Force }
-
-          # These are inherited by the child process Start-Process below launches (default Win32
-          # CreateProcess behavior — no special flag needed) — this is the ONLY thing that tells
-          # the packaged app to run the probe instead of its normal startup.
-          $env:PONYABC_MSIX_FIRMWARE_PROBE = '1'
-          $env:PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT = $probeOutput
-
-          Write-Host 'Launching the installed package with the firmware plumbing probe enabled...'
-          Write-Host 'NOTE: this probe triggers a REAL UAC elevation prompt (for a harmless local stand-in script, never a vendor tool). In this non-interactive CI session nothing can click "Yes" — a timeout here is an expected, informative outcome, not a build failure.'
-          $proc = Start-Process -FilePath $exePath -PassThru
-          $exited = $proc.WaitForExit(150000)
-
-          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE -ErrorAction SilentlyContinue
-          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT -ErrorAction SilentlyContinue
-
-          if (-not $exited) {
-            Write-Host '::warning::Probe process did not exit within 150s — most likely a blocked/hung interactive UAC consent prompt with no one able to click it in this CI session. Killing the process tree; this specific question (does the real UAC prompt work under MSIX) needs the real-machine test, not CI.'
-            & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
-          }
-
-          "## Firmware wizard plumbing probe" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          if (Test-Path $probeOutput) {
-            $resultJson = Get-Content -Path $probeOutput -Raw
-            Write-Host '----- Probe result JSON -----'
-            Write-Host $resultJson
-            "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            '```json' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            $resultJson | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          } else {
-            Write-Host '::warning::No probe result file was produced.'
-            "`nNo result file was produced (process exited or was killed before writing output — see the warning above)." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          }
-        # Deliberately not `if: always()`-guarded or fatal: a timeout/inconclusive result here is
-        # real, useful information to report, not a reason to fail the whole workflow run.
-        continue-on-error: true
+      # --- 5. (WAS: a firmware-plumbing probe against the installed Store package.) -----------
+      #
+      # It cannot run here any more, and that is the intended consequence of a decision rather
+      # than something broken: the probe was switched on by an environment variable, and the
+      # Store build now contains no environment switches at all (owner, 2026-09-30). Run
+      # 36742931878 is the proof — the step launched the app, waited its full 150s, killed it
+      # and produced no result, because nothing in the package was listening for the switch.
+      #
+      # What it asked — does the firmware plumbing work inside a real MSIX package — depended on
+      # a UAC consent prompt that no non-interactive CI session can ever click, so it is now
+      # asked on a real machine instead: docs/test-plans/internal-testing.md, check D. The
+      # Internal build still carries the probe for anyone running it locally.
 
       # --- 6. CLEANUP — runs the ACTUAL delivered 3-cleanup.ps1, validating its thumbprint-scoped
       #        removal logic for real (this run's cert should show certImportedByUs=true and get
       #        removed; a pre-existing cert never would). -------------------------------------------
+      # The earlier stamp check reads release/win-unpacked, which is scratch space: every later
+      # packaging command rewrites it, and one of them used to rewrite the installer too. This
+      # one opens the finished .exe files themselves — the exact bytes about to become Release
+      # assets — and reads the stamp back out of the app.asar inside each. A tester who cannot
+      # tell a candidate from the Store version by looking at Settings has no way to report a
+      # bug against the right build, so an unstamped candidate is a failed build, not a warning.
+      - name: "Installers: read the stamp back out of the finished files"
+        if: steps.rc.outputs.value != ''
+        shell: pwsh
+        run: |
+          $rc = '${{ steps.rc.outputs.value }}'
+          $short = $env:GITHUB_SHA.Substring(0, 7)
+          # Both installers, whatever they are called: the Store build and the Internal build.
+          $exes = @(Get-ChildItem 'release/*.exe' | Where-Object { $_.Name -notlike '*uninstaller*' })
+          if ($exes.Count -ne 2) {
+            throw "expected 2 installers in release/, found $($exes.Count): $($exes.Name -join ', ')"
+          }
+          foreach ($exe in $exes) {
+            $dir = Join-Path $env:RUNNER_TEMP ("stampcheck-" + $exe.BaseName)
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+            & 7z x -o"$dir" $exe.FullName 'resources/app.asar' -y | Out-Null
+            $asar = Join-Path $dir 'resources/app.asar'
+            if (-not (Test-Path $asar)) { throw "could not read the packaged app out of $($exe.Name)" }
+            if (-not (Select-String -Path $asar -Pattern $short -Encoding utf8 -Quiet)) {
+              throw "$($exe.Name) does not carry the stamp $rc / $short, so Settings would show a plain version number — which is what the Microsoft Store build shows. A tester could not tell the two apart."
+            }
+            Write-Host "$($exe.Name) carries $rc / $short."
+          }
+
       # Everything this version is, in one place. The owner's rule (2026-09-30) is that no
       # record of a version may live only on the Mac mini, so a dispatched candidate build
       # publishes the installer, the Store package, both checksums, the tester's README, the

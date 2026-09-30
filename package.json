@@ -15,7 +15,7 @@
     "pack:mac:x64": "electron-builder --mac --x64 -c electron-builder.mac-x64.yml && node scripts/checksum.mjs",
     "dist:win": "npm run build && electron-builder --win && node scripts/checksum.mjs",
     "dist:win:appx": "npm run build && npm run pack:win:appx",
-    "pack:win:appx": "electron-builder --win --config electron-builder.win-appx.yml && node scripts/checksum.mjs",
+    "pack:win:appx": "electron-builder --win appx --config electron-builder.win-appx.yml && node scripts/checksum.mjs",
     "build:store": "node scripts/build-flavour.mjs store",
     "build:internal": "node scripts/build-flavour.mjs internal",
     "dist:win:internal": "npm run build:internal && electron-builder --win --config electron-builder.win-internal.yml && node scripts/checksum.mjs"

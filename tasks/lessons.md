@@ -796,3 +796,20 @@ the zip flat.
 actually receive — the extracted folder, not the file list in the workflow. For
 `upload-artifact` specifically, every path in one artifact should share the directory you want
 to be the root.
+
+## Check the file you are about to hand over, not the one you built
+
+CI stamped the release candidate into the installer, checked the stamp, and passed. Two steps
+later the Store-package command rebuilt the installer from an unstamped bundle on top of it and
+refreshed its checksum to match, and rc4 went out with a Settings screen reading a plain
+`0.3.17` — indistinguishable from the Microsoft Store version, in a build whose whole purpose
+was to be distinguishable. Every step was green. The check had been true when it ran.
+
+**Why:** `release/` is scratch space that later steps keep writing to, and
+`electron-builder --win --config <appx>.yml` builds the config's target *plus* the default NSIS
+one. A check against an intermediate proves the intermediate, and says nothing about what the
+Release ends up serving.
+
+**How to apply:** verify the artefact that is actually published, as late as possible and by
+opening it — unpack the finished installer and read the value back out. Downloading the
+published asset and inspecting it is the only check that cannot be invalidated by a later step.
