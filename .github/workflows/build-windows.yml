@@ -71,6 +71,12 @@ jobs:
       # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
       # built by a separate command without them, so it shows a plain version number — see
       # formatBuildLabel in src/shared/appVariant.ts.
+      # Read the bytes that would ship, and refuse if anything internal is in them.
+      - name: "Store build: prove it contains no developer path"
+        run: |
+          npm run build:store
+          node scripts/check-store-build.mjs
+
       - name: "Store build: installer + Store package"
         run: npm run dist:win
         env:
