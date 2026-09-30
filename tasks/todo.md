@@ -59,10 +59,14 @@ again. The commit belongs at the boundary, in main.
 
 ## FIRMWARE
 
-- [ ] 9. Internal: keep the folder picker AND check online for newer firmware for this hardware,
-      offering "Download and update" with a progress bar. Store: online only — confirm the
-      folder picker is absent.
-- [ ] 10. Show the pen's current firmware version if it can be read; say so plainly if not.
+- [x] 9. Confirmed already true and now pinned: the online check is in BOTH builds (it was
+      never behind `@internal`), and the by-hand picker is Internal-only — absent from the
+      Store bundle by aliasing, checked against the built artefact.
+- [x] 10. It cannot be read — traced again: every scripted path in the vendor toolkit is
+      write-only, and `penFirmwareVersionVerified` is a literal `false` for that reason. The
+      screen now says so **always** (it used to say it only when the catalogue had answered),
+      and adds the one thing the app knows for certain: the version it installed itself, and
+      when — labelled as that and not as a reading from the pen.
 
 ## TEST PLAN
 

@@ -54,6 +54,7 @@ import { checkForUpdates, openLatestReleasePage } from './updates';
 import {
   acknowledgeFirmwareOutcome,
   cancelFirmwareDownload,
+  firmwareLastInstalled,
   exportFirmwareDiagnostics,
   getFirmwareRecoveryStatus,
   getOfficialFirmwareRelease,
@@ -200,6 +201,7 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.firmwareRecoveryRecheck, () => recheckFirmwareRecovery());
 
   ipcMain.handle(IPC.firmwareGetOfficialRelease, () => getOfficialFirmwareRelease());
+  ipcMain.handle(IPC.firmwareLastInstalled, () => firmwareLastInstalled());
   ipcMain.handle(IPC.firmwarePrepareOfficialPackage, (_event, params) => prepareOfficialFirmwarePackage(getWindow(), params));
   ipcMain.handle(IPC.firmwareCancelDownload, () => cancelFirmwareDownload());
   ipcMain.handle(IPC.firmwareDiagnosticsExport, () => exportFirmwareDiagnostics(getWindow()));

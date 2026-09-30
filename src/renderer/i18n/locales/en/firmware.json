@@ -98,5 +98,12 @@
     "checkAgainButton": "Check again",
     "startedAt": "Upgrade attempt started: {{time}}",
     "lastChecked": "Last checked: {{time}}"
+  },
+  "onPen": {
+    "title": "The version on your pen",
+    "cannotRead": "Your pen does not report which firmware version it is running, so this app cannot show it.",
+    "lastInstalled": "The last version this app installed was {{version}}, on {{when}}.",
+    "lastInstalledNone": "This app has not installed a firmware version on a pen yet.",
+    "notTheSame": "That is what this app did — not a reading from the pen in your hand. A pen updated on another computer, or before you got it, will be running something this app has never seen."
   }
 }

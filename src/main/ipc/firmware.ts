@@ -45,6 +45,7 @@ import {
   redactSessionRecordForExport,
   startFirmwareSession,
   type FirmwareSessionHandle,
+  lastInstalledFirmware,
 } from '../services/firmwareSessionLog';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
@@ -659,4 +660,15 @@ export async function exportFirmwareDiagnostics(window: BrowserWindow): Promise<
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }
+}
+
+/**
+ * The newest firmware version this app finished installing, and when.
+ *
+ * Not "the pen's version": nothing reads a pen. The screen says which of the two it is showing,
+ * because the difference matters — a pen that was flashed on another computer, or by the shop,
+ * has a version this app has never heard of.
+ */
+export function firmwareLastInstalled(): { version: string; atMs: number } | null {
+  return lastInstalledFirmware(app.getPath('userData'));
 }

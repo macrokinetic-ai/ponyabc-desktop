@@ -211,6 +211,10 @@ export interface FirmwareSessionSummary {
    *  reached, meaning the app was closed/crashed/lost power mid-upgrade. */
   interrupted: boolean;
   outcomeStatus: FirmwareSessionRecord['outcomeStatus'];
+  /** The version this session was installing. NOT a claim about what is on any pen now — see
+   *  penFirmwareVersionVerified above, which is always false and always will be until the
+   *  vendor toolkit grows a read. */
+  firmwareVersion: string | null;
 }
 
 function toSummary(record: FirmwareSessionRecord): FirmwareSessionSummary {
@@ -220,7 +224,25 @@ function toSummary(record: FirmwareSessionRecord): FirmwareSessionSummary {
     endedAtMs: record.endedAtMs,
     interrupted: record.endedAtMs === null,
     outcomeStatus: record.outcomeStatus,
+    firmwareVersion: record.firmwareVersion,
   };
+}
+
+/**
+ * The newest version this app finished installing, and when.
+ *
+ * Deliberately not called "the pen's version". Nothing here reads a pen: this is what the app
+ * did, from its own records, and the screen says so in those words. It is the closest honest
+ * answer to "which version is on my pen" that exists today, and the difference between the two
+ * is the whole reason this logging system is shaped the way it is.
+ */
+export function lastInstalledFirmware(userDataPath: string): { version: string; atMs: number } | null {
+  for (const s of listFirmwareSessions(userDataPath)) {
+    if (s.outcomeStatus === 'success' && s.firmwareVersion) {
+      return { version: s.firmwareVersion, atMs: s.endedAtMs ?? s.startedAtMs };
+    }
+  }
+  return null;
 }
 
 /** Newest-first. Tolerant of unreadable/corrupt individual session files — skips them rather

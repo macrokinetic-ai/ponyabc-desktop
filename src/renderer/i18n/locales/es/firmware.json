@@ -98,5 +98,12 @@
     "checkAgainButton": "Comprobar de nuevo",
     "startedAt": "Intento de actualización iniciado: {{time}}",
     "lastChecked": "Última comprobación: {{time}}"
+  },
+  "onPen": {
+    "title": "La versión de su lápiz",
+    "cannotRead": "Su lápiz no informa de la versión de firmware que utiliza, por lo que esta aplicación no puede mostrarla.",
+    "lastInstalled": "La última versión que instaló esta aplicación fue {{version}}, el {{when}}.",
+    "lastInstalledNone": "Esta aplicación todavía no ha instalado ninguna versión de firmware en un lápiz.",
+    "notTheSame": "Eso es lo que hizo esta aplicación, no una lectura del lápiz que tiene en la mano. Un lápiz actualizado en otro ordenador, o antes de que usted lo tuviera, funcionará con una versión que esta aplicación nunca ha visto."
   }
 }

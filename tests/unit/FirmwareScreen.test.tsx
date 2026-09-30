@@ -68,6 +68,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     prepareOfficialFirmwarePackage: vi.fn(async () => ({ status: 'no-network', message: 'offline' }) as const),
     onFirmwareDownloadProgress: vi.fn(() => () => {}),
     cancelFirmwareDownload: vi.fn(async () => ({ ok: false })),
+    firmwareLastInstalled: vi.fn(async () => null),
     exportFirmwareDiagnostics: vi.fn(async () => ({ status: 'cancelled' }) as const),
     onFirmwareProgress: vi.fn((listener) => {
       progressListener = listener;
@@ -105,7 +106,11 @@ afterEach(() => {
   cleanup();
 });
 
-function renderScreen() {
+function renderScreen(overrides: Record<string, unknown> = {}) {
+  if (Object.keys(overrides).length > 0) {
+    // @ts-expect-error — test-only global shim for the preload bridge
+    window.ponyabc = { ...mockPonyAbc(), ...overrides };
+  }
   render(
     <PenRootProvider>
       <FirmwareScreen onNavigate={navigateMock} />
@@ -626,5 +631,39 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
     renderScreen();
     await screen.findByText('Prepare your pen');
     expect(screen.queryByText('An earlier update may still be running')).toBeNull();
+  });
+});
+
+/**
+ * The version question, asked by the owner after testing rc5: "show the pen's current firmware
+ * version if it can be read; if not, say so plainly."
+ *
+ * It cannot be read. Every scripted path in the vendor toolkit is write-only (traced in
+ * firmwareUpgrade.ts, and `penFirmwareVersionVerified` in firmwareSessionLog.ts is a literal
+ * `false` so that a future accident is a compile error). So the screen says so, and then says
+ * the one thing the app does know: what it installed itself. These tests exist to stop those two
+ * claims ever being merged into one.
+ */
+describe('FirmwareScreen — the version on the pen', () => {
+  it('says plainly that the pen does not report its version, before any catalogue answer', async () => {
+    renderScreen({ firmwareGetOfficialRelease: vi.fn(async () => ({ status: 'no-network' })) });
+
+    await screen.findByText('The version on your pen');
+    await screen.findByText(/does not report which firmware version it is running/);
+  });
+
+  it('says so when the app has installed nothing yet, rather than showing a blank', async () => {
+    renderScreen({ firmwareLastInstalled: vi.fn(async () => null) });
+    await screen.findByText('This app has not installed a firmware version on a pen yet.');
+  });
+
+  it('shows what the app itself installed, and says that is not a reading from the pen', async () => {
+    renderScreen({
+      firmwareLastInstalled: vi.fn(async () => ({ version: 'V1.26', atMs: Date.UTC(2026, 8, 30, 12, 0, 0) })),
+    });
+
+    await screen.findByText(/The last version this app installed was V1\.26/);
+    // The distinction, in as many words.
+    await screen.findByText(/not a reading from the pen in your hand/);
   });
 });

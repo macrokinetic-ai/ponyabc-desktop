@@ -98,5 +98,12 @@
     "checkAgainButton": "Erneut prüfen",
     "startedAt": "Update-Versuch gestartet: {{time}}",
     "lastChecked": "Zuletzt geprüft: {{time}}"
+  },
+  "onPen": {
+    "title": "Die Version auf Ihrem Stift",
+    "cannotRead": "Ihr Stift meldet nicht, welche Firmware-Version er verwendet, deshalb kann diese App sie nicht anzeigen.",
+    "lastInstalled": "Die letzte Version, die diese App installiert hat, war {{version}}, am {{when}}.",
+    "lastInstalledNone": "Diese App hat noch keine Firmware-Version auf einen Stift installiert.",
+    "notTheSame": "Das ist, was diese App getan hat — keine Auskunft des Stifts in Ihrer Hand. Ein Stift, der an einem anderen Computer aktualisiert wurde oder schon vorher, läuft mit einer Version, die diese App nie gesehen hat."
   }
 }

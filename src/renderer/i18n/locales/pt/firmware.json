@@ -98,5 +98,12 @@
     "checkAgainButton": "Verificar novamente",
     "startedAt": "Tentativa de atualização iniciada: {{time}}",
     "lastChecked": "Última verificação: {{time}}"
+  },
+  "onPen": {
+    "title": "A versão na sua caneta",
+    "cannotRead": "A sua caneta não indica que versão do firmware está a usar, por isso esta aplicação não a consegue mostrar.",
+    "lastInstalled": "A última versão que esta aplicação instalou foi {{version}}, em {{when}}.",
+    "lastInstalledNone": "Esta aplicação ainda não instalou nenhuma versão de firmware numa caneta.",
+    "notTheSame": "Isto é o que esta aplicação fez — não uma leitura da caneta que tem na mão. Uma caneta atualizada noutro computador, ou antes de a receber, estará a usar uma versão que esta aplicação nunca viu."
   }
 }

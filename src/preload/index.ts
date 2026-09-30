@@ -156,6 +156,7 @@ const api: PonyAbcApi = {
     ipcRenderer.invoke(IPC.firmwarePrepareOfficialPackage, { release }) as Promise<FirmwarePrepareResult>,
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => subscribe(IPC.firmwareDownloadProgress, listener),
   cancelFirmwareDownload: () => ipcRenderer.invoke(IPC.firmwareCancelDownload) as Promise<{ ok: boolean }>,
+  firmwareLastInstalled: () => ipcRenderer.invoke(IPC.firmwareLastInstalled),
   exportFirmwareDiagnostics: () => ipcRenderer.invoke(IPC.firmwareDiagnosticsExport) as Promise<DiagnosticsExportResult>,
 };
 

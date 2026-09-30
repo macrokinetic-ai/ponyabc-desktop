@@ -58,6 +58,7 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
   const [preparing, setPreparing] = useState(false);
   const [prepareResult, setPrepareResult] = useState<FirmwarePrepareResult | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<FirmwareDownloadProgressEvent | null>(null);
+  const [lastInstalled, setLastInstalled] = useState<{ version: string; atMs: number } | null | undefined>(undefined);
   // No automatic hardware-revision detection exists — the app hardcodes a single hardware_rev
   // in every /api/public/firmware query (HARDWARE_REV_CONST), regardless of which pen is
   // actually connected (real registered serials exist for BOTH v1 and v2 today). This is a
@@ -99,6 +100,14 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
     if (isMac) return;
     return window.ponyabc.onFirmwareProgress((event) => setProgress(event));
   }, [isMac]);
+
+  // Re-read after an upgrade finishes, so the figure is the one that was just installed.
+  useEffect(() => {
+    void window.ponyabc
+      .firmwareLastInstalled()
+      .then(setLastInstalled)
+      .catch(() => setLastInstalled(null));
+  }, [outcome]);
 
   useEffect(() => {
     if (isMac) return;
@@ -329,6 +338,29 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
           </li>
         ))}
       </ol>
+
+      {/* The version question, answered honestly and always — not only when the catalogue
+          happened to answer. The pen does not report its own firmware version (traced through
+          the vendor toolkit: every scripted path is write-only, see firmwareUpgrade.ts), so this
+          says so, and then says the one thing the app does know for certain: what it installed
+          itself, and when. The two are deliberately not presented as the same claim. */}
+      <section className="note-box">
+        <h2>{t('onPen.title')}</h2>
+        <p>{t('onPen.cannotRead')}</p>
+        {lastInstalled === undefined ? null : lastInstalled === null ? (
+          <p className="hint">{t('onPen.lastInstalledNone')}</p>
+        ) : (
+          <>
+            <p className="hint">
+              {t('onPen.lastInstalled', {
+                version: lastInstalled.version,
+                when: formatDate(i18n.language, lastInstalled.atMs),
+              })}
+            </p>
+            <p className="hint">{t('onPen.notTheSame')}</p>
+          </>
+        )}
+      </section>
 
       {step === 'prepare' && (
         <section>

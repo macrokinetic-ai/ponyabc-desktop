@@ -120,3 +120,24 @@ describe('the technical log — Store build', () => {
     }
   });
 });
+
+/**
+ * Item 9: the Internal build keeps the by-hand folder picker AND the online check; the Store
+ * build has the online check only.
+ *
+ * The online check is not behind `@internal` at all — both builds have it, which is the point.
+ * The picker is, so this is the same "same names, nothing behind them" check the rest of the
+ * internal surface gets. scripts/check-store-build.mjs proves the absence against the built
+ * bundle; this proves the two module shapes cannot drift.
+ */
+describe('the by-hand firmware folder picker', () => {
+  it('is a real dialog in the Internal build and a no-op in the Store build', async () => {
+    const internal = await import('../../src/main/internal/index');
+    const stub = await import('../../src/main/internal/stub');
+
+    expect(typeof internal.pickFirmwareFolder).toBe('function');
+    expect(typeof stub.pickFirmwareFolder).toBe('function');
+    // No dialog, no path, nothing to select — whatever it is handed.
+    await expect(stub.pickFirmwareFolder(undefined as never)).resolves.toBeNull();
+  });
+});

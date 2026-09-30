@@ -98,5 +98,12 @@
     "checkAgainButton": "Vérifier à nouveau",
     "startedAt": "Tentative de mise à jour démarrée : {{time}}",
     "lastChecked": "Dernière vérification : {{time}}"
+  },
+  "onPen": {
+    "title": "La version sur votre stylo",
+    "cannotRead": "Votre stylo n’indique pas la version du micrologiciel qu’il utilise ; cette application ne peut donc pas l’afficher.",
+    "lastInstalled": "La dernière version installée par cette application était {{version}}, le {{when}}.",
+    "lastInstalledNone": "Cette application n’a encore installé aucune version de micrologiciel sur un stylo.",
+    "notTheSame": "C’est ce que cette application a fait, et non une lecture du stylo que vous avez en main. Un stylo mis à jour sur un autre ordinateur, ou avant que vous l’ayez, utilisera une version que cette application n’a jamais vue."
   }
 }

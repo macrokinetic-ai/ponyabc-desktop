@@ -1057,6 +1057,8 @@ export interface PonyAbcApi {
   prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
   cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
+  /** What this app last installed — never a claim about what a pen is running now. */
+  firmwareLastInstalled: () => Promise<{ version: string; atMs: number } | null>;
   /** Settings → Support → "Export firmware diagnostic logs". Exports the recent structured
    *  per-attempt session logs (see src/main/services/firmwareSessionLog.ts) — separate from
    *  exportDiagnostics() above, which exports the general, capped app-wide diagnostics log.

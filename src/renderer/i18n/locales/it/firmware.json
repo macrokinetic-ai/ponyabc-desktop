@@ -98,5 +98,12 @@
     "checkAgainButton": "Verifica di nuovo",
     "startedAt": "Tentativo di aggiornamento avviato: {{time}}",
     "lastChecked": "Ultima verifica: {{time}}"
+  },
+  "onPen": {
+    "title": "La versione sulla tua penna",
+    "cannotRead": "La tua penna non comunica quale versione del firmware sta usando, quindi questa app non può mostrarla.",
+    "lastInstalled": "L’ultima versione installata da questa app è stata {{version}}, il {{when}}.",
+    "lastInstalledNone": "Questa app non ha ancora installato nessuna versione del firmware su una penna.",
+    "notTheSame": "Questo è ciò che ha fatto questa app, non una lettura dalla penna che hai in mano. Una penna aggiornata su un altro computer, o prima che tu l’avessi, starà usando una versione che questa app non ha mai visto."
   }
 }
