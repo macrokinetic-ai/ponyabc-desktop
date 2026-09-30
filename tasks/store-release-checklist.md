@@ -1,131 +1,61 @@
-# Microsoft Store release checklist — PonyABC Desktop
+# Releases: what gets published, where, and when
 
-Store ID **9P544XC6B609** · `https://apps.microsoft.com/detail/9P544XC6B609`
-Currently live: **APPX 0.3.16.0** (source commit `f39df08`, tagged `v0.3.16`).
+**The rule, owner decision 2026-09-30.** A version number becomes a GitHub Release in two
+stages, and the second one waits for Microsoft.
 
-Derived from §13 of `docs/store/PonyABC-Microsoft-Store-AI-Handover.md`, corrected
-against the repo on 2026-09-29.
+| Stage | What exists | Marked |
+|---|---|---|
+| Testing | `vX.Y.Z-rcN` pre-release, one per test build the owner is asked to try | **Pre-release**, never Latest |
+| In the Store | `vX.Y.Z` release, created **only after Microsoft Store approval** | Latest |
 
-**Division of labour, and it is absolute:**
+**A final `vX.Y.Z` Release is never created before the Store has approved that version.** The
+reason is that the tag becomes the thing people point at: if it exists while the Store still has
+the previous version, the newest link in the repository is for software nobody can install, and
+a tester cannot tell which build the customers have. Until approval, the newest thing on the
+Releases page is a pre-release, which reads as exactly what it is.
 
-|                      |                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **Claude / AI does** | repo, version bumps, build config, CI, package verification, checksums, release notes drafts, this checklist  |
-| **You do**           | every Partner Center action — logging in, uploading, filling fields, submitting, and pressing **Publish now** |
+Nothing is ever submitted to Partner Center from here. Submission is a person, signed in, by
+hand.
 
-An AI must never log in to Partner Center, upload a package, submit for certification, or
-publish. Nothing in this file authorises it.
+## Publishing a test build (rcN)
 
----
+1. Push to `release/X.Y.Z` and wait for **Build Windows EXE + Store package** to go green.
+   Dispatch it with the `rc` input set to the candidate number — `rc2`, `rc3` — so the build
+   stamps itself. The app then shows `0.3.17 (rc2, <commit>)` in **Settings → Version**, and
+   the Store build still shows a plain `0.3.17`.
+2. Download the run's `windows-installer` artifact. It holds three files:
+   the `.exe`, its `.sha256` and `READ-ME-FIRST.txt`.
+3. Check the checksum locally (`shasum -a 256 -c *.sha256`) before publishing it to anyone.
+4. Create the pre-release on the exact commit the build came from:
 
-## Phase 1 — before any code changes (AI)
+   ```
+   gh release create vX.Y.Z-rcN --target <full commit sha> \
+     --title "vX.Y.Z-rcN — test build" --notes-file notes.md \
+     --prerelease --latest=false \
+     PonyABC-Desktop-*.exe PonyABC-Desktop-*.exe.sha256 READ-ME-FIRST.txt
+   ```
 
-- [ ] `git status`; confirm nothing uncommitted is about to be lost. **Never discard the
-      user's work.**
-- [ ] Confirm `main` contains everything that shipped last time:
-      `git merge-base --is-ancestor v0.3.16 main` must succeed.
-- [ ] Note the currently published version from `store-assets/PUBLISHED-STORE-VERSION`.
-- [ ] Create `release/<next-version>` from `main`.
+5. The notes say, in plain UK English: **Test build — not for customers**, what to download,
+   what Windows will warn and which two words to click, what is new for a tester, and what to
+   look at. Never a changelog of commits.
 
-## Phase 2 — version (AI)
+## Publishing a Store version (vX.Y.Z)
 
-- [ ] Bump `package.json` to the new version; regenerate `package-lock.json`.
-- [ ] The APPX manifest version is **derived** — electron-builder appends `.0`, so
-      `0.3.17` → `0.3.17.0`. Do not hand-edit a manifest.
-- [ ] The new version **must be strictly higher** than `PUBLISHED-STORE-VERSION`.
-      Partner Center rejects anything equal or lower. CI now enforces this.
-- [ ] **Never change** these four. They are the product's identity in the Store:
+Only once Partner Center reports the submission as **published**:
 
-      | Field | Value |
-      | --- | --- |
-      | Identity/Name | `PonyABC.PonyABCDesktop` |
-      | Identity/Publisher | `CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5` |
-      | PublisherDisplayName | `PonyABC` |
-      | Store ID | `9P544XC6B609` |
+1. Tag the exact commit that was submitted, if it is not tagged already.
+2. `gh release create vX.Y.Z --verify-tag --latest`, titled `vX.Y.Z — Microsoft Store version`.
+3. Attach the archived `.appx` and its `.sha256` from `store-assets/` — the same bytes that
+   were submitted, so a later build can be compared against what customers actually have.
+4. The notes say plainly that customers should install from the Store, and that the attachment
+   is an archive.
+5. Update `tasks/PM-STATUS.md`: published version, source commit, provenance.
 
-      CI asserts all three manifest values and fails the build on any mismatch.
+## What is on the Releases page today
 
-## Phase 3 — build and verify the PACKAGE, not the sources (AI)
+| Release | What it is |
+|---|---|
+| `v0.3.16` | The Microsoft Store version, live since 2026-09-28. Latest. Archive of the submitted `.appx`. |
+| `v0.3.17-rc1` | The first 0.3.17 test build, from `69e4412`. Pre-release. Predates the build stamp, so it shows a plain `0.3.17` in Settings. |
 
-Run the Windows CI build (`build-windows.yml`, `workflow_dispatch` or a push to `main`).
-It extracts the final `.appx` and fails the build on any of:
-
-- [ ] manifest identity ≠ the four values above
-- [ ] manifest `Identity/Version` ≠ `package.json` version + `.0`
-- [ ] version not higher than `PUBLISHED-STORE-VERSION`
-- [ ] any manifest-referenced tile/logo/scale asset missing from the package
-- [ ] any packaged asset matching a known electron-builder default (by SHA-256)
-- [ ] `resources.pri` missing (scaled assets not indexed)
-- [ ] `.sha256` sidecar missing or not matching the `.appx`
-- [ ] `build/icon.ico` missing, too small, or ≠ `build/icon.ico.sha256.expected`
-
-Then, still AI:
-
-- [ ] Record the APPX SHA-256 and the CI run URL in the release notes.
-- [ ] Download the CI artifact and confirm it is byte-identical to whatever you hand over
-      — this is how `v0.3.16`'s provenance was proven, and it takes one command.
-- [ ] Run the test suite and the Mac build if the change touches shared code.
-- [ ] **Icons changed?** Also eyeball the rendered tiles. CI proves assets exist and are
-      not defaults; it cannot tell you they look right.
-
-## Phase 4 — merge and tag (AI)
-
-- [ ] Merge `release/<version>` into `main` (show conflicts before resolving anything
-      non-trivial).
-- [ ] Tag the **exact commit CI built from**, annotated with: CI run id, artifact name,
-      APPX SHA-256. Push the tag.
-- [ ] ⚠️ Pushing a `v*` tag triggers `build-windows.yml` and it can attach artefacts to a
-      **GitHub Release**. That is GitHub only — it cannot reach the Microsoft Store — but
-      expect the run and tell the user.
-
-## Phase 5 — Partner Center (YOU — the user, alone)
-
-The AI's part is finished. It can read you these steps; it must not perform them.
-
-- [ ] Partner Center → the product → **Start update** (do not create a new product).
-- [ ] **Packages** → upload the new `.appx` → wait for validation.
-- [ ] The previous package appears struck through with a "Save to remove" prompt. That is
-      expected when the new package serves the same customers.
-- [ ] Device families: **Windows 10/11 Desktop only**. Leave Mobile / Xbox / Team / Mixed
-      Reality unchecked, and leave the "automatically extend to future device families"
-      box unchecked.
-- [ ] `runFullTrust` may raise an approval warning — the justification is in handover §8.
-- [ ] **Save.**
-- [ ] Update **What's new** for this version. (It may be blank only on a first submission.)
-- [ ] **Additional Testing Information**: keep the existing hardware/UAC testing notes and
-      append anything specific to this release. Reviewers rely on this.
-- [ ] Re-check anything the change touched: Store listing, screenshots, age rating,
-      Properties. Leave the rest alone.
-- [ ] **Submit for certification.**
-- [ ] Wait for certification. "Packages Validated" is **not** certification, and
-      "Complete" only means the form is filled in.
-- [ ] Once certified, if the release is on manual hold, press **Publish now**. Certified ≠
-      published.
-- [ ] Confirm **In Microsoft Store**, then open
-      `https://apps.microsoft.com/detail/9P544XC6B609` and check it returns 200.
-- [ ] **Install from the real Store on a real machine and run it.** Still never done for
-      any release. Publishing is not proof the product works.
-
-## Phase 6 — after publishing (AI, once you confirm)
-
-- [ ] Update `store-assets/PUBLISHED-STORE-VERSION` to the newly published version, so the
-      next build's "must increase" check has the right baseline.
-- [ ] Record in `tasks/todo.md`: version, source commit, CI run, APPX SHA-256, publish
-      date.
-- [ ] Confirm the release tag is pushed and reachable.
-
-## The four ways a release has gone wrong here
-
-Every one of these actually happened, or came one step from happening:
-
-1. **Default Electron tile art shipped** → certification failure 10.1.1.11 (v0.3.15). The
-   EXE icon was already correct; the APPX tiles were not. They are separate assets, and a
-   Store-listing logo upload fixes neither.
-2. **The fix was never merged to `main`.** For six days after publishing, `main` had no
-   `build/appx`, no `electron-builder.win-appx.yml`, no asset generator, and version
-   `0.3.15`. A release cut from `main` would have reproduced the rejection exactly.
-3. **Version lower than published.** `main` read `0.3.15` while `0.3.16.0` was live.
-   Partner Center refuses it. Now blocked by CI.
-4. **Source assets verified instead of the package.** `build/appx/` being correct says
-   nothing about what ended up inside the `.appx`. Always extract and check the real
-   container.
+`v0.3.17` itself does not exist yet, and must not until the Store has approved 0.3.17.

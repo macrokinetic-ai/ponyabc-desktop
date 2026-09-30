@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-30 09:50 BST** · by Claude Code · after the book-index rule change
+Last updated: **2026-09-30 13:20 BST** · by Claude Code · after the GitHub Releases round
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -27,6 +27,22 @@ Convention: ✅ verified by someone actually checking · ⚠️ needs attention 
 
 History worth not repeating: v0.3.15 was **rejected** under policy 10.1.1.11 (On Device
 Tiles) for shipping default Electron tile art. Fixed in v0.3.16.
+
+### Releases (owner decision, 2026-09-30) — `tasks/store-release-checklist.md`
+
+Test builds now live on the repo's Releases page, members only:
+
+| Release | What it is |
+| --- | --- |
+| **`v0.3.16`** | The Microsoft Store version, marked **Latest**, with the submitted `.appx` archived on it |
+| **`v0.3.17-rc1`** | The first 0.3.17 test build, from `69e4412`, marked **Pre-release** — `.exe`, `.sha256`, `READ-ME-FIRST.txt` |
+
+**A final `v0.3.17` Release is created only after Microsoft Store approval** — never before, so
+the newest thing in the repository is never software nobody can install. Each further test build
+is the next `rcN`, published the same way. Nothing is submitted to Partner Center from here.
+
+Since rc2, a test build **stamps itself**: Settings → Version shows `0.3.17 (rc2, <commit>)`,
+while the Store build, built without the stamp, shows a plain `0.3.17`. rc1 predates this.
 
 ## 2. Current development
 

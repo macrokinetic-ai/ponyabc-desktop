@@ -6,6 +6,13 @@ export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     resolve: { alias: { '@shared': resolve('src/shared') } },
+    // Stamped into the build so a tester can tell one 0.3.17 from another. Both are empty
+    // unless the build sets them, which is why the Microsoft Store build — built by the same
+    // command without them — shows a plain version number. See formatBuildLabel.
+    define: {
+      __PONYABC_BUILD_TAG__: JSON.stringify(process.env.PONYABC_BUILD_TAG ?? ''),
+      __PONYABC_BUILD_COMMIT__: JSON.stringify((process.env.PONYABC_BUILD_COMMIT ?? '').slice(0, 7)),
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

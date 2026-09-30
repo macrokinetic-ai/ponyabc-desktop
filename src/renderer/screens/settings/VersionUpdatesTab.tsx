@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { identifyAppVariant } from '@shared/appVariant';
+import { formatBuildLabel, identifyAppVariant } from '@shared/appVariant';
 import type { AppInfo, UpdateCheckResult } from '@shared/types';
 
 /**
@@ -38,13 +38,15 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
   }
 
   const variant = appInfo ? identifyAppVariant(appInfo.platform, appInfo.arch, appInfo.isWindowsStore) : null;
+  // A test build says which candidate it is; the Store build shows a plain version number.
+  const versionLabel = appInfo ? formatBuildLabel(appInfo.version, appInfo.buildTag, appInfo.buildCommit) : '';
   const variantLabel = variant ? (variant.labelKey ? t(variant.labelKey) : t('about.variantUnknown')) : '';
 
   async function handleCopy() {
     if (!appInfo || !variant) return;
     const text = [
       `${t('about.title')}`,
-      `${t('about.versionLabel')}: ${appInfo.version}`,
+      `${t('about.versionLabel')}: ${versionLabel}`,
       `${t('about.typeLabel')}: ${variantLabel}`,
       `${t('about.identifierLabel')}: ${variant.identifier}`,
     ].join('\n');
@@ -66,7 +68,7 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
         <>
           <dl className="about-info">
             <dt>{t('about.versionLabel')}</dt>
-            <dd>{appInfo.version}</dd>
+            <dd>{versionLabel}</dd>
             <dt>{t('about.typeLabel')}</dt>
             <dd>{variantLabel}</dd>
             <dt>{t('about.identifierLabel')}</dt>

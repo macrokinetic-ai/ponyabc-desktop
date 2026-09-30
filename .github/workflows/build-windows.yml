@@ -5,6 +5,11 @@ on:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      rc:
+        description: 'Release candidate to stamp into the .exe, e.g. rc2. Leave empty for an unstamped build; the Store package is never stamped.'
+        required: false
+        default: ''
 
 permissions:
   contents: write # only needed to attach the installer to a GitHub Release on a tag push
@@ -48,7 +53,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
+      # built by a separate command without them, so it shows a plain version number — see
+      # formatBuildLabel in src/shared/appVariant.ts.
       - run: npm run dist:win
+        env:
+          PONYABC_BUILD_TAG: ${{ inputs.rc }}
+          PONYABC_BUILD_COMMIT: ${{ github.sha }}
 
       # Copied INTO release/ rather than listed from store-assets/ in the upload below:
       # upload-artifact roots the zip at the least common ancestor of its paths, so mixing the

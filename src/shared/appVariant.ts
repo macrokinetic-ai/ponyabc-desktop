@@ -12,6 +12,30 @@ export interface AppInfo {
    *  mac and on the plain NSIS-installed Windows build; not a build-time flag, so it can't
    *  drift out of sync with how the app actually launched. */
   isWindowsStore: boolean;
+  /** Which release candidate this build is, e.g. 'rc1' — set at build time and empty for
+   *  every build a customer can get. See formatBuildLabel. */
+  buildTag: string;
+  /** The short commit the build came from. Only ever shown alongside a buildTag. */
+  buildCommit: string;
+}
+
+/**
+ * What the Settings page shows as the version.
+ *
+ * A tester may have three builds of "0.3.17" on the same machine in a week, and a bug report
+ * against the wrong one costs more than it saves. A test build therefore says which candidate
+ * it is and which commit it came from — "0.3.17 (rc1, 69e4412)" — while the build a customer
+ * installs from the Microsoft Store says only "0.3.17", because none of the rest is their
+ * business. The stamp is set when the installer is built; an unstamped build is, by
+ * definition, one nobody labelled as a candidate.
+ */
+export function formatBuildLabel(version: string, buildTag?: string, buildCommit?: string): string {
+  // Tolerant of absent fields on purpose: this is the screen someone opens when something is
+  // already wrong, and a missing stamp should cost them a suffix, not the whole page.
+  const tag = (buildTag ?? '').trim();
+  if (!tag) return version;
+  const commit = (buildCommit ?? '').trim();
+  return commit ? `${version} (${tag}, ${commit})` : `${version} (${tag})`;
 }
 
 export type KnownVariantIdentifier = 'mac-arm64' | 'mac-x64' | 'win-x64' | 'win-x64-msix';

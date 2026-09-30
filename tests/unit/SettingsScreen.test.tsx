@@ -28,7 +28,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     onTransferProgress: vi.fn(() => () => {}),
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
-    getAppInfo: vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'arm64' })),
+    getAppInfo: vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'arm64', isWindowsStore: false, buildTag: '', buildCommit: '' })),
     checkForUpdates: vi.fn(async () => ({ status: 'up-to-date', currentVersion: '0.2.2' })),
     openLatestReleasePage: vi.fn(async () => ({ ok: true })),
     getDiagnosticsSummary: vi.fn(async () => ({ appVersion: '0.2.2', platform: 'darwin', arch: 'arm64', entries: [] })),
@@ -81,14 +81,14 @@ describe('SettingsScreen — Version & Updates (default tab)', () => {
   });
 
   it('shows Mac · Intel / mac-x64 for an x64 build — even when this reflects Rosetta, not host hardware', async () => {
-    window.ponyabc.getAppInfo = vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'x64' }));
+    window.ponyabc.getAppInfo = vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'x64', isWindowsStore: false, buildTag: '', buildCommit: '' }));
     render(<SettingsScreen />);
     await waitFor(() => expect(screen.getByText('Mac · Intel')).toBeTruthy());
     expect(screen.getByText('mac-x64')).toBeTruthy();
   });
 
   it('shows Windows · x64 / win-x64 for a win32/x64 build', async () => {
-    window.ponyabc.getAppInfo = vi.fn(async () => ({ version: '0.2.2', platform: 'win32', arch: 'x64' }));
+    window.ponyabc.getAppInfo = vi.fn(async () => ({ version: '0.2.2', platform: 'win32', arch: 'x64', isWindowsStore: false, buildTag: '', buildCommit: '' }));
     render(<SettingsScreen />);
     await waitFor(() => expect(screen.getByText('Windows · x64')).toBeTruthy());
     expect(screen.getByText('win-x64')).toBeTruthy();
