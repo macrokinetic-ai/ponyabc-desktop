@@ -81,9 +81,12 @@ function renderPanel(overrides: Record<string, unknown> = {}) {
 }
 
 describe('adding recordings from this computer', () => {
-  it('explains the naming rule in plain words, with an example', async () => {
+  it('explains the naming rule in plain words, with an example and no file extension', async () => {
     renderPanel();
-    await screen.findByText(/four digits, like 0451\.mp3, or five/);
+    await screen.findByText(/four digits, like 0451, or five/);
+    // Windows hides file extensions by default, so "name it 0451" is both plainer and what a
+    // teacher actually types. The picker adds the rest.
+    expect(document.body.textContent).not.toMatch(/\.mp3/);
   });
 
   it('marks one as new and the other as a replacement, using the main process\'s own plan', async () => {
@@ -154,7 +157,7 @@ describe('adding recordings from this computer', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Choose recordings…' }));
 
-    await screen.findByText(/Not a sticker number/);
+    await screen.findByText(/Not a sticker number — rename it to four digits, like 0451/);
     fireEvent.click(screen.getByRole('button', { name: 'Copy to my pen' }));
 
     await waitFor(() =>

@@ -500,3 +500,20 @@ describe('MyRecordingsScreen — audio preview', () => {
     await waitFor(() => expect(document.querySelector('.audio-preview-bar')).toBeNull());
   });
 });
+
+/**
+ * The owner's product principle: our customers are nursery parents and teachers, not technical
+ * users, so a customer-facing screen must never show a technical term or a technical step.
+ *
+ * Checked for the WHOLE screen rather than one panel on it. The backups panel had its own version
+ * of this test, and a new panel added beside it was free to say `.mp3` without anything noticing.
+ */
+describe('MyRecordingsScreen — plain language', () => {
+  it('shows no file name, checksum, drive letter or internal term anywhere a parent looks', async () => {
+    await renderScreen();
+
+    // Everything above the "Advanced tools" disclosure, which legitimately holds file names.
+    const visible = (document.body.textContent ?? '').split('Advanced tools')[0];
+    expect(visible).not.toMatch(/\.mp3|\.axb|checksum|SHA-?256|manifest|snapshot|preflight|DIY|BOOKFILE|1\.BIN|C:\\/i);
+  });
+});

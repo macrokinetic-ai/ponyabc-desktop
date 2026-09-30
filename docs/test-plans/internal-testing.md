@@ -126,6 +126,26 @@ Note down, with the pen connected:
 **If anything outside the list was removed, stop and report it.** That is the one failure in
 this plan that must never happen.
 
+#### Result, measured on a real pen — 30 September 2026
+
+The pen **rebuilt both `BOOK/1.BIN` and `BOOK/BOOKFILE.BIN` within a few seconds of power-on**
+after they were deleted (owner, on the test PC).
+
+That is the answer to the question the whole index rule rests on, and it is a good one: the cost
+of resetting the index is a few seconds of the pen's own start-up, once, not a wait a parent would
+notice or ask about. It is why the app can afford to reset after **any** write rather than trying
+to work out which writes really need it — and trying to be clever about that is what left a stale
+index on a pen in rc5.
+
+The wording a parent sees stays as it is: "The first start may take a little longer while your pen
+gets its books ready." A few seconds is "a little longer", and promising a number we have measured
+once, on one pen, with one card, is a promise we cannot keep for every pen.
+
+| Measured | A few seconds |
+|---|---|
+| Both `.BIN` files present again afterwards? | Yes |
+| Books still played correctly? | Yes |
+
 ### B. The new books play, after the restart
 
 1. [ ] The sync should end with **"All done!"** and ask you to restart the pen.
@@ -178,11 +198,68 @@ Install `PonyABC-Desktop-v0.3.17-winx64.exe` — the Store build — alongside t
 | Is there a banner across the top? | should be **no** |
 | Settings → is there a Testing mode section? | should be **no** |
 | Firmware → is there any way to choose a folder by hand? | should be **no** |
+| Firmware → does it still check online for a newer version? | should be **yes** |
+| BOOK → is there a **Technical log** panel? | should be **no** |
 | Settings → Version: does it say "· Internal"? | should be **no** |
 | Does the BOOK page still work normally? | should be **yes** |
+| Does it still list the books and the free space? | should be **yes** |
+| Can you still add your own recordings? | should be **yes** |
 
 The two install side by side and do not replace each other. If installing one removes the other,
 stop and report it: they are supposed to be different products to Windows.
+
+### F. The technical log shows the .BIN files going (Internal build only)
+
+The point of this is that you should not have to take the SD card out to see what happened.
+
+1. [ ] On the **BOOK** screen, open **Technical log** at the bottom. Leave it open.
+2. [ ] Press **Sync books**, or use **Get a fresh copy and put it on my pen** on any book under
+       Advanced details.
+3. [ ] Watch the log as it runs.
+
+|  |  |
+|---|---|
+| Did it list `Wrote BOOK/…` for each book? | ____ |
+| Did it list **`Deleted BOOK/1.BIN`** and **`Deleted BOOK/BOOKFILE.BIN`**? | ____ |
+| Did those two lines come **last**, after the books? | ____ |
+| Did the app then ask you to restart the pen? | ____ |
+
+**This is the rc5 bug.** "Get a fresh copy" wrote the book to the pen and left both `.BIN` files
+sitting there, with no restart asked for. If the two `Deleted` lines do not appear after a
+re-download, that bug is back.
+
+### G. What is on the pen, and how much room is left
+
+1. [ ] Open **BOOK**. The books on the pen should be listed **straight away**, without opening
+       anything.
+2. [ ] Below them, a line like "12.4 GB of 14.8 GB used on your pen", and a breakdown.
+3. [ ] Open **My Recordings**. The same figures, in the same words.
+
+|  |  |
+|---|---|
+| Are the book names in your app's language, with sizes? | ____ |
+| Do the two screens agree with each other? | ____ |
+| Does the total match what Windows says about the drive? | ____ |
+| Anything reading as though written for an engineer? | ____ |
+
+### H. Adding your own recordings, and the backups
+
+1. [ ] On **My Recordings**, press **Choose recordings…** and pick two `.mp3` files from one
+       folder: one named with a sticker number the pen **already has**, one it does not.
+2. [ ] Check one is marked **New** and the other **WILL REPLACE the recording on your pen**.
+3. [ ] Play both takes of the one being replaced.
+4. [ ] Press **Copy to my pen** and watch the progress.
+5. [ ] Look at **Backups on this computer**.
+
+|  |  |
+|---|---|
+| Is there a new backup called **"Automatic backup before replacing ….."**? | ____ |
+| Does choosing it **list the recordings inside it**, with names and sizes? | ____ |
+| Does Select all, and unticking one, change the count? | ____ |
+| Does **Put selected recordings back on my pen** put back only what was ticked? | ____ |
+| Did every long action say what it was doing, and end with something? | ____ |
+
+The listing is the other rc5 bug: a backup said "20 recordings" and showed none.
 
 ## What to send back
 

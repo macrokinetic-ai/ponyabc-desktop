@@ -155,7 +155,7 @@ export function AddRecordingsPanel(props: { penReady: boolean; penIdentityKey: s
       </button>
       {folder && <p className="hint">{t('addFromComputer.chosenFrom', { folder })}</p>}
 
-      {rejected.length > 0 && <p className="hint">{t('addFromComputer.rejected', { names: rejected.join(', ') })}</p>}
+      {rejected.length > 0 && <p className="hint">{t('addFromComputer.rejected', { names: rejected.map(stickerName).join(', ') })}</p>}
 
       {rows.length === 0 ? (
         <p className="hint">{t('addFromComputer.noneChosen')}</p>
