@@ -111,7 +111,8 @@
     "contentsLoading": "正在查看這個備份…",
     "working": "正在備份您的錄音…",
     "selectAll": "全選",
-    "selectedCount_other": "已選 {{count}} 個"
+    "selectedCount_other": "已選 {{count}} 個",
+    "progress": "第 {{done}} / {{total}} 個 — {{name}}"
   },
   "restore": {
     "button": "把選取的錄音放回錄音筆",
@@ -126,7 +127,8 @@
     "nothingToDo": "該備份的內容已全部在點讀筆內。",
     "noClashes_other": "將會加入 {{count}} 段錄音，筆內原有的不會改動。",
     "done_other": "已將 {{count}} 段錄音放回點讀筆。",
-    "buttonNote": "只有您在上面勾選的錄音會被複製回去，錄音筆上的其他內容不會變動。"
+    "buttonNote": "只有您在上面勾選的錄音會被複製回去，錄音筆上的其他內容不會變動。",
+    "working": "正在放回錄音…"
   },
   "label": {
     "button": "改名",

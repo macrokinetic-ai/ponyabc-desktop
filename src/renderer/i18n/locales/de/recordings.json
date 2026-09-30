@@ -117,7 +117,8 @@
     "working": "Ihre Aufnahmen werden gesichert…",
     "selectAll": "Alle auswählen",
     "selectedCount_one": "{{count}} ausgewählt",
-    "selectedCount_other": "{{count}} ausgewählt"
+    "selectedCount_other": "{{count}} ausgewählt",
+    "progress": "{{done}} von {{total}} — {{name}}"
   },
   "restore": {
     "button": "Ausgewählte Aufnahmen zurück auf den Stift legen",
@@ -134,7 +135,8 @@
     "noClashes_other": "{{count}} Aufnahmen werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
     "done_one": "{{count}} Aufnahme zurück auf den Stift gespielt.",
     "done_other": "{{count}} Aufnahmen zurück auf den Stift gespielt.",
-    "buttonNote": "Nur die oben angehakten Aufnahmen werden zurückkopiert. Alles andere auf Ihrem Stift bleibt unberührt."
+    "buttonNote": "Nur die oben angehakten Aufnahmen werden zurückkopiert. Alles andere auf Ihrem Stift bleibt unberührt.",
+    "working": "Aufnahmen werden zurückgelegt…"
   },
   "label": {
     "button": "Umbenennen",

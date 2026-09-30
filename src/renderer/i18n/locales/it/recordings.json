@@ -117,7 +117,8 @@
     "working": "Sto salvando le tue registrazioni…",
     "selectAll": "Seleziona tutto",
     "selectedCount_one": "{{count}} selezionata",
-    "selectedCount_other": "{{count}} selezionate"
+    "selectedCount_other": "{{count}} selezionate",
+    "progress": "{{done}} di {{total}} — {{name}}"
   },
   "restore": {
     "button": "Rimetti sulla penna le registrazioni selezionate",
@@ -134,7 +135,8 @@
     "noClashes_other": "Verranno aggiunte {{count}} registrazioni. Quello che è già sulla penna non cambia.",
     "done_one": "{{count}} registrazione rimessa sulla penna.",
     "done_other": "{{count}} registrazioni rimesse sulla penna.",
-    "buttonNote": "Vengono ricopiate solo le registrazioni spuntate sopra. Tutto il resto sulla penna resta com’è."
+    "buttonNote": "Vengono ricopiate solo le registrazioni spuntate sopra. Tutto il resto sulla penna resta com’è.",
+    "working": "Sto rimettendo le registrazioni…"
   },
   "label": {
     "button": "Rinomina",

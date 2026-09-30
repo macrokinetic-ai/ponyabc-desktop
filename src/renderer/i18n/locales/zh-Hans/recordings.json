@@ -111,7 +111,8 @@
     "contentsLoading": "正在查看这个备份…",
     "working": "正在备份您的录音…",
     "selectAll": "全选",
-    "selectedCount_other": "已选 {{count}} 个"
+    "selectedCount_other": "已选 {{count}} 个",
+    "progress": "第 {{done}} / {{total}} 个 — {{name}}"
   },
   "restore": {
     "button": "把选中的录音放回录音笔",
@@ -126,7 +127,8 @@
     "nothingToDo": "该备份的内容已全部在点读笔内。",
     "noClashes_other": "将会加入 {{count}} 段录音，笔内原有的不会改动。",
     "done_other": "已将 {{count}} 段录音放回点读笔。",
-    "buttonNote": "只有您在上面勾选的录音会被复制回去，录音笔上的其他内容不会变动。"
+    "buttonNote": "只有您在上面勾选的录音会被复制回去，录音笔上的其他内容不会变动。",
+    "working": "正在放回录音…"
   },
   "label": {
     "button": "改名",

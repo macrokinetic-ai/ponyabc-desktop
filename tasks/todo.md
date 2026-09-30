@@ -46,9 +46,12 @@ again. The commit belongs at the boundary, in main.
 
 ## BOOKS
 
-- [ ] 5. Progress or a spinner with what it is doing, and a clear Done or error, for every long
-      action: Verify, Re-download, Sync, firmware download, backups, copying recordings.
-      Buttons disabled while running.
+- [x] 5. Audited all six. Sync and the firmware download already had progress bars. Added:
+      Re-download says "Getting a fresh copy…" and ends with "Done"; Verify says "Checking this
+      file…" and now always ends (it used to go quiet when it had nothing to report); backing up
+      and putting back name the recording and count through it — the progress channel existed and
+      **nothing was listening**, so twenty recordings showed one unchanging line; copying
+      recordings has a bar. Every one of those buttons is disabled while it runs.
 - [x] 6. Pen storage on BOOK and My Recordings: total / used / free, books and recordings
       separately, in plain words.
 - [x] 7. BOOK screen lists the books on the pen by default — name in the app's language, size,

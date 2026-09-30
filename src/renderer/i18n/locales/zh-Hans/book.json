@@ -94,7 +94,9 @@
     "updateOne": "更新",
     "reinstallNote": "这会重新下载这本书并复制到您的录音笔，完成后需要重新启动录音笔。",
     "reinstallWorking": "正在重新获取…",
-    "reinstallDone": "完成。这本书已重新放到您的录音笔。"
+    "reinstallDone": "完成。这本书已重新放到您的录音笔。",
+    "verifyWorking": "正在检查这个文件…",
+    "verifyDone": "完成。这个文件已检查。"
   },
   "statusHelp": {
     "present": "文件名与官方书本相符，但 App 未读取文件内容进行核对。刷新不会读取文件内容，所以在你选择“校验此文件”之前，这都是正常状态。",

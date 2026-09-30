@@ -117,7 +117,8 @@
     "working": "Sauvegarde de vos enregistrements…",
     "selectAll": "Tout sélectionner",
     "selectedCount_one": "{{count}} sélectionné",
-    "selectedCount_other": "{{count}} sélectionnés"
+    "selectedCount_other": "{{count}} sélectionnés",
+    "progress": "{{done}} sur {{total}} — {{name}}"
   },
   "restore": {
     "button": "Remettre les enregistrements sélectionnés sur mon stylo",
@@ -134,7 +135,8 @@
     "noClashes_other": "{{count}} enregistrements seront ajoutés. Rien de ce qui est déjà sur le stylo ne changera.",
     "done_one": "{{count}} enregistrement remis sur votre stylo.",
     "done_other": "{{count}} enregistrements remis sur votre stylo.",
-    "buttonNote": "Seuls les enregistrements cochés ci-dessus sont recopiés. Le reste de votre stylo n’est pas touché."
+    "buttonNote": "Seuls les enregistrements cochés ci-dessus sont recopiés. Le reste de votre stylo n’est pas touché.",
+    "working": "Remise en place des enregistrements…"
   },
   "label": {
     "button": "Renommer",

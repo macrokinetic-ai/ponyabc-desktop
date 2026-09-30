@@ -95,7 +95,9 @@
     "updateOne": "Update",
     "reinstallNote": "This downloads the book again and copies it onto your pen, so your pen will need restarting afterwards.",
     "reinstallWorking": "Getting a fresh copy…",
-    "reinstallDone": "Done. That book is on your pen again."
+    "reinstallDone": "Done. That book is on your pen again.",
+    "verifyWorking": "Checking this file…",
+    "verifyDone": "Done. That file has been checked."
   },
   "statusHelp": {
     "present": "The name matches an official book, but the App has not read the file to check its contents. Refreshing never reads files, so this is the normal state until you choose Verify this file.",

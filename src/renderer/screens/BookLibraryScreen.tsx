@@ -388,7 +388,9 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
     try {
       const result = await lib.verifyContent(fileNames);
       const msg = verifyResultMessage(t, result);
-      if (msg) setMessage(msg);
+      // Always an ending, never silence: a check that found nothing to say still finished, and a
+      // button that goes quiet reads as a button that did nothing.
+      setMessage(msg ?? t('action.verifyDone'));
     } finally {
       setBusy(false);
     }
@@ -647,7 +649,7 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
                   <span className="hint status-help">{t(penStatusHelpKey(status))}</span>
                   <div className="recordings-list__detail-actions">
                     <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
-                      {t('action.verifyThis')}
+                      {progress ? t('action.verifyWorking') : t('action.verifyThis')}
                     </button>
                     {item.contentId && (
                       <button

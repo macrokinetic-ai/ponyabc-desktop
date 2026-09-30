@@ -117,7 +117,8 @@
     "working": "Guardando una copia de sus grabaciones…",
     "selectAll": "Seleccionar todo",
     "selectedCount_one": "{{count}} seleccionada",
-    "selectedCount_other": "{{count}} seleccionadas"
+    "selectedCount_other": "{{count}} seleccionadas",
+    "progress": "{{done}} de {{total}} — {{name}}"
   },
   "restore": {
     "button": "Devolver al lápiz las grabaciones seleccionadas",
@@ -134,7 +135,8 @@
     "noClashes_other": "Se añadirán {{count}} grabaciones. Nada de lo que ya está en el lápiz cambiará.",
     "done_one": "{{count}} grabación devuelta a su lápiz.",
     "done_other": "{{count}} grabaciones devueltas a su lápiz.",
-    "buttonNote": "Solo se copian las grabaciones marcadas arriba. Lo demás que haya en el lápiz no se toca."
+    "buttonNote": "Solo se copian las grabaciones marcadas arriba. Lo demás que haya en el lápiz no se toca.",
+    "working": "Devolviendo las grabaciones…"
   },
   "label": {
     "button": "Cambiar el nombre",

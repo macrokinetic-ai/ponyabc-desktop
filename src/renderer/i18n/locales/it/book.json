@@ -95,7 +95,9 @@
     "updateOne": "Aggiorna",
     "reinstallNote": "Il libro viene scaricato di nuovo e copiato sulla penna, che poi va riavviata.",
     "reinstallWorking": "Sto scaricando una copia nuova…",
-    "reinstallDone": "Fatto. Quel libro è di nuovo sulla penna."
+    "reinstallDone": "Fatto. Quel libro è di nuovo sulla penna.",
+    "verifyWorking": "Sto controllando questo file…",
+    "verifyDone": "Fatto. Quel file è stato controllato."
   },
   "statusHelp": {
     "present": "Il nome corrisponde a un libro ufficiale, ma l'App non ha letto il file per controllarne il contenuto. L'aggiornamento non legge mai i file: è quindi lo stato normale finché non si sceglie Verifica questo file.",

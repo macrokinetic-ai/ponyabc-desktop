@@ -94,7 +94,9 @@
     "updateOne": "更新",
     "reinstallNote": "這會重新下載這本書並複製到您的錄音筆，完成後需要重新啟動錄音筆。",
     "reinstallWorking": "正在重新取得…",
-    "reinstallDone": "完成。這本書已重新放到您的錄音筆。"
+    "reinstallDone": "完成。這本書已重新放到您的錄音筆。",
+    "verifyWorking": "正在檢查這個檔案…",
+    "verifyDone": "完成。這個檔案已檢查。"
   },
   "statusHelp": {
     "present": "檔名與官方書本相符，但 App 未讀取檔案內容作核對。重新整理不會讀取檔案內容，所以在你選擇「校驗此檔案」之前，這都是正常狀態。",

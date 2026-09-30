@@ -95,7 +95,9 @@
     "updateOne": "Actualizar",
     "reinstallNote": "El libro se descarga de nuevo y se copia en el lápiz, que después habrá que reiniciar.",
     "reinstallWorking": "Obteniendo una copia nueva…",
-    "reinstallDone": "Listo. Ese libro está de nuevo en su lápiz."
+    "reinstallDone": "Listo. Ese libro está de nuevo en su lápiz.",
+    "verifyWorking": "Comprobando este archivo…",
+    "verifyDone": "Listo. Se ha comprobado ese archivo."
   },
   "statusHelp": {
     "present": "El nombre coincide con un libro oficial, pero la App no ha leído el archivo para comprobar su contenido. Actualizar nunca lee los archivos, así que este es el estado normal hasta que elija Verificar este archivo.",

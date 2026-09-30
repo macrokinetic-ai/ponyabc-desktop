@@ -117,7 +117,8 @@
     "working": "A guardar as suas gravações…",
     "selectAll": "Selecionar tudo",
     "selectedCount_one": "{{count}} selecionada",
-    "selectedCount_other": "{{count}} selecionadas"
+    "selectedCount_other": "{{count}} selecionadas",
+    "progress": "{{done}} de {{total}} — {{name}}"
   },
   "restore": {
     "button": "Repor na caneta as gravações selecionadas",
@@ -134,7 +135,8 @@
     "noClashes_other": "Vão ser adicionadas {{count}} gravações. Nada do que já está na caneta muda.",
     "done_one": "{{count}} gravação reposta na caneta.",
     "done_other": "{{count}} gravações repostas na caneta.",
-    "buttonNote": "Só as gravações assinaladas acima são copiadas de volta. O resto da caneta fica intacto."
+    "buttonNote": "Só as gravações assinaladas acima são copiadas de volta. O resto da caneta fica intacto.",
+    "working": "A repor as gravações…"
   },
   "label": {
     "button": "Mudar o nome",

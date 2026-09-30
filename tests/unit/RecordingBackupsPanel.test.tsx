@@ -46,6 +46,7 @@ function mockApi(overrides: Record<string, unknown> = {}) {
       ],
     })),
     recordingLabelsGet: vi.fn(async () => ({})),
+    onRecordingBackupProgress: vi.fn(() => () => {}),
     recordingLabelSet: vi.fn(async () => ({})),
     recordingBackupCreate: vi.fn(async () => ({ status: 'ok', snapshotId: 's2', recordingCount: 3, dedupedCount: 1, failedCount: 0 })),
     recordingRestorePlan: vi.fn(async () => ({ status: 'ok', snapshotId: 's1', items: [], missingFromBackup: [] })),
@@ -342,5 +343,39 @@ describe('recordings — backing up cannot happen twice', () => {
 
     release?.();
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+  });
+});
+
+/**
+ * Item 5: every long action says what it is doing while it runs, and always ends with something.
+ *
+ * The backup progress channel existed and nothing was listening to it, so backing up twenty
+ * recordings showed one unchanging line for however long it took.
+ */
+describe('recordings — saying what is happening', () => {
+  it('names the recording it is copying, and how far through it is', async () => {
+    let push: ((e: { fileIndex: number; fileCount: number; fileName: string }) => void) | null = null;
+    await renderPanel({
+      onRecordingBackupProgress: vi.fn((listener: (e: { fileIndex: number; fileCount: number; fileName: string }) => void) => {
+        push = listener;
+        return () => {};
+      }),
+      recordingBackupCreate: vi.fn(() => new Promise(() => {})), // never settles: mid-run
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back up my recordings' }));
+    push?.({ fileIndex: 6, fileCount: 20, fileName: '0451.mp3' });
+
+    // Human counting: the seventh of twenty, not "index 6".
+    await screen.findByText('7 of 20 — 0451');
+    expect(document.querySelector('progress')).not.toBeNull();
+  });
+
+  it('says so even when a backup had nothing to report', async () => {
+    await renderPanel({
+      recordingBackupCreate: vi.fn(async () => ({ status: 'ok', snapshotId: 's4', recordingCount: 0, dedupedCount: 0, failedCount: 0 })),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back up my recordings' }));
+    await screen.findByText('Backed up 0 recordings.');
   });
 });

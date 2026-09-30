@@ -95,7 +95,9 @@
     "updateOne": "Aktualisieren",
     "reinstallNote": "Das Buch wird erneut heruntergeladen und auf Ihren Stift kopiert. Danach muss der Stift neu gestartet werden.",
     "reinstallWorking": "Neue Kopie wird geholt…",
-    "reinstallDone": "Fertig. Das Buch ist wieder auf Ihrem Stift."
+    "reinstallDone": "Fertig. Das Buch ist wieder auf Ihrem Stift.",
+    "verifyWorking": "Diese Datei wird geprüft…",
+    "verifyDone": "Fertig. Diese Datei wurde geprüft."
   },
   "statusHelp": {
     "present": "Der Name entspricht einem offiziellen Buch, die App hat die Datei aber nicht gelesen, um den Inhalt zu prüfen. Beim Aktualisieren werden nie Dateien gelesen — das ist also der normale Zustand, bis Sie „Diese Datei überprüfen“ wählen.",

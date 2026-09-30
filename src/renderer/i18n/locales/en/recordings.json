@@ -117,7 +117,8 @@
     "working": "Backing up your recordings…",
     "selectAll": "Select all",
     "selectedCount_one": "{{count}} chosen",
-    "selectedCount_other": "{{count}} chosen"
+    "selectedCount_other": "{{count}} chosen",
+    "progress": "{{done}} of {{total}} — {{name}}"
   },
   "restore": {
     "button": "Put selected recordings back on my pen",
@@ -134,7 +135,8 @@
     "noClashes_other": "{{count}} recordings will be added to your pen. Nothing already on it will change.",
     "done_one": "Put {{count}} recording back on your pen.",
     "done_other": "Put {{count}} recordings back on your pen.",
-    "buttonNote": "Only the recordings you have ticked above are copied back. Anything else on your pen is left alone."
+    "buttonNote": "Only the recordings you have ticked above are copied back. Anything else on your pen is left alone.",
+    "working": "Putting your recordings back…"
   },
   "label": {
     "button": "Rename",

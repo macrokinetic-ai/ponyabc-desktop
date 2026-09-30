@@ -95,7 +95,9 @@
     "updateOne": "Mettre à jour",
     "reinstallNote": "Le livre est téléchargé à nouveau puis copié sur votre stylo, qui devra ensuite être redémarré.",
     "reinstallWorking": "Récupération en cours…",
-    "reinstallDone": "Terminé. Ce livre est de nouveau sur votre stylo."
+    "reinstallDone": "Terminé. Ce livre est de nouveau sur votre stylo.",
+    "verifyWorking": "Vérification de ce fichier…",
+    "verifyDone": "Terminé. Ce fichier a été vérifié."
   },
   "statusHelp": {
     "present": "Le nom correspond à un livre officiel, mais l'App n'a pas lu le fichier pour en vérifier le contenu. Une actualisation ne lit jamais les fichiers : c'est donc l'état normal tant que vous n'avez pas choisi Vérifier ce fichier.",

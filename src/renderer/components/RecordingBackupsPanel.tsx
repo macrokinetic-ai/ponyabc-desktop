@@ -41,6 +41,11 @@ export function RecordingBackupsPanel() {
   /** Separate from `busy`: the backup button must go dead the instant it is pressed, before
    *  any await, so a quick double click cannot make two backups. */
   const [backingUp, setBackingUp] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  /** Which recording is being copied, for both backing up and putting back. The main process has
+   *  always sent this and nothing was listening, so a backup of twenty recordings showed one
+   *  unchanging line for however long it took. */
+  const [step, setStep] = useState<{ fileIndex: number; fileCount: number; fileName: string } | null>(null);
 
   const [plan, setPlan] = useState<RestorePlan | null>(null);
   const [decisions, setDecisions] = useState<Record<string, RestoreDecision>>({});
@@ -75,6 +80,8 @@ export function RecordingBackupsPanel() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => window.ponyabc.onRecordingBackupProgress(setStep), []);
+
   // The chosen backup's contents, refetched when the choice changes. Everything in it starts
   // ticked: putting a whole backup back is the common case, and a list that starts empty makes
   // the primary button look broken.
@@ -108,6 +115,7 @@ export function RecordingBackupsPanel() {
   async function run<T>(action: () => Promise<T>, onDone?: (result: T) => void) {
     setBusy(true);
     setMessage(null);
+    setStep(null);
     try {
       const result = await action();
       onDone?.(result);
@@ -115,6 +123,7 @@ export function RecordingBackupsPanel() {
     } catch (err) {
       setMessage(tCommon('errors.generic', { message: err instanceof Error ? err.message : String(err) }));
     } finally {
+      setStep(null);
       setBusy(false);
     }
   }
@@ -157,7 +166,7 @@ export function RecordingBackupsPanel() {
   const confirmRestore = () =>
     plan &&
     selectedBackupId &&
-    run(
+    runRestore(
       () => window.ponyabc.recordingRestoreExecute({ snapshotId: selectedBackupId, plan, decisions }),
       (result) => {
         setPlan(null);
@@ -168,6 +177,16 @@ export function RecordingBackupsPanel() {
         setMessage(t('restore.done', { count: result.restored.length + result.replaced.length }));
       },
     );
+
+  /** As `run`, plus the flag the "Put them back" button reads while it works. */
+  async function runRestore<T>(action: () => Promise<T>, onDone?: (result: T) => void) {
+    setRestoring(true);
+    try {
+      await run(action, onDone);
+    } finally {
+      setRestoring(false);
+    }
+  }
 
   const saveLabel = (fileName: string) =>
     run(
@@ -222,6 +241,18 @@ export function RecordingBackupsPanel() {
             >
               {backingUp ? t('backup.working') : t('backup.button')}
             </button>
+            {step && (
+              <div>
+                <progress className="book-progress" value={step.fileIndex} max={Math.max(step.fileCount, 1)} />
+                <p className="hint">
+                  {t('backup.progress', {
+                    done: step.fileIndex + 1,
+                    total: step.fileCount,
+                    name: nameOf(step.fileName),
+                  })}
+                </p>
+              </div>
+            )}
           </div>
           <div className="pane__list">
             {!penReady && <p className="hint">{t('noPenSelected')}</p>}
@@ -471,7 +502,7 @@ export function RecordingBackupsPanel() {
           )}
           <div className="recordings-list__detail-actions">
             <button type="button" className="button button--primary" disabled={busy || !allDecided} onClick={() => void confirmRestore()}>
-              {t('restore.confirm')}
+              {restoring ? t('restore.working') : t('restore.confirm')}
             </button>
             <button type="button" className="button" onClick={() => setPlan(null)}>
               {tCommon('buttons.cancel')}
