@@ -1,3 +1,4 @@
+import { DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS } from '../../src/main/services/firmwarePreflight';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -352,5 +353,29 @@ describe('firmware preflight — backup and restore', () => {
     expect(summarizeRestore({ restored: ['1.BIN'], skippedPresent: ['BOOKFILE.BIN'], failed: [] })).toBe(
       'restored 1, skipped 1 (already present)',
     );
+  });
+});
+
+/**
+ * The preflight is per-UPGRADE, not per-version.
+ *
+ * Confirmed 2026-09-30 by reading the one call site: `startFirmwareUpgrade` runs it every time,
+ * with DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS unless a release carries its own list. Nothing keys
+ * it to V1.26, or to any version. This test is here so a later "only newer firmware needs it"
+ * cannot creep in: V1.18 needs it exactly as much, because the pen rebuilds its book list from
+ * whatever is there on the next power-on either way.
+ */
+describe('every firmware upgrade clears the pen’s book list first', () => {
+  it('the default deletion list is the two index files, for any version', () => {
+    expect([...DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS]).toEqual(['1.BIN', 'BOOKFILE.BIN']);
+  });
+
+  it('the upgrade path names no version anywhere near the preflight decision', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../../src/main/ipc/firmware.ts'), 'utf8');
+    const call = source.indexOf('runFirmwarePreflight(');
+    expect(call).toBeGreaterThan(-1);
+    // The 600 characters around the call: if a version ever gates it, it will be here.
+    const around = source.slice(Math.max(0, call - 600), call + 200);
+    expect(around).not.toMatch(/V1\.\d|version\s*===|version\s*>=|hardware_rev\s*===/);
   });
 });

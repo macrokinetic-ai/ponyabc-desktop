@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-30 14:10 BST** · by Claude Code · after the GitHub archive round
+Last updated: **2026-09-30 17:40 BST** · by Claude Code · after the two-builds round
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -40,6 +40,13 @@ Test builds now live on the repo's Releases page, members only:
 **A final `v0.3.17` Release is created only after Microsoft Store approval** — never before, so
 the newest thing in the repository is never software nobody can install. Each further test build
 is the next `rcN`, published the same way. Nothing is submitted to Partner Center from here.
+
+**Two builds from every commit (owner, 2026-09-30).** The **Store build** is the only one ever
+submitted: no testing mode, no support tools, no developer switches, excluded at build time and
+checked against the built bundle by a test. The **Internal build** is the same code plus testing
+mode, with its own name, application id and banner, so it installs beside the Store app and
+cannot be submitted by mistake — CI refuses an internal package carrying the Store identity.
+Every rc Release carries both.
 
 **Every version is stored on GitHub as the permanent record (owner, 2026-09-30).** Nothing
 important may live only on the Mac mini. A candidate build dispatched with an `rc` input now
