@@ -57,5 +57,6 @@ Only once Partner Center reports the submission as **published**:
 |---|---|
 | `v0.3.16` | The Microsoft Store version, live since 2026-09-28. Latest. Archive of the submitted `.appx`. |
 | `v0.3.17-rc1` | The first 0.3.17 test build, from `69e4412`. Pre-release. Predates the build stamp, so it shows a plain `0.3.17` in Settings. |
+| `v0.3.17-rc2` | From `2ad7a0b`. Pre-release. The first build that names itself: Settings shows `0.3.17 (rc2, 2ad7a0b)`. |
 
 `v0.3.17` itself does not exist yet, and must not until the Store has approved 0.3.17.
