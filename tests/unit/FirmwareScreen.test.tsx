@@ -120,7 +120,7 @@ async function advanceToConfirm() {
   // The local-folder chooser lives behind the "Advanced / support" disclosure, collapsed by
   // default — this is the exact fix for it no longer being a required, always-visible step.
   fireEvent.click(screen.getByRole('button', { name: 'Show' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose folder…' }));
   await screen.findByText(/Selected:/);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Confirm' });
@@ -151,8 +151,8 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     renderScreen();
     await screen.findByText('Pen detected.');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Show' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose folder…' }));
     await screen.findByText('isd_download.exe');
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -450,7 +450,7 @@ describe('FirmwareScreen — official download flow (Windows), simulated release
     await screen.findByText('Test release notes.');
 
     // The Advanced/support disclosure stays collapsed — its local-folder button never appears.
-    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose folder…' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Download official update' }));
     await screen.findByText('Ready — click Next to continue.');
@@ -525,7 +525,7 @@ describe('FirmwareScreen — official download flow (Windows), simulated release
     await screen.findByText('No official firmware release has been published yet.');
     expect(screen.queryByRole('button', { name: 'Download official update' })).toBeNull();
     // The disclosure exists but is collapsed — no local-folder button visible without opening it.
-    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose folder…' })).toBeNull();
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
   });
 

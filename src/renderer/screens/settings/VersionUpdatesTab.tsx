@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatBuildLabel, identifyAppVariant } from '@shared/appVariant';
+import { INTERNAL_UI, TestingModeSection } from '@internal-ui';
 import type { AppInfo, UpdateCheckResult } from '@shared/types';
 
 /**
@@ -39,7 +40,7 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
 
   const variant = appInfo ? identifyAppVariant(appInfo.platform, appInfo.arch, appInfo.isWindowsStore) : null;
   // A test build says which candidate it is; the Store build shows a plain version number.
-  const versionLabel = appInfo ? formatBuildLabel(appInfo.version, appInfo.buildTag, appInfo.buildCommit) : '';
+  const versionLabel = appInfo ? formatBuildLabel(appInfo.version, appInfo.buildTag, appInfo.buildCommit, INTERNAL_UI) : '';
   const variantLabel = variant ? (variant.labelKey ? t(variant.labelKey) : t('about.variantUnknown')) : '';
 
   async function handleCopy() {
@@ -66,6 +67,9 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
         <p className="hint">…</p>
       ) : (
         <>
+          {/* Internal build only; renders nothing at all in a Store build. */}
+          <TestingModeSection />
+
           <dl className="about-info">
             <dt>{t('about.versionLabel')}</dt>
             <dd>{versionLabel}</dd>

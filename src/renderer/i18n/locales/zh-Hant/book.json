@@ -244,5 +244,9 @@
   },
   "size": {
     "about": "約 {{size}}"
+  },
+  "remove": {
+    "title_other": "將有 {{count}} 本書從點讀筆移除",
+    "body": "這些書本已不再屬於 PonyABC 書庫。移除後可在點讀筆騰出約 {{size}} 空間，其餘內容一律維持不變。"
   }
 }

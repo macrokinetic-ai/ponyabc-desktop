@@ -108,6 +108,9 @@ const api: PonyAbcApi = {
   onBookWriteProgress: (listener: (event: import('@shared/types').BookWriteProgressEvent) => void) =>
     subscribe(IPC.bookWriteProgress, listener),
   bookIndexStatus: () => ipcRenderer.invoke(IPC.bookIndexStatus),
+  testingModeGet: () => ipcRenderer.invoke(IPC.testingModeGet),
+  testingModeSet: (patch: Record<string, unknown>) => ipcRenderer.invoke(IPC.testingModeSet, patch),
+  testingModeChooseFolder: () => ipcRenderer.invoke(IPC.testingModeChooseFolder),
   bookIndexCommit: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookIndexCommit, params ?? {}),
   bookIndexFix: () => ipcRenderer.invoke(IPC.bookIndexFix),
   bookDownloadBatch: (params: { contentIds: string[] }) => ipcRenderer.invoke(IPC.bookDownloadBatch, params) as Promise<BookDownloadBatchStartResult>,

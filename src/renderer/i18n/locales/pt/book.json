@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "cerca de {{size}}"
+  },
+  "remove": {
+    "title_one": "Um livro vai ser retirado da sua caneta",
+    "title_other": "{{count}} livros vão ser retirados da sua caneta",
+    "body": "Estes livros já não fazem parte da biblioteca PonyABC. Retirá-los liberta cerca de {{size}} na caneta. Tudo o resto fica como está."
   }
 }

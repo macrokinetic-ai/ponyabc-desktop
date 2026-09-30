@@ -29,13 +29,19 @@ export interface AppInfo {
  * business. The stamp is set when the installer is built; an unstamped build is, by
  * definition, one nobody labelled as a candidate.
  */
-export function formatBuildLabel(version: string, buildTag?: string, buildCommit?: string): string {
+export function formatBuildLabel(
+  version: string,
+  buildTag?: string,
+  buildCommit?: string,
+  isInternal = false,
+): string {
   // Tolerant of absent fields on purpose: this is the screen someone opens when something is
   // already wrong, and a missing stamp should cost them a suffix, not the whole page.
+  const internal = isInternal ? ' · Internal' : '';
   const tag = (buildTag ?? '').trim();
-  if (!tag) return version;
+  if (!tag) return `${version}${internal}`;
   const commit = (buildCommit ?? '').trim();
-  return commit ? `${version} (${tag}, ${commit})` : `${version} (${tag})`;
+  return commit ? `${version} (${tag}, ${commit})${internal}` : `${version} (${tag})${internal}`;
 }
 
 export type KnownVariantIdentifier = 'mac-arm64' | 'mac-x64' | 'win-x64' | 'win-x64-msix';

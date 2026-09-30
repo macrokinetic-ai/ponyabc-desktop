@@ -20,15 +20,6 @@
   },
   "package": {
     "title": "Firmware-Paket",
-    "devModeNotice": "Nur für Test/Support: Wählen Sie selbst den bereits entpackten Herstellerpaket-Ordner aus. Die meisten Personen sollten stattdessen den offiziellen Download oben verwenden.",
-    "selectButton": "Test/Support: lokalen Ordner auswählen…",
-    "advanced": {
-      "title": "Erweitert / Support",
-      "readButton": "Anzeigen",
-      "collapseButton": "Ausblenden"
-    },
-    "selectedPath": "Ausgewählt: {{path}}",
-    "looksValid": "Dieser Ordner enthält die für den bestätigten Update-Pfad benötigten Dateien.",
     "invalid": "Diesem Ordner fehlen für das Update benötigte Dateien. Es wird nichts ausgeführt.",
     "nextButton": "Weiter",
     "official": {

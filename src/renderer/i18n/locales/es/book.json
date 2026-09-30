@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "unos {{size}}"
+  },
+  "remove": {
+    "title_one": "Se quitará un libro de su lápiz",
+    "title_other": "Se quitarán {{count}} libros de su lápiz",
+    "body": "Estos libros ya no forman parte de la biblioteca PonyABC. Quitarlos libera unos {{size}} en el lápiz. Todo lo demás se mantiene igual."
   }
 }

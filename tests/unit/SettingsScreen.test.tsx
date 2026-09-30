@@ -28,6 +28,9 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     onTransferProgress: vi.fn(() => () => {}),
     getSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
     setSettings: vi.fn(async () => ({ version: 1, locale: 'en', lastPenRootPath: null, lastComputerFolderPath: null })),
+    testingModeGet: vi.fn(async () => ({ enabled: false, testCatalogueFolder: null, testerKey: null })),
+    testingModeSet: vi.fn(async () => ({ enabled: false, testCatalogueFolder: null, testerKey: null })),
+    testingModeChooseFolder: vi.fn(async () => null),
     getAppInfo: vi.fn(async () => ({ version: '0.2.2', platform: 'darwin', arch: 'arm64', isWindowsStore: false, buildTag: '', buildCommit: '' })),
     checkForUpdates: vi.fn(async () => ({ status: 'up-to-date', currentVersion: '0.2.2' })),
     openLatestReleasePage: vi.fn(async () => ({ ok: true })),
@@ -75,7 +78,7 @@ afterEach(() => {
 describe('SettingsScreen — Version & Updates (default tab)', () => {
   it('shows the actual app version, translated variant label, and raw identifier', async () => {
     render(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByText('0.2.2')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/^0\.2\.2( · Internal)?$/)).toBeTruthy());
     expect(screen.getByText('Mac · Apple Silicon')).toBeTruthy();
     expect(screen.getByText('mac-arm64')).toBeTruthy();
   });
@@ -96,7 +99,7 @@ describe('SettingsScreen — Version & Updates (default tab)', () => {
 
   it('copies version info to the clipboard and shows a confirmation', async () => {
     render(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByText('0.2.2')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/^0\.2\.2( · Internal)?$/)).toBeTruthy());
 
     fireEvent.click(screen.getByText('Copy version info'));
 
@@ -148,7 +151,7 @@ describe('SettingsScreen — tabs', () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Version & Updates', 'Support', 'Privacy & Legal']);
     expect(screen.getByRole('tab', { name: 'Version & Updates' }).getAttribute('aria-selected')).toBe('true');
-    await waitFor(() => expect(screen.getByText('0.2.2')).toBeTruthy()); // default tab's content visible
+    await waitFor(() => expect(screen.getByText(/^0\.2\.2( · Internal)?$/)).toBeTruthy()); // default tab's content visible
   });
 
   it('switches visible content when a different tab is activated', async () => {
@@ -179,7 +182,7 @@ describe('SettingsScreen — Support tab', () => {
 
   it('"Contact Support" opens a mail draft with a subject naming the app version/platform, never auto-attaching diagnostics or files', async () => {
     render(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByText('0.2.2')).toBeTruthy()); // appInfo loaded (Version & Updates tab)
+    await waitFor(() => expect(screen.getByText(/^0\.2\.2( · Internal)?$/)).toBeTruthy()); // appInfo loaded (Version & Updates tab)
     openTab('Support');
     fireEvent.click(await screen.findByRole('button', { name: 'Contact Support' }));
     await waitFor(() => expect(window.ponyabc.openSupportEmail).toHaveBeenCalled());

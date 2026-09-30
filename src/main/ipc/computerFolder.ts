@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import * as internal from '@internal';
 import { dialog, type BrowserWindow } from 'electron';
 import type { ComputerFile, ComputerFolderListResult, ComputerFolderResult } from '@shared/types';
 import { isEligibleMp3FileName, resolveContainedFile } from '../services/pathSecurity';
@@ -24,7 +25,7 @@ export async function selectComputerFolder(window: BrowserWindow, store: Setting
   // Test-only override so automated/CDP verification can seed the right pane without a
   // native OS dialog, which cannot be driven programmatically. Never used unless the
   // developer explicitly sets this env var.
-  const testOverride = process.env.PONYABC_TEST_COMPUTER_FOLDER;
+  const testOverride = internal.computerFolderOverride();
   if (testOverride) {
     const resolved = resolveFolder(testOverride);
     if (resolved.status === 'ok') {
@@ -49,7 +50,7 @@ export async function selectComputerFolder(window: BrowserWindow, store: Setting
 }
 
 export function restoreComputerFolder(store: SettingsStore): ComputerFolderResult {
-  const testOverride = process.env.PONYABC_TEST_COMPUTER_FOLDER;
+  const testOverride = internal.computerFolderOverride();
   const lastPath = testOverride || store.get().lastComputerFolderPath;
   if (!lastPath) return { status: 'none' };
 

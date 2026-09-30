@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "about {{size}}"
+  },
+  "remove": {
+    "title_one": "One book will be taken off your pen",
+    "title_other": "{{count}} books will be taken off your pen",
+    "body": "These are no longer part of the PonyABC library. Removing them frees about {{size}} on your pen. Everything else stays exactly as it is."
   }
 }

@@ -249,5 +249,10 @@
   },
   "size": {
     "about": "circa {{size}}"
+  },
+  "remove": {
+    "title_one": "Un libro verrà tolto dalla penna",
+    "title_other": "{{count}} libri verranno tolti dalla penna",
+    "body": "Questi libri non fanno più parte della biblioteca PonyABC. Toglierli libera circa {{size}} sulla penna. Tutto il resto resta com’è."
   }
 }

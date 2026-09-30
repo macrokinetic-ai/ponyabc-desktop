@@ -1,0 +1,26 @@
+# The INTERNAL build's Windows installer.
+#
+# The same code as the Store build, plus testing mode and the support tools — and deliberately a
+# different product to Windows: its own name, its own application id and its own install folder,
+# so it sits beside the Store app rather than replacing it, and so it can never be submitted by
+# mistake. CI refuses to publish an internal package that carries the Store identity
+# (.github/workflows/build-windows.yml, "Internal: prove this is not the Store identity").
+#
+# There is no appx target here on purpose. The Store format is for the Store, and the Store gets
+# the Store build.
+extends: ./electron-builder.yml
+appId: uk.ponyabc.desktop.internal
+productName: PonyABC Desktop Internal
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: PonyABC-Desktop-Internal-v${version}-winx64.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  # Its own folder and its own shortcut, so the two builds never overwrite each other.
+  shortcutName: PonyABC Desktop Internal
+publish: null

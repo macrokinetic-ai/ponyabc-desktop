@@ -1,4 +1,5 @@
 import { isSupportedLocale } from '@shared/locales';
+import * as internal from '@internal';
 import type { Settings } from '@shared/types';
 import type { SettingsStore } from '../services/settingsStore';
 
@@ -6,7 +7,7 @@ export function getSettings(store: SettingsStore): Settings {
   const settings = store.get();
   // Screenshots only: lets the capture script photograph the same screens in each language
   // without writing to the user's settings file. Never set in a shipped build.
-  const override = process.env.PONYABC_LOCALE;
+  const override = internal.localeOverride();
   if (override && isSupportedLocale(override)) return { ...settings, locale: override };
   return settings;
 }

@@ -12,6 +12,7 @@ import type {
 import { usePenRoot } from '../state/PenRootContext';
 import { compareOfficialToOnPen } from './firmwareVersionCompare';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import { FirmwareFolderPicker } from '@internal-ui';
 import type { Section } from '../components/NavSidebar';
 import { formatDate, formatDateTime } from '@shared/dateFormat';
 
@@ -457,34 +458,11 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
             )}
           </div>
 
-          <CollapsibleSection
-            title={t('package.advanced.title')}
-            summary={t('package.devModeNotice')}
-            readLabel={t('package.advanced.readButton')}
-            collapseLabel={t('package.advanced.collapseButton')}
-            defaultOpen={false}
-          >
-            <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
-              {t('package.selectButton')}
-            </button>
-            {packageSource === 'local' && packageInfo && (
-              <div className="firmware-package-info">
-                <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
-                {packageInfo.looksValid ? (
-                  <p className="hint">{t('package.looksValid')}</p>
-                ) : (
-                  <>
-                    <p className="error-text">{t('package.invalid')}</p>
-                    <ul>
-                      {packageInfo.missingFiles.map((f) => (
-                        <li key={f}>{f}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
-          </CollapsibleSection>
+          <FirmwareFolderPicker
+            busy={selecting}
+            onPick={() => void handleSelectPackage()}
+            selected={packageSource === 'local' && packageInfo ? packageInfo : null}
+          />
 
           <div className="firmware-wizard__actions">
             <button type="button" className="button" onClick={() => setStep('prepare')}>

@@ -71,8 +71,10 @@ jobs:
       # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
       # built by a separate command without them, so it shows a plain version number — see
       # formatBuildLabel in src/shared/appVariant.ts.
-      - run: npm run dist:win
+      - name: "Store build: installer + Store package"
+        run: npm run dist:win
         env:
+          PONYABC_INTERNAL: '0'
           PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
           PONYABC_BUILD_COMMIT: ${{ github.sha }}
 
@@ -101,6 +103,39 @@ jobs:
       # instead of the three files side by side.
       - name: "Installer: put the tester's README next to the .exe"
         run: Copy-Item store-assets/windows-installer-kit/READ-ME-FIRST.txt release/
+
+      # The INTERNAL build: same code, plus testing mode and the support tools. A different
+      # product to Windows, so it installs beside the Store app instead of replacing it.
+      - name: "Internal build: installer"
+        run: npm run dist:win:internal
+        env:
+          PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
+          PONYABC_BUILD_COMMIT: ${{ github.sha }}
+
+      # An internal package carrying the Store identity could be submitted by mistake, and
+      # would replace the customers' app on any machine that installed it. Refuse to go on.
+      - name: "Internal: prove this is not the Store identity"
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem release/PonyABC-Desktop-Internal-*.exe | Select-Object -First 1
+          if (-not $exe) { throw "no internal installer was produced" }
+          Write-Host "internal installer: $($exe.Name)"
+          $asar = 'release/win-unpacked/resources/app.asar'
+          if (Select-String -Path $asar -Pattern 'uk\.ponyabc\.desktop"' -Quiet) {
+            throw "the internal package carries the Store application id"
+          }
+          if (-not (Select-String -Path $asar -Pattern 'INTERNAL TEST BUILD' -Quiet)) {
+            throw "the internal build has no internal banner — it is not the internal build"
+          }
+          Write-Host "Internal identity confirmed, and it says so on screen."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-internal
+          path: |
+            release/PonyABC-Desktop-Internal-*.exe
+            release/PonyABC-Desktop-Internal-*.sha256
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
@@ -597,6 +632,7 @@ jobs:
               -e "s/{{RUN}}/${GITHUB_RUN_ID}/g" \
               store-assets/rc-release-notes.md > /tmp/notes.md
 
+          # Both builds, each with its checksum, plus everything that says what this version is.
           ASSETS=(release/*.exe release/*.exe.sha256 release/*.appx release/*.appx.sha256
                   release/READ-ME-FIRST.txt docs/manual/pdf/*.pdf
                   store-assets/whats-new-${VERSION}.md store-assets/store-listing-${VERSION}.md)

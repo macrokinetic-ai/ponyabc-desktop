@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { resolvePenRoot, type ResolvedPenRoot } from './pathSecurity';
+import * as internal from '@internal';
 
 /**
  * Roots to check for mounted external volumes, non-recursively. This never walks the whole
@@ -10,11 +11,12 @@ import { resolvePenRoot, type ResolvedPenRoot } from './pathSecurity';
  * candidate below is then confirmed by a single BOOK/DIY existence check at depth 1 of that
  * volume, never deeper.
  *
- * Overridable via PONYABC_TEST_VOLUMES_ROOT so simulated-folder tests (and the packaged-app
- * verification script) can exercise real candidate-detection logic without a physical device.
+ * The Internal build can point this at a folder instead, so simulated-pen tests and the
+ * packaged-app verification script exercise the real detection logic without a physical device.
+ * The Store build has no such override: see src/main/internal/.
  */
 function scanRoots(): string[] {
-  const override = process.env.PONYABC_TEST_VOLUMES_ROOT;
+  const override = internal.volumesRootOverride();
   if (override) return [override];
 
   switch (process.platform) {
@@ -35,7 +37,7 @@ function scanRoots(): string[] {
 /** On macOS/override roots, each entry under the root is itself a mounted volume to check.
  *  On Windows, each scanRoots() entry already IS a single drive — check it directly. */
 function volumesUnder(root: string): string[] {
-  if (process.platform === 'win32' && !process.env.PONYABC_TEST_VOLUMES_ROOT) return [root];
+  if (process.platform === 'win32' && !internal.volumesRootOverride()) return [root];
   try {
     return fs
       .readdirSync(root, { withFileTypes: true })

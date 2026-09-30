@@ -1,3 +1,4 @@
+import * as internal from '@internal';
 import { ipcMain, type BrowserWindow } from 'electron';
 import { IPC } from '@shared/ipcChannels';
 import type { SettingsStore } from '../services/settingsStore';
@@ -113,6 +114,12 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.replaceStickerExecute, (_event, params) => executeReplaceSticker(getWindow(), params));
 
   ipcMain.handle(IPC.bookIndexStatus, () => getBookIndexStatus());
+
+  // Testing mode. `internal` is the stub in a Store build, so these answer "off" and the
+  // folder picker returns null — there is no dialog and no stored key to reach.
+  ipcMain.handle(IPC.testingModeGet, () => internal.getTestingMode());
+  ipcMain.handle(IPC.testingModeSet, (_e, patch) => internal.setTestingMode(patch ?? {}));
+  ipcMain.handle(IPC.testingModeChooseFolder, () => internal.chooseTestCatalogueFolder(getWindow()));
   ipcMain.handle(IPC.bookIndexCommit, (_event, params) => commitBookIndexReset(params ?? {}));
   ipcMain.handle(IPC.bookIndexFix, () => fixBookIndex());
 
