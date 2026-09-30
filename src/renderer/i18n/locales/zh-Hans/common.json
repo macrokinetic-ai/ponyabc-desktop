@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "发生错误：{{message}}"
+  },
+  "penStorage": {
+    "summary": "录音笔已使用 {{used}}，总容量 {{total}}",
+    "breakdown": "书本 {{books}} · 录音 {{recordings}} · 可用 {{free}}",
+    "unreadable": "我们无法查看录音笔还剩多少空间。请拔下录音笔，重新插上，再看这个画面。"
   }
 }

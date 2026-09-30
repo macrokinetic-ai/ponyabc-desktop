@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "Something went wrong: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} of {{total}} used on your pen",
+    "breakdown": "Books {{books}} · Recordings {{recordings}} · Free {{free}}",
+    "unreadable": "We could not check how much room is left on your pen. Please unplug it, plug it in again and look at this screen once more."
   }
 }

@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "Ein Fehler ist aufgetreten: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} von {{total}} auf Ihrem Stift belegt",
+    "breakdown": "Bücher {{books}} · Aufnahmen {{recordings}} · Frei {{free}}",
+    "unreadable": "Wir konnten nicht prüfen, wie viel Platz auf Ihrem Stift noch frei ist. Ziehen Sie ihn ab, stecken Sie ihn wieder ein und sehen Sie noch einmal auf diesen Bildschirm."
   }
 }

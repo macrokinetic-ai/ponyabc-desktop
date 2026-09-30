@@ -531,14 +531,17 @@ describe('BookLibraryScreen — the book list', () => {
       }),
     );
 
-    const list = document.querySelector('details.book-list') as HTMLDetailsElement;
-    list.open = true;
+    // "On your pen" is no longer behind a disclosure — a teacher checking a row of pens sees it
+    // straight away. What the sync will do is still one click away.
+    const list = document.querySelector('section.book-list') as HTMLElement;
+    const details = list.querySelector('details') as HTMLDetailsElement;
+    details.open = true;
     expect(list.textContent).toContain('On your pen');
     expect(list.textContent).toContain('Will be added');
     expect(list.textContent).toContain('Will be updated');
     expect(list.textContent).toContain('Other books (not from PonyABC)');
     expect(list.textContent).toContain('This app never changes them.');
-    // Nothing in the list is pressable.
+    // Nothing in the list is pressable, apart from the disclosure that opens the rest of it.
     expect(list.querySelectorAll('button, input')).toHaveLength(0);
   });
 });
@@ -555,6 +558,56 @@ describe('BookLibraryScreen — after a change', () => {
 
     fireEvent.click(screen.getByRole('button', { name: "Fix my pen's book list" }));
     await waitFor(() => expect(window.ponyabc.bookIndexFix).toHaveBeenCalled());
+  });
+});
+
+/**
+ * What the owner asked for after testing rc5: a teacher checking a row of pens should see what
+ * is on the one in their hand, and how much room is left, without opening anything.
+ */
+describe('BookLibraryScreen — what is on the pen, shown', () => {
+  it('lists the pen\'s books straight away, with sizes, and no disclosure to open', async () => {
+    await renderScreen(listResult({ penItems: [penItem({ contentId: 'b1' })], catalogItems: [] }));
+
+    // Before the "See book list" disclosure, i.e. in the part a parent sees without clicking.
+    const main = document.body.textContent?.split('See book list')[0] ?? '';
+    expect(main).toContain('On your pen');
+    expect(main).toContain('Book One');
+    expect(main).toContain('about 100 MB');
+  });
+
+  it('says how much room is left, books and recordings apart, in plain words', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' })],
+        catalogItems: [],
+        meta: {
+          fetchedAtMs: 1,
+          source: 'live',
+          offline: false,
+          conflicts: [],
+          lastCheck: okLastCheck,
+          penFreeBytes: 2_400_000_000,
+          penTotalBytes: 14_800_000_000,
+        },
+      }),
+    );
+
+    await screen.findByText('12.4 GB of 14.8 GB used on your pen');
+    await screen.findByText(/Books .* · Recordings .* · Free/);
+  });
+
+  it('says it could not check rather than showing a made-up figure', async () => {
+    await renderScreen(
+      listResult({
+        penItems: [penItem({ contentId: 'b1' })],
+        catalogItems: [],
+        meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: null },
+      }),
+    );
+
+    await screen.findByText(/We could not check how much room is left/);
+    expect(document.body.textContent).not.toContain('NaN');
   });
 });
 

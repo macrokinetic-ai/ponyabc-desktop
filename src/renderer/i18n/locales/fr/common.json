@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "Une erreur s'est produite : {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} utilisés sur {{total}} sur votre stylo",
+    "breakdown": "Livres {{books}} · Enregistrements {{recordings}} · Libre {{free}}",
+    "unreadable": "Nous n’avons pas pu vérifier l’espace restant sur votre stylo. Débranchez-le, rebranchez-le et revenez sur cet écran."
   }
 }

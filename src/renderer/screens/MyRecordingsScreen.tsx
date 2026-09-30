@@ -18,6 +18,7 @@ import { TransferPlanPanel } from '../components/TransferPlanPanel';
 import { ReplaceStickerPanel } from '../components/ReplaceStickerPanel';
 import { AudioPreviewBar } from '../components/AudioPreviewBar';
 import { RecordingBackupsPanel } from '../components/RecordingBackupsPanel';
+import { PenStorageBar } from '../components/PenStorageBar';
 import { usePenRoot } from '../state/PenRootContext';
 import { useComputerFolder } from '../state/ComputerFolderContext';
 import { useTransferProgress } from '../hooks/useCopyProgress';
@@ -50,6 +51,26 @@ export function MyRecordingsScreen() {
   const [replaceSummary, setReplaceSummary] = useState<ReplaceStickerSummary | null>(null);
 
   const audioPreview = useAudioPreview();
+
+  // The volume's own figures and the books' sizes, so this screen's breakdown matches the Books
+  // screen's rather than being a second, different answer to the same question.
+  const [penSpace, setPenSpace] = useState<{ totalBytes: number | null; freeBytes: number | null; bookSizes: number[] }>({
+    totalBytes: null,
+    freeBytes: null,
+    bookSizes: [],
+  });
+  useEffect(() => {
+    void window.ponyabc
+      .bookList()
+      .then((res) =>
+        setPenSpace(
+          res.status === 'ok'
+            ? { totalBytes: res.meta.penTotalBytes, freeBytes: res.meta.penFreeBytes, bookSizes: (res.penItems ?? []).map((i) => i.sizeBytes) }
+            : { totalBytes: null, freeBytes: null, bookSizes: [] },
+        ),
+      )
+      .catch(() => setPenSpace({ totalBytes: null, freeBytes: null, bookSizes: [] }));
+  }, [penRootResult, penFiles]);
 
   const refreshPenFiles = useCallback(async () => {
     const res = await window.ponyabc.listDiyRecordings();
@@ -292,6 +313,14 @@ export function MyRecordingsScreen() {
       {/* What a parent came here to do: keep a copy, put one back, name it, move it, delete it.
           The folder-to-folder transfer tools below are still here, one disclosure away, for
           anyone who wants them. */}
+      {/* How much room is left, in the same words as the Books screen (owner, testing rc5). */}
+      <PenStorageBar
+        totalBytes={penSpace.totalBytes}
+        freeBytes={penSpace.freeBytes}
+        bookSizes={penSpace.bookSizes}
+        recordingSizes={penFileList.map((f) => f.sizeBytes)}
+      />
+
       <RecordingBackupsPanel />
 
       <details className="advanced-details">

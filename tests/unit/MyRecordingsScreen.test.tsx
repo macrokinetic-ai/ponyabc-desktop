@@ -64,6 +64,13 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     scanForPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1, auto: true })),
     chooseCandidatePenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
     selectPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
+    // The storage bar asks for the pen's own capacity and the books on it.
+    bookList: vi.fn(async () => ({
+      status: 'ok',
+      penItems: [{ fileName: '0451.axb', sizeBytes: 100_000_000 }],
+      catalogItems: [],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], penTotalBytes: 14_800_000_000, penFreeBytes: 2_400_000_000 },
+    })),
     listDiyRecordings: vi.fn(async () => ({
       status: 'ok',
       diyFolderName: 'DIY',

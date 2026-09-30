@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "Se produjo un error: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} de {{total}} usados en su lápiz",
+    "breakdown": "Libros {{books}} · Grabaciones {{recordings}} · Libre {{free}}",
+    "unreadable": "No hemos podido comprobar cuánto espacio queda en su lápiz. Desconéctelo, vuelva a conectarlo y mire de nuevo esta pantalla."
   }
 }

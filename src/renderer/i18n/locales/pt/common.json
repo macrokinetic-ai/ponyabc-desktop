@@ -46,5 +46,10 @@
   },
   "errors": {
     "generic": "Ocorreu um erro: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} de {{total}} usados na sua caneta",
+    "breakdown": "Livros {{books}} · Gravações {{recordings}} · Livre {{free}}",
+    "unreadable": "Não conseguimos verificar o espaço que resta na sua caneta. Desligue-a, volte a ligá-la e veja este ecrã outra vez."
   }
 }

@@ -46,9 +46,9 @@ again. The commit belongs at the boundary, in main.
 - [ ] 5. Progress or a spinner with what it is doing, and a clear Done or error, for every long
       action: Verify, Re-download, Sync, firmware download, backups, copying recordings.
       Buttons disabled while running.
-- [ ] 6. Pen storage on BOOK and My Recordings: total / used / free, books and recordings
+- [x] 6. Pen storage on BOOK and My Recordings: total / used / free, books and recordings
       separately, in plain words.
-- [ ] 7. BOOK screen lists the books on the pen by default — name in the app's language, size,
+- [x] 7. BOOK screen lists the books on the pen by default — name in the app's language, size,
       status — not behind "See book list".
 
 ## INTERNAL BUILD ONLY

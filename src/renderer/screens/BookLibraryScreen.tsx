@@ -21,11 +21,13 @@ import {
   PEN_STATUS_LEGEND_ORDER,
   SIMPLE_STATE_LABELS,
   SIMPLE_STATE_LEGEND_ORDER,
+  simpleStateForPen,
 } from './bookStatusLabels';
 import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
 import { buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '@shared/bookSyncPlan';
 import { formatDateTime } from '@shared/dateFormat';
 import { TechnicalLogPanel } from '@internal-ui';
+import { PenStorageBar } from '../components/PenStorageBar';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
 /**
@@ -354,6 +356,15 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
 
   const [reinstalling, setReinstalling] = useState<string | null>(null);
 
+  // The pen's recordings, for the storage breakdown only — this screen never lists them.
+  const [recordingSizes, setRecordingSizes] = useState<number[]>([]);
+  useEffect(() => {
+    void window.ponyabc
+      .listDiyRecordings()
+      .then((res) => setRecordingSizes(res.status === 'ok' ? res.files.map((f) => f.sizeBytes) : []))
+      .catch(() => setRecordingSizes([]));
+  }, [lib.penItems]);
+
   async function handleReinstall(contentId: string) {
     setBusy(true);
     setReinstalling(contentId);
@@ -525,27 +536,62 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
         </div>
       )}
 
-      {/* --------------------------------------------------------------- THE BOOK LIST --- */}
-      <details className="book-list">
-        <summary>{t('list.toggle')}</summary>
-
+      {/* ------------------------------------------------- WHAT IS ON THE PEN, AND ITS ROOM ---
+          Shown, not hidden behind "See book list". A teacher checking twelve pens in a row wants
+          to see what is on the one in their hand without opening anything (owner, testing rc5). */}
+      <section className="book-list book-list--open">
         <h3 className="status-legend__heading">{t('list.onPen')}</h3>
-        <BookNameList items={ourBooks.map((p) => displayNameFor({ friendlyName: p.friendlyName, friendlyNameI18n: p.friendlyNameI18n, filename: p.fileName }, i18n.language))} emptyLabel={t('list.none')} />
-
-        <h3 className="status-legend__heading">{t('list.willAdd')}</h3>
-        <BookNameList items={plan.toAdd.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
-
-        <h3 className="status-legend__heading">{t('list.willUpdate')}</h3>
-        <BookNameList items={plan.toUpdate.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
-
-        {otherBooks.length > 0 && (
-          <>
-            <h3 className="status-legend__heading">{t('list.other')}</h3>
-            <p className="hint">{t('list.otherBody')}</p>
-            <BookNameList items={otherBooks.map((p) => p.fileName)} emptyLabel={t('list.none')} />
-          </>
+        {ourBooks.length === 0 ? (
+          <p className="hint">{t('list.none')}</p>
+        ) : (
+          <ul className="recordings-list">
+            {ourBooks.map((item) => (
+              <li key={item.fileName} className="recordings-list__row">
+                <span className="recordings-list__label">
+                  <span className="recordings-list__name">
+                    {displayNameFor(
+                      { friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName },
+                      i18n.language,
+                    )}
+                  </span>
+                </span>
+                <span className="recordings-list__size">{t('size.about', { size: formatFriendlySize(item.sizeBytes) })}</span>
+                {/* The parent's wording, not the technical one. `matched-hash-unknown` reads
+                    "On pen — no official checksum to check against" under Advanced details, which
+                    is right there and wrong here. */}
+                <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForPen(item.status)].short)}</span>
+              </li>
+            ))}
+          </ul>
         )}
-      </details>
+
+        <PenStorageBar
+          totalBytes={lib.meta.penTotalBytes}
+          freeBytes={lib.meta.penFreeBytes}
+          bookSizes={penItems.map((i) => i.sizeBytes)}
+          recordingSizes={recordingSizes}
+        />
+
+        {/* What the sync is about to do, and the books that are not ours, stay one disclosure
+            away: they are answers to "why", and the list above is the answer to "what". */}
+        <details>
+          <summary>{t('list.toggle')}</summary>
+
+          <h3 className="status-legend__heading">{t('list.willAdd')}</h3>
+          <BookNameList items={plan.toAdd.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
+
+          <h3 className="status-legend__heading">{t('list.willUpdate')}</h3>
+          <BookNameList items={plan.toUpdate.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
+
+          {otherBooks.length > 0 && (
+            <>
+              <h3 className="status-legend__heading">{t('list.other')}</h3>
+              <p className="hint">{t('list.otherBody')}</p>
+              <BookNameList items={otherBooks.map((p) => p.fileName)} emptyLabel={t('list.none')} />
+            </>
+          )}
+        </details>
+      </section>
 
       {writing && (
         <div className="note-box">
