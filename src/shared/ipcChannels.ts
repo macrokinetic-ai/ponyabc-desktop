@@ -57,8 +57,10 @@ export const IPC = {
   bookWriteProgress: 'ponyabc:book:writeProgress',
   bookIndexStatus: 'ponyabc:book:index:status',
 
-  // Testing mode — the Internal build only. The Store build registers no handler for these,
-  // so an invoke resolves to the stub's "off" answer rather than doing anything.
+  // Testing mode — the Internal build only. Both builds register these handlers; in the Store
+  // build they are wired to the stubs in src/main/internal/stub.ts, which report testing mode
+  // off, ignore any attempt to switch it on, and hand back no tester key and no folder. The
+  // Store renderer has nothing that invokes them: the screen is not hidden, it is not built.
   testingModeGet: 'ponyabc:testing:get',
   testingModeSet: 'ponyabc:testing:set',
   testingModeChooseFolder: 'ponyabc:testing:chooseFolder',
