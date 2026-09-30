@@ -1,40 +1,78 @@
-# Two builds, and the web contract — 0.3.17 rc4
+# rc6 — what the owner found testing rc5 on a real Windows PC
 
-Owner decisions, 2026-09-30. 0.3.17 is not yet submitted, so all of this is allowed.
-Never log in to Partner Center, submit, or publish.
+Owner decisions, 2026-09-30. Nothing is submitted to the Store; Partner Center is never opened.
 
-## 0. Match the web contract first
-- [x] `state` (active/retired/remove_from_pens/hidden) replaces `lifecycleState` everywhere
-- [x] `X-PonyABC-App-Version` on every catalogue and firmware request
-- [x] `min_app_version` honoured as a second guard, client-side
-- [x] a contract test built from the web branch's own response examples
+## 4. Re-download leaves the pen's book list behind — THE BUG  (do first)
 
-## A. Two builds from every commit
-- [x] audit and list every developer/support path in the app
-- [x] STORE build: none of them, excluded at compile time
-- [x] INTERNAL build: own name, AppId and badged icon; permanent banner; version reads
-      "0.3.17 (rc4, <commit>) · Internal"
-- [x] CI fails if an internal package carries the Store identity
-- [x] tests proving the Store build contains no developer path
+**Found it.** `Re-download` (`reinstall` in `bookInstall.ts`) **does write to the pen** —
+`resolveCacheFile(…, force) → writeToPen`. So the rule applies to it, and it is being broken.
 
-## B. Book and firmware rules, both builds
-- [x] confirm the BIN preflight is per-upgrade, not per-version
-- [x] remove_from_pens: remove matching books first, then add/update, one index reset at the
-      end, peak space includes the removals, and the parent is told in plain words first
-- [x] retired never added but still updated; hidden never shown in the Store build
-- [x] 8 locales, UK English
+`markBookIndexStale()` is called correctly by every pen mutation and persisted immediately.
+What is missing is the commit: `commitBookIndexReset()` is only ever reached from
+`finishBookBatch()` in `BookLibraryScreen.runSync`. A single action — Re-download, Add,
+Replace, Remove, Restore — marks the pen stale and then **nobody deletes the two .BIN files**,
+so they sit there until the next time the pen is plugged in, with no restart prompt. Exactly
+what the owner saw on the SD card.
 
-## C. Testing mode, Internal build only
-- [x] Settings → Testing mode: a local test-catalogue folder, and the server tester channel
-- [x] test items go through exactly the same sync code as real ones
-- [x] firmware: choose V1.18 or V1.26 and run the normal wizard with the preflight
-- [x] docs/test-plans/internal-testing.md with a ready manifest.json
+The fix must not be "call it from the other four places too": the next path added would forget
+again. The commit belongs at the boundary, in main.
 
-## D. Gates
-- [x] typecheck, vitest, build, Windows CI for both builds — run 36746198871, green
-- [x] Release with both builds — **`v0.3.17-rc5`**, not rc4: rc4 published a Store installer
-      that a later packaging step had rebuilt over the stamped one, so it showed a plain
-      `0.3.17` and was indistinguishable from the Store version. rc4 marked Superseded; the
-      installers are now hashed when built and re-checked before publishing.
-- [x] PM-STATUS and store-release-checklist: only the Store build is ever submitted
-- [x] report, INDEX, push to ponyabc-reports
+- [x] `bookIndex.ts`: a batch session — `beginPenBookBatch()` / `endPenBookBatch()`, depth-counted
+- [x] every pen-mutating IPC handler commits the reset itself when no batch is open, and returns
+      what happened so the screen can ask for the restart
+- [x] `runSync` opens one batch and closes it once, keeping "one reset per batch"
+- [x] audit and cover every writing path: Sync, Re-download, Add, Replace, Remove, Restore,
+      testing-mode installs
+- [x] tests: each single action resets and prompts; a batch resets exactly once; a batch that
+      wrote nothing resets nothing; an interrupted batch still heals
+
+## RECORDINGS
+
+- [ ] 1. `reason` on the snapshot manifest (`manual` | `before-replace` | `before-delete` |
+      `before-restore` | `migration`), with the thing it was protecting. Labels read
+      "Backup — 30 September 2026, 21:10" vs "Automatic backup before replacing 0451".
+- [ ] 1. "Back up my recordings" single-shot: disabled while running, so a double click cannot
+      make two backups.
+- [ ] 2. BUG: a backup says "20 recordings" and lists none — `SnapshotSummary` never carries the
+      entries. Add a contents call; list sticker number, friendly name, size, Play; tick boxes
+      and Select all; "Put selected recordings back on my pen" with one line of explanation;
+      say plainly that each backup is its own snapshot and older ones are kept.
+- [ ] 3. Promote "Add recordings from this computer" to the main screen: choose MP3 files
+      (name = sticker number, 4 or 5 digits), show new vs REPLACE, Preview both, automatic
+      backup of the pen's copy first, progress bar. Batch to many pens is 0.3.18 — design note.
+
+## BOOKS
+
+- [ ] 5. Progress or a spinner with what it is doing, and a clear Done or error, for every long
+      action: Verify, Re-download, Sync, firmware download, backups, copying recordings.
+      Buttons disabled while running.
+- [ ] 6. Pen storage on BOOK and My Recordings: total / used / free, books and recordings
+      separately, in plain words.
+- [ ] 7. BOOK screen lists the books on the pen by default — name in the app's language, size,
+      status — not behind "See book list".
+
+## INTERNAL BUILD ONLY
+
+- [ ] 8. A Technical log panel listing each step as it happens: files deleted
+      ("Deleted BOOK/1.BIN"), files written, index reset requested, firmware preflight,
+      restores. Test that the Store build contains none of it.
+
+## FIRMWARE
+
+- [ ] 9. Internal: keep the folder picker AND check online for newer firmware for this hardware,
+      offering "Download and update" with a progress bar. Store: online only — confirm the
+      folder picker is absent.
+- [ ] 10. Show the pen's current firmware version if it can be read; say so plainly if not.
+
+## TEST PLAN
+
+- [ ] Record the owner's measurement as test A's result: the pen rebuilt both .BIN files within
+      a few seconds of power-on after deletion.
+
+## GATES
+
+- [ ] 8 locales, UK English, no technical words in the Store build
+- [ ] typecheck, vitest, build, Windows CI both builds
+- [ ] publish `v0.3.17-rc6` (pre-release, both builds)
+- [ ] `tasks/PM-STATUS.md`
+- [ ] report, INDEX, push to ponyabc-reports

@@ -84,7 +84,7 @@
   },
   "action": {
     "add": "Añadir lo seleccionado a su lápiz",
-    "reinstall": "Volver a descargar",
+    "reinstall": "Obtener una copia nueva y ponerla en el lápiz",
     "cancelDownload": "Cancelar",
     "cancelVerify": "Cancelar verificación",
     "verifyThis": "Verificar este archivo",
@@ -92,7 +92,10 @@
     "downloadAll": "Descargar todo a la App",
     "cancelDownloadBatch": "Cancelar descarga",
     "addOne": "Añadir",
-    "updateOne": "Actualizar"
+    "updateOne": "Actualizar",
+    "reinstallNote": "El libro se descarga de nuevo y se copia en el lápiz, que después habrá que reiniciar.",
+    "reinstallWorking": "Obteniendo una copia nueva…",
+    "reinstallDone": "Listo. Ese libro está de nuevo en su lápiz."
   },
   "statusHelp": {
     "present": "El nombre coincide con un libro oficial, pero la App no ha leído el archivo para comprobar su contenido. Actualizar nunca lee los archivos, así que este es el estado normal hasta que elija Verificar este archivo.",

@@ -65,6 +65,11 @@ export const IPC = {
   testingModeSet: 'ponyabc:testing:set',
   testingModeChooseFolder: 'ponyabc:testing:chooseFolder',
   bookIndexCommit: 'ponyabc:book:index:commit',
+  // A sync opens a batch so the many writes inside it cost the pen one index reset, not one per
+  // book. Every write outside a batch settles itself in the main process — see
+  // finishPenBookMutation in main/ipc/bookIndex.ts.
+  bookBatchBegin: 'ponyabc:book:batch:begin',
+  bookBatchEnd: 'ponyabc:book:batch:end',
   bookIndexFix: 'ponyabc:book:index:fix',
   bookDownloadBatchCancel: 'ponyabc:book:downloadBatchCancel',
   bookDownloadBatchSummary: 'ponyabc:book:downloadBatchSummary',

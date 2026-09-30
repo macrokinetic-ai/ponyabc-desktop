@@ -607,6 +607,15 @@ export interface BookWriteProgressEvent {
   totalBytes: number;
 }
 
+/**
+ * What happened to the pen's book index when an action that writes to the pen finished.
+ *
+ * Every single action carries this, because every single action is its own complete batch: it
+ * writes, the index is reset, and the pen has to be restarted. `'not-needed'` means the action
+ * ran inside a batch that will settle it, or that nothing on the pen changed.
+ */
+export type PenIndexOutcome = 'reset' | 'still-pending' | 'not-needed' | 'no-pen-selected';
+
 export interface BookActionResult {
   status: BookActionStatus;
   message?: string;
@@ -616,6 +625,9 @@ export interface BookActionResult {
    *  book index is positional, so an addition makes it stale and a same-name replacement does
    *  not — see src/main/services/bookIndexReset.ts. */
   createdNewFile?: boolean;
+  /** Set on every action that can write to the pen. `'reset'` or `'still-pending'` both mean the
+   *  screen must ask for the pen to be restarted. See PenIndexOutcome. */
+  penIndex?: PenIndexOutcome;
 }
 
 export type BookRemoveStatus =
@@ -634,6 +646,9 @@ export type BookRemoveStatus =
 export interface BookRemoveResult {
   status: BookRemoveStatus;
   freedBytes?: number;
+  /** As BookActionResult.penIndex — a removal shifts every later book's position, so it owes the
+   *  pen the same rebuilt list an addition does. */
+  penIndex?: PenIndexOutcome;
   /** The backup id this removal's backup was recorded under, so the UI can offer "restore"
    *  for it directly. */
   backupPath?: string;
@@ -963,6 +978,10 @@ export interface PonyAbcApi {
 
   bookIndexStatus: () => Promise<import('../main/ipc/bookIndex').BookIndexStatus | { status: 'no-pen-selected' }>;
   bookIndexCommit: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
+  /** Opens a batch: the writes inside it cost the pen ONE index reset, settled by bookBatchEnd.
+   *  A write outside a batch settles itself in the main process. */
+  bookBatchBegin: () => Promise<{ ok: boolean }>;
+  bookBatchEnd: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookIndexFix: () => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookDownloadBatch: (params: { contentIds: string[] }) => Promise<BookDownloadBatchStartResult>;
   bookDownloadBatchCancel: () => Promise<{ ok: boolean }>;

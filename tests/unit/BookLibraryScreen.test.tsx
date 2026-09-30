@@ -94,6 +94,8 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     onBookWriteProgress: vi.fn(() => () => {}),
     bookIndexStatus: vi.fn(async () => ({ recordCount: 1, bookCount: 1, malformed: false, appleDoubleFiles: [], hasDsStore: false, status: 'ok', resetPending: false })),
     bookIndexCommit: vi.fn(async () => ({ status: 'not-needed' })),
+    bookBatchBegin: vi.fn(async () => ({ ok: true })),
+    bookBatchEnd: vi.fn(async () => ({ status: 'not-needed' })),
     bookIndexFix: vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false })),
     bookDownloadBatch: vi.fn(async () => ({ status: 'started' })),
     bookDownloadBatchCancel: vi.fn(async () => ({ ok: true })),
@@ -280,7 +282,7 @@ describe('BookLibraryScreen — syncing', () => {
 
   it('tells the parent to restart the pen once a book has been added', async () => {
     await renderScreen(twoToDo());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
@@ -340,11 +342,13 @@ describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
       meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], lastCheck: okLastCheck, penFreeBytes: 9_000_000_000 },
     });
 
-  const commitMock = () => window.ponyabc.bookIndexCommit as ReturnType<typeof vi.fn>;
+  // The screen no longer commits the reset itself: it closes the batch, and the main process
+  // decides. `bookBatchEnd`'s answer is what tells the screen whether to ask for the restart.
+  const commitMock = () => window.ponyabc.bookBatchEnd as ReturnType<typeof vi.fn>;
 
   it('resets after a sync that only UPDATED a book, and asks for a restart', async () => {
     await renderScreen(updateOnly());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN', 'BOOKFILE.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
@@ -357,7 +361,7 @@ describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
 
   it('never tells a parent that an update needs no restart', async () => {
     await renderScreen(updateOnly());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
@@ -367,7 +371,7 @@ describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
 
   it('resets after a sync that ADDED a book', async () => {
     await renderScreen(addOnly());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
@@ -377,19 +381,20 @@ describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
 
   it('leaves the pen alone when there was nothing to sync', async () => {
     await renderScreen(nothingToDo());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     // The button is disabled with nothing to do; clicking it must stay a no-op either way.
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
     await waitFor(() => expect(window.ponyabc.bookAdd).not.toHaveBeenCalled());
-    expect(commitMock()).not.toHaveBeenCalled();
+    expect(window.ponyabc.bookUpdate).not.toHaveBeenCalled();
+    expect(window.ponyabc.bookRemove).not.toHaveBeenCalled();
     expect(screen.queryByText('All done!')).toBeNull();
+    expect(screen.queryByText(/Please unplug your pen/)).toBeNull();
   });
 
   it('resets when the card filled up AFTER one book had been written', async () => {
     await renderScreen(oneOfEach());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
     // The 20 MB addition goes first and succeeds; the 100 MB update then runs out of room.
     window.ponyabc.bookUpdate = vi.fn(async () => ({ status: 'no-space' }));
 
@@ -402,19 +407,22 @@ describe('BookLibraryScreen — rebuilding the pen\'s book list', () => {
 
   it('leaves the pen alone when the very first write failed', async () => {
     await renderScreen(oneOfEach());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    // Nothing was written, so the main process has nothing pending and answers 'not-needed' —
+    // the default mock. The batch is still closed, because a batch left open would make the
+    // next single write reset nothing.
     window.ponyabc.bookAdd = vi.fn(async () => ({ status: 'no-space' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
     await screen.findByText('Your pen filled up, so we stopped. The books that finished are on your pen.');
-    expect(commitMock()).not.toHaveBeenCalled();
+    await waitFor(() => expect(commitMock()).toHaveBeenCalledTimes(1));
     expect(screen.queryByText('All done!')).toBeNull();
+    expect(screen.queryByText(/Please unplug your pen/)).toBeNull();
   });
 
   it('names the books it wrote, so the tidy-up only touches those', async () => {
     await renderScreen(addOnly());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 
@@ -601,7 +609,7 @@ describe('BookLibraryScreen — books coming off the pen', () => {
 
   it('removes it as part of Sync books, before anything is written', async () => {
     await renderScreen(beingRemoved());
-    window.ponyabc.bookIndexCommit = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
+    window.ponyabc.bookBatchEnd = vi.fn(async () => ({ status: 'reset', deleted: ['1.BIN'], ejected: false }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync books' }));
 

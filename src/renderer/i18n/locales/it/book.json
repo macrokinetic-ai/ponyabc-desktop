@@ -84,7 +84,7 @@
   },
   "action": {
     "add": "Aggiungi i selezionati alla penna",
-    "reinstall": "Riscarica",
+    "reinstall": "Scarica una copia nuova e mettila sulla penna",
     "cancelDownload": "Annulla",
     "cancelVerify": "Annulla verifica",
     "verifyThis": "Verifica questo file",
@@ -92,7 +92,10 @@
     "downloadAll": "Scarica tutto nell'App",
     "cancelDownloadBatch": "Annulla download",
     "addOne": "Aggiungi",
-    "updateOne": "Aggiorna"
+    "updateOne": "Aggiorna",
+    "reinstallNote": "Il libro viene scaricato di nuovo e copiato sulla penna, che poi va riavviata.",
+    "reinstallWorking": "Sto scaricando una copia nuova…",
+    "reinstallDone": "Fatto. Quel libro è di nuovo sulla penna."
   },
   "statusHelp": {
     "present": "Il nome corrisponde a un libro ufficiale, ma l'App non ha letto il file per controllarne il contenuto. L'aggiornamento non legge mai i file: è quindi lo stato normale finché non si sceglie Verifica questo file.",

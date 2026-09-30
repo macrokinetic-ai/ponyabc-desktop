@@ -28,7 +28,7 @@ import { validateCatalogEntries } from '../services/bookCatalogValidate';
 import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient';
 import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial } from '../services/bookInstall';
 import { removeFromPen } from '../services/bookRemove';
-import { markBookIndexStale } from './bookIndex';
+import { finishPenBookMutation, markBookIndexStale } from './bookIndex';
 import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
@@ -273,7 +273,17 @@ async function runInstallAction(
   // dependable of the contents, and the cost of being wrong is the pen reading the wrong book
   // aloud with nothing visibly broken. The catalogue's `updateRequiresIndexReset` is still
   // parsed and still harmless, but nothing decides anything by it any more.
-  if (result.status === 'completed') markBookIndexStale('written');
+  //
+  // The reset is committed HERE, not by whichever screen happened to call this. A single action
+  // is its own complete batch — it wrote, so the pen's list is wrong, so both .BIN files go now
+  // and the caller is told to ask for the restart. Inside a sync batch this is a no-op and the
+  // batch settles it once at the end. Before this, only runSync ever committed, and
+  // Re-download left the stale index on the card (owner, testing rc5).
+  if (result.status === 'completed') {
+    markBookIndexStale('written');
+    const commit = await finishPenBookMutation({ writtenFileNames: [entry.filename] });
+    result = { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
+  }
 
   appendDiagnostic(diagnosticsStore(), 'book-download', {
     contentId: entry.contentId,
@@ -634,8 +644,10 @@ export async function bookRemove(params: { fileName: string; penGeneration: numb
   });
   // Every book after this one has just shifted down a position. Left unfixed, the pen plays the
   // wrong book's audio — which looks like nothing being wrong at all.
-  if (result.status === 'completed') markBookIndexStale('removed');
-  return result;
+  if (result.status !== 'completed') return result;
+  markBookIndexStale('removed');
+  const commit = await finishPenBookMutation();
+  return { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
 }
 
 export function bookBackups(): BookBackupSummary[] {
@@ -666,12 +678,21 @@ export async function bookRestore(params: { backupId: string; penGeneration: num
     return { status: 'restore-not-allowed', message: 'Restoring unrecognized content back onto the pen is no longer supported.' };
   }
   const { scratchBackupRootDir } = dirs();
-  return restoreFromBackup({
+  const result = await restoreFromBackup({
     backupId: params.backupId,
     penGeneration: params.penGeneration,
     backupDeps: backupDeps(),
     scratchBackupDir: makeBackupDir(scratchBackupRootDir),
   });
+  // A restore puts a file back into BOOK/, which is a write like any other. This marked nothing
+  // and reset nothing before, so a restored book could be played from the wrong position with
+  // nothing visibly wrong.
+  if (result.status !== 'completed') return result;
+  markBookIndexStale('written');
+  const commit = await finishPenBookMutation(
+    backupEntry ? { writtenFileNames: [backupEntry.originalFileName] } : {},
+  );
+  return { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
 }
 
 export function bookDownloadCancel(contentId: string): { ok: boolean } {

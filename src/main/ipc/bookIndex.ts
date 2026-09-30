@@ -24,6 +24,13 @@ import { ejectPen } from '../services/penEject';
  * 2. The reset is the **last** step, after every book operation has succeeded. Deleting the
  *    index first would leave a window where the pen has neither a valid index nor the books the
  *    new one should describe.
+ * 3. **Committing the reset is this module's job, not the caller's.** It used to be the screen's:
+ *    only `BookLibraryScreen.runSync` called `commitBookIndexReset`, so Re-download, Add,
+ *    Replace, Remove and Restore each marked the pen stale and then left both .BIN files sitting
+ *    on it until the pen was next plugged in — with no restart asked for, because nothing knew a
+ *    reset had been owed. Now a pen mutation outside a batch commits as it finishes, and a batch
+ *    is an explicit session that commits once when it closes. A new writing path gets the rule
+ *    for free; forgetting to call something is no longer a way to break it.
  */
 
 /** Same derivation as the BOOK verification index and the recordings labels, so one pen has one
@@ -70,6 +77,42 @@ export function markBookIndexStale(reason: 'written' | 'removed'): void {
   if (current[pen.penKey]) return; // already pending; keep the original timestamp
   pending().set({ ...current, [pen.penKey]: { requestedAtMs: Date.now() } });
   appendDiagnostic(diagnosticsStore(), 'book-index-reset', { event: 'marked-stale', reason, pen: pen.penKey });
+}
+
+/**
+ * An open batch means "more writes are coming — do not reset yet".
+ *
+ * Depth-counted rather than a boolean so nesting cannot end the batch early, and deliberately
+ * only in memory: if the app dies with a batch open, the persisted stale flag is what heals the
+ * pen on its next connection, which is the same path an interrupted batch has always taken.
+ */
+let openBatchDepth = 0;
+
+export function beginPenBookBatch(): void {
+  openBatchDepth += 1;
+}
+
+/** Closes a batch and, if it is the outermost one, settles whatever the batch owes the pen. */
+export async function endPenBookBatch(params: { writtenFileNames?: string[] } = {}): Promise<BookIndexCommitResult> {
+  openBatchDepth = Math.max(0, openBatchDepth - 1);
+  if (openBatchDepth > 0) return { status: 'not-needed' };
+  return commitBookIndexReset(params);
+}
+
+export function isPenBookBatchOpen(): boolean {
+  return openBatchDepth > 0;
+}
+
+/**
+ * Called by every pen mutation as it finishes — one write, one removal, one restore.
+ *
+ * Inside a batch this does nothing, because the batch will settle it. On its own, a single
+ * action IS the whole batch, so the index is reset here and the caller is told, which is how the
+ * screen knows to ask for the restart.
+ */
+export async function finishPenBookMutation(params: { writtenFileNames?: string[] } = {}): Promise<BookIndexCommitResult> {
+  if (openBatchDepth > 0) return { status: 'not-needed' };
+  return commitBookIndexReset(params);
 }
 
 export function isBookIndexStale(): boolean {

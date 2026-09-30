@@ -5,6 +5,7 @@ import type {
   BookPenMatchStatus,
   BookRemoveResult,
   BookVerifyContentResult,
+  PenIndexOutcome,
 } from '@shared/types';
 import { resolveBookDisplayName } from '@shared/bookDisplay';
 import { isSupportedLocale, DEFAULT_LOCALE } from '@shared/locales';
@@ -196,7 +197,9 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
    */
   async function finishBookBatch(writtenFileNames: string[]) {
     try {
-      const result = await window.ponyabc.bookIndexCommit({ writtenFileNames });
+      // Closes the batch opened at the start of the sync. The main process decides whether
+      // anything is owed; this screen only has to know whether to ask for the restart.
+      const result = await window.ponyabc.bookBatchEnd({ writtenFileNames });
       await refreshIndexStatus();
       // 'still-pending' shows the same notice on purpose: the reset is owed and happens on the
       // next connection, and restarting the pen is the right thing to do either way. The two
@@ -271,6 +274,11 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
     setMessage(null);
     setRestartNotice(false);
 
+    // One batch for the whole sync, so twelve books cost the pen one index reset rather than
+    // twelve. Every write inside it defers to this batch; the `finally` below always closes it.
+    await window.ponyabc.bookBatchBegin();
+    let batchClosed = false;
+
     try {
       const written: string[] = [];
       let removed = 0;
@@ -311,24 +319,52 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
       // wrote nothing — nothing to do, or the first book failed — leaves the pen alone.
       // A removal shifts every later book's position in the pen's list, exactly as an addition
       // does, so it owes the same rebuild. One reset, at the end, for the whole batch.
-      if (written.length > 0 || removed > 0) await finishBookBatch(written);
+      await finishBookBatch(written);
+      batchClosed = true;
       if (ranOutOfSpace) setMessage(t('sync.stoppedNoSpace'));
       else if (lastMessage) setMessage(lastMessage);
     } finally {
+      // A throw anywhere above must not leave the batch open: the next single action would then
+      // write and reset nothing, which is the bug this replaced.
+      if (!batchClosed) {
+        try {
+          await window.ponyabc.bookBatchEnd({});
+        } catch {
+          // The pen is gone; the owed reset is on disk and the next connection finishes it.
+        }
+      }
       setBusy(false);
       setWriting(null);
       await lib.refreshPen();
     }
   }
 
+  /**
+   * Any single action that can write to the pen ends the same way a sync does. The main process
+   * has already deleted the pen's book list by the time this runs — `penIndex` says whether it
+   * did — so all this decides is whether the parent is asked to restart the pen.
+   */
+  async function noteRestartIfNeeded(result: { penIndex?: PenIndexOutcome }) {
+    if (result.penIndex === 'reset' || result.penIndex === 'still-pending') {
+      setRestartNotice(true);
+      await refreshIndexStatus();
+    }
+  }
+
+  const [reinstalling, setReinstalling] = useState<string | null>(null);
+
   async function handleReinstall(contentId: string) {
     setBusy(true);
+    setReinstalling(contentId);
     setMessage(null);
+    setRestartNotice(false);
     try {
       const result = await lib.reinstall(contentId);
       const msg = resultMessage(t, result);
-      if (msg) setMessage(msg);
+      setMessage(msg ?? t('action.reinstallDone'));
+      await noteRestartIfNeeded(result);
     } finally {
+      setReinstalling(null);
       setBusy(false);
     }
   }
@@ -567,11 +603,20 @@ export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Secti
                       {t('action.verifyThis')}
                     </button>
                     {item.contentId && (
-                      <button type="button" className="button" disabled={busy || !!progress} onClick={() => void handleReinstall(item.contentId as string)}>
-                        {t('action.reinstall')}
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={busy || !!progress}
+                        onClick={() => void handleReinstall(item.contentId as string)}
+                      >
+                        {reinstalling === item.contentId ? t('action.reinstallWorking') : t('action.reinstall')}
                       </button>
                     )}
                   </div>
+                  {/* It writes to the pen. The old label ("Re-download") read as though it only
+                      touched the copy on this computer, and the owner reasonably expected the
+                      pen to be left alone. */}
+                  {item.contentId && <p className="hint">{t('action.reinstallNote')}</p>}
                 </li>
               );
             })}

@@ -84,7 +84,7 @@
   },
   "action": {
     "add": "Ajouter la sélection à votre stylo",
-    "reinstall": "Retélécharger",
+    "reinstall": "Récupérer une copie neuve et la mettre sur le stylo",
     "cancelDownload": "Annuler",
     "cancelVerify": "Annuler la vérification",
     "verifyThis": "Vérifier ce fichier",
@@ -92,7 +92,10 @@
     "downloadAll": "Tout télécharger vers l'App",
     "cancelDownloadBatch": "Annuler le téléchargement",
     "addOne": "Ajouter",
-    "updateOne": "Mettre à jour"
+    "updateOne": "Mettre à jour",
+    "reinstallNote": "Le livre est téléchargé à nouveau puis copié sur votre stylo, qui devra ensuite être redémarré.",
+    "reinstallWorking": "Récupération en cours…",
+    "reinstallDone": "Terminé. Ce livre est de nouveau sur votre stylo."
   },
   "statusHelp": {
     "present": "Le nom correspond à un livre officiel, mais l'App n'a pas lu le fichier pour en vérifier le contenu. Une actualisation ne lit jamais les fichiers : c'est donc l'état normal tant que vous n'avez pas choisi Vérifier ce fichier.",

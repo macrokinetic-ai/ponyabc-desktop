@@ -130,6 +130,92 @@ describe('the rule', () => {
 });
 
 /**
+ * Who commits the reset.
+ *
+ * rc5 shipped with the commit living in one screen: only `BookLibraryScreen.runSync` called it.
+ * Re-download, Add, Replace, Remove and Restore each marked the pen stale and left both .BIN
+ * files on the card — the owner found them there after a Re-download. The commit now belongs to
+ * the main process: a mutation outside a batch settles itself, and a batch settles once.
+ */
+describe('who commits the reset', () => {
+  it('a single write with no batch open deletes the index there and then', async () => {
+    fs.writeFileSync(path.join(bookDir, 'a.axb'), 'rewritten');
+    writeIndex(1);
+    const { bookIndex } = await load();
+
+    bookIndex.markBookIndexStale('written');
+    // This is all Re-download does now, and it is enough.
+    const result = await bookIndex.finishPenBookMutation({ writtenFileNames: ['a.axb'] });
+
+    expect(result.status).toBe('reset');
+    expect(indexPresent()).toBe(false);
+    expect(fs.existsSync(path.join(bookDir, 'a.axb'))).toBe(true);
+  });
+
+  it('a write INSIDE a batch waits for the batch, and the batch resets once', async () => {
+    writeIndex(3);
+    const { bookIndex } = await load();
+
+    bookIndex.beginPenBookBatch();
+
+    bookIndex.markBookIndexStale('written');
+    expect((await bookIndex.finishPenBookMutation()).status).toBe('not-needed');
+    expect(indexPresent()).toBe(true); // three books still to write — the index goes last
+
+    bookIndex.markBookIndexStale('written');
+    expect((await bookIndex.finishPenBookMutation()).status).toBe('not-needed');
+    expect(indexPresent()).toBe(true);
+
+    expect((await bookIndex.endPenBookBatch()).status).toBe('reset');
+    expect(indexPresent()).toBe(false);
+  });
+
+  it('a batch that wrote nothing resets nothing', async () => {
+    fs.writeFileSync(path.join(bookDir, 'a.axb'), 'unchanged');
+    writeIndex(1);
+    const before = fs.readFileSync(path.join(bookDir, 'BOOKFILE.BIN'));
+    const { bookIndex } = await load();
+
+    bookIndex.beginPenBookBatch();
+    expect((await bookIndex.endPenBookBatch()).status).toBe('not-needed');
+
+    expect(indexPresent()).toBe(true);
+    expect(fs.readFileSync(path.join(bookDir, 'BOOKFILE.BIN'))).toEqual(before);
+  });
+
+  it('nesting cannot end the batch early', async () => {
+    writeIndex(2);
+    const { bookIndex } = await load();
+
+    bookIndex.beginPenBookBatch();
+    bookIndex.beginPenBookBatch();
+    bookIndex.markBookIndexStale('written');
+
+    expect((await bookIndex.endPenBookBatch()).status).toBe('not-needed');
+    expect(bookIndex.isPenBookBatchOpen()).toBe(true);
+    expect(indexPresent()).toBe(true);
+
+    expect((await bookIndex.endPenBookBatch()).status).toBe('reset');
+    expect(bookIndex.isPenBookBatchOpen()).toBe(false);
+    expect(indexPresent()).toBe(false);
+  });
+
+  it('a single write AFTER a batch has closed settles itself again', async () => {
+    writeIndex(2);
+    const { bookIndex } = await load();
+
+    bookIndex.beginPenBookBatch();
+    bookIndex.markBookIndexStale('written');
+    await bookIndex.endPenBookBatch();
+    writeIndex(2); // the pen rebuilt its index on the restart
+
+    bookIndex.markBookIndexStale('written');
+    expect((await bookIndex.finishPenBookMutation()).status).toBe('reset');
+    expect(indexPresent()).toBe(false);
+  });
+});
+
+/**
  * A read-only directory is how a deletion is made to fail here. That only works where POSIX
  * permissions are enforced: Windows ignores the mode bits for this, and root bypasses them — in
  * either case the delete would succeed and the test would assert the opposite of what it claims.

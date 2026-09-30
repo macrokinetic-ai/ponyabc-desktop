@@ -10,7 +10,14 @@ import { copyRecordingsToComputer, listDiyRecordings } from './recordings';
 import { listComputerFolder, restoreComputerFolder, selectComputerFolder } from './computerFolder';
 import { executeReplaceSticker, executeTransferToPen, planReplaceSticker, planTransferToPen } from './transfer';
 import { readAudioPreview } from './audioPreview';
-import { commitBookIndexReset, completePendingBookIndexReset, fixBookIndex, getBookIndexStatus } from './bookIndex';
+import {
+  beginPenBookBatch,
+  commitBookIndexReset,
+  completePendingBookIndexReset,
+  endPenBookBatch,
+  fixBookIndex,
+  getBookIndexStatus,
+} from './bookIndex';
 import {
   createRecordingBackup,
   deleteRecordingsFromBackup,
@@ -121,6 +128,11 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow, store: Setti
   ipcMain.handle(IPC.testingModeSet, (_e, patch) => internal.setTestingMode(patch ?? {}));
   ipcMain.handle(IPC.testingModeChooseFolder, () => internal.chooseTestCatalogueFolder(getWindow()));
   ipcMain.handle(IPC.bookIndexCommit, (_event, params) => commitBookIndexReset(params ?? {}));
+  ipcMain.handle(IPC.bookBatchBegin, () => {
+    beginPenBookBatch();
+    return { ok: true };
+  });
+  ipcMain.handle(IPC.bookBatchEnd, (_event, params) => endPenBookBatch(params ?? {}));
   ipcMain.handle(IPC.bookIndexFix, () => fixBookIndex());
 
   ipcMain.handle(IPC.audioPreviewRead, (_event, params) => readAudioPreview(params));

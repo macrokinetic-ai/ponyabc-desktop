@@ -84,7 +84,7 @@
   },
   "action": {
     "add": "Adicionar os selecionados à caneta",
-    "reinstall": "Descarregar novamente",
+    "reinstall": "Obter uma cópia nova e colocá-la na caneta",
     "cancelDownload": "Cancelar",
     "cancelVerify": "Cancelar verificação",
     "verifyThis": "Verificar este ficheiro",
@@ -92,7 +92,10 @@
     "downloadAll": "Transferir tudo para a App",
     "cancelDownloadBatch": "Cancelar transferência",
     "addOne": "Adicionar",
-    "updateOne": "Atualizar"
+    "updateOne": "Atualizar",
+    "reinstallNote": "O livro é descarregado novamente e copiado para a sua caneta, que depois terá de ser reiniciada.",
+    "reinstallWorking": "A obter uma cópia nova…",
+    "reinstallDone": "Concluído. Esse livro está novamente na sua caneta."
   },
   "statusHelp": {
     "present": "O nome corresponde a um livro oficial, mas a App não leu o ficheiro para verificar o conteúdo. Atualizar nunca lê os ficheiros, por isso este é o estado normal até escolher Verificar este ficheiro.",
