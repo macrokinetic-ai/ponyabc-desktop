@@ -133,13 +133,21 @@ async function capture(ws, file, scrollTo) {
 
 /**
  * `click` matches a button by the text it shows, in whatever language — the Store build has no
- * test ids and adding them for a screenshot would be changing the product to photograph it.
- * Each entry gives the English and 繁體中文 text.
+ * test ids, and adding them so a screenshot can be taken would be changing the product to
+ * photograph it.
+ *
+ * The text is read from the locale files rather than written here. It was written here first,
+ * and the next change to those strings broke the capture: the Chinese word for the pen was
+ * corrected and the script went on looking for a button that no longer existed. One source.
  */
-const T = {
-  backUp: { en: 'Back up my recordings', 'zh-Hant': '備份我的錄音' },
-  putBack: { en: 'Put selected recordings back on my pen', 'zh-Hant': '把選取的錄音放回錄音筆' },
-};
+function buttonText(locale) {
+  const file = path.join(REPO_ROOT, 'src/renderer/i18n/locales', locale, 'recordings.json');
+  const strings = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const backUp = strings?.backup?.button;
+  const putBack = strings?.restore?.button;
+  if (!backUp || !putBack) throw new Error(`${locale}/recordings.json has no backup.button or restore.button`);
+  return { backUp, putBack };
+}
 
 const SHOTS = [
   { id: '01-home', nav: 'home', wait: 1200 },
@@ -217,7 +225,7 @@ async function runLocale(locale, results) {
         }
         if (shot.host) HOST[shot.host](fixture);
         if (shot.click) {
-          const text = T[shot.click][locale];
+          const text = buttonText(locale)[shot.click];
           if (!(await clickByText(ws, text))) throw new Error(`no enabled button saying "${text}"`);
         }
         if (shot.wait) await sleep(shot.wait);

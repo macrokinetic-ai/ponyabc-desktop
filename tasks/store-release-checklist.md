@@ -89,6 +89,93 @@ hand.
    what Windows will warn and which two words to click, what is new for a tester, and what to
    look at. Never a changelog of commits.
 
+## Submitting to the Microsoft Store, step by step (owner does this by hand)
+
+Nothing automated ever touches Partner Center. This is the order to do it in, with the exact
+field names as they appear.
+
+Everything you need is in one folder, also attached to the GitHub pre-release
+**`v0.3.17-store-candidate`**:
+
+```
+AI-Reports/store-submission-0.3.17/
+  01-package/      the .appx and its .sha256
+  02-store-listing-0.3.17.md     description, short description, features, search terms × 8 languages
+  03-screenshots/  5 screens × English and 繁體中文
+  04-notes-for-certification.md
+  05-whats-new-0.3.17.md         × 8 languages
+```
+
+### Before you start
+
+1. Check the package is the one you mean to send. In PowerShell, in `01-package/`:
+   `Get-FileHash .\PonyABC-Desktop-v0.3.17-winx64.appx -Algorithm SHA256`
+   It must match the `.sha256` file beside it. If it does not, do not upload it.
+
+### In Partner Center
+
+2. **Apps and games → PonyABC Desktop → Start new submission.** If a submission is already open
+   and not yet submitted, use that one rather than starting another.
+
+3. **Packages.** Drag in `PonyABC-Desktop-v0.3.17-winx64.appx`. Wait for it to finish validating
+   before moving on. It should show **0.3.17.0** and **x64**. The previous package (0.3.16.0) can
+   stay; the Store serves the newest a device can run.
+
+4. **Pricing and availability.** Nothing to change. Do not alter markets or visibility.
+
+5. **Properties.** Nothing to change. Category, age rating and the privacy policy URL are all as
+   they were — this release does not change any of them.
+
+6. **Store listings → English (United Kingdom).** Replace these four, from
+   `02-store-listing-0.3.17.md`:
+   - **Description**
+   - **Short description**
+   - **Product features** — one per line, 15 of them
+   - **Search terms** — 7
+   Leave the product name as it is. Leave **Additional licence terms**, **Privacy policy** and
+   every other field untouched.
+
+7. **Store listings → English → Screenshots.** Remove the old ones and upload the five
+   `*-en.png` files from `03-screenshots/`, in number order. The first one is what people see
+   first, so keep `01-home-en.png` first.
+
+8. **Store listings → 中文(繁體).** The same four fields and the five `*-zh-Hant.png`
+   screenshots. If that listing does not exist yet, **Add a Store listing → 中文(繁體)**.
+
+9. **The other six languages.** Add a Store listing for each of 中文(简体), Español, Français,
+   Deutsch, Italiano and Português and paste their four fields. Screenshots are optional for
+   these — a listing with no screenshots of its own falls back to the English ones, which is
+   better than nothing and is what 0.3.16 does today.
+
+10. **What's new in this version.** In each language's listing, paste that language's text from
+    `05-whats-new-0.3.17.md`.
+
+11. **Submission options → Notes for certification.** Paste the whole block from
+    `04-notes-for-certification.md`. This is the one that most affects whether the review passes
+    first time: the reviewer will not have a pen.
+
+12. **Review and submit.** Read the summary page, then press **Submit to the Store**.
+
+13. Tell me it is submitted, and I will record the date and the package hash in
+    `tasks/PM-STATUS.md`.
+
+### What Partner Center may object to, and what to do
+
+| If it says | What it means | What to do |
+|---|---|---|
+| "Package is not signed" or a certificate error | It expected a signature | It should not — Microsoft signs on ingestion, and electron-builder leaves a Store package unsigned on purpose. If it genuinely refuses, stop and tell me rather than signing it by hand: a self-signed package will be rejected later for a publisher mismatch. |
+| "Package with the same version already exists" | 0.3.17.0 has been uploaded before | Do not bump the version to get past it. Tell me — the package in the folder is the one that was tested, and a new version number means a new build. |
+| An identity or publisher mismatch | The manifest does not match the account | Should not happen; it is checked against the built package by CI. Stop and tell me. |
+| A screenshot is refused for its size | Outside 1366x768 – 3840x2160 | Should not happen; every file is checked. Tell me which one. |
+| A field is too long to save | A limit changed | The character counts are in `02-store-listing-0.3.17.md`. Tell me which field and I will shorten it. |
+| Age rating questionnaire reappears | Microsoft has changed it | Answer it honestly: no user-to-user communication, no user-generated content shared with others, no advertising, no purchases in the app. |
+| Certification fails on 10.1.1.11 (tiles) | Default placeholder art | It was this in 0.3.15. The art is checked against the built package now; if it recurs, send me the failure text. |
+
+### After it is approved
+
+Only once Partner Center reports the submission as **published**, follow the section below to
+create the final `v0.3.17` Release.
+
 ## Publishing a Store version (vX.Y.Z)
 
 Only once Partner Center reports the submission as **published**:
