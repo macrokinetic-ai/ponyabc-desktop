@@ -170,15 +170,30 @@ async function main() {
     // browser then does is not this app's to prove.
     // There is no user guide inside the app — the manual is a PDF shipped beside the installer,
     // not something Settings opens. The two links that do exist are checked instead.
+    //
+    // The evidence screenshot is taken BEFORE these, not after. `shell.openExternal` launches a
+    // real browser on this machine, and capturing the Electron window once another application
+    // has taken the foreground stalls `Page.captureScreenshot` — which failed the first run and
+    // said nothing about the app, since it was still responsive for the step after it. What these
+    // two steps prove is that the app hands the URL over and returns without throwing; what the
+    // browser then does is not this app's to prove.
+    await step('settings-before-opening-any-link', async () => {
+      await shot(ws, '07-settings-before-external-links');
+    });
     await step('open-the-registration-page', async () => {
       const r = await evaluate(ws, `window.ponyabc.openRegistrationPage()`);
       results.registration = r.result.value;
+      if (r.result.value?.ok !== true) throw new Error(`openRegistrationPage returned ${JSON.stringify(r.result.value)}`);
     });
     await step('open-the-privacy-policy', async () => {
       const r = await evaluate(ws, `window.ponyabc.openPrivacyPolicyPage()`);
       results.privacyPolicy = r.result.value;
-      await sleep(800);
-      await shot(ws, '07-after-external-links');
+      if (r.result.value?.ok !== true) throw new Error(`openPrivacyPolicyPage returned ${JSON.stringify(r.result.value)}`);
+    });
+    // The window must still be alive and drawable after both.
+    await step('the-app-is-still-responsive-afterwards', async () => {
+      const alive = await evaluate(ws, `document.querySelectorAll('.nav-item').length`);
+      if (!alive.result.value) throw new Error('the window stopped responding after the external links');
     });
 
     // LAST, and on its own clock: this opens a native Save dialog, which cannot be dismissed from
