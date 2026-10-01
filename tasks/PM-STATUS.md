@@ -72,7 +72,7 @@ workflows, whose attach steps overwrote the unsigned submission `.appx` with a t
 added installers, DMGs and a test certificate to that release. Fixed, and both workflows now
 exclude that tag — but for a while the page the owner would submit from held the wrong package.
 
-Still open: the six non-Chinese translations of the product name are mine and need native review.
+Still open: the five translated product names (es, fr, de, it, pt) are mine and need native review.
 
 ### 0.3.17 is live on the Microsoft Store (2026-10-01)
 
@@ -99,8 +99,10 @@ and a plain `vX.Y.Z` page is written by a person (`fc6c0a9`).
 The pack also lives in `~/Documents/AI-Reports/store-submission-0.3.17/`, and the Partner Center
 steps in `tasks/store-release-checklist.md`.
 
-Still open: the six non-Chinese translations of the product name are mine and need native review.
-They are on the Store now. See `tasks/backlog-0.3.18.md`.
+Still open: **five** product-name translations are mine and have had no native review (es, fr, de,
+it, pt). English and both Chinese forms came from the owner. They are on the Store now. The full
+list of what 0.3.18 owes is `tasks/backlog-0.3.18.md` — the headline being that no Mac builds
+shipped with 0.3.17, which breaks a standing rule.
 
 ### What rc6 fixes, from the owner's rc5 test on a real pen (2026-09-30)
 
