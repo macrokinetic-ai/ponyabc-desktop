@@ -41,7 +41,15 @@ const argOf = (name, fallback) => {
   return hit ? hit.split('=').slice(1).join('=') : fallback;
 };
 const locales = argOf('locales', 'en,zh-Hant').split(',').map((s) => s.trim()).filter(Boolean);
-const workRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ponyabc-store-shots-'));
+// Where the fixture pen lives. It matters more than it looks: the app shows how much room is
+// left on the VOLUME the pen is on, so a fixture sitting on the machine's own system drive makes
+// the app truthfully report that drive — "126.3 GB of 160.5 GB used on your pen", on a product
+// whose card is 16 GB. Correct behaviour, wrong picture. The workflow hands this a small mounted
+// volume so the figures are a real reading of a realistically-sized disk.
+const fixtureRoot = argOf('fixture-root', '');
+const workRoot = fixtureRoot
+  ? fs.mkdtempSync(path.join(fixtureRoot, 'shots-'))
+  : fs.mkdtempSync(path.join(os.tmpdir(), 'ponyabc-store-shots-'));
 
 const NAV = { home: 0, recordings: 1, book: 2, firmware: 3, settings: 4 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

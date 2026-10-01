@@ -198,7 +198,35 @@ jobs:
           $exe = 'release/win-unpacked/PonyABC Desktop.exe'
           if (-not (Test-Path $exe)) { throw "no unpacked app at $exe" }
           New-Item -ItemType Directory -Force -Path 'release/store-screenshots' | Out-Null
-          node scripts/capture-store-screenshots.mjs $exe 'release/store-screenshots' --locales=en,zh-Hant
+
+          # A 16 GB volume to put the fixture pen on.
+          #
+          # The app reports how much room is left on the volume the pen is on, truthfully. With
+          # the fixture on the runner's own system drive that read "126.3 GB of 160.5 GB used on
+          # your pen" — real, and a picture of a pen nobody sells. A dynamically-expanding VHD
+          # costs almost nothing on disk and gives the app a real volume of the right size to
+          # measure, so the figures in the listing are a true reading rather than a dressed-up one.
+          $vhd = Join-Path $env:RUNNER_TEMP 'ponyabc-pen.vhd'
+          # Built as an array rather than a here-string: a PowerShell here-string needs its body
+          # at column zero, which ends the YAML block this script lives in.
+          $diskpart = @(
+            "create vdisk file=`"$vhd`" maximum=16000 type=expandable",
+            'attach vdisk',
+            'create partition primary',
+            'format fs=fat32 quick label=PONYABC',
+            'assign letter=P'
+          )
+          $scriptFile = Join-Path $env:RUNNER_TEMP 'make-pen-vhd.txt'
+          Set-Content -Path $scriptFile -Value $diskpart -Encoding ASCII
+          diskpart /s $scriptFile
+          if ($LASTEXITCODE -ne 0) { throw "diskpart could not create the fixture volume (exit $LASTEXITCODE)" }
+          if (-not (Test-Path 'P:\')) { throw 'The fixture volume did not mount at P:.' }
+          $drive = Get-PSDrive -Name P
+          $totalGb = [math]::Round(($drive.Used + $drive.Free) / 1GB, 1)
+          Write-Host "Fixture volume P: mounted, $totalGb GB total"
+          if ($totalGb -gt 20) { throw "The fixture volume is $totalGb GB — too big to be a believable pen." }
+
+          node scripts/capture-store-screenshots.mjs $exe 'release/store-screenshots' --locales=en,zh-Hant --fixture-root=P:\
           if ($LASTEXITCODE -ne 0) { throw 'A Store listing screenshot is missing — see the failures above.' }
           Get-ChildItem 'release/store-screenshots' -Filter *.png | ForEach-Object {
             Write-Host "  $($_.Name) ($([math]::Round($_.Length / 1KB)) KB)"
