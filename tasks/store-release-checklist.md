@@ -174,31 +174,59 @@ AI-Reports/store-submission-0.3.17/
 ### After it is approved
 
 Only once Partner Center reports the submission as **published**, follow the section below to
-create the final `v0.3.17` Release.
+create the final `vX.Y.Z` Release.
+
+**Confirm it independently.** Partner Center saying "published" and the Store serving the new
+package are not the same event — the rollout takes time. Microsoft's public catalogue answers
+without a login:
+
+```
+curl -s "https://displaycatalog.mp.microsoft.com/v7.0/products/9P544XC6B609?market=GB&languages=en-GB&MS-CV=x" \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); [print(k['Version']) for a in d['Product']['DisplaySkuAvailabilities'] for k in a['Sku']['Properties']['Packages']]"
+```
+
+It prints a packed 64-bit version. Unpack it: `major<<48 | minor<<32 | build<<16 | revision`, so
+`12886016000` is `0.3.17.0`. If it still shows the previous version, the rollout has not reached
+the catalogue yet — wait, do not re-submit.
 
 ## Publishing a Store version (vX.Y.Z)
 
 Only once Partner Center reports the submission as **published**:
 
-1. Tag the exact commit that was submitted, if it is not tagged already.
-2. `gh release create vX.Y.Z --verify-tag --latest`, titled `vX.Y.Z — Microsoft Store version`.
-3. Attach the archived `.appx` and its `.sha256` from `store-assets/` — the same bytes that
-   were submitted, so a later build can be compared against what customers actually have.
+1. Confirm the version from the public catalogue, as above.
+2. `gh release create vX.Y.Z --target <submitted commit> --latest`, titled
+   `vX.Y.Z — Microsoft Store version`. Creating the Release creates the tag at that commit.
+3. Attach the archived `.appx` and its `.sha256` — the same bytes that were submitted, so a later
+   build can be compared against what customers actually have. Also the Store-flavour installer,
+   the manuals and quick starts, the listing text, "What's new", and the certification notes
+   **as actually pasted into Partner Center**, so the archive and the submission agree.
 4. The notes say plainly that customers should install from the Store, and that the attachment
-   is an archive.
-5. Update `tasks/PM-STATUS.md`: published version, source commit, provenance.
+   is an archive. If the attached installer carries an `rc` stamp while the `.appx` does not,
+   say so on the page rather than leaving someone to find it in Settings.
+5. **Download the `.appx` back off the finished Release page and re-hash it.** Uploading is where
+   an archive quietly stops being the thing it claims to be.
+6. Keep every `rcN` and the `store-candidate` as pre-releases. Only the `vX.Y.Z` page is Latest.
+7. Update `tasks/PM-STATUS.md`: published version, source commit, provenance.
+
+**A build never writes to a `vX.Y.Z` page.** The attach steps in `build-windows.yml` and
+`build-mac.yml` run only for tags containing `-rc`. This was once a denylist of tags to skip, and
+it let the published `v0.3.17` through: tagging it would have overwritten the certified `.appx`
+with a test-signed one, which is exactly what had already happened to `v0.3.17-store-candidate`.
+If you ever need to widen that guard, do not.
 
 ## What is on the Releases page today
 
 | Release | What it is |
 |---|---|
-| `v0.3.16` | The Microsoft Store version, live since 2026-09-28. Latest. Archive of the submitted `.appx`. |
-| `v0.3.17-rc1` | The first 0.3.17 test build, from `69e4412`. Pre-release. Predates the build stamp, so it shows a plain `0.3.17` in Settings. |
+| **`v0.3.17`** | ✅ **The Microsoft Store version, live since 2026-10-01. Latest.** The submitted `.appx` (`49a9e2a2…e4c92b94`), the Store-flavour installer, both manuals and quick starts, the listing text, "What's new", and the certification notes as pasted into Partner Center. |
+| `v0.3.16` | The previous Store version, live 2026-09-28 to 2026-10-01. Archive of its submitted `.appx`. |
+| `v0.3.17-rc1` | From `69e4412`. Pre-release. Predates the build stamp, so it shows a plain `0.3.17` in Settings. |
 | `v0.3.17-rc2` | From `2ad7a0b`. Pre-release. The first build that names itself: Settings shows `0.3.17 (rc2, 2ad7a0b)`. |
 | `v0.3.17-rc3` | From `9e02f4e`. Pre-release. |
 | `v0.3.17-rc4` | From `ae94b07`. Pre-release, **Superseded** — its Store installer lost its stamp before publishing and shows a plain `0.3.17`, so a tester cannot tell it from the Store version. Left in place as the record; do not hand it to anyone. |
-| `v0.3.17-rc5` | From `dbfb545`. Pre-release. Two installers, both stamped `0.3.17 (rc5, dbfb545)`. Superseded by rc6. |
-| `v0.3.17-rc6` | From `57fa68f`. Pre-release. **Tested on real pens and approved by the owner.** |
-| `v0.3.17-store-candidate` | From `dd7e87f`, whose app code is byte-identical to rc6. The pack for Partner Center: the unsigned `.appx`, the listing text in eight languages, ten screenshots and the certification notes. Pre-release. **Not submitted.** |
+| `v0.3.17-rc5` | From `dbfb545`. Pre-release. Two installers, both stamped `0.3.17 (rc5, dbfb545)`. |
+| `v0.3.17-rc6` | From `57fa68f`. Pre-release. Tested on real pens and approved by the owner. |
+| `v0.3.17-rc7` | From `17ecd69`. Pre-release. **The build that was submitted** — the official product name and the button layout fix. |
+| `v0.3.17-store-candidate` | The pack as it went to Partner Center: the unsigned `.appx`, the listing text in eight languages, the screenshots and the certification notes. Pre-release. |
 
-`v0.3.17` itself does not exist yet, and must not until the Store has approved 0.3.17.
+Earlier versions, `v0.3.8` to `v0.3.15`, remain as the record.

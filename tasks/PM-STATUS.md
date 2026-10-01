@@ -2,7 +2,7 @@
 
 **Single source of truth. Update at the end of every task.**
 
-Last updated: **2026-09-30 17:40 BST** · by Claude Code · after the two-builds round
+Last updated: **2026-10-01 11:05 BST** · by Claude Code · after 0.3.17 went live on the Store
 
 Covers both products, because the **1–4 Oct expo** needs both:
 the **desktop app** (`ponyabc-desktop`, this repo) and the **registration site**
@@ -17,10 +17,11 @@ Convention: ✅ verified by someone actually checking · ⚠️ needs attention 
 
 |                                       |                                                                                                                                                          |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status                                | ✅ **Live** since 2026-09-28                                                                                                                             |
-| Published version                     | **APPX 0.3.16.0**                                                                                                                                        |
-| Source commit                         | `f39df08ad9b26e1768e1ff0dc9f1026198ef5c4e`, tagged **`v0.3.16`**                                                                                         |
-| Provenance                            | ✅ CI run **35883786536** → artifact `windows-appx`, **byte-identical** to `store-assets/v0.3.16-tile-fix/`; sha256 `48ad39b2…506dbf4b` agrees four ways |
+| Status                                | ✅ **Live** since 2026-09-28 · **0.3.17 published 2026-10-01**                                                                                            |
+| Published version                     | **APPX 0.3.17.0** — confirmed from Microsoft's own public catalogue, not from a claim: packed version `12886016000` decodes to `0.3.17.0`, last modified `2026-10-01T09:40Z` |
+| Source commit                         | `17ecd69e88f03d1db3e4c951facf1f65cf5959a2`, tagged **`v0.3.17`**                                                                                          |
+| Provenance                            | ✅ sha256 `49a9e2a2…e4c92b94` agrees three ways: the pack, the owner's submitted file, and the `.appx` downloaded back off the `v0.3.17` Release page    |
+| Previous version                      | 0.3.16.0 from `f39df08`, tagged `v0.3.16`; sha256 `48ad39b2…506dbf4b` agreed four ways                                                                    |
 | Store page                            | ✅ `https://apps.microsoft.com/detail/9P544XC6B609` → HTTP 200                                                                                           |
 | Short link                            | ✅ `https://tinyurl.com/ponyabc-windows` → 302 → Store page (⚠️ routes via TinyURL's `redirect.viglink.com` affiliate hop)                               |
 | Installed from the real Store and run | 🛑 **Never done, for any release.** Publishing is not proof the product works.                                                                           |
@@ -39,11 +40,15 @@ Test builds now live on the repo's Releases page, members only:
 | `v0.3.17-rc2` … `rc3` | Further test builds. Pre-release. |
 | `v0.3.17-rc4` | **Superseded.** Its Store installer lost its stamp before publishing, so Settings showed a plain `0.3.17` and a tester could not tell it from the Store version. Left as the record; not to be handed to anyone. |
 | `v0.3.17-rc5` | From `dbfb545`. The build the owner tested on a real Windows PC. |
-| **`v0.3.17-rc6`** | From `40290da`. **The build to test now** — everything the owner found in rc5, fixed. |
+| `v0.3.17-rc6` | From `40290da`. Tested on real pens and approved. |
+| `v0.3.17-rc7` | From `17ecd69`. The build that was submitted: the official product name and the button layout fix. Pre-release. |
+| `v0.3.17-store-candidate` | The submission pack as it was assembled — the unsigned `.appx`, listing text, screenshots, notes. Pre-release, and never written to by a build again. |
+| **`v0.3.17`** | ✅ **The Microsoft Store version, marked Latest** (2026-10-01), holding the exact submitted `.appx` and everything that went with it |
 
-**A final `v0.3.17` Release is created only after Microsoft Store approval** — never before, so
-the newest thing in the repository is never software nobody can install. Each further test build
-is the next `rcN`, published the same way. Nothing is submitted to Partner Center from here.
+**A final `vX.Y.Z` Release is created only after Microsoft Store approval** — never before, so the
+newest thing in the repository is never software nobody can install. `v0.3.17` was created on
+2026-10-01, after the owner published. Each further test build is the next `rcN`, published the
+same way. Nothing is submitted to Partner Center from here.
 
 **Two builds from every commit (owner, 2026-09-30).** The **Store build** is the only one ever
 submitted: no testing mode, no support tools, no developer switches, excluded at build time and
@@ -69,27 +74,33 @@ exclude that tag — but for a while the page the owner would submit from held t
 
 Still open: the six non-Chinese translations of the product name are mine and need native review.
 
-### The Store submission pack is ready, and waits on one decision (2026-10-01)
+### 0.3.17 is live on the Microsoft Store (2026-10-01)
 
-rc6 was tested on real pens and approved. The pack the owner uploads by hand is on the Releases
-page as **`v0.3.17-store-candidate`** (pre-release) and in
-`~/Documents/AI-Reports/store-submission-0.3.17/`: the unsigned `.appx`, the listing text in all
-eight languages, ten screenshots, the certification notes and the "What's new" text. The
-step-by-step Partner Center instructions are in `tasks/store-release-checklist.md`.
+The owner pressed Publish. Microsoft's public catalogue now serves **0.3.17.0** for
+`9P544XC6B609`, which is the only confirmation that matters and needs nobody to log in to
+Partner Center.
 
-**Nothing has been submitted and Partner Center has not been opened.**
+It passed certification first time — the thing the whole pre-flight was for, after 0.3.15 was
+rejected under 10.1.1.11 for default Electron tile art.
 
-The package's app code is byte-identical to the tested rc6 (`57fa68f`), and everything that
-matters is checked against the finished `.appx` rather than the source: manifest `0.3.17.0`, the
-Partner Center identity, unsigned as a Store submission must be, no build stamp, none of eight
-internal strings, and tile art that is ours.
+The permanent record is the **`v0.3.17`** Release: the submitted `.appx` and its checksum, the
+Store-flavour installer, both manuals and quick starts, the listing text, "What's new", and
+`04-notes-for-certification-SUBMITTED.md` — the exact 1,923 characters pasted into Partner
+Center, so the archive and the submission say the same thing. The `.appx` was downloaded back off
+the finished page and re-hashed: `49a9e2a2…e4c92b94`, the owner's figure.
 
-**One thing to decide first.** The Chinese word for the pen is wrong in that package, in both
-Chinese locales — 錄音筆, a voice recorder, instead of 點讀筆, a reading pen, in fifty strings added
-in rc6. It is fixed on the branch (`fd6c035`) and deliberately not in the package, which is the
-tested code. Submit as tested, or cut rc7 with the fix and re-test; the recommendation is rc7,
-because the defect is visible in the pack's own 繁體中文 screenshots and the listing text already
-says 點讀筆.
+**The near miss.** Creating `v0.3.17-store-candidate` had already triggered the rc workflows once,
+whose attach steps overwrote the unsigned submission `.appx` with a test-signed one. The fix at the
+time was a denylist naming that one tag — which did not include `v0.3.17`, so tagging the published
+version would have overwritten the certified bytes the same way. Both workflows had to be disabled
+by hand to cut the release safely. Now an allowlist: a build attaches to a `-rc` tag or to nothing,
+and a plain `vX.Y.Z` page is written by a person (`fc6c0a9`).
+
+The pack also lives in `~/Documents/AI-Reports/store-submission-0.3.17/`, and the Partner Center
+steps in `tasks/store-release-checklist.md`.
+
+Still open: the six non-Chinese translations of the product name are mine and need native review.
+They are on the Store now. See `tasks/backlog-0.3.18.md`.
 
 ### What rc6 fixes, from the owner's rc5 test on a real pen (2026-09-30)
 
@@ -228,7 +239,7 @@ Gates: typecheck ✅, 696 unit tests ✅, build ✅, Windows CI package verifica
 
 | Decision                                               | Detail                                                                                                                                                                                                                                                                                                                          |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **The firmware row stays `inactive` through the expo** | No firmware is published to `ponyabc-web` until 0.3.17 is live in the Microsoft Store. Visitors will see "no update available", and that is the intended state — an upgrade offered to 0.3.16 would run without the pre-flash cleanup and silently not take effect. Sequence: 0.3.17 live in the Store → then publish firmware. |
+| **The firmware row stays `inactive` through the expo** | No firmware is published to `ponyabc-web` until 0.3.17 is live in the Microsoft Store — an upgrade offered to 0.3.16 would run without the pre-flash cleanup and silently not take effect. **That gate is now open** (0.3.17 live 2026-10-01), but the row is still `inactive` and stays that way until the owner says otherwise: the Store rollout reaches machines over hours, not instantly, and every 0.3.16 still out there would be offered an upgrade it cannot apply. Recommendation: leave it until after the expo, 4 Oct. See ⚠️ below. |
 | **v0.3.17 scope received**                             | Phases 0–2 implemented (see §2). Phase 3 (DIY recordings) is designed only, awaiting approval.                                                                                                                                                                                                                                  |
 
 ### Needs attention before the expo ⚠️
@@ -239,6 +250,7 @@ Gates: typecheck ✅, 696 unit tests ✅, build ✅, Windows CI package verifica
 | 🛑 **Nobody has installed the app from the real Store**               | Do it on a clean Windows machine, ideally the expo laptop.                                                                      |
 | ⚠️ **Admin dashboard never opened with a real login**                 | Needed if you want to show or check registrations at the expo.                                                                  |
 | ⚠️ **Print and apply the stickers**                                   | Test-print one first, scan the QR, and confirm it validates against production.                                                 |
+| ⚠️ **Firmware publishing is now unblocked — owner's call**            | 0.3.17 is live, so the condition for publishing firmware is met. Nothing has been changed. Doing it means 0.3.16 users get offered an upgrade that silently will not take. |
 
 ### Known behaviour, not a fault
 
