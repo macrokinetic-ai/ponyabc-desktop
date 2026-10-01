@@ -52,6 +52,28 @@ mode, with its own name, application id and banner, so it installs beside the St
 cannot be submitted by mistake — CI refuses an internal package carrying the Store identity.
 Every rc Release carries both.
 
+### The Store submission pack is ready, and waits on one decision (2026-10-01)
+
+rc6 was tested on real pens and approved. The pack the owner uploads by hand is on the Releases
+page as **`v0.3.17-store-candidate`** (pre-release) and in
+`~/Documents/AI-Reports/store-submission-0.3.17/`: the unsigned `.appx`, the listing text in all
+eight languages, ten screenshots, the certification notes and the "What's new" text. The
+step-by-step Partner Center instructions are in `tasks/store-release-checklist.md`.
+
+**Nothing has been submitted and Partner Center has not been opened.**
+
+The package's app code is byte-identical to the tested rc6 (`57fa68f`), and everything that
+matters is checked against the finished `.appx` rather than the source: manifest `0.3.17.0`, the
+Partner Center identity, unsigned as a Store submission must be, no build stamp, none of eight
+internal strings, and tile art that is ours.
+
+**One thing to decide first.** The Chinese word for the pen is wrong in that package, in both
+Chinese locales — 錄音筆, a voice recorder, instead of 點讀筆, a reading pen, in fifty strings added
+in rc6. It is fixed on the branch (`fd6c035`) and deliberately not in the package, which is the
+tested code. Submit as tested, or cut rc7 with the fix and re-test; the recommendation is rc7,
+because the defect is visible in the pack's own 繁體中文 screenshots and the listing text already
+says 點讀筆.
+
 ### What rc6 fixes, from the owner's rc5 test on a real pen (2026-09-30)
 
 **The book index was only being reset after a full sync.** Re-download, Add, Replace, Remove and
