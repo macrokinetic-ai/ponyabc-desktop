@@ -813,3 +813,32 @@ Release ends up serving.
 **How to apply:** verify the artefact that is actually published, as late as possible and by
 opening it — unpack the finished installer and read the value back out. Downloading the
 published asset and inspecting it is the only check that cannot be invalidated by a later step.
+
+## A guard that fires is a claim about the guard too, not only about the thing
+
+Checking the archived manuals against the naming rule, the 繁體中文 user guide failed: 錄音筆, the
+retired recorder-only name, apparently standing alone in a manual that had already gone out with a
+published release. The honest-looking move would have been to report a defect in shipped,
+customer-facing material.
+
+The context said otherwise. The PDF had wrapped a line between 點讀 and 錄音筆, so extracted text
+read `點讀\n錄音筆` — the **official** name, split by typesetting. The negative lookbehind
+`(?<!點讀)錄音筆` cannot see past a newline, so a correct document failed a check that was wrong
+about documents. Normalising whitespace away first turned one false alarm into 57 correct
+occurrences.
+
+This is the third time the same class of mistake has cost something: a needle that could never
+match (`'Deleted BOOK/'` against a template literal), a gate that read `RESULT` as an attribute
+when it is a child element and so reported "0 warnings" over a real failure, and now a guard
+matching a line break. Two were too lax, one too strict; all three were confidently green or
+confidently red about nothing.
+
+**Why:** a check is code, and it is the only code in the change that nothing else checks. When it
+disagrees with reality, reality is not automatically the thing that is wrong — especially when the
+check has never fired before.
+
+**How to apply:** before reporting a finding a guard produced, print the surrounding context and
+read it. Before trusting a guard that passes, make it fail on purpose on something you know is
+bad. For text lifted out of a rendered artefact — PDF, screenshot OCR, a DOM dump — strip
+whitespace before matching, because the renderer chooses the line breaks and will put one wherever
+it likes, including through the middle of the word you are looking for.
