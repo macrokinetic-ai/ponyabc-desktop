@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Auf dem Computer speichern →",
     "sendToPen": "← An den Stift senden",
-    "replaceSticker": "Diesen Aufkleber mit ausgewähltem Audio ersetzen…",
+    "replaceSticker": "Audio dieses Aufklebers ersetzen…",
     "play": "Abspielen",
     "deleteFromPen": "Vom Stift löschen"
   },

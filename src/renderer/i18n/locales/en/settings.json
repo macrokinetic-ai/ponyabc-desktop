@@ -20,7 +20,9 @@
     "updateAvailable": "A new version is available: {{version}}",
     "downloadUpdateButton": "Go to download page",
     "checkFailed": "Couldn't check for updates (are you online?).",
-    "storeManagedUpdates": "Installed from Microsoft Store — updates are handled automatically."
+    "storeManagedUpdates": "Installed from Microsoft Store — updates are handled automatically.",
+    "productLabel": "Product",
+    "productName": "PonyABC P5 Intelligent Recording Reading Pen"
   },
   "diagnostics": {
     "title": "Diagnostics",

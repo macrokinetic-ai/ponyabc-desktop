@@ -281,7 +281,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('0001.mp3'))!);
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
 
-    const replaceButton = screen.getByText("Replace this sticker using selected audio…") as HTMLButtonElement;
+    const replaceButton = screen.getByText("Replace this sticker's audio…") as HTMLButtonElement;
     expect(replaceButton.disabled).toBe(false);
     fireEvent.click(replaceButton);
 
@@ -295,7 +295,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    fireEvent.click(screen.getByText("Replace this sticker's audio…"));
     await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
@@ -312,7 +312,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    fireEvent.click(screen.getByText("Replace this sticker's audio…"));
     await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());

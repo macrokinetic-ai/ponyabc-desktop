@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Save to computer →",
     "sendToPen": "← Send to pen",
-    "replaceSticker": "Replace this sticker using selected audio…",
+    "replaceSticker": "Replace this sticker's audio…",
     "play": "Play",
     "deleteFromPen": "Delete from pen"
   },

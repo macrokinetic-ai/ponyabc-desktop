@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Guardar no computador →",
     "sendToPen": "← Enviar para a caneta",
-    "replaceSticker": "Substituir este autocolante com o áudio selecionado…",
+    "replaceSticker": "Substituir o áudio deste autocolante…",
     "play": "Ouvir",
     "deleteFromPen": "Apagar da caneta"
   },

@@ -142,28 +142,58 @@ describe('Chinese locales are standard written Chinese', () => {
  * Both forms are in the test so neither script can drift on its own.
  */
 describe('what the pen is called in Chinese', () => {
-  const WRONG = { 'zh-Hant': '錄音筆', 'zh-Hans': '录音笔' } as const;
-  const RIGHT = { 'zh-Hant': '點讀筆', 'zh-Hans': '点读笔' } as const;
+  /**
+   * The official product name, decided by the owner on 1 October 2026:
+   *
+   *   繁體中文  點讀錄音筆      简体中文  点读录音笔
+   *   English  Intelligent Recording Reading Pen, model P5
+   *   full     PonyABC P5 Intelligent Recording Reading Pen
+   *
+   * It reads AND records, and the name says both. Two earlier names are now wrong:
+   *
+   *   點讀筆 / 点读笔   — reading only; what the app said until rc7
+   *   錄音筆 / 录音笔   — recording only; what I wrongly wrote into rc6's new strings
+   *
+   * The catch is that the right name CONTAINS the wrong one: 點讀錄音筆 ends in 錄音筆. A plain
+   * search for 錄音筆 matches every correct name, so this uses a negative lookbehind — 錄音筆 is
+   * an offence only when 點讀 is not immediately before it.
+   */
+  const WRONG_ALONE = { 'zh-Hant': /(?<!點讀)錄音筆/, 'zh-Hans': /(?<!点读)录音笔/ } as const;
+  const OLD_READING_ONLY = { 'zh-Hant': /點讀筆/, 'zh-Hans': /点读笔/ } as const;
+  const OFFICIAL = { 'zh-Hant': '點讀錄音筆', 'zh-Hans': '点读录音笔' } as const;
 
   for (const locale of ['zh-Hant', 'zh-Hans'] as const) {
-    it(`${locale} never calls it a ${WRONG[locale]}`, () => {
-      const dir = path.join(LOCALES_DIR, locale);
-      const offences: string[] = [];
-      for (const file of fs.readdirSync(dir)) {
-        const text = fs.readFileSync(path.join(dir, file), 'utf8');
-        if (text.includes(WRONG[locale])) offences.push(`${locale}/${file}`);
-      }
-      expect(offences).toEqual([]);
+    const files = () =>
+      fs.readdirSync(path.join(LOCALES_DIR, locale)).map((f) => ({
+        name: `${locale}/${f}`,
+        text: fs.readFileSync(path.join(LOCALES_DIR, locale, f), 'utf8'),
+      }));
+
+    it(`${locale} never calls it a recording pen alone`, () => {
+      expect(files().filter((f) => WRONG_ALONE[locale].test(f.text)).map((f) => f.name)).toEqual([]);
     });
 
-    it(`${locale} does call it a ${RIGHT[locale]}`, () => {
-      // Guards against the obvious wrong fix: deleting the word rather than correcting it.
-      const dir = path.join(LOCALES_DIR, locale);
-      const all = fs
-        .readdirSync(dir)
-        .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
-        .join('');
-      expect(all.includes(RIGHT[locale])).toBe(true);
+    it(`${locale} never uses the old reading-only name`, () => {
+      expect(files().filter((f) => OLD_READING_ONLY[locale].test(f.text)).map((f) => f.name)).toEqual([]);
+    });
+
+    it(`${locale} does use the official name`, () => {
+      // Guards the obvious wrong fix: deleting the word rather than correcting it.
+      expect(files().some((f) => f.text.includes(OFFICIAL[locale]))).toBe(true);
+    });
+
+    it(`${locale}'s home header is the full product name`, () => {
+      const home = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, locale, 'home.json'), 'utf8'));
+      expect(home.kicker).toContain('PonyABC P5');
+      expect(home.kicker).toContain(OFFICIAL[locale]);
     });
   }
+
+  it('the negative lookbehind really does distinguish the two', () => {
+    // If this ever stops holding, the first test above silently passes everything.
+    expect(WRONG_ALONE['zh-Hant'].test('點讀錄音筆')).toBe(false);
+    expect(WRONG_ALONE['zh-Hant'].test('錄音筆')).toBe(true);
+    expect(WRONG_ALONE['zh-Hans'].test('点读录音笔')).toBe(false);
+    expect(WRONG_ALONE['zh-Hans'].test('录音笔')).toBe(true);
+  });
 });

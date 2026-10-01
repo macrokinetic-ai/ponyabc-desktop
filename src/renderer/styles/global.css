@@ -443,7 +443,20 @@ body {
   gap: 8px;
   justify-content: center;
   flex-shrink: 0;
-  width: 160px;
+  /* Was a flat 160px, which forced "Replace this sticker using selected audio…" onto three lines
+     in English and broke 傳送至點讀錄音筆 in two. The column now takes the width its longest label
+     needs, within bounds, so labels stay whole and the panes either side give up the room. */
+  width: max-content;
+  min-width: 160px;
+  max-width: 260px;
+}
+
+/* These labels are whole sentences, so they may wrap — but only between words, never mid-word,
+   which is what made the Chinese ones break badly. */
+.dual-pane__actions > .button {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 .plan-panel {
@@ -521,6 +534,11 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* The name is what gives way when a row is tight — never the buttons. */
+.recordings-list__label {
+  flex: 1 1 8rem;
+}
+
 .recordings-list__size {
   color: var(--fg-muted);
   font-size: 12px;
@@ -581,8 +599,35 @@ body {
 
 .recordings-list__detail-actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 4px;
+}
+
+/* Whole buttons move to the next line; none is compressed to make room. This is the load-bearing
+   fix: a button that cannot be squeezed narrower than its label cannot wrap in the first place. */
+.recordings-list__detail-actions > .button,
+.recordings-list__row > .button {
+  flex: 0 0 auto;
+}
+
+/* And a belt to that brace. Chinese has no spaces between words, so a pill that does get squeezed
+   breaks to one character per line and renders as a circle — what the owner saw on My Recordings
+   in 繁體中文. Scoped to rows and toolbars on purpose: a sentence-like label elsewhere, such as
+   "Replace this sticker's audio…", must still be allowed to wrap rather than be clipped. */
+.recordings-list .button,
+.recordings-list__detail-actions > .button,
+.pane__toolbar .button,
+.book-toolbar .button {
+  white-space: nowrap;
+}
+
+/* Compact pills inside a list row. The full-size button is right for a page's main action and too
+   heavy repeated four times against every recording. */
+.recordings-list .button {
+  padding: 5px 12px;
+  font-size: 13px;
+  border-width: 1px;
 }
 
 .pane__footer {

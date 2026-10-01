@@ -1,11 +1,11 @@
 {
-  "kicker": "PonyABC P5 reading pen",
+  "kicker": "PonyABC P5 Intelligent Recording Reading Pen",
   "title": "Welcome to PonyABC Desktop",
   "intro": "Register your pen for warranty, or manage its content from the sections on the left.",
   "connection": {
     "checking": "Checking for your pen…",
-    "connectedTitle": "P5 pen connected",
-    "disconnectedTitle": "P5 pen not connected"
+    "connectedTitle": "Your pen is connected",
+    "disconnectedTitle": "Your pen is not connected"
   },
   "entries": {
     "recordingsBody": "Keep a copy of your child's recordings on this computer, give them names, and put them back whenever you need to.",

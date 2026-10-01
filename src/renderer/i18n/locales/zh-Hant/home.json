@@ -1,19 +1,19 @@
 {
-  "kicker": "PonyABC P5 點讀筆",
+  "kicker": "PonyABC P5 點讀錄音筆",
   "title": "歡迎使用 PonyABC 桌面應用程式",
-  "intro": "為您的點讀筆註冊保養，或在左側各欄管理其內容。",
+  "intro": "為您的點讀錄音筆註冊保養，或在左側各欄管理其內容。",
   "connection": {
-    "checking": "正在偵測您的點讀筆…",
-    "connectedTitle": "P5 點讀筆已連接",
-    "disconnectedTitle": "未連接 P5 點讀筆"
+    "checking": "正在偵測您的點讀錄音筆…",
+    "connectedTitle": "P5 點讀錄音筆已連接",
+    "disconnectedTitle": "未連接 P5 點讀錄音筆"
   },
   "entries": {
-    "recordingsBody": "把孩子的錄音在這部電腦保存一份、為它們改名，需要時隨時放回點讀筆。",
-    "bookBody": "把 PonyABC 書本放進點讀筆，並保持最新。",
-    "firmwareBody": "僅支援 Windows。有新版本時，更新點讀筆本身的軟件。"
+    "recordingsBody": "把孩子的錄音在這部電腦保存一份、為它們改名，需要時隨時放回點讀錄音筆。",
+    "bookBody": "把 PonyABC 書本放進點讀錄音筆，並保持最新。",
+    "firmwareBody": "僅支援 Windows。有新版本時，更新點讀錄音筆本身的軟件。"
   },
   "warrantyTitle": "保養登記",
-  "registerButton": "註冊您的點讀筆",
+  "registerButton": "註冊您的點讀錄音筆",
   "registerHint": "將於您的網頁瀏覽器中開啟註冊頁面。",
   "registerError": "無法開啟註冊頁面：{{error}}"
 }

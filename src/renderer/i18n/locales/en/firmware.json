@@ -11,7 +11,7 @@
   },
   "prepare": {
     "title": "Prepare your pen",
-    "checklistUsb": "Connect the P5 pen to this computer with a USB cable.",
+    "checklistUsb": "Connect your pen to this computer with a USB cable.",
     "checklistPower": "Keep the pen connected and powered for the whole upgrade — do not unplug it.",
     "checklistNoOtherOps": "Close anything else that is using the pen.",
     "penDetected": "Pen detected.",

@@ -47,6 +47,7 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
     if (!appInfo || !variant) return;
     const text = [
       `${t('about.title')}`,
+      `${t('about.productLabel')}: ${t('about.productName')}`,
       `${t('about.versionLabel')}: ${versionLabel}`,
       `${t('about.typeLabel')}: ${variantLabel}`,
       `${t('about.identifierLabel')}: ${variant.identifier}`,
@@ -71,6 +72,9 @@ export function VersionUpdatesTab({ appInfo }: { appInfo: AppInfo | null }) {
           <TestingModeSection />
 
           <dl className="about-info">
+            {/* The full official product name, as the owner requires it in About. */}
+            <dt>{t('about.productLabel')}</dt>
+            <dd>{t('about.productName')}</dd>
             <dt>{t('about.versionLabel')}</dt>
             <dd>{versionLabel}</dd>
             <dt>{t('about.typeLabel')}</dt>

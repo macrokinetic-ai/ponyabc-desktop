@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Guardar en el equipo →",
     "sendToPen": "← Enviar al lápiz",
-    "replaceSticker": "Reemplazar este adhesivo con el audio seleccionado…",
+    "replaceSticker": "Reemplazar el audio de esta pegatina…",
     "play": "Escuchar",
     "deleteFromPen": "Borrar del lápiz"
   },

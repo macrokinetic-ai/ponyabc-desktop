@@ -10,12 +10,12 @@
     "result": "结果"
   },
   "prepare": {
-    "title": "准备你的点读笔",
-    "checklistUsb": "用 USB 线将 P5 点读笔连接到这台电脑。",
-    "checklistPower": "整个升级过程请保持点读笔连接并供电——不要拔除。",
-    "checklistNoOtherOps": "请先关闭其他正在使用点读笔的程序。",
-    "penDetected": "已检测到点读笔。",
-    "penRequired": "请先连接点读笔才能继续。",
+    "title": "准备你的点读录音笔",
+    "checklistUsb": "用 USB 线将 P5 点读录音笔连接到这台电脑。",
+    "checklistPower": "整个升级过程请保持点读录音笔连接并供电——不要拔除。",
+    "checklistNoOtherOps": "请先关闭其他正在使用点读录音笔的程序。",
+    "penDetected": "已检测到点读录音笔。",
+    "penRequired": "请先连接点读录音笔才能继续。",
     "nextButton": "下一步"
   },
   "package": {
@@ -32,12 +32,12 @@
       "version": "官方版本：{{version}}",
       "packageLabel": "套件：{{label}}（{{date}}）",
       "onPenVersionUnknown": "目前笔内版本：尚未能读取",
-      "onPenVersionHint": "本程序无法得知点读笔上当前的版本。",
-      "hardwareRevNotice": "此韧体适用硬件版本 {{hardwareRev}}；目前未能自动识别所连接点读笔的硬件版本。",
-      "hardwareConfirmLegend": "请确认所连接点读笔的硬件版本：",
-      "hardwareConfirmYes": "已确认——我的点读笔是硬件版本 {{hardwareRev}}",
+      "onPenVersionHint": "本程序无法得知点读录音笔上当前的版本。",
+      "hardwareRevNotice": "此韧体适用硬件版本 {{hardwareRev}}；目前未能自动识别所连接点读录音笔的硬件版本。",
+      "hardwareConfirmLegend": "请确认所连接点读录音笔的硬件版本：",
+      "hardwareConfirmYes": "已确认——我的点读录音笔是硬件版本 {{hardwareRev}}",
       "hardwareConfirmNotSure": "不确定",
-      "hardwareConfirmRequired": "请先在上方确认硬件版本才可继续。如不确定，请不要继续——请检查点读笔或联络支持。",
+      "hardwareConfirmRequired": "请先在上方确认硬件版本才可继续。如不确定，请不要继续——请检查点读录音笔或联络支持。",
       "downloadButton": "下载官方更新",
       "cancelButton": "取消下载",
       "reinstallButton": "高级：重新安装此版本",
@@ -63,26 +63,26 @@
     "title": "升级中",
     "phasePreparing": "正在准备升级…",
     "phaseAwaitingAuth": "等待 Windows 授权，或正在启动中…",
-    "phaseToolRunning": "正在更新点读笔，请保持 USB 连接。",
+    "phaseToolRunning": "正在更新点读录音笔，请保持 USB 连接。",
     "phaseFinishing": "正在确认结果…",
     "noCancelNotice": "更新开始后无法中途停止，请耐心等候，一般只需几分钟。",
     "noOutputYet": "暂时没有输出。"
   },
   "result": {
     "title": "结果",
-    "successMessage": "你的点读笔已更新完成。请将笔关掉再开启，然后试播一本书。",
-    "processFinishedMessage": "更新已完成。请将点读笔关掉再开启，然后试播一本书。",
+    "successMessage": "你的点读录音笔已更新完成。请将笔关掉再开启，然后试播一本书。",
+    "processFinishedMessage": "更新已完成。请将点读录音笔关掉再开启，然后试播一本书。",
     "failedTitle": "更新未能完成",
     "unclearTitle": "未能确认更新是否完成",
-    "unclearBodyUnconfirmed": "为保障你的点读笔，本程序暂时不会对它作任何改动。请完全关闭 PonyABC，重新开启，然后再执行一次更新。",
+    "unclearBodyUnconfirmed": "为保障你的点读录音笔，本程序暂时不会对它作任何改动。请完全关闭 PonyABC，重新开启，然后再执行一次更新。",
     "finishButton": "完成",
     "returnHomeButton": "返回主页",
     "acknowledgeButtonUnconfirmed": "我明白——我会重新启动应用程序",
-    "restartNoticeAcknowledged": "请完全关闭 PonyABC 并重新开启，然后才用本程序操作点读笔。",
+    "restartNoticeAcknowledged": "请完全关闭 PonyABC 并重新开启，然后才用本程序操作点读录音笔。",
     "startOverButton": "重新开始",
     "preflightFailedTitle": "更新未能开始",
-    "preflightFailedBody": "你的点读笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
-    "failedBody": "你的点读笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
+    "preflightFailedBody": "你的点读录音笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
+    "failedBody": "你的点读录音笔没有被改动。请检查是否仍然连接电脑，然后再试一次。",
     "retryAfterUnclearBody": "未能确认更新是否完成。请再执行一次更新，重复执行是安全的。"
   },
   "technicalDetails": {
@@ -92,18 +92,18 @@
   },
   "recovery": {
     "title": "先前的更新可能仍在进行",
-    "stillRunningBody": "较早前开始的更新仍在这台电脑上运行。请等它完成，或重新启动电脑，然后才用本程序操作点读笔。",
-    "unknownBody": "未能确认较早前的更新是否已完成。为保障你的点读笔，在情况未明朗前，本程序不会对它作任何改动。",
+    "stillRunningBody": "较早前开始的更新仍在这台电脑上运行。请等它完成，或重新启动电脑，然后才用本程序操作点读录音笔。",
+    "unknownBody": "未能确认较早前的更新是否已完成。为保障你的点读录音笔，在情况未明朗前，本程序不会对它作任何改动。",
     "checking": "检查中…",
     "checkAgainButton": "重新检查",
     "startedAt": "升级尝试开始时间：{{time}}",
     "lastChecked": "上次检查时间：{{time}}"
   },
   "onPen": {
-    "title": "点读笔上的版本",
-    "cannotRead": "您的点读笔不会回报自己的固件版本，因此本应用程序无法显示。",
+    "title": "点读录音笔上的版本",
+    "cannotRead": "您的点读录音笔不会回报自己的固件版本，因此本应用程序无法显示。",
     "lastInstalled": "本应用程序上次安装的版本是 {{version}}，时间为 {{when}}。",
-    "lastInstalledNone": "本应用程序尚未为任何点读笔安装过固件版本。",
-    "notTheSame": "这是本应用程序做过的事，不是从您手上的点读笔读出来的。若该点读笔曾在其他电脑上更新，或在您拿到之前已更新，它运行的版本本应用程序从未见过。"
+    "lastInstalledNone": "本应用程序尚未为任何点读录音笔安装过固件版本。",
+    "notTheSame": "这是本应用程序做过的事，不是从您手上的点读录音笔读出来的。若该点读录音笔曾在其他电脑上更新，或在您拿到之前已更新，它运行的版本本应用程序从未见过。"
   }
 }

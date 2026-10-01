@@ -35,7 +35,7 @@
   "actions": {
     "saveToComputer": "Enregistrer sur l'ordinateur →",
     "sendToPen": "← Envoyer au stylo",
-    "replaceSticker": "Remplacer cet autocollant avec l'audio sélectionné…",
+    "replaceSticker": "Remplacer l’audio de cet autocollant…",
     "play": "Écouter",
     "deleteFromPen": "Supprimer du stylo"
   },

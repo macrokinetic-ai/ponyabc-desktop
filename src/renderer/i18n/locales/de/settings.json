@@ -20,7 +20,9 @@
     "updateAvailable": "Eine neue Version ist verfügbar: {{version}}",
     "downloadUpdateButton": "Zur Download-Seite",
     "checkFailed": "Updates konnten nicht geprüft werden (sind Sie online?).",
-    "storeManagedUpdates": "Aus dem Microsoft Store installiert — Updates werden automatisch verwaltet."
+    "storeManagedUpdates": "Aus dem Microsoft Store installiert — Updates werden automatisch verwaltet.",
+    "productLabel": "Produkt",
+    "productName": "PonyABC P5 Intelligenter Vorlese- und Aufnahmestift"
   },
   "diagnostics": {
     "title": "Diagnose",
