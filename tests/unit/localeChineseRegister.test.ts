@@ -130,3 +130,40 @@ describe('Chinese locales are standard written Chinese', () => {
     expect(remaining.includes('係')).toBe(false);
   });
 });
+
+/**
+ * The pen has one name in Chinese, and it is not "錄音筆".
+ *
+ * 點讀筆 / 点读笔 is a reading pen — you touch it to a book and it reads aloud. 錄音筆 / 录音笔 is a
+ * voice recorder, a different product in a different aisle. The app said 點讀筆 everywhere until
+ * rc6 added twenty-one strings about recordings and backups that said 錄音筆, because the screens
+ * they were written for are about recordings. The product is still a reading pen.
+ *
+ * Both forms are in the test so neither script can drift on its own.
+ */
+describe('what the pen is called in Chinese', () => {
+  const WRONG = { 'zh-Hant': '錄音筆', 'zh-Hans': '录音笔' } as const;
+  const RIGHT = { 'zh-Hant': '點讀筆', 'zh-Hans': '点读笔' } as const;
+
+  for (const locale of ['zh-Hant', 'zh-Hans'] as const) {
+    it(`${locale} never calls it a ${WRONG[locale]}`, () => {
+      const dir = path.join(LOCALES_DIR, locale);
+      const offences: string[] = [];
+      for (const file of fs.readdirSync(dir)) {
+        const text = fs.readFileSync(path.join(dir, file), 'utf8');
+        if (text.includes(WRONG[locale])) offences.push(`${locale}/${file}`);
+      }
+      expect(offences).toEqual([]);
+    });
+
+    it(`${locale} does call it a ${RIGHT[locale]}`, () => {
+      // Guards against the obvious wrong fix: deleting the word rather than correcting it.
+      const dir = path.join(LOCALES_DIR, locale);
+      const all = fs
+        .readdirSync(dir)
+        .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
+        .join('');
+      expect(all.includes(RIGHT[locale])).toBe(true);
+    });
+  }
+});

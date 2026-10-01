@@ -48,8 +48,8 @@
     "generic": "發生錯誤：{{message}}"
   },
   "penStorage": {
-    "summary": "錄音筆已使用 {{used}}，總容量 {{total}}",
+    "summary": "點讀筆已使用 {{used}}，總容量 {{total}}",
     "breakdown": "書本 {{books}} · 錄音 {{recordings}} · 可用 {{free}}",
-    "unreadable": "我們無法查看錄音筆還剩多少空間。請拔下錄音筆，重新插上，再看這個畫面。"
+    "unreadable": "我們無法查看點讀筆還剩多少空間。請拔下點讀筆，重新插上，再看這個畫面。"
   }
 }

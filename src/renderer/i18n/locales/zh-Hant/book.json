@@ -83,7 +83,7 @@
   },
   "action": {
     "add": "將已選書本加入點讀筆",
-    "reinstall": "重新取得檔案並放到錄音筆",
+    "reinstall": "重新取得檔案並放到點讀筆",
     "cancelDownload": "取消",
     "cancelVerify": "取消驗證",
     "verifyThis": "校驗此檔案",
@@ -92,9 +92,9 @@
     "cancelDownloadBatch": "取消下載",
     "addOne": "加入",
     "updateOne": "更新",
-    "reinstallNote": "這會重新下載這本書並複製到您的錄音筆，完成後需要重新啟動錄音筆。",
+    "reinstallNote": "這會重新下載這本書並複製到您的點讀筆，完成後需要重新啟動點讀筆。",
     "reinstallWorking": "正在重新取得…",
-    "reinstallDone": "完成。這本書已重新放到您的錄音筆。",
+    "reinstallDone": "完成。這本書已重新放到您的點讀筆。",
     "verifyWorking": "正在檢查這個檔案…",
     "verifyDone": "完成。這個檔案已檢查。"
   },
