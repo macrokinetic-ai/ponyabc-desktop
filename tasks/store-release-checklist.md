@@ -197,6 +197,8 @@ Only once Partner Center reports the submission as **published**:
 | `v0.3.17-rc2` | From `2ad7a0b`. Pre-release. The first build that names itself: Settings shows `0.3.17 (rc2, 2ad7a0b)`. |
 | `v0.3.17-rc3` | From `9e02f4e`. Pre-release. |
 | `v0.3.17-rc4` | From `ae94b07`. Pre-release, **Superseded** — its Store installer lost its stamp before publishing and shows a plain `0.3.17`, so a tester cannot tell it from the Store version. Left in place as the record; do not hand it to anyone. |
-| `v0.3.17-rc5` | From `dbfb545`. Pre-release. **The build to test.** Two installers: the Store build and the Internal build, both stamped `0.3.17 (rc5, dbfb545)`. |
+| `v0.3.17-rc5` | From `dbfb545`. Pre-release. Two installers, both stamped `0.3.17 (rc5, dbfb545)`. Superseded by rc6. |
+| `v0.3.17-rc6` | From `57fa68f`. Pre-release. **Tested on real pens and approved by the owner.** |
+| `v0.3.17-store-candidate` | From `dd7e87f`, whose app code is byte-identical to rc6. The pack for Partner Center: the unsigned `.appx`, the listing text in eight languages, ten screenshots and the certification notes. Pre-release. **Not submitted.** |
 
 `v0.3.17` itself does not exist yet, and must not until the Store has approved 0.3.17.
