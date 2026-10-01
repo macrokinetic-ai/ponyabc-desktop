@@ -89,14 +89,36 @@ async function waitForTarget(port) {
   throw new Error('the app never opened a debuggable window');
 }
 
-/** Full-height capture at twice the logical width: 2560px wide, comfortably over Partner
- *  Center's 1366x768 minimum. */
-async function capture(ws, file) {
-  const height = (
-    await evaluate(ws, `(() => Math.min(2000, Math.max(860, document.documentElement.scrollHeight)))()`)
-  ).result.value;
-  await send(ws, 'Emulation.setDeviceMetricsOverride', { width: 1280, height, deviceScaleFactor: 2, mobile: false });
+/**
+ * Every picture the same size: 2560x2000.
+ *
+ * Partner Center takes PNGs from 1366x768 up to 3840x2160. Capturing the full page instead gave
+ * 2560x2954 for the restore screen — over the height limit, and a set of listing images in five
+ * different shapes. A fixed viewport with the interesting panel scrolled into it is both inside
+ * the limits and a consistent set.
+ */
+const SHOT_WIDTH = 1280;
+const SHOT_HEIGHT = 1000;
+
+async function capture(ws, file, scrollTo) {
+  await send(ws, 'Emulation.setDeviceMetricsOverride', {
+    width: SHOT_WIDTH,
+    height: SHOT_HEIGHT,
+    deviceScaleFactor: 2,
+    mobile: false,
+  });
   await sleep(300);
+  if (scrollTo) {
+    await evaluate(
+      ws,
+      `(() => {
+         const el = document.querySelector(${JSON.stringify(scrollTo)});
+         if (el) el.scrollIntoView({ block: 'center' });
+         return true;
+       })()`,
+    );
+    await sleep(400);
+  }
   let data;
   try {
     ({ data } = await send(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }));
@@ -105,7 +127,6 @@ async function capture(ws, file) {
     ({ data } = await send(ws, 'Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }));
   }
   fs.writeFileSync(file, Buffer.from(data, 'base64'));
-  await send(ws, 'Emulation.setDeviceMetricsOverride', { width: 1280, height: 860, deviceScaleFactor: 2, mobile: false });
 }
 
 /* ------------------------------------------------------------------------ the screens ---- */
@@ -124,10 +145,10 @@ const SHOTS = [
   { id: '01-home', nav: 'home', wait: 1200 },
   { id: '02-books', nav: 'book', wait: 2500 },
   // The backup is made here, by pressing the real button, so the next picture shows a real one.
-  { id: '03-recordings-backed-up', nav: 'recordings', click: 'backUp', wait: 2600 },
+  { id: '03-recordings-backed-up', nav: 'recordings', click: 'backUp', wait: 2600, scrollTo: '.dual-pane' },
   // A real clash: the pen's copy of 0451 is changed after the backup was taken, exactly as it
   // would be if the child recorded over it. Restoring then has something to ask about.
-  { id: '04-restore-choice', host: 'changeOneRecording', click: 'putBack', wait: 2200 },
+  { id: '04-restore-choice', host: 'changeOneRecording', click: 'putBack', wait: 2200, scrollTo: '.plan-panel' },
   { id: '05-firmware', nav: 'firmware', wait: 2000 },
 ];
 
@@ -202,7 +223,7 @@ async function runLocale(locale, results) {
         if (shot.wait) await sleep(shot.wait);
 
         const file = path.join(outDir, `${shot.id}-${locale}.png`);
-        await capture(ws, file);
+        await capture(ws, file, shot.scrollTo);
         results.captured.push({ shot: shot.id, locale, file, bytes: fs.statSync(file).size });
         console.log(`  ${path.basename(file)}`);
       } catch (err) {

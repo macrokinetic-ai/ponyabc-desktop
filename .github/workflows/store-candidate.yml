@@ -245,7 +245,22 @@ jobs:
           foreach ($shot in $report.captured) {
             if ($shot.bytes -lt 20000) { throw "$($shot.shot) ($($shot.locale)) is only $($shot.bytes) bytes — probably a blank window." }
           }
-          Write-Host "All $expected screenshots captured, none blank."
+
+          # Partner Center takes PNGs from 1366x768 up to 3840x2160. Checked here rather than
+          # discovered at upload time, where the only clue is a refusal.
+          Add-Type -AssemblyName System.Drawing
+          foreach ($file in Get-ChildItem 'release/store-screenshots' -Filter *.png) {
+            $img = [System.Drawing.Image]::FromFile($file.FullName)
+            try {
+              $w = $img.Width; $h = $img.Height
+            } finally {
+              $img.Dispose()
+            }
+            if ($w -lt 1366 -or $h -lt 768) { throw "$($file.Name) is ${w}x${h} — under Partner Center's 1366x768 minimum." }
+            if ($w -gt 3840 -or $h -gt 2160) { throw "$($file.Name) is ${w}x${h} — over Partner Center's 3840x2160 maximum." }
+            Write-Host "  $($file.Name)  ${w}x${h}"
+          }
+          Write-Host "All $expected screenshots captured, none blank, all within Partner Center's sizes."
 
       - uses: actions/upload-artifact@v4
         with:
