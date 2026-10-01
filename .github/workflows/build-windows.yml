@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    # The submission-pack tag is excluded below, in every step that attaches to a Release.
-    # Its own package is built by store-candidate.yml, unsigned and unstamped.
+    # Builds run on every v* tag, but only a -rc tag may ATTACH to a Release (see the
+    # attach steps). A plain vX.Y.Z page holds the exact bytes sent to the Store.
   workflow_dispatch:
     inputs:
       rc:
@@ -200,10 +200,14 @@ jobs:
       # they land next to the Mac .dmg builds on the same release page — not just as a
       # build artifact that requires a GitHub login to download.
       - name: Attach installer to the matching GitHub Release (skips if none exists)
-        # Never the submission-pack tag: creating v0.3.17-store-candidate triggered this
-        # workflow, and its attach step clobbered the unsigned .appx on that release with a
-        # test-signed one, and added installers, DMGs and a test certificate beside it.
-        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'store-candidate')
+        # TEST TAGS ONLY (-rc). A plain vX.Y.Z release page is the permanent record of what
+        # went to the Microsoft Store: hand-assembled, byte-checked, and never to be written
+        # to by a build. This was a denylist naming 'store-candidate' — the one tag that had
+        # already been damaged, where a build clobbered the unsigned submitted .appx with a
+        # test-signed one. v0.3.17 was not on that list, so tagging the published version
+        # would have overwritten the exact bytes Microsoft certified. An allowlist cannot
+        # have that hole: a build attaches to a release candidate, or to nothing.
+        if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
         shell: bash
         run: |
           set -euo pipefail
@@ -741,10 +745,14 @@ jobs:
       # test-certificate-signed package, never a normal customer installer, and NOT the Microsoft
       # Store listing itself, which is submitted separately via Partner Center.
       - name: Attach Store test package to the matching GitHub Release (skips if none exists)
-        # Never the submission-pack tag: creating v0.3.17-store-candidate triggered this
-        # workflow, and its attach step clobbered the unsigned .appx on that release with a
-        # test-signed one, and added installers, DMGs and a test certificate beside it.
-        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'store-candidate')
+        # TEST TAGS ONLY (-rc). A plain vX.Y.Z release page is the permanent record of what
+        # went to the Microsoft Store: hand-assembled, byte-checked, and never to be written
+        # to by a build. This was a denylist naming 'store-candidate' — the one tag that had
+        # already been damaged, where a build clobbered the unsigned submitted .appx with a
+        # test-signed one. v0.3.17 was not on that list, so tagging the published version
+        # would have overwritten the exact bytes Microsoft certified. An allowlist cannot
+        # have that hole: a build attaches to a release candidate, or to nothing.
+        if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
         shell: bash
         run: |
           set -euo pipefail
