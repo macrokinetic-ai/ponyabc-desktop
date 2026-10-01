@@ -107,34 +107,72 @@ jobs:
         run: |
           [xml]$r = Get-Content 'preflight/wack-report.xml' -Raw
           $overall = $r.REPORT.OVERALL_RESULT
-          Write-Host "OVERALL RESULT: $overall"
+          Write-Host "OVERALL RESULT: $overall  (WACK $($r.REPORT.VERSION), app type $($r.REPORT.APP_TYPE))"
 
+          # RESULT is a CHILD ELEMENT of TEST, not an attribute. Read as an attribute it comes back
+          # empty for every test, so the first version of this gate could not have found a failure
+          # if there had been one — and there was: "Blocked executables" FAILED while this printed
+          # "0 warnings". Same shape of mistake as a needle that matches nothing.
           $failed = @()
           $warned = @()
           foreach ($t in $r.SelectNodes('//TEST')) {
             $name = $t.GetAttribute('NAME')
-            $res = $t.GetAttribute('RESULT')
-            if ($res -eq 'FAIL') { $failed += $name }
+            $optional = $t.GetAttribute('OPTIONAL') -eq 'TRUE'
+            $res = ($t.SelectSingleNode('RESULT').InnerText).Trim()
+            if ($res -eq 'FAIL') { $failed += [pscustomobject]@{ Name = $name; Optional = $optional; Node = $t } }
             elseif ($res -eq 'WARNING') { $warned += $name }
           }
+          Write-Host "Tests: $($r.SelectNodes('//TEST').Count), failed: $($failed.Count), warnings: $($warned.Count)"
+
+          # The one failure this app is expected to produce, and why it is allowed.
+          #
+          # "Blocked executables" is a substring scan for the names of executables a UWP app may not
+          # launch. Most of what it finds is noise inside Chromium's own data — "reg", "cmd", "cdb",
+          # "CSI", "dNX" happen to appear as bytes in icudtl.dat and the .pak files, in every
+          # Electron app ever submitted. Two of its findings are really ours: app.asar refers to
+          # powershell.exe and cmd.exe, which is the firmware update asking Windows to run the pen
+          # maker's tool with administrator rights.
+          #
+          # That is allowed for this app type. The report says APP_TYPE=Centennial — a Desktop
+          # Bridge, full-trust app — where launching an external process is the point of the
+          # packaging model, not a violation of it. WACK marks the test OPTIONAL for that reason and
+          # the overall result stays PASS. 0.3.16 is live in the Store with the same mechanism.
+          #
+          # It is allowed by NAME, and only while WACK itself calls it optional. Any other failure,
+          # and any failure of this one once WACK stops treating it as optional, fails this job.
+          $allowed = @('Blocked executables')
 
           "## Windows App Certification Kit" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          "Overall: **$overall**" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Overall: **$overall** — $($r.SelectNodes('//TEST').Count) tests, $($failed.Count) failed, $($warned.Count) warnings." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
           if ($warned.Count -gt 0) {
-            "### Warnings ($($warned.Count))" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            "### Warnings" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
             foreach ($w in $warned) { "- $w" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append; Write-Host "::warning::WACK warning: $w" }
           } else {
             "No warnings." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           }
 
-          if ($failed.Count -gt 0) {
-            foreach ($f in $failed) { Write-Host "::error::WACK FAILED: $f" }
-            throw "The certification kit failed $($failed.Count) test(s). A submission must not go out on this."
+          $blocking = @()
+          foreach ($f in $failed) {
+            $why = if ($f.Optional) { 'optional' } else { 'REQUIRED' }
+            "### Failed: $($f.Name) ($why)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            foreach ($m in $f.Node.SelectNodes('.//MESSAGE')) {
+              "- $($m.GetAttribute('TEXT'))" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            }
+            if ($allowed -contains $f.Name -and $f.Optional) {
+              Write-Host "::warning::WACK failed an allowed optional test: $($f.Name) — see the job summary for every message."
+            } else {
+              Write-Host "::error::WACK FAILED: $($f.Name) ($why)"
+              foreach ($m in $f.Node.SelectNodes('.//MESSAGE')) { Write-Host "::error::  $($m.GetAttribute('TEXT'))" }
+              $blocking += $f.Name
+            }
           }
+
+          if ($blocking.Count -gt 0) { throw "The certification kit failed $($blocking.Count) test(s) that are not allowed: $($blocking -join ', ')" }
           if ($overall -eq 'FAIL') { throw "The certification kit's overall result is FAIL." }
-          Write-Host "WACK passed with $($warned.Count) warning(s)."
+          Write-Host "WACK: overall $overall, $($warned.Count) warning(s), $($failed.Count) failure(s) — all allowed and documented."
 
       # --- (c) The clean machine ---------------------------------------------------------------
       - name: "Clean machine: install the Store package"
