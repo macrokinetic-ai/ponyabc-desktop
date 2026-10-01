@@ -1,0 +1,197 @@
+name: Store certification pre-flight
+
+# Everything that should be known BEFORE a submission, rather than from a rejection notice.
+#
+# 0.3.15 was rejected on certification 10.1.1.11 for shipping electron-builder's default Electron
+# tile art. That specific trap is now checked at build time; this job is the rest of it — the
+# Windows App Certification Kit, and a walk through every screen on a machine with no pen, nothing
+# reachable on the network and nothing this app has ever written.
+#
+# Nothing here goes near Partner Center.
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'What this pre-flight is for'
+        required: false
+        default: ''
+
+jobs:
+  preflight:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: "Build the app exactly as the submission does"
+        shell: pwsh
+        run: |
+          Remove-Item Env:\PONYABC_BUILD_TAG -ErrorAction SilentlyContinue
+          Remove-Item Env:\PONYABC_BUILD_COMMIT -ErrorAction SilentlyContinue
+          npm run build:store
+          node scripts/check-store-build.mjs
+
+      # Two packages from one build. They differ by a signature and nothing else.
+      #
+      # The SUBMISSION package is unsigned, which is what Partner Center wants and what the
+      # store-candidate workflow produces. An unsigned package cannot be installed, and the
+      # certification kit has to install what it tests — so the same bytes are packed again with
+      # an ephemeral certificate for WACK and for the clean-machine walk. The report says which
+      # package each result came from, because pretending they are one thing would be the easiest
+      # lie to tell here.
+      - name: "Package: unsigned (the submission) and test-signed (what can actually be run)"
+        shell: pwsh
+        run: |
+          Remove-Item Env:\CSC_LINK -ErrorAction SilentlyContinue
+          Remove-Item Env:\CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
+          npm run dist:win:appx
+          if ($LASTEXITCODE -ne 0) { throw 'unsigned packaging failed' }
+          $unsigned = Get-ChildItem 'release' -Filter '*.appx' | Select-Object -First 1
+          New-Item -ItemType Directory -Force -Path 'preflight' | Out-Null
+          Copy-Item $unsigned.FullName 'preflight/submission-unsigned.appx'
+          $h = (Get-FileHash 'preflight/submission-unsigned.appx' -Algorithm SHA256).Hash.ToLower()
+          Write-Host "SUBMISSION (unsigned) sha256: $h"
+          "$h  $($unsigned.Name)" | Set-Content 'preflight/submission-unsigned.appx.sha256' -NoNewline
+
+          $certSubject = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $certSubject `
+            -KeyUsage DigitalSignature -FriendlyName 'PonyABC preflight cert (ephemeral)' `
+            -CertStoreLocation 'Cert:\CurrentUser\My' `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+          $pfx = Join-Path $env:RUNNER_TEMP 'preflight.pfx'
+          $cer = Join-Path $env:RUNNER_TEMP 'preflight.cer'
+          $pw = [System.Guid]::NewGuid().ToString()
+          Export-PfxCertificate -Cert $cert -FilePath $pfx -Password (ConvertTo-SecureString -String $pw -Force -AsPlainText) | Out-Null
+          Export-Certificate -Cert $cert -FilePath $cer | Out-Null
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter 'signtool.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -like '*\x64\*' } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw 'no Windows SDK signtool.exe on this runner' }
+          $env:CSC_LINK = $pfx
+          $env:CSC_KEY_PASSWORD = $pw
+          $env:SIGNTOOL_PATH = $signtool.FullName
+          npm run dist:win:appx
+          if ($LASTEXITCODE -ne 0) { throw 'signed packaging failed' }
+          $signed = Get-ChildItem 'release' -Filter '*.appx' | Select-Object -First 1
+          Copy-Item $signed.FullName 'preflight/testsigned.appx'
+          Copy-Item $cer 'preflight/testsigned.cer'
+          Write-Host "TEST-SIGNED sha256: $((Get-FileHash 'preflight/testsigned.appx' -Algorithm SHA256).Hash.ToLower())"
+
+      # --- (a) The Windows App Certification Kit --------------------------------------------
+      - name: "WACK: run the Windows App Certification Kit"
+        shell: pwsh
+        run: |
+          $appcert = 'C:\Program Files (x86)\Windows Kits\10\App Certification Kit\appcert.exe'
+          if (-not (Test-Path $appcert)) {
+            $found = Get-ChildItem 'C:\Program Files (x86)\Windows Kits' -Recurse -Filter 'appcert.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $found) { throw 'The Windows App Certification Kit is not installed on this runner.' }
+            $appcert = $found.FullName
+          }
+          Write-Host "Using: $appcert"
+
+          Import-Certificate -FilePath 'preflight/testsigned.cer' -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null
+          Import-Certificate -FilePath 'preflight/testsigned.cer' -CertStoreLocation 'Cert:\LocalMachine\Root' | Out-Null
+
+          $report = Join-Path (Resolve-Path 'preflight') 'wack-report.xml'
+          & $appcert reset
+          & $appcert test -appxpackagepath (Resolve-Path 'preflight/testsigned.appx') -reportoutputpath $report
+          Write-Host "appcert exit code: $LASTEXITCODE"
+          if (-not (Test-Path $report)) { throw 'WACK produced no report.' }
+        timeout-minutes: 45
+
+      - name: "WACK: read the report, fail on any FAILED test"
+        shell: pwsh
+        run: |
+          [xml]$r = Get-Content 'preflight/wack-report.xml' -Raw
+          $overall = $r.REPORT.OVERALL_RESULT
+          Write-Host "OVERALL RESULT: $overall"
+
+          $failed = @()
+          $warned = @()
+          foreach ($t in $r.SelectNodes('//TEST')) {
+            $name = $t.GetAttribute('NAME')
+            $res = $t.GetAttribute('RESULT')
+            if ($res -eq 'FAIL') { $failed += $name }
+            elseif ($res -eq 'WARNING') { $warned += $name }
+          }
+
+          "## Windows App Certification Kit" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Overall: **$overall**" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if ($warned.Count -gt 0) {
+            "### Warnings ($($warned.Count))" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            foreach ($w in $warned) { "- $w" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append; Write-Host "::warning::WACK warning: $w" }
+          } else {
+            "No warnings." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+
+          if ($failed.Count -gt 0) {
+            foreach ($f in $failed) { Write-Host "::error::WACK FAILED: $f" }
+            throw "The certification kit failed $($failed.Count) test(s). A submission must not go out on this."
+          }
+          if ($overall -eq 'FAIL') { throw "The certification kit's overall result is FAIL." }
+          Write-Host "WACK passed with $($warned.Count) warning(s)."
+
+      # --- (c) The clean machine ---------------------------------------------------------------
+      - name: "Clean machine: install the Store package"
+        shell: pwsh
+        run: |
+          Add-AppxPackage -Path (Resolve-Path 'preflight/testsigned.appx')
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          if (-not $installed) { throw 'The package did not install.' }
+          Write-Host "Installed $($installed.PackageFullName)"
+
+      - name: "Clean machine: cut the app off from everything it talks to"
+        shell: pwsh
+        run: |
+          # Not "turn the runner's network off" — that would cut this job's own connection too.
+          # These are the only three hosts the app contacts (see the privacy notice), pointed at
+          # nowhere, which is indistinguishable from no network as far as the app is concerned.
+          $hosts = "$env:SystemRoot\System32\drivers\etc\hosts"
+          Add-Content -Path $hosts -Value "`n127.0.0.1 register.ponyabc.uk`n127.0.0.1 api.github.com`n127.0.0.1 github.com"
+          ipconfig /flushdns | Out-Null
+          Write-Host 'register.ponyabc.uk, api.github.com and github.com now resolve to nowhere.'
+
+      - name: "Clean machine: every screen, no pen, no network"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          [xml]$m = Get-Content (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($m.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $exe = Join-Path $installed.InstallLocation $m.SelectSingleNode('//a:Application', $ns).GetAttribute('Executable')
+          New-Item -ItemType Directory -Force -Path 'preflight/clean-machine' | Out-Null
+          node scripts/clean-machine-check.mjs $exe 'preflight/clean-machine'
+          if ($LASTEXITCODE -ne 0) { throw 'The clean-machine walk reported a failure — see above.' }
+        timeout-minutes: 15
+
+      - name: "Clean machine: put the network back"
+        if: always()
+        shell: pwsh
+        run: |
+          $hosts = "$env:SystemRoot\System32\drivers\etc\hosts"
+          (Get-Content $hosts) | Where-Object { $_ -notmatch 'ponyabc\.uk|api\.github\.com|^127\.0\.0\.1 github\.com' } | Set-Content $hosts
+          ipconfig /flushdns | Out-Null
+
+      - name: "Clean machine: uninstall, and prove nothing is left"
+        shell: pwsh
+        run: |
+          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
+          if (-not $installed) { throw 'Nothing to uninstall — the package is already gone.' }
+          Remove-AppxPackage -Package $installed.PackageFullName
+          if (Get-AppxPackage -Name 'PonyABC.PonyABCDesktop') { throw 'The package is still installed after Remove-AppxPackage.' }
+          Write-Host 'Uninstalled cleanly.'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: store-preflight
+          path: |
+            preflight/wack-report.xml
+            preflight/clean-machine/**
+            preflight/submission-unsigned.appx.sha256
+          if-no-files-found: warn
