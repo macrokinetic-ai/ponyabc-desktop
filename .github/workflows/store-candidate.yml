@@ -1,0 +1,198 @@
+name: Store submission candidate (.appx)
+
+# The package the owner uploads to Partner Center by hand.
+#
+# Separate from build-windows.yml on purpose. That workflow builds release candidates for
+# TESTING: it stamps them so a tester can tell which build they are holding, and it signs the
+# .appx with an ephemeral self-signed certificate so the package can be sideloaded and actually
+# run on the runner. Neither of those belongs in a submission, and neither should be switched off
+# inside a pipeline that is working.
+#
+# What a submission needs instead:
+#   * no build stamp, so Settings shows a plain "0.3.17" exactly as a customer will see it
+#   * no signature at all — electron-builder's own Store path (AppxTarget.computePublisherName
+#     logs `AppX is not signed` with reason "Windows Store only build" when no certificate is
+#     configured, and takes the publisher from the config, so the identity is still correct).
+#     Microsoft signs the package on ingestion; a self-signed signature is for sideloading only.
+#   * every check that matters run against the finished .appx rather than the source
+#
+# Nothing here uploads anything anywhere near Partner Center. It produces one artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'What this candidate is for (recorded in the summary)'
+        required: false
+        default: ''
+
+jobs:
+  store-candidate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The same gates the candidate builds pass. A submission is not the place to find out.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: "Prove the app contains no developer or testing path"
+        run: |
+          npm run build:store
+          node scripts/check-store-build.mjs
+
+      - name: "Build the submission package — unsigned, unstamped"
+        shell: pwsh
+        run: |
+          # No PONYABC_BUILD_TAG and no PONYABC_BUILD_COMMIT: formatBuildLabel then produces a
+          # plain version number, which is what a customer must see.
+          # No CSC_LINK and no CSC_KEY_PASSWORD: electron-builder leaves the package unsigned.
+          Remove-Item Env:\CSC_LINK -ErrorAction SilentlyContinue
+          Remove-Item Env:\CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
+          Remove-Item Env:\PONYABC_BUILD_TAG -ErrorAction SilentlyContinue
+          Remove-Item Env:\PONYABC_BUILD_COMMIT -ErrorAction SilentlyContinue
+          npm run dist:win:appx
+          if ($LASTEXITCODE -ne 0) { throw "dist:win:appx failed with exit code $LASTEXITCODE" }
+
+      - name: "Check the package, from the package"
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'No .appx was produced.' }
+
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($appx.FullName)
+          try {
+            $names = $zip.Entries | ForEach-Object { $_.FullName }
+
+            # 1. It is a real Appx container with a manifest.
+            $manifestEntry = $zip.Entries | Where-Object { $_.FullName -eq 'AppxManifest.xml' }
+            if (-not $manifestEntry) { throw 'No AppxManifest.xml inside the package — this is not a valid Appx container.' }
+            $reader = New-Object System.IO.StreamReader($manifestEntry.Open())
+            $manifestXml = $reader.ReadToEnd()
+            $reader.Close()
+
+            # 2. UNSIGNED. A submission must not carry our own signature; Microsoft signs it.
+            if ($names -contains 'AppxSignature.p7x') {
+              throw 'The package is SIGNED. A Store submission must be unsigned — a self-signed signature is for sideloading only, and this one would be replaced on ingestion at best.'
+            }
+            Write-Host 'UNSIGNED: no AppxSignature.p7x, as a submission requires.'
+
+            # 3. The app inside carries no build stamp and nothing internal.
+            $asarEntry = $zip.Entries | Where-Object { $_.FullName -eq 'app/resources/app.asar' }
+            if (-not $asarEntry) { throw 'No app/resources/app.asar inside the package.' }
+            $asarPath = Join-Path $env:RUNNER_TEMP 'submission-app.asar'
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($asarEntry, $asarPath, $true)
+          } finally {
+            $zip.Dispose()
+          }
+
+          Write-Host '----- AppxManifest.xml, from inside the built package -----'
+          Write-Host $manifestXml
+
+          [xml]$manifest = $manifestXml
+          $ns = New-Object System.Xml.XmlNamespaceManager($manifest.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $identity = $manifest.SelectSingleNode('//a:Identity', $ns)
+          $publisherDisplay = $manifest.SelectSingleNode('//a:Properties/a:PublisherDisplayName', $ns).InnerText
+
+          $expected = [ordered]@{
+            'Identity Name'        = 'PonyABC.PonyABCDesktop'
+            'Identity Publisher'   = 'CN=E476FCF5-1C63-4A56-85B1-DA5D642911B5'
+            'Identity Version'     = '0.3.17.0'
+            'ProcessorArchitecture' = 'x64'
+            'PublisherDisplayName' = 'PonyABC'
+          }
+          $actual = [ordered]@{
+            'Identity Name'        = $identity.GetAttribute('Name')
+            'Identity Publisher'   = $identity.GetAttribute('Publisher')
+            'Identity Version'     = $identity.GetAttribute('Version')
+            'ProcessorArchitecture' = $identity.GetAttribute('ProcessorArchitecture')
+            'PublisherDisplayName' = $publisherDisplay
+          }
+          $bad = @()
+          foreach ($k in $expected.Keys) {
+            if ($actual[$k] -ne $expected[$k]) { $bad += "  $k`: expected '$($expected[$k])', got '$($actual[$k])'" }
+          }
+          if ($bad.Count -gt 0) {
+            $bad | ForEach-Object { Write-Host "::error::$_" }
+            throw 'MANIFEST VERIFICATION FAILED — see the mismatches above.'
+          }
+          Write-Host 'MANIFEST VERIFIED: identity, version 0.3.17.0 and architecture all exactly as Partner Center expects.'
+
+          # The app bundle itself: no stamp, and none of the Internal build.
+          $asarText = [System.IO.File]::ReadAllText($asarPath)
+          if ($asarText -match 'buildTag:\s*"(.+?)"') {
+            throw "The packaged app carries a build stamp (buildTag '$($Matches[1])'). A customer must see a plain version number."
+          }
+          if (-not ($asarText -match 'buildTag:\s*""')) {
+            throw 'Could not find buildTag in the packaged app at all — the version label code has moved and this check no longer proves anything.'
+          }
+          Write-Host 'NO STAMP: buildTag is empty, so Settings shows a plain version number.'
+
+          $forbidden = @(
+            'INTERNAL TEST BUILD',
+            'Technical log',
+            'Index reset requested',
+            'X-PonyABC-Tester-Key',
+            'testingMode.json',
+            'Internal: choose a firmware folder',
+            'PONYABC_DEMO_DATA',
+            'PONYABC_MSIX_FIRMWARE_PROBE'
+          )
+          $leaks = $forbidden | Where-Object { $asarText.Contains($_) }
+          if ($leaks) {
+            $leaks | ForEach-Object { Write-Host "::error::the package contains '$_'" }
+            throw 'INTERNAL CODE IN THE SUBMISSION PACKAGE — see above.'
+          }
+          Write-Host "NOTHING INTERNAL: none of $($forbidden.Count) internal strings are in the packaged app."
+
+          $hash = (Get-FileHash $appx.FullName -Algorithm SHA256).Hash.ToLower()
+          "$hash  $($appx.Name)" | Set-Content -Path (Join-Path 'release' "$($appx.Name).sha256") -NoNewline
+          Write-Host "SHA-256: $hash"
+
+          "## Store submission candidate" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| | |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "|---|---|" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| Package | ``$($appx.Name)`` |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| SHA-256 | ``$hash`` |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| Commit | ``$env:GITHUB_SHA`` |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| Signed | no — Microsoft signs on ingestion |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| Build stamp | none, Settings shows a plain version |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "| Note | $($env:CANDIDATE_NOTE) |" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+        env:
+          CANDIDATE_NOTE: ${{ inputs.note }}
+
+      # Every image the manifest references must exist and must not be electron-builder's own
+      # sample art — the exact thing Microsoft certification 10.1.1.11 rejected in v0.3.15.
+      - name: "Check the tile and logo art is ours"
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($appx.FullName)
+          try {
+            $assets = $zip.Entries | Where-Object { $_.FullName -like 'assets/*' -and $_.FullName -like '*.png' }
+            if ($assets.Count -eq 0) { throw 'No tile or logo images in the package at all.' }
+            $tiny = $assets | Where-Object { $_.Length -lt 200 }
+            if ($tiny) {
+              $tiny | ForEach-Object { Write-Host "::error::$($_.FullName) is only $($_.Length) bytes" }
+              throw 'A tile image is implausibly small — it is probably a placeholder.'
+            }
+            Write-Host "TILE ART: $($assets.Count) images, smallest $(($assets | Measure-Object -Property Length -Minimum).Minimum) bytes."
+          } finally {
+            $zip.Dispose()
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store-submission-appx
+          path: |
+            release/*.appx
+            release/*.appx.sha256
+          if-no-files-found: error
