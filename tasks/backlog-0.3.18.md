@@ -22,10 +22,32 @@ Firmware updating is Windows-only and stays Windows-only — the vendor's flashi
 Windows executable. A Mac build must therefore say so plainly on the firmware screen rather
 than offering something it cannot do.
 
-- `build-mac.yml` exists and its attach step now runs on `-rc` tags.
-- What is unknown: whether the workflow currently produces both architectures, and whether the
-  app's firmware screen degrades honestly on macOS. Neither has been checked on a Mac.
-- Do this before anything cosmetic. It is a rule already broken, not a feature.
+**The cause is known, and it is not a broken build.** `build-mac.yml` works: it built both
+architectures successfully on `main` on 2026-10-01 (run `36847118680`, `mac-arm64-installer` and
+`mac-x64-installer`). It also triggers on `tags: ['v*']`, and it did run for `v0.3.17-rc1` and
+`v0.3.17-rc2`, whose tags were pushed by hand.
+
+From rc3 onwards the rc releases were cut by `workflow_dispatch` on `build-windows.yml`, which
+creates the tag with `gh release create --target` (`build-windows.yml:687`). **A tag created
+through the API does not fire a `push` event**, so `build-mac.yml` was never invoked for rc3,
+rc4, rc5, rc6 or rc7 — and `v0.3.17` has the same gap, because that tag was created the same way.
+
+Two things to do, in this order:
+
+1. Make the Mac build part of cutting an rc, rather than something a side effect of tag pushing
+   used to provide. Either dispatch `build-mac.yml` from the rc job, or push the tag as a tag and
+   let both workflows see it. The second is simpler and restores the behaviour rc1 and rc2 had.
+2. Decide what a Mac build is *for*. `electron-builder.yml:31` sets `identity: null` — there is no
+   paid Apple Developer ID, so the `.dmg` is unsigned and macOS will refuse to open it without the
+   user overriding Gatekeeper by hand. Shipping that to a nursery parent is worse than shipping
+   nothing. Firmware updating is Windows-only regardless, since the vendor's flashing tool is a
+   Windows executable, so a Mac build must say so on the firmware screen rather than offer what it
+   cannot do.
+
+DMGs for 0.3.17's exact app code already exist as artifacts of run `36847118680` — `main`'s tree
+differs from `17ecd69` only in documentation and CI. They are **not** attached to the `v0.3.17`
+Release, because unsigned builds are a distribution decision for the owner, not a gap to fill
+quietly.
 
 ---
 
