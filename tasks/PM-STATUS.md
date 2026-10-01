@@ -52,6 +52,23 @@ mode, with its own name, application id and banner, so it installs beside the St
 cannot be submitted by mistake — CI refuses an internal package carrying the Store identity.
 Every rc Release carries both.
 
+### rc7 is the build to submit, and the pre-flight passes on it (2026-10-01)
+
+**`v0.3.17-rc7`** (`17ecd69`) carries the product's official name — 點讀錄音筆 / 点读录音笔 /
+PonyABC P5 Intelligent Recording Reading Pen — in the app, the manual, the rebuilt PDFs, the Store
+listing and the screenshots, and the button layout fix for every language at every window size.
+
+The submission pack on **`v0.3.17-store-candidate`** is built from that same commit.
+WACK: overall PASS, 0 warnings. Clean machine with no pen and no network: 12 of 12 steps, 0 errors,
+clean uninstall. **Verdict: GO**, after the ten-minute look in `09-rc7-visual-check.md`.
+
+**One scare worth remembering.** Creating the `v0.3.17-store-candidate` tag triggered the rc
+workflows, whose attach steps overwrote the unsigned submission `.appx` with a test-signed one and
+added installers, DMGs and a test certificate to that release. Fixed, and both workflows now
+exclude that tag — but for a while the page the owner would submit from held the wrong package.
+
+Still open: the six non-Chinese translations of the product name are mine and need native review.
+
 ### The Store submission pack is ready, and waits on one decision (2026-10-01)
 
 rc6 was tested on real pens and approved. The pack the owner uploads by hand is on the Releases
