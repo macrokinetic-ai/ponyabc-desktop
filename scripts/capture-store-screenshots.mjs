@@ -230,6 +230,7 @@ async function runLocale(locale, results) {
         }
         if (shot.wait) await sleep(shot.wait);
 
+        await checkChineseNames(ws, locale, shot.id, results);
         const file = path.join(outDir, `${shot.id}-${locale}.png`);
         await capture(ws, file, shot.scrollTo);
         results.captured.push({ shot: shot.id, locale, file, bytes: fs.statSync(file).size });
@@ -254,6 +255,38 @@ async function runLocale(locale, results) {
     }
     child.kill();
     await sleep(800);
+  }
+}
+
+/**
+ * No Chinese screenshot may show a name the product no longer has.
+ *
+ * Read out of the rendered page rather than the image, because reading pixels would need OCR and
+ * the DOM already knows. The official name CONTAINS the wrong one — 點讀錄音筆 ends in 錄音筆 — so
+ * the check uses a negative lookbehind; a plain search would match every correct name and pass.
+ */
+async function checkChineseNames(ws, locale, shotId, results) {
+  if (!locale.startsWith('zh')) return;
+  const wrong = locale === 'zh-Hant' ? '(?<!點讀)錄音筆' : '(?<!点读)录音笔';
+  const old = locale === 'zh-Hant' ? '(?<!點讀錄音)點讀筆' : '(?<!点读录音)点读笔';
+  const found = (
+    await evaluate(
+      ws,
+      `(() => {
+         const text = document.body.innerText || '';
+         const hits = [];
+         for (const [label, re] of [['recording-pen-alone', new RegExp(${JSON.stringify(wrong)}, 'g')],
+                                    ['old-reading-pen', new RegExp(${JSON.stringify(old)}, 'g')]]) {
+           const m = text.match(re);
+           if (m) hits.push(label + ' x' + m.length);
+         }
+         return hits;
+       })()`,
+    )
+  ).result.value;
+  for (const hit of found ?? []) {
+    results.failed.push({ shot: shotId, locale, why: `the screen shows ${hit}` });
+    console.error(`  ! ${shotId} (${locale}): shows ${hit}`);
   }
 }
 
