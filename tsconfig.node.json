@@ -13,7 +13,9 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "@internal": ["src/main/internal/index.ts"],
+      "@internal-ui": ["src/renderer/internal/index.tsx"]
     }
   },
   "include": [

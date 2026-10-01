@@ -6,6 +6,7 @@ import { cacheFilePath, downloadToCache } from './bookDownload';
 import { acquirePenLock } from './penOperationLock';
 import { getFreeBytes } from './transferPlanner';
 import * as session from './session';
+import * as internal from '@internal';
 
 export interface BookInstallDeps {
   cacheDir: string;
@@ -15,6 +16,9 @@ export interface BookInstallDeps {
   getCacheEntries: () => BookCacheEntry[];
   saveCacheEntry: (entry: BookCacheEntry) => void;
   onProgress?: (e: BookDownloadProgressEvent) => void;
+  /** Bytes written to the PEN, as they are written. Separate from the download progress above:
+   *  downloading happens at internet speed, writing happens at the pen's ~1 MB/s. */
+  onWriteProgress?: (e: { contentId: string; filename: string; bytesWritten: number; totalBytes: number }) => void;
   fetchFn?: typeof fetch;
   getFreeBytesFn?: (p: string) => Promise<number>;
 }
@@ -97,6 +101,8 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
       targetFileName: entry.filename,
       backupDir: deps.backupDir,
       verifyStillSameTarget,
+      onProgress: (bytesWritten, totalBytes) =>
+        deps.onWriteProgress?.({ contentId: entry.contentId, filename: entry.filename, bytesWritten, totalBytes }),
     });
     if (!result.ok) {
       const status =
@@ -109,7 +115,10 @@ async function writeToPen(entry: BookCatalogEntry, cacheFileRealPath: string, pe
               : 'error';
       return { status, message: result.message, backupPath: result.backupPath };
     }
-    return { status: 'completed', backupPath: result.backupPath };
+    // `created` is what decides whether the pen's book index is now stale: an added file
+    // changes every later book's position, a same-name replacement changes nothing.
+    internal.technical('file-written', `BOOK/${entry.filename}`, entry.sizeBytes);
+    return { status: 'completed', backupPath: result.backupPath, createdNewFile: result.created === true };
   } finally {
     release();
   }

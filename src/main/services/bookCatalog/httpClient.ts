@@ -1,4 +1,6 @@
-import type { BookCatalogEntry } from '@shared/types';
+import type { BookCatalogEntry, ContentState } from '@shared/types';
+import { APP_VERSION_HEADER } from '@shared/contentContract';
+import { TESTER_KEY_HEADER } from '@internal';
 import type { BookCatalogClient, BookCatalogFetchOutcome } from './client';
 
 interface RawPublicBook {
@@ -11,6 +13,9 @@ interface RawPublicBook {
   sha256: unknown;
   sortOrder: unknown;
   updatedAt: unknown;
+  updateRequiresIndexReset: unknown;
+  state: unknown;
+  minAppVersion: unknown;
   downloadUrl: unknown;
 }
 
@@ -37,6 +42,20 @@ function toEntry(b: RawPublicBook): BookCatalogEntry {
     contentLanguages: Array.isArray(b.contentLanguages) ? (b.contentLanguages as string[]) : [],
     sortOrder: typeof b.sortOrder === 'number' ? b.sortOrder : Number(b.sortOrder) || 0,
     updatedAtMs: parseUpdatedAtMs(b.updatedAt),
+    // Strictly `=== true`: a missing field, a string, or anything else means "no", because the
+    // consequence of a wrong `true` is a pointless restart and a wrong `false` is a book that
+    // plays the wrong audio. Only an explicit boolean true is allowed to mean yes.
+    updateRequiresIndexReset: b.updateRequiresIndexReset === true,
+    // `state`, exactly as ponyabc-web sends it. Anything the server does not say — or says
+    // wrongly — is an ordinary active book: an unknown value must never be read as a reason to
+    // take a book off somebody's pen.
+    state:
+      b.state === 'retired' || b.state === 'remove_from_pens' || b.state === 'hidden'
+        ? (b.state as ContentState)
+        : 'active',
+    // A string or null. Compared against our own version before anything is offered, as a
+    // second guard behind the server's own filtering.
+    minAppVersion: typeof b.minAppVersion === 'string' && b.minAppVersion.trim() ? b.minAppVersion.trim() : null,
     downloadUrl: String(b.downloadUrl),
   };
 }
@@ -46,7 +65,14 @@ function toEntry(b: RawPublicBook): BookCatalogEntry {
  * no Authorization header, since Option A's public endpoint takes none. There is nothing
  * to embed or gate here: the endpoint is safe to call directly from a shipped build.
  */
-export function createHttpBookCatalogClient(opts: { baseUrl: string; fetchFn?: typeof fetch }): BookCatalogClient {
+export function createHttpBookCatalogClient(opts: {
+  baseUrl: string;
+  fetchFn?: typeof fetch;
+  /** This build's version, sent so the server can decide what we are allowed to be told. */
+  appVersion: string;
+  /** Internal builds only, and only when the owner has entered one. Never in a Store build. */
+  testerKey?: string | null;
+}): BookCatalogClient {
   const fetchFn = opts.fetchFn ?? fetch;
   return {
     kind: 'live',
@@ -54,6 +80,10 @@ export function createHttpBookCatalogClient(opts: { baseUrl: string; fetchFn?: t
       try {
         const response = await fetchFn(`${opts.baseUrl}/api/public/books`, {
           signal: AbortSignal.timeout(10000),
+          headers: {
+            [APP_VERSION_HEADER]: opts.appVersion,
+            ...(opts.testerKey ? { [TESTER_KEY_HEADER]: opts.testerKey } : {}),
+          },
         });
         if (!response.ok) {
           return { status: 'error', message: `Server returned ${response.status}.`, httpStatus: response.status };

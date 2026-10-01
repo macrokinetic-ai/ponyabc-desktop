@@ -1,6 +1,6 @@
 {
   "title": "Mes enregistrements",
-  "emptyState": "Aucun enregistrement DIY trouvé sur le stylo.",
+  "emptyState": "Il n'y a pas encore d'enregistrement sur votre stylo.",
   "computerEmptyState": "Aucun fichier .mp3 dans ce dossier.",
   "selectAll": "Tout sélectionner",
   "selectedCount": "{{count}} sélectionné(s)",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Enregistrer sur l'ordinateur →",
     "sendToPen": "← Envoyer au stylo",
-    "replaceSticker": "Remplacer cet autocollant avec l'audio sélectionné…"
+    "replaceSticker": "Remplacer l’audio de cet autocollant…",
+    "play": "Écouter",
+    "deleteFromPen": "Supprimer du stylo"
   },
   "transferPlan": {
     "title": "Envoyer au stylo — vérifiez avant d'envoyer",
@@ -84,5 +86,106 @@
     "errorTooLarge": "Ce fichier est trop volumineux pour être écouté.",
     "errorGeneric": "Impossible de lire ce fichier (non pris en charge ou illisible).",
     "penEncodingHint": "Une lecture réussie ici ne garantit pas que le stylo pourra lire le même fichier une fois envoyé."
+  },
+  "onPen": {
+    "title": "Sur votre stylo",
+    "intro": "Les enregistrements actuellement sur votre stylo."
+  },
+  "backup": {
+    "title": "Sauvegardes sur cet ordinateur",
+    "intro": "Une sauvegarde conserve une copie de chaque enregistrement, pour pouvoir les remettre plus tard.",
+    "button": "Sauvegarder mes enregistrements",
+    "none": "Aucune sauvegarde. Choisissez Sauvegarder mes enregistrements pour en créer une.",
+    "choose": "Sauvegarde à utiliser :",
+    "missing": "Cette sauvegarde est introuvable.",
+    "done_one": "{{count}} enregistrement sauvegardé.",
+    "done_other": "{{count}} enregistrements sauvegardés.",
+    "countLabel_one": "{{count}} enregistrement",
+    "countLabel_other": "{{count}} enregistrements",
+    "labelManual": "Sauvegarde",
+    "labelBeforeReplace": "Sauvegarde automatique avant le remplacement de {{name}}",
+    "labelBeforeReplaceMany": "Sauvegarde automatique avant le remplacement d’enregistrements",
+    "labelBeforeDelete": "Sauvegarde automatique avant la suppression de {{name}}",
+    "labelBeforeDeleteMany": "Sauvegarde automatique avant la suppression d’enregistrements",
+    "labelBeforeRestore": "Sauvegarde automatique avant la remise en place d’enregistrements",
+    "labelBeforeReassign": "Sauvegarde automatique avant le déplacement de {{name}} vers un autre numéro",
+    "labelMigration": "Sauvegarde reprise d’une ancienne version",
+    "keptSeparately": "Chaque sauvegarde est une copie distincte de vos enregistrements tels qu’ils étaient à ce moment-là. Les anciennes sont conservées : en créer une nouvelle ne les remplace jamais.",
+    "contentsTitle": "Dans cette sauvegarde",
+    "contentsEmpty": "Cette sauvegarde ne contient aucun enregistrement.",
+    "contentsLoading": "Consultation de cette sauvegarde…",
+    "working": "Sauvegarde de vos enregistrements…",
+    "selectAll": "Tout sélectionner",
+    "selectedCount_one": "{{count}} sélectionné",
+    "selectedCount_other": "{{count}} sélectionnés",
+    "progress": "{{done}} sur {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Remettre les enregistrements sélectionnés sur mon stylo",
+    "reviewTitle": "Avant de les remettre",
+    "clashIntro": "Certains de ces numéros ont déjà un enregistrement sur votre stylo. Écoutez les deux et choisissez lequel garder.",
+    "fromBackup": "Depuis la sauvegarde :",
+    "onPen": "Sur votre stylo :",
+    "replace": "Prendre celui de la sauvegarde",
+    "keepPen": "Garder celui du stylo",
+    "decideAll": "Choisissez pour chacun ci-dessus.",
+    "confirm": "Les remettre",
+    "nothingToDo": "Tout ce que contient cette sauvegarde est déjà sur votre stylo.",
+    "noClashes_one": "{{count}} enregistrement sera ajouté. Rien de ce qui est déjà sur le stylo ne changera.",
+    "noClashes_other": "{{count}} enregistrements seront ajoutés. Rien de ce qui est déjà sur le stylo ne changera.",
+    "done_one": "{{count}} enregistrement remis sur votre stylo.",
+    "done_other": "{{count}} enregistrements remis sur votre stylo.",
+    "buttonNote": "Seuls les enregistrements cochés ci-dessus sont recopiés. Le reste de votre stylo n’est pas touché.",
+    "working": "Remise en place des enregistrements…"
+  },
+  "label": {
+    "button": "Renommer",
+    "prompt": "Comment voulez-vous l’appeler ?",
+    "hint": "Ce nom reste sur cet ordinateur. Votre stylo utilise toujours le numéro de la gommette."
+  },
+  "reassign": {
+    "button": "Changer le numéro de gommette",
+    "prompt": "Nouveau numéro de gommette",
+    "hint": "Tapez le numéro imprimé sur la gommette, exactement tel quel.",
+    "confirm": "Le déplacer",
+    "done": "Déplacé vers la nouvelle gommette.",
+    "failed": "Cela n'a pas pu être fait. Réessayez.",
+    "rejected": {
+      "notDigits": "Tapez uniquement les chiffres de la gommette.",
+      "length": "Tapez le numéro exactement comme il est imprimé, y compris les zéros du début.",
+      "occupied": "Cette gommette a déjà un enregistrement.",
+      "unchanged": "C'est déjà la gommette actuelle."
+    }
+  },
+  "deletePen": {
+    "confirm": "Supprimer « {{name}} » de votre stylo ?",
+    "backupNotice": "Une copie est d'abord enregistrée sur cet ordinateur, pour pouvoir la remettre plus tard.",
+    "done": "Supprimé. Une copie est dans vos sauvegardes.",
+    "failed": "Impossible de supprimer. Rien n'a été modifié."
+  },
+  "advancedTools": {
+    "title": "Outils avancés"
+  },
+  "addFromComputer": {
+    "title": "Ajouter des enregistrements depuis cet ordinateur",
+    "intro": "Mettez vos propres enregistrements sur le stylo. Nommez chaque fichier avec le numéro de l’autocollant auquel il appartient — quatre chiffres, comme 0451, ou cinq.",
+    "choose": "Choisir des enregistrements…",
+    "chosenFrom": "Depuis {{folder}}",
+    "mixedFolders": "Veuillez choisir des enregistrements d’un seul dossier à la fois.",
+    "noneChosen": "Aucun enregistrement choisi pour le moment.",
+    "rejected": "Ceux-ci ne sont pas des enregistrements utilisables et ont été écartés : {{names}}",
+    "badName": "Pas un numéro d’autocollant — renommez-le en quatre chiffres, comme 0451",
+    "willAdd": "Nouveau",
+    "willReplace": "REMPLACERA l’enregistrement sur votre stylo",
+    "previewChosen": "Écouter celui de cet ordinateur",
+    "previewPen": "Écouter celui du stylo",
+    "copyButton": "Copier sur mon stylo",
+    "copying": "Copie sur votre stylo…",
+    "backupFirst": "Les enregistrements du stylo sont sauvegardés automatiquement d’abord. Vous les trouverez sous Sauvegardes sur cet ordinateur.",
+    "done_one": "{{count}} enregistrement copié sur votre stylo.",
+    "done_other": "{{count}} enregistrements copiés sur votre stylo.",
+    "backupFailed": "Les enregistrements de votre stylo n’ont pas pu être sauvegardés, donc rien n’a été modifié. Veuillez réessayer.",
+    "manyPens": "Envoyer le même ensemble à plusieurs stylos l’un après l’autre arrivera dans une version ultérieure. Pour l’instant, choisissez les enregistrements à nouveau pour chaque stylo.",
+    "noSpace": "Il n’y a pas assez de place sur votre stylo pour tout cela. Supprimez des enregistrements dont vous n’avez plus besoin, puis choisissez-les à nouveau."
   }
 }

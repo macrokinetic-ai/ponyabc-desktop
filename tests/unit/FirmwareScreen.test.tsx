@@ -68,6 +68,7 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     prepareOfficialFirmwarePackage: vi.fn(async () => ({ status: 'no-network', message: 'offline' }) as const),
     onFirmwareDownloadProgress: vi.fn(() => () => {}),
     cancelFirmwareDownload: vi.fn(async () => ({ ok: false })),
+    firmwareLastInstalled: vi.fn(async () => null),
     exportFirmwareDiagnostics: vi.fn(async () => ({ status: 'cancelled' }) as const),
     onFirmwareProgress: vi.fn((listener) => {
       progressListener = listener;
@@ -105,7 +106,11 @@ afterEach(() => {
   cleanup();
 });
 
-function renderScreen() {
+function renderScreen(overrides: Record<string, unknown> = {}) {
+  if (Object.keys(overrides).length > 0) {
+    // @ts-expect-error — test-only global shim for the preload bridge
+    window.ponyabc = { ...mockPonyAbc(), ...overrides };
+  }
   render(
     <PenRootProvider>
       <FirmwareScreen onNavigate={navigateMock} />
@@ -120,7 +125,7 @@ async function advanceToConfirm() {
   // The local-folder chooser lives behind the "Advanced / support" disclosure, collapsed by
   // default — this is the exact fix for it no longer being a required, always-visible step.
   fireEvent.click(screen.getByRole('button', { name: 'Show' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose folder…' }));
   await screen.findByText(/Selected:/);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByRole('heading', { name: 'Confirm' });
@@ -151,8 +156,8 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     renderScreen();
     await screen.findByText('Pen detected.');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Show' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Test/support: select a local folder…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose folder…' }));
     await screen.findByText('isd_download.exe');
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -179,7 +184,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     await screen.findByText(/Write sector:147/);
     expect(screen.queryByText(/%/)).toBeNull(); // no fabricated percentage anywhere
-    expect(screen.getByText('The upgrade cannot be force-cancelled once it has started.')).toBeTruthy();
+    expect(screen.getByText('Once the update starts it cannot be stopped. Please wait — it usually takes a few minutes.')).toBeTruthy();
     // No cancel button anywhere on this screen once upgrading has started.
     expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
   });
@@ -201,11 +206,11 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+    await screen.findByText('Your pen is up to date. Please switch it off and on again, then try one of your books.');
     expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Return to Home' })).toBeTruthy();
     // No removed elements: no red "result could not be confirmed" title, no old buttons.
-    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    expect(screen.queryByText('We could not confirm the update finished')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
     expect(screen.queryByRole('button', { name: /I tested the pen/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /I understand/ })).toBeNull();
@@ -228,8 +233,8 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
-    expect(screen.queryByText('The result could not be confirmed.')).toBeNull();
+    await screen.findByText('The update has finished. Please switch your pen off and on again, then try one of your books.');
+    expect(screen.queryByText('We could not confirm the update finished')).toBeNull();
     expect(screen.queryByText('Upgrade completed successfully.')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
@@ -257,7 +262,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade process has finished. Please restart the pen and test playback.');
+    await screen.findByText('The update has finished. Please switch your pen off and on again, then try one of your books.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Return to Home' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
@@ -283,7 +288,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The upgrade did not start or did not complete.');
+    await screen.findByText('The update did not finish');
     expect(screen.queryByRole('button', { name: 'Return to Home' })).toBeNull();
   });
 
@@ -304,7 +309,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The firmware upgrade is completed. Please restart the pen and test playback.');
+    await screen.findByText('Your pen is up to date. Please switch it off and on again, then try one of your books.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     await waitFor(() => expect(window.ponyabc.acknowledgeFirmwareOutcome).toHaveBeenCalled());
@@ -333,11 +338,46 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       sawUfwGenerated: false,
       sawNoLicenseWarning: false,
     });
-    await screen.findByText('The upgrade did not start or did not complete.');
-    expect(screen.queryByText('The firmware upgrade is completed. Please restart the pen and test playback.')).toBeNull();
-    expect(screen.queryByText('The firmware upgrade process has finished. Please restart the pen and test playback.')).toBeNull();
+    await screen.findByText('The update did not finish');
+    expect(screen.queryByText('Your pen is up to date. Please switch it off and on again, then try one of your books.')).toBeNull();
+    expect(screen.queryByText('The update has finished. Please switch your pen off and on again, then try one of your books.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
+  });
+
+  it('a pre-flash cleanup abort explains itself instead of showing the generic failure text', async () => {
+    renderScreen();
+    await advanceToConfirm();
+    fireEvent.click(screen.getByRole('button', { name: 'Start upgrade' }));
+    await screen.findByRole('heading', { name: 'Upgrading' });
+
+    outcomeListener?.({
+      status: 'failed',
+      reason: 'preflight-deletion-failed',
+      exitCode: null,
+      logExcerpt: '1.BIN: EACCES',
+      // Nothing was launched, so termination is genuinely confirmed and the pen is untouched.
+      processTerminationConfirmed: true,
+      encodingKnown: true,
+      otaTableHadFailures: false,
+      sawUfwGenerated: false,
+      sawNoLicenseWarning: false,
+    });
+
+    await screen.findByText('The update did not start');
+    await screen.findByText('Your pen has not been changed. Please check it is still plugged in and try again.');
+    // The generic wording would tell the user nothing about what to do next, and would leave
+    // "did not complete" hanging over a pen that was never written to.
+    expect(screen.queryByText('The update did not finish')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start over' })).toBeTruthy();
+  });
+
+  it('never shows a customer the index filenames or the vendor tool — they are internal', async () => {
+    // The wizard handles the cleanup silently. A parent should not meet 1.BIN, BOOKFILE.BIN or
+    // the manufacturer's own tool anywhere in this app; that lives in docs/vendor-notes.md.
+    renderScreen();
+    await advanceToConfirm();
+    expect(document.body.textContent).not.toMatch(/1\.BIN|BOOKFILE|vendor tool|manufacturer/i);
   });
 
   it('an "unclear" outcome whose termination could NOT be confirmed (e.g. a timeout) never offers the normal acknowledge path, never resets the wizard, and stays locked even after the user clicks through', async () => {
@@ -354,7 +394,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
       logExcerpt: 'partial output, then nothing',
       processTerminationConfirmed: false,
     });
-    await screen.findByText('The result could not be confirmed.');
+    await screen.findByText('We could not confirm the update finished');
     // Neither the normal-completion "Finish" button nor "Start over" is offered here — those
     // paths are only for a confirmed-terminated outcome.
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
@@ -366,7 +406,7 @@ describe('FirmwareScreen — wizard flow (Windows)', () => {
 
     // Clicking through shows the persistent "still locked" notice — never the reset wizard.
     await screen.findByText(
-      'Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.',
+      'Please close PonyABC completely and open it again before using your pen with this app.',
     );
     expect(screen.queryByText('Prepare your pen')).toBeNull();
     expect(screen.queryByRole('button', { name: 'I understand — I will restart the app' })).toBeNull();
@@ -415,7 +455,7 @@ describe('FirmwareScreen — official download flow (Windows), simulated release
     await screen.findByText('Test release notes.');
 
     // The Advanced/support disclosure stays collapsed — its local-folder button never appears.
-    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose folder…' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Download official update' }));
     await screen.findByText('Ready — click Next to continue.');
@@ -490,7 +530,7 @@ describe('FirmwareScreen — official download flow (Windows), simulated release
     await screen.findByText('No official firmware release has been published yet.');
     expect(screen.queryByRole('button', { name: 'Download official update' })).toBeNull();
     // The disclosure exists but is collapsed — no local-folder button visible without opening it.
-    expect(screen.queryByRole('button', { name: 'Test/support: select a local folder…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose folder…' })).toBeNull();
     expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -521,10 +561,10 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_001_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
     expect(
       screen.getByText(
-        'A firmware upgrade from a previous session appears to still be running outside this app. Restarting this app is not evidence it has stopped. New firmware upgrades and BOOK/DIY pen writes stay blocked, and this app will not attempt to stop the other process itself.',
+        'An update started earlier is still running on this computer. Please wait for it to finish, or restart the computer, before using your pen with this app.',
       ),
     ).toBeTruthy();
     // The normal wizard must not render underneath/instead — no way to sneak into a new attempt.
@@ -539,10 +579,10 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_001_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
     expect(
       screen.getByText(
-        'This app could not determine whether a firmware upgrade from a previous session has finished. New firmware upgrades and BOOK/DIY pen writes stay blocked until this can be confirmed.',
+        'We could not tell whether an earlier update finished. To keep your pen safe, this app will not change anything on it until that is clear.',
       ),
     ).toBeTruthy();
     expect(screen.queryByText('Prepare your pen')).toBeNull();
@@ -556,7 +596,7 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
     }));
     window.ponyabc.recheckFirmwareRecovery = vi.fn(async () => ({ status: 'none' }) as const);
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
 
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
@@ -577,19 +617,53 @@ describe('FirmwareScreen — cross-restart recovery screen (a previous session l
       lastCheckedAtMs: 1_700_000_002_000,
     }));
     renderScreen();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
 
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     await waitFor(() => expect(window.ponyabc.recheckFirmwareRecovery).toHaveBeenCalled());
 
     expect(screen.queryByText('Prepare your pen')).toBeNull();
-    await screen.findByText('Previous upgrade not confirmed finished');
+    await screen.findByText('An earlier update may still be running');
   });
 
   it('"none" (the common case): the normal wizard renders immediately, no recovery screen at all', async () => {
     window.ponyabc.getFirmwareRecoveryStatus = vi.fn(async () => ({ status: 'none' }) as const);
     renderScreen();
     await screen.findByText('Prepare your pen');
-    expect(screen.queryByText('Previous upgrade not confirmed finished')).toBeNull();
+    expect(screen.queryByText('An earlier update may still be running')).toBeNull();
+  });
+});
+
+/**
+ * The version question, asked by the owner after testing rc5: "show the pen's current firmware
+ * version if it can be read; if not, say so plainly."
+ *
+ * It cannot be read. Every scripted path in the vendor toolkit is write-only (traced in
+ * firmwareUpgrade.ts, and `penFirmwareVersionVerified` in firmwareSessionLog.ts is a literal
+ * `false` so that a future accident is a compile error). So the screen says so, and then says
+ * the one thing the app does know: what it installed itself. These tests exist to stop those two
+ * claims ever being merged into one.
+ */
+describe('FirmwareScreen — the version on the pen', () => {
+  it('says plainly that the pen does not report its version, before any catalogue answer', async () => {
+    renderScreen({ firmwareGetOfficialRelease: vi.fn(async () => ({ status: 'no-network' })) });
+
+    await screen.findByText('The version on your pen');
+    await screen.findByText(/does not report which firmware version it is running/);
+  });
+
+  it('says so when the app has installed nothing yet, rather than showing a blank', async () => {
+    renderScreen({ firmwareLastInstalled: vi.fn(async () => null) });
+    await screen.findByText('This app has not installed a firmware version on a pen yet.');
+  });
+
+  it('shows what the app itself installed, and says that is not a reading from the pen', async () => {
+    renderScreen({
+      firmwareLastInstalled: vi.fn(async () => ({ version: 'V1.26', atMs: Date.UTC(2026, 8, 30, 12, 0, 0) })),
+    });
+
+    await screen.findByText(/The last version this app installed was V1\.26/);
+    // The distinction, in as many words.
+    await screen.findByText(/not a reading from the pen in your hand/);
   });
 });

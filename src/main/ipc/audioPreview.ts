@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import type { AudioPreviewResult, AudioSource } from '@shared/types';
 import { isEligibleMp3FileName, resolveContainedFile, resolvePenRoot } from '../services/pathSecurity';
 import { resolveFolder } from './computerFolder';
+import { listSnapshots } from '../services/recordingSnapshot';
+import { recordingBackupRootDir } from './recordingBackup';
 import * as session from '../services/session';
 
 // A one-shot, in-memory read (not a live file handle held open for the duration of
@@ -21,8 +23,11 @@ function mimeTypeFor(fileName: string): string {
  * name a file by its plain basename inside the currently-authorized DIY or computer folder,
  * never an arbitrary path.
  */
-export function readAudioPreview(params: { source: AudioSource; fileName: string }, maxBytes: number = MAX_PREVIEW_BYTES): AudioPreviewResult {
-  const { source, fileName } = params;
+export function readAudioPreview(
+  params: { source: AudioSource; fileName: string; snapshotId?: string },
+  maxBytes: number = MAX_PREVIEW_BYTES,
+): AudioPreviewResult {
+  const { source, fileName, snapshotId } = params;
 
   if (!isEligibleMp3FileName(fileName)) return { status: 'rejected' };
 
@@ -38,6 +43,13 @@ export function readAudioPreview(params: { source: AudioSource; fileName: string
     if (fresh.status === 'invalid') return { status: 'invalid', missing: fresh.missing };
     session.setPenRoot(fresh);
     dirReal = fresh.diyDirReal;
+  } else if (source === 'backup') {
+    // The id is a key, never a path fragment: it is matched against the snapshots we actually
+    // hold, so the renderer can't name a directory of its own choosing.
+    if (!snapshotId) return { status: 'not-found' };
+    const found = listSnapshots(recordingBackupRootDir()).find((s) => s.snapshotId === snapshotId);
+    if (!found) return { status: 'not-found' };
+    dirReal = found.snapshotDir;
   } else {
     const computerFolder = session.getComputerFolder();
     if (!computerFolder) return { status: 'no-computer-folder-selected' };

@@ -11,24 +11,15 @@
   },
   "prepare": {
     "title": "Prepare your pen",
-    "checklistUsb": "Connect the P5 pen to this computer with a USB cable.",
+    "checklistUsb": "Connect your pen to this computer with a USB cable.",
     "checklistPower": "Keep the pen connected and powered for the whole upgrade — do not unplug it.",
-    "checklistNoOtherOps": "Make sure no other file operation (BOOK, DIY, or another upgrade) is running.",
+    "checklistNoOtherOps": "Close anything else that is using the pen.",
     "penDetected": "Pen detected.",
     "penRequired": "Connect a pen to continue.",
     "nextButton": "Next"
   },
   "package": {
     "title": "Firmware package",
-    "devModeNotice": "Test/support only: pick an already-extracted vendor package folder yourself. Most people should use the official download above instead.",
-    "selectButton": "Test/support: select a local folder…",
-    "advanced": {
-      "title": "Advanced / support",
-      "readButton": "Show",
-      "collapseButton": "Hide"
-    },
-    "selectedPath": "Selected: {{path}}",
-    "looksValid": "This folder has the files the confirmed upgrade path needs.",
     "invalid": "This folder is missing files the upgrade needs. Nothing will be run.",
     "nextButton": "Next",
     "official": {
@@ -41,7 +32,7 @@
       "version": "Official version: {{version}}",
       "packageLabel": "Package: {{label}} ({{date}})",
       "onPenVersionUnknown": "Current on-pen version: unavailable",
-      "onPenVersionHint": "This app cannot read the firmware version already on the pen — there is no reliable way to query it today.",
+      "onPenVersionHint": "This app cannot tell which version is already on your pen.",
       "hardwareRevNotice": "This firmware applies to hardware version {{hardwareRev}}. This app cannot automatically detect the connected pen's hardware version.",
       "hardwareConfirmLegend": "Confirm the connected pen's hardware version:",
       "hardwareConfirmYes": "Confirmed — my pen is hardware version {{hardwareRev}}",
@@ -71,24 +62,28 @@
   "upgrading": {
     "title": "Upgrading",
     "phasePreparing": "Preparing to upgrade…",
-    "phaseAwaitingAuth": "Waiting for Windows authorization, or starting…",
+    "phaseAwaitingAuth": "Waiting for Windows permission, or starting…",
     "phaseToolRunning": "Updating the pen — keep it connected via USB.",
     "phaseFinishing": "Confirming the result…",
-    "noCancelNotice": "The upgrade cannot be force-cancelled once it has started.",
+    "noCancelNotice": "Once the update starts it cannot be stopped. Please wait — it usually takes a few minutes.",
     "noOutputYet": "No output yet."
   },
   "result": {
     "title": "Result",
-    "successMessage": "The firmware upgrade is completed. Please restart the pen and test playback.",
-    "processFinishedMessage": "The firmware upgrade process has finished. Please restart the pen and test playback.",
-    "failedTitle": "The upgrade did not start or did not complete.",
-    "unclearTitle": "The result could not be confirmed.",
-    "unclearBodyUnconfirmed": "We could not confirm whether the upgrade tool has actually finished running. For safety, no new firmware upgrade or BOOK/DIY pen write is allowed while this is unresolved. Please fully quit and reopen this app only after you have independently confirmed (for example in Windows Task Manager, or by checking the pen itself) that the process has stopped.",
+    "successMessage": "Your pen is up to date. Please switch it off and on again, then try one of your books.",
+    "processFinishedMessage": "The update has finished. Please switch your pen off and on again, then try one of your books.",
+    "failedTitle": "The update did not finish",
+    "unclearTitle": "We could not confirm the update finished",
+    "unclearBodyUnconfirmed": "To keep your pen safe, this app will not change anything on it for now. Please close PonyABC completely, open it again, and run the update once more.",
     "finishButton": "Finish",
     "returnHomeButton": "Return to Home",
     "acknowledgeButtonUnconfirmed": "I understand — I will restart the app",
-    "restartNoticeAcknowledged": "Noted. This app will stay locked against new firmware upgrades and BOOK/DIY pen writes until you fully quit and reopen it.",
-    "startOverButton": "Start over"
+    "restartNoticeAcknowledged": "Please close PonyABC completely and open it again before using your pen with this app.",
+    "startOverButton": "Start over",
+    "preflightFailedTitle": "The update did not start",
+    "preflightFailedBody": "Your pen has not been changed. Please check it is still plugged in and try again.",
+    "failedBody": "Your pen has not been changed. Please check it is still plugged in, then try again.",
+    "retryAfterUnclearBody": "We could not confirm the update finished. Please run it once more — running it again is safe."
   },
   "technicalDetails": {
     "title": "Technical details",
@@ -96,12 +91,19 @@
     "collapseButton": "Hide"
   },
   "recovery": {
-    "title": "Previous upgrade not confirmed finished",
-    "stillRunningBody": "A firmware upgrade from a previous session appears to still be running outside this app. Restarting this app is not evidence it has stopped. New firmware upgrades and BOOK/DIY pen writes stay blocked, and this app will not attempt to stop the other process itself.",
-    "unknownBody": "This app could not determine whether a firmware upgrade from a previous session has finished. New firmware upgrades and BOOK/DIY pen writes stay blocked until this can be confirmed.",
+    "title": "An earlier update may still be running",
+    "stillRunningBody": "An update started earlier is still running on this computer. Please wait for it to finish, or restart the computer, before using your pen with this app.",
+    "unknownBody": "We could not tell whether an earlier update finished. To keep your pen safe, this app will not change anything on it until that is clear.",
     "checking": "Checking…",
     "checkAgainButton": "Check again",
     "startedAt": "Upgrade attempt started: {{time}}",
     "lastChecked": "Last checked: {{time}}"
+  },
+  "onPen": {
+    "title": "The version on your pen",
+    "cannotRead": "Your pen does not report which firmware version it is running, so this app cannot show it.",
+    "lastInstalled": "The last version this app installed was {{version}}, on {{when}}.",
+    "lastInstalledNone": "This app has not installed a firmware version on a pen yet.",
+    "notTheSame": "That is what this app did — not a reading from the pen in your hand. A pen updated on another computer, or before you got it, will be running something this app has never seen."
   }
 }

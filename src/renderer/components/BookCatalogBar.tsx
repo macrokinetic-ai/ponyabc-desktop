@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useBookLibrary } from '../state/BookLibraryContext';
+import { formatDateTime } from '@shared/dateFormat';
 
 /**
  * Right pane's status bar, structurally mirroring PenRootBar/ComputerFolderBar (same
@@ -10,7 +11,7 @@ import { useBookLibrary } from '../state/BookLibraryContext';
  * failure.
  */
 export function BookCatalogBar() {
-  const { t } = useTranslation('book');
+  const { t, i18n } = useTranslation('book');
   const lib = useBookLibrary();
   const { meta, refreshing } = lib;
 
@@ -26,7 +27,7 @@ export function BookCatalogBar() {
         {state === 'ok' && meta.lastCheck?.state === 'ok' && (
           <span className="pen-root-bar__accessible">
             {meta.lastCheck.itemCount === 0 ? t('connection.okEmpty') : t('connection.ok', { count: meta.lastCheck.itemCount ?? 0 })}
-            {meta.fetchedAtMs !== null && ` · ${t('lastUpdated', { time: new Date(meta.fetchedAtMs).toLocaleString() })}`}
+            {meta.fetchedAtMs !== null && ` · ${t('lastUpdated', { time: formatDateTime(i18n.language, meta.fetchedAtMs) })}`}
           </span>
         )}
         {state === 'error' && meta.lastCheck?.state === 'error' && (
@@ -37,7 +38,7 @@ export function BookCatalogBar() {
             <p className="hint">
               {meta.offline
                 ? t('connection.neverLoaded')
-                : t('connection.usingOfflineCache', { time: meta.fetchedAtMs !== null ? new Date(meta.fetchedAtMs).toLocaleString() : '' })}
+                : t('connection.usingOfflineCache', { time: meta.fetchedAtMs !== null ? formatDateTime(i18n.language, meta.fetchedAtMs) : '' })}
             </p>
           </>
         )}

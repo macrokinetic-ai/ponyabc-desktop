@@ -12,7 +12,9 @@ import type {
 import { usePenRoot } from '../state/PenRootContext';
 import { compareOfficialToOnPen } from './firmwareVersionCompare';
 import { CollapsibleSection } from '../components/CollapsibleSection';
+import { FirmwareFolderPicker } from '@internal-ui';
 import type { Section } from '../components/NavSidebar';
+import { formatDate, formatDateTime } from '@shared/dateFormat';
 
 type WizardStep = 'prepare' | 'package' | 'confirm' | 'upgrading' | 'result';
 
@@ -24,7 +26,7 @@ const PHASE_KEY: Record<FirmwareProgressEvent['phase'], string> = {
 };
 
 export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) => void }) {
-  const { t } = useTranslation('firmware');
+  const { t, i18n } = useTranslation('firmware');
   const penRoot = usePenRoot();
   const isMac = window.ponyabc.platform === 'darwin';
   const penConnected = penRoot.result.status === 'ok';
@@ -56,6 +58,7 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
   const [preparing, setPreparing] = useState(false);
   const [prepareResult, setPrepareResult] = useState<FirmwarePrepareResult | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<FirmwareDownloadProgressEvent | null>(null);
+  const [lastInstalled, setLastInstalled] = useState<{ version: string; atMs: number } | null | undefined>(undefined);
   // No automatic hardware-revision detection exists — the app hardcodes a single hardware_rev
   // in every /api/public/firmware query (HARDWARE_REV_CONST), regardless of which pen is
   // actually connected (real registered serials exist for BOTH v1 and v2 today). This is a
@@ -97,6 +100,14 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
     if (isMac) return;
     return window.ponyabc.onFirmwareProgress((event) => setProgress(event));
   }, [isMac]);
+
+  // Re-read after an upgrade finishes, so the figure is the one that was just installed.
+  useEffect(() => {
+    void window.ponyabc
+      .firmwareLastInstalled()
+      .then(setLastInstalled)
+      .catch(() => setLastInstalled(null));
+  }, [outcome]);
 
   useEffect(() => {
     if (isMac) return;
@@ -293,9 +304,9 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
                   : t('recovery.unknownBody')}
             </p>
           </div>
-          <p className="hint">{t('recovery.startedAt', { time: new Date(recovery.pending.startedAtMs).toLocaleString() })}</p>
+          <p className="hint">{t('recovery.startedAt', { time: formatDateTime(i18n.language, recovery.pending.startedAtMs) })}</p>
           {recovery.status !== 'checking' && (
-            <p className="hint">{t('recovery.lastChecked', { time: new Date(recovery.lastCheckedAtMs).toLocaleString() })}</p>
+            <p className="hint">{t('recovery.lastChecked', { time: formatDateTime(i18n.language, recovery.lastCheckedAtMs) })}</p>
           )}
           <button
             type="button"
@@ -327,6 +338,29 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
           </li>
         ))}
       </ol>
+
+      {/* The version question, answered honestly and always — not only when the catalogue
+          happened to answer. The pen does not report its own firmware version (traced through
+          the vendor toolkit: every scripted path is write-only, see firmwareUpgrade.ts), so this
+          says so, and then says the one thing the app does know for certain: what it installed
+          itself, and when. The two are deliberately not presented as the same claim. */}
+      <section className="note-box">
+        <h2>{t('onPen.title')}</h2>
+        <p>{t('onPen.cannotRead')}</p>
+        {lastInstalled === undefined ? null : lastInstalled === null ? (
+          <p className="hint">{t('onPen.lastInstalledNone')}</p>
+        ) : (
+          <>
+            <p className="hint">
+              {t('onPen.lastInstalled', {
+                version: lastInstalled.version,
+                when: formatDate(i18n.language, lastInstalled.atMs),
+              })}
+            </p>
+            <p className="hint">{t('onPen.notTheSame')}</p>
+          </>
+        )}
+      </section>
 
       {step === 'prepare' && (
         <section>
@@ -362,7 +396,7 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
                   <p className="hint">
                     {t('package.official.packageLabel', {
                       label: officialFetch.release.packageLabel,
-                      date: officialFetch.release.packageDate ? new Date(officialFetch.release.packageDate).toLocaleDateString() : '',
+                      date: officialFetch.release.packageDate ? formatDate(i18n.language, new Date(officialFetch.release.packageDate).getTime()) : '',
                     })}
                   </p>
                 )}
@@ -456,34 +490,11 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
             )}
           </div>
 
-          <CollapsibleSection
-            title={t('package.advanced.title')}
-            summary={t('package.devModeNotice')}
-            readLabel={t('package.advanced.readButton')}
-            collapseLabel={t('package.advanced.collapseButton')}
-            defaultOpen={false}
-          >
-            <button type="button" className="button" disabled={selecting} onClick={() => void handleSelectPackage()}>
-              {t('package.selectButton')}
-            </button>
-            {packageSource === 'local' && packageInfo && (
-              <div className="firmware-package-info">
-                <p>{t('package.selectedPath', { path: packageInfo.rootDir })}</p>
-                {packageInfo.looksValid ? (
-                  <p className="hint">{t('package.looksValid')}</p>
-                ) : (
-                  <>
-                    <p className="error-text">{t('package.invalid')}</p>
-                    <ul>
-                      {packageInfo.missingFiles.map((f) => (
-                        <li key={f}>{f}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
-          </CollapsibleSection>
+          <FirmwareFolderPicker
+            busy={selecting}
+            onPick={() => void handleSelectPackage()}
+            selected={packageSource === 'local' && packageInfo ? packageInfo : null}
+          />
 
           <div className="firmware-wizard__actions">
             <button type="button" className="button" onClick={() => setStep('prepare')}>
@@ -553,14 +564,22 @@ export function FirmwareScreen({ onNavigate }: { onNavigate: (section: Section) 
           {outcome.processTerminationConfirmed && outcome.status !== 'failed' && (
             <div className="note-box">
               <p>{outcome.status === 'success' ? t('result.successMessage') : t('result.processFinishedMessage')}</p>
+              {outcome.status === 'unclear' && <p className="hint">{t('result.retryAfterUnclearBody')}</p>}
             </div>
           )}
 
-          {outcome.status === 'failed' && (
-            <div className="note-box">
-              <p className="error-text">{t('result.failedTitle')}</p>
-            </div>
-          )}
+          {outcome.status === 'failed' &&
+            (outcome.reason.startsWith('preflight-') ? (
+              <div className="note-box">
+                <p className="error-text">{t('result.preflightFailedTitle')}</p>
+                <p className="hint">{t('result.preflightFailedBody')}</p>
+              </div>
+            ) : (
+              <div className="note-box">
+                <p className="error-text">{t('result.failedTitle')}</p>
+                <p className="hint">{t('result.failedBody')}</p>
+              </div>
+            ))}
 
           {outcome.status === 'unclear' && !outcome.processTerminationConfirmed && (
             <div className="note-box">

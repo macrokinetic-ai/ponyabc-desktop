@@ -28,12 +28,17 @@ import { validateCatalogEntries } from '../services/bookCatalogValidate';
 import { createHttpBookCatalogClient } from '../services/bookCatalog/httpClient';
 import { addToPen, downloadToCacheOnly, reinstall, replaceWithOfficial } from '../services/bookInstall';
 import { removeFromPen } from '../services/bookRemove';
+import { finishPenBookMutation, markBookIndexStale } from './bookIndex';
+import { blockSleepDuringPenWrite } from '../services/sleepBlocker';
 import { restoreFromBackup } from '../services/bookRestore';
 import { cancelDownload } from '../services/bookDownload';
+import { getVolumeInfo } from '../services/transferPlanner';
+
 import { sha256FileWithProgress } from '../services/transferService';
 import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
 import { appendDiagnostic } from '../services/diagnostics';
+import * as internal from '@internal';
 
 // Hardcoded — the renderer has no way to influence which host this reads from. Secret-free
 // public endpoint (Option A): no Authorization header, nothing embedded to protect.
@@ -94,10 +99,30 @@ function currentPenBookFiles(): { files: PenBookFile[] | null; bookDirReal: stri
   return { files: listPenBookFiles(fresh.bookDirReal), bookDirReal: fresh.bookDirReal, penVolumeLabel };
 }
 
+/** Size, free space and cluster size for the pen, or nulls if there is no pen or the filesystem
+ *  would not say. Never throws: a sync that cannot read these proceeds rather than refusing on a
+ *  failed stat. */
+async function currentPenVolume(): Promise<{ freeBytes: number | null; totalBytes: number | null; clusterBytes: number | null }> {
+  const none = { freeBytes: null, totalBytes: null, clusterBytes: null };
+  const penRoot = session.getPenRoot();
+  if (!penRoot) return none;
+  const fresh = resolvePenRoot(penRoot.realPath);
+  if (fresh.status !== 'ok') return none;
+  try {
+    return await getVolumeInfo(fresh.bookDirReal);
+  } catch {
+    return none;
+  }
+}
+
 /** Fast and hash-free: filenames/sizes/mtimes only (a stat, not a file read), plus whatever a
  *  prior explicit verification already recorded — see bookReconcile.ts. Never blocks on, or
  *  triggers, hashing a pen file's content. */
 async function currentList(): Promise<BookListResult> {
+  // Screenshots and the manual only. Never set in a shipped build — see demoBookData.ts.
+  const demo = internal.demoBookList();
+  if (demo) return demo;
+
   const snapshot = catalogStore().get();
   const cacheEntries = cacheManifestStore().get();
   const { files, penVolumeLabel } = currentPenBookFiles();
@@ -119,6 +144,11 @@ async function currentList(): Promise<BookListResult> {
       offline: snapshot === null,
       conflicts: snapshot?.conflicts ?? [],
       lastCheck: lastCatalogCheck,
+      ...(await currentPenVolume().then((v) => ({
+        penFreeBytes: v.freeBytes,
+        penTotalBytes: v.totalBytes,
+        penClusterBytes: v.clusterBytes,
+      }))),
     },
   };
 }
@@ -136,7 +166,11 @@ export function bookList(): Promise<BookListResult> {
  *  finishes (and clears the "refreshing" busy state) as soon as that one HTTP request settles,
  *  regardless of how many or how large the files on the pen are. */
 export async function bookCatalogRefresh(): Promise<BookListResult> {
-  const client = createHttpBookCatalogClient({ baseUrl: BOOK_API_BASE_URL });
+  const client = createHttpBookCatalogClient({
+    baseUrl: BOOK_API_BASE_URL,
+    appVersion: app.getVersion(),
+    testerKey: internal.testerKeyForRequests(),
+  });
   const requestUrl = `${BOOK_API_BASE_URL}/api/public/books`;
   const startedAtMs = Date.now();
   const outcome = await client.fetchCatalog();
@@ -198,6 +232,13 @@ function installDeps(window: BrowserWindow) {
     saveCacheEntry: (e: BookCacheEntry) =>
       cacheManifestStore().update((cur) => (cur.some((c) => c.contentId === e.contentId && c.sha256 === e.sha256) ? cur : [...cur, e])),
     onProgress: (event: import('@shared/types').BookDownloadProgressEvent) => window.webContents.send(IPC.bookDownloadProgress, event),
+    onWriteProgress: (event: import('@shared/types').BookWriteProgressEvent) => {
+      try {
+        window.webContents.send(IPC.bookWriteProgress, event);
+      } catch {
+        // window already gone
+      }
+    },
   };
 }
 
@@ -206,9 +247,45 @@ async function runInstallAction(
   window: BrowserWindow,
   params: { contentId: string; penGeneration: number },
 ): Promise<BookActionResult> {
+  // Screenshots and the manual only — see demoBookData.ts. The demo catalogue is not a real
+  // catalogue, so there is nothing to download and nowhere to write: report the completion the
+  // real path would report, and let the screen show what a parent sees when a sync finishes.
+  const demoResult = internal.demoInstallResult();
+
   const entry = findEntry(params.contentId);
   if (!entry) return { status: 'error', message: 'Unknown content id — refresh the catalog and try again.' };
-  const result = await action(entry, params.penGeneration, installDeps(window));
+  // A book can take twenty minutes to write at the pen's ~1 MB/s. If the computer sleeps
+  // part-way through, the customer comes back to a half-written book on a FAT volume — so the
+  // write holds the machine awake, and always releases, including on failure.
+  const stopSleepBlock = blockSleepDuringPenWrite('adding or updating a book');
+  let result: BookActionResult;
+  try {
+    // The demonstration catalogue writes nothing and downloads nothing, and then goes through
+    // exactly the same ending as a real write below — which is the point of it.
+    result = demoResult ?? (await action(entry, params.penGeneration, installDeps(window)));
+  } finally {
+    stopSleepBlock();
+  }
+
+  // Owner decision, 2026-09-30: ANY write to the pen's BOOK folder — an addition or a
+  // replacement under the same name — makes the index stale, and the batch resets it once at
+  // the end. The old rule reset only on an addition, on the reasoning that a same-name
+  // replacement leaves every book in the same position; that is true of the positions and not
+  // dependable of the contents, and the cost of being wrong is the pen reading the wrong book
+  // aloud with nothing visibly broken. The catalogue's `updateRequiresIndexReset` is still
+  // parsed and still harmless, but nothing decides anything by it any more.
+  //
+  // The reset is committed HERE, not by whichever screen happened to call this. A single action
+  // is its own complete batch — it wrote, so the pen's list is wrong, so both .BIN files go now
+  // and the caller is told to ask for the restart. Inside a sync batch this is a no-op and the
+  // batch settles it once at the end. Before this, only runSync ever committed, and
+  // Re-download left the stale index on the card (owner, testing rc5).
+  if (result.status === 'completed') {
+    markBookIndexStale('written');
+    const commit = await finishPenBookMutation({ writtenFileNames: [entry.filename] });
+    result = { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
+  }
+
   appendDiagnostic(diagnosticsStore(), 'book-download', {
     contentId: entry.contentId,
     filename: entry.filename,
@@ -559,13 +636,19 @@ export async function bookRemove(params: { fileName: string; penGeneration: numb
   // treated the same, neutral way: it might differ, so it's always backed up the same.
   const reason = item.status === 'verified-current' ? ('pre-removal-current-version' as const) : ('differs-from-official' as const);
 
-  return removeFromPen({
+  const result = await removeFromPen({
     fileName: params.fileName,
     penGeneration: params.penGeneration,
     reason,
     matchedContentId: item.contentId,
     backupDeps: backupDeps(),
   });
+  // Every book after this one has just shifted down a position. Left unfixed, the pen plays the
+  // wrong book's audio — which looks like nothing being wrong at all.
+  if (result.status !== 'completed') return result;
+  markBookIndexStale('removed');
+  const commit = await finishPenBookMutation();
+  return { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
 }
 
 export function bookBackups(): BookBackupSummary[] {
@@ -596,12 +679,21 @@ export async function bookRestore(params: { backupId: string; penGeneration: num
     return { status: 'restore-not-allowed', message: 'Restoring unrecognized content back onto the pen is no longer supported.' };
   }
   const { scratchBackupRootDir } = dirs();
-  return restoreFromBackup({
+  const result = await restoreFromBackup({
     backupId: params.backupId,
     penGeneration: params.penGeneration,
     backupDeps: backupDeps(),
     scratchBackupDir: makeBackupDir(scratchBackupRootDir),
   });
+  // A restore puts a file back into BOOK/, which is a write like any other. This marked nothing
+  // and reset nothing before, so a restored book could be played from the wrong position with
+  // nothing visibly wrong.
+  if (result.status !== 'completed') return result;
+  markBookIndexStale('written');
+  const commit = await finishPenBookMutation(
+    backupEntry ? { writtenFileNames: [backupEntry.originalFileName] } : {},
+  );
+  return { ...result, penIndex: commit.status === 'no-pen-selected' ? 'no-pen-selected' : commit.status };
 }
 
 export function bookDownloadCancel(contentId: string): { ok: boolean } {

@@ -56,7 +56,7 @@ these are different things, and we don't want to blur them together.
 Used for: browsing/downloading the BOOK library, checking for and downloading firmware, and (via
 your browser, not the app directly) pen registration and this privacy policy itself.
 
-- **What our application code does**: our BOOK-catalog, firmware-catalog, and download API
+- **What our application code does**: our BOOK-catalogue, firmware-catalogue, and download API
   routes (`/api/public/books`, `/api/public/firmware`, and their `/download` endpoints) do not
   require any login or device identifier, and our route code does not read, log, or store your IP
   address, a device ID, or any other personal identifier for these specific requests — they are

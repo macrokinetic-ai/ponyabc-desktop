@@ -13,22 +13,13 @@
     "title": "Prepare su lápiz",
     "checklistUsb": "Conecte el lápiz P5 a este ordenador con un cable USB.",
     "checklistPower": "Mantenga el lápiz conectado y con alimentación durante toda la actualización — no lo desconecte.",
-    "checklistNoOtherOps": "Asegúrese de que no haya otra operación de archivos (BOOK, DIY u otra actualización) en curso.",
+    "checklistNoOtherOps": "Cierre cualquier otro programa que esté usando el lápiz.",
     "penDetected": "Lápiz detectado.",
     "penRequired": "Conecte un lápiz para continuar.",
     "nextButton": "Siguiente"
   },
   "package": {
     "title": "Paquete de firmware",
-    "devModeNotice": "Solo para pruebas/soporte: seleccione usted mismo la carpeta del paquete del proveedor ya extraída. La mayoría de las personas deberían usar la descarga oficial de arriba.",
-    "selectButton": "Prueba/soporte: seleccionar una carpeta local…",
-    "advanced": {
-      "title": "Avanzado / soporte",
-      "readButton": "Mostrar",
-      "collapseButton": "Ocultar"
-    },
-    "selectedPath": "Seleccionado: {{path}}",
-    "looksValid": "Esta carpeta tiene los archivos que necesita la ruta de actualización confirmada.",
     "invalid": "A esta carpeta le faltan archivos necesarios para la actualización. No se ejecutará nada.",
     "nextButton": "Siguiente",
     "official": {
@@ -41,7 +32,7 @@
       "version": "Versión oficial: {{version}}",
       "packageLabel": "Paquete: {{label}} ({{date}})",
       "onPenVersionUnknown": "Versión actual en el lápiz: no disponible",
-      "onPenVersionHint": "Esta aplicación no puede leer la versión del firmware ya presente en el lápiz — actualmente no existe una forma fiable de consultarla.",
+      "onPenVersionHint": "Esta aplicación no puede saber qué versión hay ya en su lápiz.",
       "hardwareRevNotice": "Este firmware corresponde a la versión de hardware {{hardwareRev}}. Esta aplicación no puede detectar automáticamente la versión de hardware del lápiz conectado.",
       "hardwareConfirmLegend": "Confirme la versión de hardware del lápiz conectado:",
       "hardwareConfirmYes": "Confirmado — mi lápiz es la versión de hardware {{hardwareRev}}",
@@ -74,21 +65,25 @@
     "phaseAwaitingAuth": "Esperando autorización de Windows, o iniciando…",
     "phaseToolRunning": "Actualizando el lápiz — mantenga la conexión USB.",
     "phaseFinishing": "Confirmando el resultado…",
-    "noCancelNotice": "La actualización no se puede cancelar a la fuerza una vez iniciada.",
+    "noCancelNotice": "Una vez iniciada, la actualización no se puede detener. Espere: suele tardar unos minutos.",
     "noOutputYet": "Aún no hay salida."
   },
   "result": {
     "title": "Resultado",
-    "successMessage": "La actualización del firmware se ha completado. Reinicie el lápiz y pruebe la reproducción.",
-    "processFinishedMessage": "El proceso de actualización del firmware ha terminado. Reinicie el lápiz y pruebe la reproducción.",
-    "failedTitle": "La actualización no se inició o no se completó.",
-    "unclearTitle": "No se pudo confirmar el resultado.",
-    "unclearBodyUnconfirmed": "No se pudo confirmar si la herramienta de actualización realmente terminó de ejecutarse. Por seguridad, no se permitirá ninguna nueva actualización de firmware ni escritura BOOK/DIY en el lápiz mientras esto no se resuelva. Cierre completamente esta aplicación y vuelva a abrirla solo después de haber confirmado usted mismo (por ejemplo, en el Administrador de tareas de Windows, o revisando el propio lápiz) que el proceso se ha detenido.",
+    "successMessage": "Su lápiz está actualizado. Apáguelo y vuelva a encenderlo, y pruebe uno de sus libros.",
+    "processFinishedMessage": "La actualización ha terminado. Apague el lápiz y vuelva a encenderlo, y pruebe uno de sus libros.",
+    "failedTitle": "La actualización no se completó",
+    "unclearTitle": "No pudimos confirmar que la actualización terminara",
+    "unclearBodyUnconfirmed": "Por seguridad, esta aplicación no cambiará nada en su lápiz por ahora. Cierre PonyABC por completo, ábrala de nuevo y ejecute la actualización otra vez.",
     "finishButton": "Finalizar",
     "returnHomeButton": "Volver al inicio",
     "acknowledgeButtonUnconfirmed": "Entiendo — reiniciaré la aplicación",
-    "restartNoticeAcknowledged": "Anotado. Esta aplicación permanecerá bloqueada para nuevas actualizaciones de firmware y escrituras BOOK/DIY hasta que la cierre por completo y la vuelva a abrir.",
-    "startOverButton": "Empezar de nuevo"
+    "restartNoticeAcknowledged": "Cierre PonyABC por completo y ábrala de nuevo antes de usar su lápiz con esta aplicación.",
+    "startOverButton": "Empezar de nuevo",
+    "preflightFailedTitle": "La actualización no se inició",
+    "preflightFailedBody": "Su lápiz no ha cambiado. Compruebe que sigue conectado e inténtelo de nuevo.",
+    "failedBody": "Su lápiz no ha cambiado. Compruebe que sigue conectado e inténtelo de nuevo.",
+    "retryAfterUnclearBody": "No pudimos confirmar que la actualización terminara. Ejecútela una vez más: repetirla no supone ningún riesgo."
   },
   "technicalDetails": {
     "title": "Detalles técnicos",
@@ -96,12 +91,19 @@
     "collapseButton": "Ocultar"
   },
   "recovery": {
-    "title": "Actualización anterior no confirmada como finalizada",
-    "stillRunningBody": "Una actualización de firmware de una sesión anterior parece seguir en ejecución fuera de esta aplicación. Reiniciar esta aplicación no es evidencia de que se haya detenido. Las nuevas actualizaciones de firmware y las escrituras BOOK/DIY en el lápiz permanecen bloqueadas, y esta aplicación no intentará detener el otro proceso por sí misma.",
-    "unknownBody": "Esta aplicación no pudo determinar si una actualización de firmware de una sesión anterior ha terminado. Las nuevas actualizaciones de firmware y las escrituras BOOK/DIY en el lápiz permanecen bloqueadas hasta que esto pueda confirmarse.",
+    "title": "Puede que una actualización anterior siga en marcha",
+    "stillRunningBody": "Una actualización iniciada antes sigue ejecutándose en este ordenador. Espere a que termine, o reinicie el ordenador, antes de usar su lápiz con esta aplicación.",
+    "unknownBody": "No pudimos saber si una actualización anterior terminó. Por seguridad, esta aplicación no cambiará nada en su lápiz hasta que esté claro.",
     "checking": "Comprobando…",
     "checkAgainButton": "Comprobar de nuevo",
     "startedAt": "Intento de actualización iniciado: {{time}}",
     "lastChecked": "Última comprobación: {{time}}"
+  },
+  "onPen": {
+    "title": "La versión de su lápiz",
+    "cannotRead": "Su lápiz no informa de la versión de firmware que utiliza, por lo que esta aplicación no puede mostrarla.",
+    "lastInstalled": "La última versión que instaló esta aplicación fue {{version}}, el {{when}}.",
+    "lastInstalledNone": "Esta aplicación todavía no ha instalado ninguna versión de firmware en un lápiz.",
+    "notTheSame": "Eso es lo que hizo esta aplicación, no una lectura del lápiz que tiene en la mano. Un lápiz actualizado en otro ordenador, o antes de que usted lo tuviera, funcionará con una versión que esta aplicación nunca ha visto."
   }
 }

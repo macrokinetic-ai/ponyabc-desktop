@@ -4,7 +4,14 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Builds run on every v* tag, but only a -rc tag may ATTACH to a Release (see the
+    # attach steps). A plain vX.Y.Z page holds the exact bytes sent to the Store.
   workflow_dispatch:
+    inputs:
+      rc:
+        description: 'Release candidate to stamp into the .exe, e.g. rc2. Leave empty for an unstamped build; the Store package is never stamped.'
+        required: false
+        default: ''
 
 permissions:
   contents: write # only needed to attach the installer to a GitHub Release on a tag push
@@ -23,26 +30,204 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run dist:win
+
+      # The parent manual's pictures. Here because the firmware wizard renders on Windows only
+      # — on macOS that screen is a single "this needs Windows" banner — and this is the
+      # repo's Windows job. Nothing here touches a device: the app is pointed at a throwaway
+      # pen folder (scripts/make-demo-pen.mjs), and the firmware steps use the demo path in
+      # src/main/services/demoFirmware.ts, which launches nothing and refuses to run at all in
+      # a packaged build. Runs against the dev build, before packaging, so the artifact is
+      # ready early.
+      - name: "Manual: capture every parent-facing screen, both languages"
+        # Documentation, not a build gate: a screen that will not pose must never stop a
+        # release build. What was and was not captured is in capture-report.json.
+        continue-on-error: true
+        run: |
+          npm run build
+          node scripts/capture-manual-screenshots.mjs manual-screenshots --locales=en,zh-Hant
+          Get-Content manual-screenshots/capture-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manual-screenshots
+          path: manual-screenshots
+          if-no-files-found: error
+          retention-days: 14
+
+      # Which candidate this build is. A tag decides it — v0.3.17-rc2 means rc2 — because a tag
+      # build re-uploads the installer over the release's existing one, and taking the answer
+      # from a dispatch input would silently replace a stamped .exe with an unstamped one.
+      # That happened once; this is why it cannot happen again.
+      - name: Work out the release candidate
+        id: rc
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/*-rc* ]]; then
+            echo "value=${GITHUB_REF_NAME##*-}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.rc }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # PONYABC_BUILD_TAG/COMMIT are stamped into THIS build only. The Store package below is
+      # built by a separate command without them, so it shows a plain version number — see
+      # formatBuildLabel in src/shared/appVariant.ts. That package build must not rebuild this
+      # installer: `pack:win:appx` is pinned to `--win appx` because `--win` alone also rebuilt
+      # the NSIS .exe, from an unstamped bundle, on top of the stamped one already sitting in
+      # release/ (and refreshed its checksum to match). rc4 shipped that way. See the stamp
+      # check on the finished installers further down, which is what now catches it.
+      # Read the bytes that would ship, and refuse if anything internal is in them.
+      - name: "Store build: prove it contains no developer path"
+        run: |
+          npm run build:store
+          node scripts/check-store-build.mjs
+
+      - name: "Store build: installer + Store package"
+        run: npm run dist:win
+        env:
+          PONYABC_INTERNAL: '0'
+          PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
+          PONYABC_BUILD_COMMIT: ${{ github.sha }}
+
+      # The stamp is invisible from outside the installer, so it is checked where it is still
+      # readable: the unpacked app's own main bundle. `strings` on the finished .exe proves
+      # nothing — compressed bytes match anything — and a build that quietly lost its stamp is
+      # a build a tester cannot identify.
+      - name: "Installer: check the build stamped itself"
+        shell: pwsh
+        run: |
+          $rc = '${{ steps.rc.outputs.value }}'
+          $main = 'release/win-unpacked/resources/app.asar'
+          if (-not (Test-Path $main)) { throw "no unpacked app at $main" }
+          $stamped = Select-String -Path $main -Pattern "$($env:GITHUB_SHA.Substring(0,7))" -Encoding utf8 -Quiet
+          if ($rc -eq '') {
+            Write-Host "No candidate for this build; nothing to stamp."
+          } elseif (-not $stamped) {
+            throw "This build should carry the stamp $rc / $($env:GITHUB_SHA.Substring(0,7)), and does not."
+          } else {
+            Write-Host "Stamped $rc / $($env:GITHUB_SHA.Substring(0,7))."
+          }
+
+      # Copied INTO release/ rather than listed from store-assets/ in the upload below:
+      # upload-artifact roots the zip at the least common ancestor of its paths, so mixing the
+      # two directories would have given the tester a zip of nested folders to dig through
+      # instead of the three files side by side.
+      - name: "Installer: put the tester's README next to the .exe"
+        run: Copy-Item store-assets/windows-installer-kit/READ-ME-FIRST.txt release/
+
+      # The INTERNAL build: same code, plus testing mode and the support tools. A different
+      # product to Windows, so it installs beside the Store app instead of replacing it.
+      - name: "Internal build: installer"
+        run: npm run dist:win:internal
+        env:
+          PONYABC_BUILD_TAG: ${{ steps.rc.outputs.value }}
+          PONYABC_BUILD_COMMIT: ${{ github.sha }}
+
+      # Both installers exist and are freshly built at this point: the Store one was stamp-checked
+      # when it was made, and release/win-unpacked now holds the Internal one, so its stamp can be
+      # read the same way. Recording both hashes here is what lets the step further down prove
+      # that the files finally published are these ones and not something rebuilt over them.
+      - name: "Installers: check the internal stamp, and record both files"
+        shell: pwsh
+        run: |
+          $rc = '${{ steps.rc.outputs.value }}'
+          $short = $env:GITHUB_SHA.Substring(0, 7)
+          $asar = 'release/win-unpacked/resources/app.asar'
+          if (-not (Test-Path $asar)) { throw "no unpacked internal app at $asar" }
+          if ($rc -eq '') {
+            Write-Host 'No candidate for this build; nothing to stamp.'
+          } elseif (-not (Select-String -Path $asar -Pattern $short -Encoding utf8 -Quiet)) {
+            throw "The internal build should carry the stamp $rc / $short, and does not."
+          } else {
+            Write-Host "Internal build stamped $rc / $short."
+          }
+
+          $exes = @(Get-ChildItem 'release/*.exe' | Where-Object { $_.Name -notlike '*uninstaller*' })
+          if ($exes.Count -ne 2) {
+            throw "expected 2 installers in release/, found $($exes.Count): $($exes.Name -join ', ')"
+          }
+          $hashes = [ordered]@{}
+          foreach ($exe in $exes) {
+            $hashes[$exe.Name] = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash
+            Write-Host "$($exe.Name)  $($hashes[$exe.Name])"
+          }
+          # RUNNER_TEMP, not release/ — release/ is what gets uploaded, and this is scaffolding.
+          $hashes | ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'installer-hashes.json')
+
+      # An internal package carrying the Store identity could be submitted by mistake, and
+      # would replace the customers' app on any machine that installed it. Refuse to go on.
+      - name: "Internal: prove this is not the Store identity"
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem release/PonyABC-Desktop-Internal-*.exe | Select-Object -First 1
+          if (-not $exe) { throw "no internal installer was produced" }
+          Write-Host "internal installer: $($exe.Name)"
+          $asar = 'release/win-unpacked/resources/app.asar'
+          if (Select-String -Path $asar -Pattern 'uk\.ponyabc\.desktop"' -Quiet) {
+            throw "the internal package carries the Store application id"
+          }
+          if (-not (Select-String -Path $asar -Pattern 'INTERNAL TEST BUILD' -Quiet)) {
+            throw "the internal build has no internal banner — it is not the internal build"
+          }
+          Write-Host "Internal identity confirmed, and it says so on screen."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-internal
+          path: |
+            release/PonyABC-Desktop-Internal-*.exe
+            release/PonyABC-Desktop-Internal-*.sha256
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           # dist:win's postscript (scripts/checksum.mjs) writes a matching .sha256 sidecar —
           # ship it alongside the installer so a downloaded artifact can be verified too.
+          # READ-ME-FIRST.txt rides along because the person who downloads this is usually a
+          # tester, not a developer: it names the file to double-click, says what the
+          # "Windows protected your PC" box is and which two words to click, and explains how
+          # to put the Store version back afterwards.
           path: |
             release/*.exe
             release/*.sha256
+            release/READ-ME-FIRST.txt
           if-no-files-found: error
 
       # When this run was triggered by pushing a version tag (i.e. a release tag such as
       # v0.2.5), attach the installer + its checksum straight to that GitHub Release so
       # they land next to the Mac .dmg builds on the same release page — not just as a
       # build artifact that requires a GitHub login to download.
-      - name: Attach installer to the matching GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Attach installer to the matching GitHub Release (skips if none exists)
+        # TEST TAGS ONLY (-rc). A plain vX.Y.Z release page is the permanent record of what
+        # went to the Microsoft Store: hand-assembled, byte-checked, and never to be written
+        # to by a build. This was a denylist naming 'store-candidate' — the one tag that had
+        # already been damaged, where a build clobbered the unsigned submitted .appx with a
+        # test-signed one. v0.3.17 was not on that list, so tagging the published version
+        # would have overwritten the exact bytes Microsoft certified. An allowlist cannot
+        # have that hole: a build attaches to a release candidate, or to nothing.
+        if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
         shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" release/*.exe release/*.sha256 --repo "${GITHUB_REPOSITORY}" --clobber
+        run: |
+          set -euo pipefail
+          # This repo is PRIVATE and does not publish GitHub Releases: distribution is the
+          # Microsoft Store, and a public download path is a separate, deliberate decision
+          # (see the upcoming Mac task). Tags are pushed for PROVENANCE — to pin the exact
+          # commit a Store package was built from — not to cut a Release.
+          #
+          # So a missing Release is the normal case, not a failure. This step used to run
+          # `gh release upload` unconditionally, which made the whole tag build red at its
+          # last step even though the build and every package check had passed (v0.3.16,
+          # run 36501587394). It never creates a Release: that would publish binaries as a
+          # side effect of tagging, which nobody asked for.
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} exists — attaching installer."
+            gh release upload "${GITHUB_REF_NAME}" release/*.exe release/*.sha256 \
+              --repo "${GITHUB_REPOSITORY}" --clobber
+          else
+            echo "::notice::No GitHub Release '${GITHUB_REF_NAME}' exists — skipping installer upload. The tag is for provenance; artifacts remain downloadable from this run. Not creating a Release."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -241,6 +426,102 @@ jobs:
           }
           Write-Host "TILE ASSETS VERIFIED: $($pkgAssets.Count) packaged images, none default art, all manifest references resolve."
 
+      - name: "Store package: verify version, checksum sidecar and EXE icon"
+        shell: pwsh
+        run: |
+          # Checks that were missing and each of which has already cost a real
+          # submission or near-miss:
+          #   1. manifest Identity/Version must equal package.json version + '.0'.
+          #      electron-builder derives it, so a mismatch means the build did not
+          #      pick up the bump and you would resubmit the SAME version.
+          #   2. the built version must be strictly GREATER than what is already live
+          #      in the Store. main once sat at 0.3.15 while 0.3.16.0 was published;
+          #      Partner Center rejects a version that is not higher.
+          #   3. the .sha256 sidecar must actually match the .appx it sits next to.
+          #   4. the packaged EXE must not carry default Electron artwork — the APPX
+          #      tiles and the EXE icon are separate assets and 10.1.1.11 was caused
+          #      by fixing one and not the other.
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+          $problems = @()
+          $appx = Get-ChildItem -Path 'release' -Filter '*.appx' | Select-Object -First 1
+          if (-not $appx) { throw 'No .appx file found in release/' }
+
+          # --- 1. manifest version vs package.json ---------------------------------
+          $pkgVersion = (Get-Content 'package.json' -Raw | ConvertFrom-Json).version
+          $expectedManifestVersion = "$pkgVersion.0"
+
+          $extract = Join-Path $env:RUNNER_TEMP 'appx-version-check'
+          if (Test-Path $extract) { Remove-Item -Recurse -Force $extract }
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($appx.FullName, $extract)
+          [xml]$m = Get-Content (Join-Path $extract 'AppxManifest.xml') -Raw
+          $ns = New-Object System.Xml.XmlNamespaceManager($m.NameTable)
+          $ns.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
+          $actualManifestVersion = $m.SelectSingleNode('//a:Identity', $ns).GetAttribute('Version')
+
+          Write-Host "package.json version      : $pkgVersion"
+          Write-Host "manifest Identity/Version : $actualManifestVersion (expected $expectedManifestVersion)"
+          if ($actualManifestVersion -ne $expectedManifestVersion) {
+            $problems += "manifest Identity/Version is '$actualManifestVersion' but package.json implies '$expectedManifestVersion' — the build did not pick up the version bump"
+          }
+
+          # --- 2. must be higher than what is already published --------------------
+          $publishedFile = 'store-assets/PUBLISHED-STORE-VERSION'
+          if (Test-Path $publishedFile) {
+            $published = (Get-Content $publishedFile -Raw).Trim()
+            Write-Host "already live in the Store  : $published"
+            if ([version]$actualManifestVersion -le [version]$published) {
+              $problems += "built version $actualManifestVersion is NOT higher than the published $published — Partner Center will reject this package"
+            }
+          } else {
+            Write-Host "::warning::$publishedFile is missing — cannot check the version actually increases"
+          }
+
+          # --- 3. checksum sidecar matches the package -----------------------------
+          $sidecar = "$($appx.FullName).sha256"
+          if (-not (Test-Path $sidecar)) {
+            $problems += "checksum sidecar $([IO.Path]::GetFileName($sidecar)) is missing"
+          } else {
+            $recorded = ((Get-Content $sidecar -Raw).Trim() -split '\s+')[0]
+            $actual = (Get-FileHash $appx.FullName -Algorithm SHA256).Hash.ToLower()
+            Write-Host "appx sha256 (recomputed)  : $actual"
+            Write-Host "appx sha256 (sidecar)     : $($recorded.ToLower())"
+            if ($recorded.ToLower() -ne $actual) {
+              $problems += "sidecar checksum does not match the .appx — the sidecar is stale"
+            }
+          }
+
+          # --- 4. EXE icon is the real PonyABC icon --------------------------------
+          # A POSITIVE assertion against the known-good icon, not a blacklist of
+          # electron's default: nobody has a trustworthy hash for every default
+          # electron-builder ships, and a blacklist silently passes anything new.
+          # If the icon is intentionally changed, update the .expected file in the
+          # same commit — that makes the change explicit and reviewable.
+          $ico = 'build/icon.ico'
+          $icoExpectedFile = 'build/icon.ico.sha256.expected'
+          if (-not (Test-Path $ico)) {
+            $problems += "$ico is missing — the EXE would fall back to default Electron artwork"
+          } elseif (-not (Test-Path $icoExpectedFile)) {
+            $problems += "$icoExpectedFile is missing — cannot prove the EXE icon is the PonyABC one"
+          } else {
+            $icoHash = (Get-FileHash $ico -Algorithm SHA256).Hash.ToUpper()
+            $icoExpected = (Get-Content $icoExpectedFile -Raw).Trim().ToUpper()
+            Write-Host "build/icon.ico sha256     : $icoHash"
+            Write-Host "build/icon.ico expected   : $icoExpected"
+            if ($icoHash -ne $icoExpected) {
+              $problems += "build/icon.ico does not match the recorded PonyABC icon. If this change is intended, update $icoExpectedFile in the same commit."
+            }
+            if ((Get-Item $ico).Length -lt 20000) {
+              $problems += "build/icon.ico is only $((Get-Item $ico).Length) bytes — too small to hold the 16-256px sizes this app ships"
+            }
+          }
+
+          if ($problems.Count -gt 0) {
+            $problems | ForEach-Object { Write-Host "::error::$_" }
+            throw 'VERSION / CHECKSUM / ICON VERIFICATION FAILED — see above.'
+          }
+          Write-Host "VERIFIED: version $actualManifestVersion is correct and higher than the published release, sidecar matches, EXE icon is custom."
+
       # --- 3. INSTALLATION — runs the ACTUAL delivered 1-install.ps1, not a parallel CI-only ------
       #        reimplementation, so a passing CI run is real evidence the tester's own script ----
       #        works, not just that installation is possible in general. --------------------------
@@ -324,61 +605,95 @@ jobs:
           path: release/screenshots/*.png
           if-no-files-found: error
 
-      # --- 5. FUNCTIONAL PROBE: firmware wizard plumbing (elevation / working dir / log / --------
-      #        recovery marker) — harmless stand-in tool, NEVER a real vendor binary or a pen. ----
-      - name: "Store package: firmware wizard plumbing probe (harmless stand-in, no vendor tool/pen)"
-        shell: pwsh
-        run: |
-          $installed = Get-AppxPackage -Name 'PonyABC.PonyABCDesktop'
-          # Same reasoning as the launch-verification step above: resolve the real executable from
-          # the installed manifest, not a directory listing (WindowsApps' ACLs block that).
-          [xml]$installedManifest = Get-Content -Path (Join-Path $installed.InstallLocation 'AppxManifest.xml') -Raw
-          $ns3 = New-Object System.Xml.XmlNamespaceManager($installedManifest.NameTable)
-          $ns3.AddNamespace('a', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
-          $exeRelPath = $installedManifest.SelectSingleNode('//a:Application', $ns3).GetAttribute('Executable')
-          $exePath = Join-Path $installed.InstallLocation $exeRelPath
-          $probeOutput = Join-Path $env:RUNNER_TEMP 'msix-firmware-probe-result.json'
-          if (Test-Path $probeOutput) { Remove-Item $probeOutput -Force }
-
-          # These are inherited by the child process Start-Process below launches (default Win32
-          # CreateProcess behavior — no special flag needed) — this is the ONLY thing that tells
-          # the packaged app to run the probe instead of its normal startup.
-          $env:PONYABC_MSIX_FIRMWARE_PROBE = '1'
-          $env:PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT = $probeOutput
-
-          Write-Host 'Launching the installed package with the firmware plumbing probe enabled...'
-          Write-Host 'NOTE: this probe triggers a REAL UAC elevation prompt (for a harmless local stand-in script, never a vendor tool). In this non-interactive CI session nothing can click "Yes" — a timeout here is an expected, informative outcome, not a build failure.'
-          $proc = Start-Process -FilePath $exePath -PassThru
-          $exited = $proc.WaitForExit(150000)
-
-          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE -ErrorAction SilentlyContinue
-          Remove-Item Env:\PONYABC_MSIX_FIRMWARE_PROBE_OUTPUT -ErrorAction SilentlyContinue
-
-          if (-not $exited) {
-            Write-Host '::warning::Probe process did not exit within 150s — most likely a blocked/hung interactive UAC consent prompt with no one able to click it in this CI session. Killing the process tree; this specific question (does the real UAC prompt work under MSIX) needs the real-machine test, not CI.'
-            & taskkill /F /T /PID $proc.Id 2>$null | Out-Null
-          }
-
-          "## Firmware wizard plumbing probe" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          if (Test-Path $probeOutput) {
-            $resultJson = Get-Content -Path $probeOutput -Raw
-            Write-Host '----- Probe result JSON -----'
-            Write-Host $resultJson
-            "" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            '```json' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            $resultJson | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          } else {
-            Write-Host '::warning::No probe result file was produced.'
-            "`nNo result file was produced (process exited or was killed before writing output — see the warning above)." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-          }
-        # Deliberately not `if: always()`-guarded or fatal: a timeout/inconclusive result here is
-        # real, useful information to report, not a reason to fail the whole workflow run.
-        continue-on-error: true
+      # --- 5. (WAS: a firmware-plumbing probe against the installed Store package.) -----------
+      #
+      # It cannot run here any more, and that is the intended consequence of a decision rather
+      # than something broken: the probe was switched on by an environment variable, and the
+      # Store build now contains no environment switches at all (owner, 2026-09-30). Run
+      # 36742931878 is the proof — the step launched the app, waited its full 150s, killed it
+      # and produced no result, because nothing in the package was listening for the switch.
+      #
+      # What it asked — does the firmware plumbing work inside a real MSIX package — depended on
+      # a UAC consent prompt that no non-interactive CI session can ever click, so it is now
+      # asked on a real machine instead: docs/test-plans/internal-testing.md, check D. The
+      # Internal build still carries the probe for anyone running it locally.
 
       # --- 6. CLEANUP — runs the ACTUAL delivered 3-cleanup.ps1, validating its thumbprint-scoped
       #        removal logic for real (this run's cert should show certImportedByUs=true and get
       #        removed; a pre-existing cert never would). -------------------------------------------
+      # The earlier stamp check reads release/win-unpacked, which is scratch space: every later
+      # packaging command rewrites it, and one of them used to rewrite the installer too. This
+      # one opens the finished .exe files themselves — the exact bytes about to become Release
+      # assets — and reads the stamp back out of the app.asar inside each. A tester who cannot
+      # tell a candidate from the Store version by looking at Settings has no way to report a
+      # bug against the right build, so an unstamped candidate is a failed build, not a warning.
+      # The stamp checks above read release/win-unpacked, which is scratch space that every
+      # later packaging command rewrites — and one of them used to rewrite the installers too,
+      # which is how rc4 shipped unstamped with every step green. Opening the finished .exe
+      # files here to re-read the stamp was the obvious answer and does not work: 7-Zip on the
+      # runner cannot parse an NSIS installer.
+      #
+      # So this asks the stronger question instead, and asks it of the bytes: are the files
+      # about to be published still the files that were checked? A rebuild cannot change the
+      # contents without changing the hash.
+      - name: "Installers: prove nothing rebuilt them after they were checked"
+        if: steps.rc.outputs.value != ''
+        shell: pwsh
+        run: |
+          $recorded = Join-Path $env:RUNNER_TEMP 'installer-hashes.json'
+          if (-not (Test-Path $recorded)) { throw "no recorded installer hashes — the recording step did not run" }
+          $before = Get-Content $recorded -Raw | ConvertFrom-Json
+          foreach ($name in $before.PSObject.Properties.Name) {
+            $path = "release/$name"
+            if (-not (Test-Path $path)) { throw "$name was built and checked, and is no longer in release/" }
+            $now = (Get-FileHash $path -Algorithm SHA256).Hash
+            if ($now -ne $before.$name) {
+              throw "$name changed after it was checked: was $($before.$name), now $now. Something rebuilt it, and whatever it now contains has not been checked — rc4 shipped this way, with a Settings screen showing a plain version number."
+            }
+            Write-Host "$name unchanged since it was checked ($now)."
+          }
+
+      # Everything this version is, in one place. The owner's rule (2026-09-30) is that no
+      # record of a version may live only on the Mac mini, so a dispatched candidate build
+      # publishes the installer, the Store package, both checksums, the tester's README, the
+      # four manual PDFs and the Store text as Release assets. Binaries are assets, never
+      # git history.
+      - name: "Release: publish this candidate with all of its records"
+        if: github.event_name == 'workflow_dispatch' && inputs.rc != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}-${{ inputs.rc }}"
+          COMMIT="${GITHUB_SHA:0:7}"
+
+          sed -e "s/{{VERSION}}/${VERSION}/g" \
+              -e "s/{{RC}}/${{ inputs.rc }}/g" \
+              -e "s/{{COMMIT}}/${COMMIT}/g" \
+              -e "s/{{RUN}}/${GITHUB_RUN_ID}/g" \
+              store-assets/rc-release-notes.md > /tmp/notes.md
+
+          # Both builds, each with its checksum, plus everything that says what this version is.
+          ASSETS=(release/*.exe release/*.exe.sha256 release/*.appx release/*.appx.sha256
+                  release/READ-ME-FIRST.txt docs/manual/pdf/*.pdf
+                  store-assets/whats-new-${VERSION}.md store-assets/store-listing-${VERSION}.md)
+          for f in "${ASSETS[@]}"; do
+            [ -e "$f" ] || { echo "missing asset: $f"; exit 1; }
+          done
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file /tmp/notes.md \
+              --prerelease --latest=false
+            gh release upload "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TAG — test build" --notes-file /tmp/notes.md \
+              --prerelease --latest=false "${ASSETS[@]}"
+          fi
+          echo "Published $TAG with ${#ASSETS[@]} assets."
+
       - name: "Store package: run the real 3-cleanup.ps1 (same script the tester gets)"
         if: always()
         shell: pwsh
@@ -429,9 +744,27 @@ jobs:
       # workflow artifact. This is a GitHub Release asset for LOCAL SIDELOAD TESTING only — a
       # test-certificate-signed package, never a normal customer installer, and NOT the Microsoft
       # Store listing itself, which is submitted separately via Partner Center.
-      - name: Attach Store test package to the matching GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Attach Store test package to the matching GitHub Release (skips if none exists)
+        # TEST TAGS ONLY (-rc). A plain vX.Y.Z release page is the permanent record of what
+        # went to the Microsoft Store: hand-assembled, byte-checked, and never to be written
+        # to by a build. This was a denylist naming 'store-candidate' — the one tag that had
+        # already been damaged, where a build clobbered the unsigned submitted .appx with a
+        # test-signed one. v0.3.17 was not on that list, so tagging the published version
+        # would have overwritten the exact bytes Microsoft certified. An allowlist cannot
+        # have that hole: a build attaches to a release candidate, or to nothing.
+        if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-rc')
         shell: bash
-        run: gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 release/*.cer --repo "${GITHUB_REPOSITORY}" --clobber
+        run: |
+          set -euo pipefail
+          # Same reasoning as the installer step above: a missing Release is normal for this
+          # private repo, and this step must not create one. The .appx, its .sha256 and the
+          # ephemeral test .cer stay available as run artifacts either way.
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} exists — attaching Store test package."
+            gh release upload "${GITHUB_REF_NAME}" release/*.appx release/*.appx.sha256 release/*.cer \
+              --repo "${GITHUB_REPOSITORY}" --clobber
+          else
+            echo "::notice::No GitHub Release '${GITHUB_REF_NAME}' exists — skipping Store test package upload. Download it from this run's artifacts instead. Not creating a Release."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

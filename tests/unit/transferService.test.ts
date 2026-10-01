@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { safeWriteFile, sha256FileWithProgress } from '../../src/main/services/transferService';
+import { VERIFY_EDGE_BYTES, safeWriteFile, sha256FileWithProgress, sha256Range, verifyRanges } from '../../src/main/services/transferService';
 
 let sourceDir: string;
 let targetDir: string;
@@ -288,7 +288,9 @@ describe('sha256FileWithProgress', () => {
     });
     await expect(promise).rejects.toThrow();
     // The file itself can still be deleted immediately after — proves the read stream's
-    // handle was actually released, not just the promise abandoned.
+    // handle was actually released, not just the promise abandoned. On Windows this is the
+    // difference between rejecting after destroy() (handle may still be open -> EPERM) and
+    // rejecting on 'close'; it failed there before the promise was made to wait for 'close'.
     expect(() => fs.unlinkSync(filePath)).not.toThrow();
   });
 
@@ -298,5 +300,196 @@ describe('sha256FileWithProgress', () => {
     const controller = new AbortController();
     controller.abort();
     await expect(sha256FileWithProgress(filePath, { signal: controller.signal })).rejects.toThrow();
+  });
+});
+
+
+/**
+ * Verification after a write to the pen.
+ *
+ * Reading a whole book back costs as long again as writing it — 978 kB/s measured, so ~19
+ * minutes for a 1.1 GB book. Instead the size is checked (free, from a `stat`) and the first and
+ * last 8 MB are read back and compared with the same ranges of the source: about sixteen seconds,
+ * and it still catches what actually goes wrong on removable media. These tests pin both halves
+ * of that claim — that it catches those faults, and that it does not read the whole file.
+ */
+
+/**
+ * A write stream that damages the data on its way to disk, at an absolute byte offset, so a
+ * corrupted write can be simulated without a real failing card.
+ */
+function corruptAt(offset: number | 'truncate-after', bytes = 0) {
+  const realCreateWriteStream = fs.createWriteStream.bind(fs);
+  return vi.spyOn(fs, 'createWriteStream').mockImplementation(((target: Parameters<typeof fs.createWriteStream>[0], options?: unknown) => {
+    const stream = realCreateWriteStream(target, options as never);
+    if (!String(target).includes('.ponyabc-tmp-')) return stream;
+
+    let seen = 0;
+    const originalWrite = stream.write.bind(stream);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (stream as any).write = (chunk: Buffer, ...rest: unknown[]) => {
+      if (Buffer.isBuffer(chunk)) {
+        if (offset === 'truncate-after') {
+          const room = Math.max(bytes - seen, 0);
+          const kept = chunk.subarray(0, Math.min(room, chunk.length));
+          seen += chunk.length;
+          if (kept.length === 0) return true; // silently drop the rest — a truncated write
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return originalWrite(kept, ...(rest as [any]));
+        }
+        if (offset >= seen && offset < seen + chunk.length) {
+          const copy = Buffer.from(chunk);
+          copy[offset - seen] ^= 0xff;
+          seen += chunk.length;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return originalWrite(copy, ...(rest as [any]));
+        }
+      }
+      seen += Buffer.isBuffer(chunk) ? chunk.length : 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return originalWrite(chunk, ...(rest as [any]));
+    };
+    return stream;
+  }) as typeof fs.createWriteStream);
+}
+
+/** A file big enough that the two 8 MB ends do not overlap. */
+function writeLargeSource(name: string, sizeBytes: number): string {
+  const p = path.join(sourceDir, name);
+  const chunk = Buffer.alloc(1024 * 1024, 0xab);
+  const fd = fs.openSync(p, 'w');
+  let written = 0;
+  while (written < sizeBytes) {
+    const n = Math.min(chunk.length, sizeBytes - written);
+    fs.writeSync(fd, chunk, 0, n);
+    written += n;
+  }
+  fs.closeSync(fd);
+  return p;
+}
+
+describe('which byte ranges get verified', () => {
+  it('checks both ends of a large file, and nothing in between', () => {
+    const size = 1_100_000_000;
+    expect(verifyRanges(size)).toEqual([
+      { start: 0, length: VERIFY_EDGE_BYTES },
+      { start: size - VERIFY_EDGE_BYTES, length: VERIFY_EDGE_BYTES },
+    ]);
+    // The point of the whole change: 16 MB read back instead of 1.1 GB.
+    const read = verifyRanges(size).reduce((sum, r) => sum + r.length, 0);
+    expect(read).toBe(2 * VERIFY_EDGE_BYTES);
+    expect(read).toBeLessThan(size / 60);
+  });
+
+  it('collapses to the whole file when the ends would overlap', () => {
+    for (const size of [0, 1, 1024, VERIFY_EDGE_BYTES, VERIFY_EDGE_BYTES * 2]) {
+      expect(verifyRanges(size), String(size)).toEqual([{ start: 0, length: size }]);
+    }
+  });
+
+  it('hashes exactly the range asked for', async () => {
+    const p = path.join(sourceDir, 'ranged.bin');
+    fs.writeFileSync(p, 'abcdefghij');
+    const whole = await sha256Range(p, 0, 10);
+    const head = await sha256Range(p, 0, 3);
+    const tail = await sha256Range(p, 7, 3);
+    expect(head).not.toBe(whole);
+    expect(head).not.toBe(tail);
+    // 'abc' and 'hij' hashed independently of the file they came from.
+    expect(head).toBe(await sha256Range(p, 0, 3));
+  });
+});
+
+describe('safeWriteFile — verification catches a bad write', () => {
+  it('catches a truncated write from the size alone, and replaces nothing', async () => {
+    const source = writeLargeSource('big.axb', 20 * 1024 * 1024);
+    fs.writeFileSync(path.join(targetDir, 'big.axb'), 'THE ORIGINAL');
+    corruptAt('truncate-after', 4 * 1024 * 1024);
+
+    const result = await safeWriteFile({
+      sourcePath: source,
+      targetDir,
+      targetFileName: 'big.axb',
+      backupDir,
+      verifyStillSameTarget: available,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('hash-mismatch');
+    expect(fs.readFileSync(path.join(targetDir, 'big.axb'), 'utf-8')).toBe('THE ORIGINAL');
+    expect(fs.readdirSync(targetDir).filter((f) => f.includes('.ponyabc-tmp-'))).toEqual([]);
+  });
+
+  it('catches corruption in the FIRST 8 MB', async () => {
+    const source = writeLargeSource('big.axb', 20 * 1024 * 1024);
+    fs.writeFileSync(path.join(targetDir, 'big.axb'), 'THE ORIGINAL');
+    corruptAt(1024); // well inside the head range
+
+    const result = await safeWriteFile({
+      sourcePath: source,
+      targetDir,
+      targetFileName: 'big.axb',
+      backupDir,
+      verifyStillSameTarget: available,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('hash-mismatch');
+    expect(fs.readFileSync(path.join(targetDir, 'big.axb'), 'utf-8')).toBe('THE ORIGINAL');
+  });
+
+  it('catches corruption in the LAST 8 MB', async () => {
+    const size = 20 * 1024 * 1024;
+    const source = writeLargeSource('big.axb', size);
+    corruptAt(size - 1024); // well inside the tail range
+
+    const result = await safeWriteFile({
+      sourcePath: source,
+      targetDir,
+      targetFileName: 'big.axb',
+      backupDir,
+      verifyStillSameTarget: available,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('hash-mismatch');
+    expect(fs.existsSync(path.join(targetDir, 'big.axb'))).toBe(false);
+  });
+
+  it('reports the source hash it computed while copying, for a later sync to record', async () => {
+    const source = path.join(sourceDir, 'small.axb');
+    fs.writeFileSync(source, 'abc');
+
+    const result = await safeWriteFile({
+      sourcePath: source,
+      targetDir,
+      targetFileName: 'small.axb',
+      backupDir,
+      verifyStillSameTarget: available,
+    });
+
+    expect(result.ok).toBe(true);
+    // sha256("abc") — computed from the bytes that were actually read and written.
+    expect(result.sourceSha256).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  });
+
+  it('does not read the middle of a large file back from the pen', async () => {
+    const size = 20 * 1024 * 1024;
+    const source = writeLargeSource('big.axb', size);
+
+    const readOffsets: Array<{ start?: number; end?: number }> = [];
+    const realCreateReadStream = fs.createReadStream.bind(fs);
+    vi.spyOn(fs, 'createReadStream').mockImplementation(((target: Parameters<typeof fs.createReadStream>[0], options?: never) => {
+      if (String(target).includes('.ponyabc-tmp-')) readOffsets.push({ start: (options as { start?: number })?.start, end: (options as { end?: number })?.end });
+      return realCreateReadStream(target, options);
+    }) as typeof fs.createReadStream);
+
+    await safeWriteFile({ sourcePath: source, targetDir, targetFileName: 'big.axb', backupDir, verifyStillSameTarget: available });
+
+    // Two ranged reads of the staged file, and no whole-file read. At 978 kB/s this is the
+    // difference between 16 seconds and 20 minutes.
+    expect(readOffsets).toHaveLength(2);
+    expect(readOffsets[0]).toEqual({ start: 0, end: VERIFY_EDGE_BYTES - 1 });
+    expect(readOffsets[1]).toEqual({ start: size - VERIFY_EDGE_BYTES, end: size - 1 });
   });
 });

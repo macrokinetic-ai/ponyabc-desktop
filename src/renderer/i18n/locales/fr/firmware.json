@@ -13,22 +13,13 @@
     "title": "Préparez votre stylo",
     "checklistUsb": "Connectez le stylo P5 à cet ordinateur avec un câble USB.",
     "checklistPower": "Gardez le stylo connecté et alimenté pendant toute la mise à jour — ne le débranchez pas.",
-    "checklistNoOtherOps": "Assurez-vous qu'aucune autre opération de fichiers (BOOK, DIY ou une autre mise à jour) n'est en cours.",
+    "checklistNoOtherOps": "Fermez tout autre programme qui utilise le stylo.",
     "penDetected": "Stylo détecté.",
     "penRequired": "Connectez un stylo pour continuer.",
     "nextButton": "Suivant"
   },
   "package": {
     "title": "Paquet de firmware",
-    "devModeNotice": "Réservé aux tests/au support : sélectionnez vous-même le dossier du paquet fournisseur déjà extrait. La plupart des utilisateurs devraient plutôt utiliser le téléchargement officiel ci-dessus.",
-    "selectButton": "Test/support : sélectionner un dossier local…",
-    "advanced": {
-      "title": "Avancé / support",
-      "readButton": "Afficher",
-      "collapseButton": "Masquer"
-    },
-    "selectedPath": "Sélectionné : {{path}}",
-    "looksValid": "Ce dossier contient les fichiers requis par le chemin de mise à jour confirmé.",
     "invalid": "Il manque à ce dossier des fichiers nécessaires à la mise à jour. Rien ne sera exécuté.",
     "nextButton": "Suivant",
     "official": {
@@ -41,7 +32,7 @@
       "version": "Version officielle : {{version}}",
       "packageLabel": "Paquet : {{label}} ({{date}})",
       "onPenVersionUnknown": "Version actuelle sur le stylo : indisponible",
-      "onPenVersionHint": "Cette application ne peut pas lire la version du firmware déjà présente sur le stylo — il n'existe actuellement aucun moyen fiable de le vérifier.",
+      "onPenVersionHint": "Cette application ne peut pas savoir quelle version se trouve déjà sur votre stylo.",
       "hardwareRevNotice": "Ce micrologiciel s'applique à la version matérielle {{hardwareRev}}. Cette application ne peut pas détecter automatiquement la version matérielle du stylo connecté.",
       "hardwareConfirmLegend": "Confirmez la version matérielle du stylo connecté :",
       "hardwareConfirmYes": "Confirmé — mon stylo est en version matérielle {{hardwareRev}}",
@@ -74,21 +65,25 @@
     "phaseAwaitingAuth": "En attente d'autorisation Windows, ou démarrage…",
     "phaseToolRunning": "Mise à jour du stylo — maintenez la connexion USB.",
     "phaseFinishing": "Confirmation du résultat…",
-    "noCancelNotice": "La mise à jour ne peut pas être annulée de force une fois commencée.",
+    "noCancelNotice": "Une fois la mise à jour commencée, elle ne peut plus être arrêtée. Patientez — cela prend généralement quelques minutes.",
     "noOutputYet": "Aucune sortie pour le moment."
   },
   "result": {
     "title": "Résultat",
-    "successMessage": "La mise à jour du micrologiciel est terminée. Redémarrez le stylo et testez la lecture.",
-    "processFinishedMessage": "Le processus de mise à jour du micrologiciel est terminé. Redémarrez le stylo et testez la lecture.",
-    "failedTitle": "La mise à jour n'a pas démarré ou ne s'est pas terminée.",
-    "unclearTitle": "Le résultat n'a pas pu être confirmé.",
-    "unclearBodyUnconfirmed": "Impossible de confirmer si l'outil de mise à jour a réellement terminé son exécution. Par sécurité, aucune nouvelle mise à jour du micrologiciel ni écriture BOOK/DIY sur le stylo ne sera autorisée tant que ce point n'est pas résolu. Quittez complètement cette application et rouvrez-la seulement après avoir confirmé vous-même (par exemple dans le Gestionnaire des tâches de Windows, ou en vérifiant le stylo lui-même) que le processus est arrêté.",
+    "successMessage": "Votre stylo est à jour. Éteignez-le puis rallumez-le, et essayez un de vos livres.",
+    "processFinishedMessage": "La mise à jour est terminée. Éteignez votre stylo puis rallumez-le, et essayez un de vos livres.",
+    "failedTitle": "La mise à jour ne s'est pas terminée",
+    "unclearTitle": "Nous n'avons pas pu confirmer la fin de la mise à jour",
+    "unclearBodyUnconfirmed": "Par précaution, cette application ne modifiera rien sur votre stylo pour l'instant. Fermez complètement PonyABC, rouvrez-la, puis relancez la mise à jour.",
     "finishButton": "Terminer",
     "returnHomeButton": "Retour à l'accueil",
     "acknowledgeButtonUnconfirmed": "Je comprends — je vais redémarrer l'application",
-    "restartNoticeAcknowledged": "Noté. Cette application restera verrouillée pour toute nouvelle mise à jour du micrologiciel et toute écriture BOOK/DIY tant que vous ne l'aurez pas complètement quittée puis rouverte.",
-    "startOverButton": "Recommencer"
+    "restartNoticeAcknowledged": "Fermez complètement PonyABC et rouvrez-la avant d'utiliser votre stylo avec cette application.",
+    "startOverButton": "Recommencer",
+    "preflightFailedTitle": "La mise à jour n'a pas démarré",
+    "preflightFailedBody": "Votre stylo n'a pas été modifié. Vérifiez qu'il est toujours branché, puis réessayez.",
+    "failedBody": "Votre stylo n'a pas été modifié. Vérifiez qu'il est toujours branché, puis réessayez.",
+    "retryAfterUnclearBody": "Nous n'avons pas pu confirmer la fin de la mise à jour. Relancez-la — la relancer ne présente aucun risque."
   },
   "technicalDetails": {
     "title": "Détails techniques",
@@ -96,12 +91,19 @@
     "collapseButton": "Masquer"
   },
   "recovery": {
-    "title": "Mise à jour précédente non confirmée comme terminée",
-    "stillRunningBody": "Une mise à jour du micrologiciel d'une session précédente semble toujours en cours d'exécution en dehors de cette application. Redémarrer cette application n'est pas une preuve qu'elle s'est arrêtée. Les nouvelles mises à jour du micrologiciel et les écritures BOOK/DIY sur le stylo restent bloquées, et cette application ne tentera pas d'arrêter elle-même l'autre processus.",
-    "unknownBody": "Cette application n'a pas pu déterminer si une mise à jour du micrologiciel d'une session précédente est terminée. Les nouvelles mises à jour du micrologiciel et les écritures BOOK/DIY sur le stylo restent bloquées tant que cela n'est pas confirmé.",
+    "title": "Une mise à jour précédente est peut-être encore en cours",
+    "stillRunningBody": "Une mise à jour lancée plus tôt s'exécute encore sur cet ordinateur. Attendez qu'elle se termine, ou redémarrez l'ordinateur, avant d'utiliser votre stylo avec cette application.",
+    "unknownBody": "Nous n'avons pas pu savoir si une mise à jour précédente s'est terminée. Par précaution, cette application ne modifiera rien sur votre stylo tant que ce n'est pas clair.",
     "checking": "Vérification…",
     "checkAgainButton": "Vérifier à nouveau",
     "startedAt": "Tentative de mise à jour démarrée : {{time}}",
     "lastChecked": "Dernière vérification : {{time}}"
+  },
+  "onPen": {
+    "title": "La version sur votre stylo",
+    "cannotRead": "Votre stylo n’indique pas la version du micrologiciel qu’il utilise ; cette application ne peut donc pas l’afficher.",
+    "lastInstalled": "La dernière version installée par cette application était {{version}}, le {{when}}.",
+    "lastInstalledNone": "Cette application n’a encore installé aucune version de micrologiciel sur un stylo.",
+    "notTheSame": "C’est ce que cette application a fait, et non une lecture du stylo que vous avez en main. Un stylo mis à jour sur un autre ordinateur, ou avant que vous l’ayez, utilisera une version que cette application n’a jamais vue."
   }
 }

@@ -1,0 +1,162 @@
+# Update Book Content — what every label means
+
+Two audiences in one file: the **exact condition** each status comes from (for us) and the
+**wording the customer sees** (for support, and for whoever writes the manual). They are kept
+together on purpose — the last time they lived apart, the UI said "On pen" for two conditions
+that mean quite different things.
+
+The strings live in `src/renderer/i18n/locales/<locale>/book.json`; the mapping from status to
+string lives in `src/renderer/screens/bookStatusLabels.ts`, which also drives the in-app legend,
+so nothing here can be shown without being explained.
+
+## The BOOK screen is one button
+
+Since 0.3.17 a parent does not choose books and cannot delete them. The screen is:
+
+```
+Your pen is connected
+Your pen has 30 PonyABC books. 1 new book and 2 updates are available. About 6 minutes.
+[ Sync books ]   Last checked: …   [ Check for new books ]
+▸ See book list
+▸ Advanced details
+```
+
+**Sync** adds every catalogue book the pen lacks and updates every book whose bytes differ, one
+at a time, smallest first, deciding from filenames and sizes only — never by reading a book back
+off the pen, which costs ~19 minutes each. It never deletes anything.
+
+The rules live in `src/shared/bookSyncPlan.ts`, deliberately outside the screen, because what a
+sync does is a property of the product rather than of a component:
+
+| Catalogue state                      | Not on the pen  | Already on the pen                                             |
+| ------------------------------------ | --------------- | -------------------------------------------------------------- |
+| `active` (and anything unrecognised) | added           | updated if it differs                                          |
+| `retired`                            | **never added** | **still updated** — the customer owns the physical cards       |
+| `remove_from_pens`                   | never added     | **ignored in 0.3.17** — nothing in this version deletes a book |
+
+Space is checked **before** anything starts, with 200 MB of headroom, and the message says how
+much more is needed and what to do about it. If the card fills mid-sync it stops cleanly, keeps
+what finished, and resets the index only if something was actually added.
+
+Everything technical — the statuses below, drive letters, manual pen selection, per-book Verify —
+is under **Advanced details**, closed.
+
+## What the customer sees, and what is underneath
+
+**Our customers are nursery parents.** The main view answers three questions and nothing else:
+is this book on the pen, does it need updating, and how do I add it. Everything in the tables
+below still exists — it now lives under **Advanced details**, closed by default, for support.
+
+| Shown in the main view                    | Comes from                                                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **On your pen**                           | `verified-current`, `present`, `matched-hash-unknown`, `awaiting-catalog`, `unknown`, `on-pen-current`, `on-pen-present` |
+| **Update available**                      | `verified-differs`, `size-differs`, `on-pen-differs`, `on-pen-size-differs`                                              |
+| **Not on your pen yet**                   | `not-on-pen`                                                                                                             |
+| **Downloading…**                          | a download is in flight                                                                                                  |
+| **Checking…**                             | `verifying`, `on-pen-verifying`                                                                                          |
+| **Something's not right — open for help** | `metadata-incomplete`, `ambiguous`                                                                                       |
+
+Three deliberate decisions in that mapping:
+
+1. **A content difference is an update, not a fault.** "Differs" invited a parent to think their
+   pen was broken; in practice it nearly always means a newer edition exists.
+2. **An unrecognised file on the pen is still "On your pen".** It is the customer's file and it
+   is on their pen — both simply true. Calling it "Unknown" was alarming and told them nothing
+   they could act on.
+3. **The unhappy state is reserved for OUR data being wrong** — a catalogue entry missing its
+   filename or hash, or two entries claiming one filename. Its wording says so, because a parent
+   reading it has done nothing wrong and their pen is fine.
+
+`simpleStateForPen` / `simpleStateForCatalog` in `bookStatusLabels.ts` are the mapping, and the
+tests fail if a technical status ever maps to nothing, or if a customer-facing string contains
+"checksum", "hash", "catalogue", "manifest", ".axb" or an index filename — in any of the 8
+locales.
+
+## The one thing to understand first
+
+The screen reports **two independent facts** about an official book:
+
+1. **Is it on the pen?** — the status.
+2. **Is a copy stored on this computer?** — the cache line ("Cached" / "Not downloaded").
+
+Neither implies the other. A book can be cached but not on the pen, or on the pen but not
+cached. Reading "Cached" as "it's on the pen" is the most common misreading of this screen, and
+it is why the in-app legend states it in its first sentence.
+
+The second thing: **"On pen" never means "checked".** Listing and refreshing only `stat` the
+files — the App never reads a book's bytes unless you press Verify. So "On pen" means the
+filename matched, nothing more.
+
+## Content on the pen (left pane)
+
+Source: `BookPenMatchStatus`, computed in `src/main/services/bookReconcile.ts`.
+
+| Status                 | Chip           | Exact condition                                                                                                                                                                                                |
+| ---------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verified-current`     | Verified       | A verification you ran found the file's SHA-256 equal to the catalog's, **and** that record is still valid for this pen volume, this generation, and this file's size + mtime.                                 |
+| `present`              | On pen         | The filename matches exactly one unambiguous catalog entry, the size matches, but no valid verification record exists. **The resting state after any refresh** — not a problem.                                |
+| `matched-hash-unknown` | No checksum    | Filename matches, but the catalog entry is not install-eligible (`filenameSource !== 'declared'` or `sha256 === null`), so there is no official hash to compare with. Nothing can make this become "Verified". |
+| `verified-differs`     | Differs        | A still-valid verification found the file's SHA-256 **different** from the catalog's.                                                                                                                          |
+| `size-differs`         | Size differs   | The file's size differs from the catalog's declared size. Decided from `stat` alone, and it short-circuits the hash check entirely — a size mismatch is already conclusive.                                    |
+| `verifying`            | Verifying…     | A verification is reading this file right now.                                                                                                                                                                 |
+| `awaiting-catalog`     | No catalog     | The filename matched nothing **and no catalog has ever been fetched** (`snapshot === null`). There is nothing to judge it against yet — it must never be presented as "checked and unrecognized".              |
+| `unknown`              | Not in catalog | The filename matched nothing **and** a real catalog snapshot exists (even an empty one). Not removable — structurally, an unmatched file never gets `removable: true`.                                         |
+
+`awaiting-catalog` and `unknown` look the same to a customer and are not: the first is "we
+haven't looked yet", the second is "we looked and this isn't ours". Only the second is a
+statement about the file.
+
+## Official content (right pane)
+
+Source: `BookCatalogItemStatus`, same function. These describe a catalog item's presence on the
+connected pen, so they are the same distinctions seen from the other side.
+
+| Status                | Chip         | Exact condition                                                                                                                                                                                                   |
+| --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `not-on-pen`          | Not on pen   | No pen file matches this entry's filename. (Also what you see with no pen connected.)                                                                                                                             |
+| `on-pen-current`      | Verified     | Mirror of `verified-current`.                                                                                                                                                                                     |
+| `on-pen-present`      | On pen       | Mirror of `present` — matched by name, size equal, contents unchecked.                                                                                                                                            |
+| `on-pen-differs`      | Differs      | Mirror of `verified-differs`.                                                                                                                                                                                     |
+| `on-pen-size-differs` | Size differs | Mirror of `size-differs`.                                                                                                                                                                                         |
+| `on-pen-verifying`    | Verifying…   | A verification is running against the pen's copy.                                                                                                                                                                 |
+| `metadata-incomplete` | Incomplete   | `isInstallEligible()` is false: the catalog entry lacks a declared filename or a hash. **A server-side data problem, not a pen problem** — worth saying plainly, because it reads like a fault. Never actionable. |
+| `ambiguous`           | Ambiguous    | Two or more catalog entries claim the same filename, so no match is safe. Reference only until fixed on the server. Never actionable, and never a match target for anything.                                      |
+
+`actionable` (what enables Add / Replace) is true only for `not-on-pen`, `on-pen-present`,
+`on-pen-differs` and `on-pen-size-differs`, and only when the entry is install-eligible and
+unambiguous. Never while verifying (don't race a write against a read) and never for
+`on-pen-current` (nothing to do). `bookInstall.ts` enforces the same rule independently — the
+UI flag is a hint, never the gate.
+
+## Copies on this computer
+
+| Label          | Exact condition                                                                        |
+| -------------- | -------------------------------------------------------------------------------------- |
+| Cached         | A verified-good copy is in the App's own download cache. Installing needs no download. |
+| Not downloaded | No cached copy. It will be downloaded when you add it to the pen.                      |
+| Downloading…   | A download is in flight for this item.                                                 |
+
+## Where each string is shown
+
+- **Chip** (`statusShort.*`) — the collapsed row. A couple of words; no explanation.
+- **Full** (`status.*`) — the expanded row detail.
+- **Help** (`statusHelp.*`) — the condition, in plain language, plus what to do. Shown in the
+  expanded detail, as the chip's `title` tooltip, and in the legend.
+
+The legend is a `<details>` under both panes, always available rather than appearing only when
+something unusual happens, and its body renders only while open so it does not duplicate every
+label in the accessibility tree. A tooltip alone would not do: `title` is unreachable by
+keyboard and on a touch screen, and these labels are precisely the ones a confused user needs
+to read slowly.
+
+`tests/unit/bookStatusLabels.test.ts` fails if a status exists without all three strings, if a
+locale is missing one, if a help string is a copy of its own label, or if a status is missing
+from the legend. Adding a status to the union without explaining it does not compile past CI.
+
+## Wording changes in 0.3.17
+
+| Status                 | Was                                                 | Now                                                                   | Why                                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matched-hash-unknown` | "Cannot verify against the catalog" / chip "On pen" | "On pen — no official checksum to check against" / chip "No checksum" | The chip was identical to `present`'s, hiding a real difference: one is _not yet_ verified, the other can _never_ be. The full wording also read like a fault in the App. |
+| `awaiting-catalog`     | "Waiting for catalog match"                         | "On pen — catalog not loaded yet"                                     | It sounded like the file was in a queue. It is on the pen; the missing piece is the catalog.                                                                              |
+| `unknown`              | "Unknown"                                           | "Not official content" / chip "Not in catalog"                        | "Unknown" implied something was wrong with the file. It is simply not ours, and the App leaves it alone.                                                                  |

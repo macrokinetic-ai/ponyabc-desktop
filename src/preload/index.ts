@@ -78,7 +78,23 @@ const api: PonyAbcApi = {
 
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => subscribe(IPC.transferProgress, listener),
 
-  readAudioPreview: (params: { source: AudioSource; fileName: string }) => ipcRenderer.invoke(IPC.audioPreviewRead, params) as Promise<AudioPreviewResult>,
+  readAudioPreview: (params: { source: AudioSource; fileName: string; snapshotId?: string }) => ipcRenderer.invoke(IPC.audioPreviewRead, params) as Promise<AudioPreviewResult>,
+
+  recordingBackupCreate: () => ipcRenderer.invoke(IPC.recordingBackupCreate),
+  recordingBackupList: () => ipcRenderer.invoke(IPC.recordingBackupList),
+  recordingBackupContents: (params: { snapshotId: string }) => ipcRenderer.invoke(IPC.recordingBackupContents, params),
+  chooseRecordingFiles: () => ipcRenderer.invoke(IPC.chooseRecordingFiles),
+  recordingRestorePlan: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestorePlan, params),
+  recordingRestoreExecute: (params: unknown) => ipcRenderer.invoke(IPC.recordingRestoreExecute, params),
+  recordingDeleteFromPen: (params: unknown) => ipcRenderer.invoke(IPC.recordingDeleteFromPen, params),
+  recordingDeleteFromBackup: (params: unknown) => ipcRenderer.invoke(IPC.recordingDeleteFromBackup, params),
+  recordingReassign: (params: unknown) => ipcRenderer.invoke(IPC.recordingReassign, params),
+  recordingLabelsGet: () => ipcRenderer.invoke(IPC.recordingLabelsGet),
+  recordingLabelSet: (params: unknown) => ipcRenderer.invoke(IPC.recordingLabelSet, params),
+  recordingLegacyScan: (params: unknown) => ipcRenderer.invoke(IPC.recordingLegacyScan, params),
+  recordingLegacyMigrate: (params: unknown) => ipcRenderer.invoke(IPC.recordingLegacyMigrate, params),
+  onRecordingBackupProgress: (listener: (event: { fileIndex: number; fileCount: number; fileName: string }) => void) =>
+    subscribe(IPC.recordingBackupProgress, listener),
 
   bookList: () => ipcRenderer.invoke(IPC.bookList) as Promise<BookListResult>,
   bookCatalogRefresh: () => ipcRenderer.invoke(IPC.bookCatalogRefresh) as Promise<BookListResult>,
@@ -91,6 +107,23 @@ const api: PonyAbcApi = {
   bookDownloadCancel: (contentId: string) => ipcRenderer.invoke(IPC.bookDownloadCancel, contentId) as Promise<{ ok: boolean }>,
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => subscribe(IPC.bookDownloadProgress, listener),
 
+  onBookWriteProgress: (listener: (event: import('@shared/types').BookWriteProgressEvent) => void) =>
+    subscribe(IPC.bookWriteProgress, listener),
+  bookIndexStatus: () => ipcRenderer.invoke(IPC.bookIndexStatus),
+  testingModeGet: () => ipcRenderer.invoke(IPC.testingModeGet),
+  testingModeSet: (patch: Record<string, unknown>) => ipcRenderer.invoke(IPC.testingModeSet, patch),
+  testingModeChooseFolder: () => ipcRenderer.invoke(IPC.testingModeChooseFolder),
+  bookIndexCommit: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookIndexCommit, params ?? {}),
+  bookBatchBegin: () => ipcRenderer.invoke(IPC.bookBatchBegin),
+  bookBatchEnd: (params?: { writtenFileNames?: string[] }) => ipcRenderer.invoke(IPC.bookBatchEnd, params ?? {}),
+  technicalLogGet: () => ipcRenderer.invoke(IPC.technicalLogGet),
+  technicalLogClear: () => ipcRenderer.invoke(IPC.technicalLogClear),
+  onTechnicalLogEntry: (listener: (entry: import('@shared/types').TechnicalLogEntry) => void) => {
+    const handler = (_e: unknown, entry: import('@shared/types').TechnicalLogEntry) => listener(entry);
+    ipcRenderer.on(IPC.technicalLogEntry, handler);
+    return () => ipcRenderer.removeListener(IPC.technicalLogEntry, handler);
+  },
+  bookIndexFix: () => ipcRenderer.invoke(IPC.bookIndexFix),
   bookDownloadBatch: (params: { contentIds: string[] }) => ipcRenderer.invoke(IPC.bookDownloadBatch, params) as Promise<BookDownloadBatchStartResult>,
   bookDownloadBatchCancel: () => ipcRenderer.invoke(IPC.bookDownloadBatchCancel) as Promise<{ ok: boolean }>,
   onBookDownloadBatchSummary: (listener: (event: BookDownloadBatchSummaryEvent) => void) => subscribe(IPC.bookDownloadBatchSummary, listener),
@@ -124,6 +157,7 @@ const api: PonyAbcApi = {
     ipcRenderer.invoke(IPC.firmwarePrepareOfficialPackage, { release }) as Promise<FirmwarePrepareResult>,
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => subscribe(IPC.firmwareDownloadProgress, listener),
   cancelFirmwareDownload: () => ipcRenderer.invoke(IPC.firmwareCancelDownload) as Promise<{ ok: boolean }>,
+  firmwareLastInstalled: () => ipcRenderer.invoke(IPC.firmwareLastInstalled),
   exportFirmwareDiagnostics: () => ipcRenderer.invoke(IPC.firmwareDiagnosticsExport) as Promise<DiagnosticsExportResult>,
 };
 

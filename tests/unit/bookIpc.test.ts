@@ -127,6 +127,86 @@ describe('bookRemove (ipc/book.ts) — main-process enforcement, not just a hidd
     expect(result.status).toBe('completed');
     expect(fs.existsSync(path.join(penRoot, 'BOOK', '0451.axb'))).toBe(false);
   });
+
+  /**
+   * The owner's rule, at the boundary rather than in a screen.
+   *
+   * rc5 left both .BIN files on the card after anything that was not a full sync, because the
+   * commit lived in `BookLibraryScreen.runSync` and nothing else called it. These two tests fail
+   * if that ever comes back: the .BIN files must be gone by the time the IPC call returns, and
+   * the result must say so, because that is what makes the screen ask for the restart.
+   */
+  it('a removal outside a batch deletes the pen book index before it returns, and says so', async () => {
+    const crypto = await import('node:crypto');
+    const bytes = 'official content';
+    writeCatalog({
+      entries: [
+        {
+          contentId: 'b1',
+          filename: '0451.axb',
+          filenameSource: 'declared',
+          sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+          sizeBytes: bytes.length,
+          friendlyName: 'Book One',
+          friendlyNameI18n: null,
+          contentLanguages: [],
+          sortOrder: 0,
+          downloadUrl: 'https://x/download?id=b1',
+        },
+      ],
+      fetchedAtMs: 1,
+      source: 'fixture',
+      conflicts: [],
+    });
+    fs.writeFileSync(path.join(penRoot, 'BOOK', '0451.axb'), bytes);
+    fs.writeFileSync(path.join(penRoot, 'BOOK', '1.BIN'), '');
+    fs.writeFileSync(path.join(penRoot, 'BOOK', 'BOOKFILE.BIN'), Buffer.alloc(44, 0xff));
+
+    const result = await bookRemove({ fileName: '0451.axb', penGeneration: session.getGeneration() });
+
+    expect(result.status).toBe('completed');
+    expect(result.penIndex).toBe('reset');
+    expect(fs.existsSync(path.join(penRoot, 'BOOK', '1.BIN'))).toBe(false);
+    expect(fs.existsSync(path.join(penRoot, 'BOOK', 'BOOKFILE.BIN'))).toBe(false);
+  });
+
+  it('a removal inside a batch leaves the index for the batch to settle', async () => {
+    const crypto = await import('node:crypto');
+    const { beginPenBookBatch, endPenBookBatch } = await import('../../src/main/ipc/bookIndex');
+    const bytes = 'official content';
+    writeCatalog({
+      entries: [
+        {
+          contentId: 'b1',
+          filename: '0451.axb',
+          filenameSource: 'declared',
+          sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+          sizeBytes: bytes.length,
+          friendlyName: 'Book One',
+          friendlyNameI18n: null,
+          contentLanguages: [],
+          sortOrder: 0,
+          downloadUrl: 'https://x/download?id=b1',
+        },
+      ],
+      fetchedAtMs: 1,
+      source: 'fixture',
+      conflicts: [],
+    });
+    fs.writeFileSync(path.join(penRoot, 'BOOK', '0451.axb'), bytes);
+    fs.writeFileSync(path.join(penRoot, 'BOOK', '1.BIN'), '');
+    fs.writeFileSync(path.join(penRoot, 'BOOK', 'BOOKFILE.BIN'), Buffer.alloc(44, 0xff));
+
+    beginPenBookBatch();
+    const result = await bookRemove({ fileName: '0451.axb', penGeneration: session.getGeneration() });
+
+    expect(result.status).toBe('completed');
+    expect(result.penIndex).toBe('not-needed');
+    expect(fs.existsSync(path.join(penRoot, 'BOOK', '1.BIN'))).toBe(true);
+
+    expect((await endPenBookBatch()).status).toBe('reset');
+    expect(fs.existsSync(path.join(penRoot, 'BOOK', '1.BIN'))).toBe(false);
+  });
 });
 
 describe('bookRestore (ipc/book.ts) — retired Unknown-backup restore path is blocked', () => {

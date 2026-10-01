@@ -27,6 +27,9 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     contentLanguages: ['en'],
     sortOrder: 0,
     updatedAtMs: null,
+    updateRequiresIndexReset: false,
+    state: 'active',
+    minAppVersion: null,
     downloadUrl: 'https://x/download?id=b1',
     ...overrides,
   };
@@ -99,6 +102,8 @@ describe('buildBookLibrary — never hashes, is synchronous/fast', () => {
         friendlyNameI18n: { en: 'Book One', 'zh-Hant': '第一本書' },
         sizeBytes: 5,
         status: 'not-on-pen',
+        state: 'active',
+        minAppVersion: null,
         cached: false,
         actionable: true,
         updatedAtMs: null,

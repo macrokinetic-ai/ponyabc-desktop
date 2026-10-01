@@ -64,6 +64,13 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
     scanForPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1, auto: true })),
     chooseCandidatePenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
     selectPenRoot: vi.fn(async () => ({ status: 'ok', path: '/Volumes/PEN', volumeLabel: 'PEN', generation: 1 })),
+    // The storage bar asks for the pen's own capacity and the books on it.
+    bookList: vi.fn(async () => ({
+      status: 'ok',
+      penItems: [{ fileName: '0451.axb', sizeBytes: 100_000_000 }],
+      catalogItems: [],
+      meta: { fetchedAtMs: 1, source: 'live', offline: false, conflicts: [], penTotalBytes: 14_800_000_000, penFreeBytes: 2_400_000_000 },
+    })),
     listDiyRecordings: vi.fn(async () => ({
       status: 'ok',
       diyFolderName: 'DIY',
@@ -73,6 +80,20 @@ function mockPonyAbc(overrides: Partial<PonyAbcApi> = {}): PonyAbcApi {
       ],
     })),
     onPenVolumesChanged: vi.fn(() => () => {}),
+
+    // Recordings v2 — the backups panel calls these on mount.
+    recordingBackupCreate: vi.fn(async () => ({ status: 'ok', snapshotId: 's1', recordingCount: 2, dedupedCount: 0, failedCount: 0 })),
+    recordingBackupList: vi.fn(async () => []),
+    recordingRestorePlan: vi.fn(async () => ({ status: 'ok', snapshotId: 's1', items: [], missingFromBackup: [] })),
+    recordingRestoreExecute: vi.fn(async () => ({ status: 'ok', restored: [], replaced: [], skipped: [], unchanged: [], failed: [], penBackupSnapshotId: null })),
+    recordingDeleteFromPen: vi.fn(async () => ({ status: 'ok', deleted: [], failed: [], backupSnapshotId: 's1' })),
+    recordingDeleteFromBackup: vi.fn(async () => ({ status: 'ok', deleted: [], failed: [], backupSnapshotId: null })),
+    recordingReassign: vi.fn(async () => ({ status: 'ok', fileName: '0462.mp3', backupSnapshotId: 's1' })),
+    recordingLabelsGet: vi.fn(async () => ({})),
+    recordingLabelSet: vi.fn(async () => ({})),
+    recordingLegacyScan: vi.fn(async () => ({ groups: [], single: [], renamedCount: 0 })),
+    recordingLegacyMigrate: vi.fn(async () => ({ status: 'needs-choices', undecided: [] })),
+    onRecordingBackupProgress: vi.fn(() => () => {}),
     selectComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
     restoreComputerFolder: vi.fn(async () => ({ status: 'ok', path: '/Users/teacher/Desktop' })),
     listComputerFolder: vi.fn(async () => ({
@@ -260,7 +281,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('0001.mp3'))!);
     fireEvent.click(screen.getAllByRole('checkbox').find((el) => (el as HTMLInputElement).closest('li')?.textContent?.includes('teacher-take.mp3'))!);
 
-    const replaceButton = screen.getByText("Replace this sticker using selected audio…") as HTMLButtonElement;
+    const replaceButton = screen.getByText("Replace this sticker's audio…") as HTMLButtonElement;
     expect(replaceButton.disabled).toBe(false);
     fireEvent.click(replaceButton);
 
@@ -274,7 +295,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    fireEvent.click(screen.getByText("Replace this sticker's audio…"));
     await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
@@ -291,7 +312,7 @@ describe('MyRecordingsScreen — replace sticker', () => {
 
     fireEvent.click(checkbox('0001.mp3'));
     fireEvent.click(checkbox('teacher-take.mp3'));
-    fireEvent.click(screen.getByText("Replace this sticker using selected audio…"));
+    fireEvent.click(screen.getByText("Replace this sticker's audio…"));
     await screen.findByText('Computer: teacher-take.mp3 → Pen DIY: 0001.mp3 (this replaces the audio on the pen)');
     fireEvent.click(screen.getByText('Confirm replacement'));
     await waitFor(() => expect(window.ponyabc.executeReplaceSticker).toHaveBeenCalled());
@@ -477,5 +498,22 @@ describe('MyRecordingsScreen — audio preview', () => {
     volumesChangedListener?.();
 
     await waitFor(() => expect(document.querySelector('.audio-preview-bar')).toBeNull());
+  });
+});
+
+/**
+ * The owner's product principle: our customers are nursery parents and teachers, not technical
+ * users, so a customer-facing screen must never show a technical term or a technical step.
+ *
+ * Checked for the WHOLE screen rather than one panel on it. The backups panel had its own version
+ * of this test, and a new panel added beside it was free to say `.mp3` without anything noticing.
+ */
+describe('MyRecordingsScreen — plain language', () => {
+  it('shows no file name, checksum, drive letter or internal term anywhere a parent looks', async () => {
+    await renderScreen();
+
+    // Everything above the "Advanced tools" disclosure, which legitimately holds file names.
+    const visible = (document.body.textContent ?? '').split('Advanced tools')[0];
+    expect(visible).not.toMatch(/\.mp3|\.axb|checksum|SHA-?256|manifest|snapshot|preflight|DIY|BOOKFILE|1\.BIN|C:\\/i);
   });
 });

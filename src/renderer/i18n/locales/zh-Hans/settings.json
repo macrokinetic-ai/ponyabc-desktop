@@ -20,7 +20,9 @@
     "updateAvailable": "有新版本可用：{{version}}",
     "downloadUpdateButton": "前往下载页面",
     "checkFailed": "无法检查更新（请确认网络连接）。",
-    "storeManagedUpdates": "此版本通过 Microsoft Store 安装，更新会自动处理。"
+    "storeManagedUpdates": "此版本通过 Microsoft Store 安装，更新会自动处理。",
+    "productLabel": "产品",
+    "productName": "PonyABC P5 点读录音笔"
   },
   "diagnostics": {
     "title": "诊断",

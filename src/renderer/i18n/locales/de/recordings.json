@@ -1,6 +1,6 @@
 {
   "title": "Meine Aufnahmen",
-  "emptyState": "Keine DIY-Aufnahmen auf dem Stift gefunden.",
+  "emptyState": "Auf Ihrem Stift sind noch keine Aufnahmen.",
   "computerEmptyState": "Keine .mp3-Dateien in diesem Ordner.",
   "selectAll": "Alle auswählen",
   "selectedCount": "{{count}} ausgewählt",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Auf dem Computer speichern →",
     "sendToPen": "← An den Stift senden",
-    "replaceSticker": "Diesen Aufkleber mit ausgewähltem Audio ersetzen…"
+    "replaceSticker": "Audio dieses Aufklebers ersetzen…",
+    "play": "Abspielen",
+    "deleteFromPen": "Vom Stift löschen"
   },
   "transferPlan": {
     "title": "An den Stift senden — vor dem Senden prüfen",
@@ -84,5 +86,106 @@
     "errorTooLarge": "Diese Datei ist zu groß zum Vorhören.",
     "errorGeneric": "Datei konnte nicht abgespielt werden (nicht unterstützt oder nicht lesbar).",
     "penEncodingHint": "Dass es hier funktioniert, garantiert nicht, dass der Stift dieselbe Datei nach dem Senden abspielen kann."
+  },
+  "onPen": {
+    "title": "Auf Ihrem Stift",
+    "intro": "Die Aufnahmen, die Ihr Stift gerade enthält."
+  },
+  "backup": {
+    "title": "Sicherungen auf diesem Computer",
+    "intro": "Eine Sicherung bewahrt eine Kopie jeder Aufnahme, damit Sie sie später zurückspielen können.",
+    "button": "Meine Aufnahmen sichern",
+    "none": "Noch keine Sicherung. Wählen Sie „Meine Aufnahmen sichern“.",
+    "choose": "Zu verwendende Sicherung:",
+    "missing": "Diese Sicherung wurde nicht gefunden.",
+    "done_one": "{{count}} Aufnahme gesichert.",
+    "done_other": "{{count}} Aufnahmen gesichert.",
+    "countLabel_one": "{{count}} Aufnahme",
+    "countLabel_other": "{{count}} Aufnahmen",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Automatisches Backup vor dem Ersetzen von {{name}}",
+    "labelBeforeReplaceMany": "Automatisches Backup vor dem Ersetzen von Aufnahmen",
+    "labelBeforeDelete": "Automatisches Backup vor dem Löschen von {{name}}",
+    "labelBeforeDeleteMany": "Automatisches Backup vor dem Löschen von Aufnahmen",
+    "labelBeforeRestore": "Automatisches Backup vor dem Zurücklegen von Aufnahmen",
+    "labelBeforeReassign": "Automatisches Backup, bevor {{name}} auf eine andere Nummer kommt",
+    "labelMigration": "Backup aus einer älteren Version übernommen",
+    "keptSeparately": "Jedes Backup ist eine eigene Kopie Ihrer Aufnahmen, so wie sie in dem Moment waren. Ältere bleiben erhalten — ein neues Backup ersetzt sie nie.",
+    "contentsTitle": "In diesem Backup",
+    "contentsEmpty": "Dieses Backup enthält keine Aufnahmen.",
+    "contentsLoading": "Backup wird geöffnet…",
+    "working": "Ihre Aufnahmen werden gesichert…",
+    "selectAll": "Alle auswählen",
+    "selectedCount_one": "{{count}} ausgewählt",
+    "selectedCount_other": "{{count}} ausgewählt",
+    "progress": "{{done}} von {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Ausgewählte Aufnahmen zurück auf den Stift legen",
+    "reviewTitle": "Bevor wir sie zurückspielen",
+    "clashIntro": "Zu einigen dieser Nummern gibt es bereits eine Aufnahme auf dem Stift. Hören Sie beide an und wählen Sie.",
+    "fromBackup": "Aus der Sicherung:",
+    "onPen": "Jetzt auf dem Stift:",
+    "replace": "Die aus der Sicherung nehmen",
+    "keepPen": "Die vom Stift behalten",
+    "decideAll": "Bitte wählen Sie für jede oben.",
+    "confirm": "Zurückspielen",
+    "nothingToDo": "Alles aus dieser Sicherung ist bereits auf Ihrem Stift.",
+    "noClashes_one": "{{count}} Aufnahme wird hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
+    "noClashes_other": "{{count}} Aufnahmen werden hinzugefügt. Was schon auf dem Stift ist, bleibt unverändert.",
+    "done_one": "{{count}} Aufnahme zurück auf den Stift gespielt.",
+    "done_other": "{{count}} Aufnahmen zurück auf den Stift gespielt.",
+    "buttonNote": "Nur die oben angehakten Aufnahmen werden zurückkopiert. Alles andere auf Ihrem Stift bleibt unberührt.",
+    "working": "Aufnahmen werden zurückgelegt…"
+  },
+  "label": {
+    "button": "Umbenennen",
+    "prompt": "Wie möchten Sie das nennen?",
+    "hint": "Dieser Name bleibt auf diesem Computer. Ihr Stift verwendet immer die Aufklebernummer."
+  },
+  "reassign": {
+    "button": "Aufklebernummer ändern",
+    "prompt": "Neue Aufklebernummer",
+    "hint": "Tippen Sie die Nummer genau so ein, wie sie auf dem Aufkleber steht.",
+    "confirm": "Verschieben",
+    "done": "Auf den neuen Aufkleber verschoben.",
+    "failed": "Das hat nicht geklappt. Bitte erneut versuchen.",
+    "rejected": {
+      "notDigits": "Bitte nur die Ziffern vom Aufkleber eingeben.",
+      "length": "Bitte die Nummer genau wie gedruckt eingeben, samt führender Nullen.",
+      "occupied": "Auf diesem Aufkleber liegt bereits eine Aufnahme.",
+      "unchanged": "Das ist bereits der aktuelle Aufkleber."
+    }
+  },
+  "deletePen": {
+    "confirm": "„{{name}}“ vom Stift löschen?",
+    "backupNotice": "Vorher wird eine Kopie auf diesem Computer gespeichert, damit Sie sie zurückspielen können.",
+    "done": "Gelöscht. Eine Kopie liegt in Ihren Sicherungen.",
+    "failed": "Konnte nicht gelöscht werden. Es wurde nichts geändert."
+  },
+  "advancedTools": {
+    "title": "Erweiterte Werkzeuge"
+  },
+  "addFromComputer": {
+    "title": "Aufnahmen von diesem Computer hinzufügen",
+    "intro": "Legen Sie Ihre eigenen Aufnahmen auf den Stift. Benennen Sie jede Datei mit der Stickernummer, zu der sie gehört — vier Ziffern, etwa 0451, oder fünf.",
+    "choose": "Aufnahmen auswählen…",
+    "chosenFrom": "Aus {{folder}}",
+    "mixedFolders": "Bitte wählen Sie Aufnahmen aus jeweils einem Ordner.",
+    "noneChosen": "Noch keine Aufnahmen ausgewählt.",
+    "rejected": "Diese sind keine Aufnahmen, die wir verwenden können, und wurden weggelassen: {{names}}",
+    "badName": "Keine Stickernummer — benennen Sie sie in vier Ziffern um, etwa 0451",
+    "willAdd": "Neu",
+    "willReplace": "ERSETZT die Aufnahme auf Ihrem Stift",
+    "previewChosen": "Die von diesem Computer abspielen",
+    "previewPen": "Die vom Stift abspielen",
+    "copyButton": "Auf meinen Stift kopieren",
+    "copying": "Wird auf Ihren Stift kopiert…",
+    "backupFirst": "Die Aufnahmen des Stifts werden zuerst automatisch gesichert. Sie finden sie unter Backups auf diesem Computer.",
+    "done_one": "{{count}} Aufnahme auf Ihren Stift kopiert.",
+    "done_other": "{{count}} Aufnahmen auf Ihren Stift kopiert.",
+    "backupFailed": "Die Aufnahmen Ihres Stifts konnten nicht gesichert werden, deshalb wurde nichts geändert. Bitte versuchen Sie es noch einmal.",
+    "manyPens": "Denselben Satz nacheinander auf mehrere Stifte zu schicken kommt in einer späteren Version. Wählen Sie die Aufnahmen vorerst für jeden Stift neu aus.",
+    "noSpace": "Auf Ihrem Stift ist nicht genug Platz für alle. Löschen Sie Aufnahmen, die Sie nicht mehr brauchen, und wählen Sie sie dann erneut aus."
   }
 }

@@ -5,7 +5,7 @@
   "lastUpdated": "Ultimo aggiornamento: {{time}}",
   "devFixtureBanner": "Dati di catalogo di sviluppo — non reali",
   "newBadge": "NUOVO",
-  "newBadgeLegend": "NUOVO indica che questo elemento è stato aggiunto o aggiornato sul server negli ultimi 14 giorni.",
+  "newBadgeLegend": "NUOVO vuol dire che questo libro è entrato nell’elenco dopo il tuo ultimo controllo.",
   "connection": {
     "label": "Catalogo BOOK",
     "checking": "Verifica in corso…",
@@ -16,7 +16,8 @@
     "usingOfflineCache": "Utilizzo dell'ultimo catalogo salvato (aggiornato {{time}})",
     "neverLoaded": "Nessun catalogo è ancora stato caricato correttamente"
   },
-  "ambiguousNotice": "{{count}} elemento/i del catalogo condividono un nome file con un altro elemento — mostrati solo a titolo informativo finché non risolto sul server.",
+  "ambiguousNotice_one": "Per ora un libro non compare in questo elenco, perché non è chiaro quale sia. Tutto il resto funziona come sempre e sulla penna non è cambiato nulla.",
+  "ambiguousNotice_other": "Per ora {{count}} libri non compaiono in questo elenco, perché non è chiaro quali siano. Tutto il resto funziona come sempre e sulla penna non è cambiato nulla.",
   "penRequiredForWrite": "Collega una penna per vedere e gestire i suoi contenuti BOOK.",
   "selectAll": "Seleziona tutto",
   "selectedCount": "{{count}} selezionati",
@@ -24,16 +25,13 @@
   "insufficientSpace": "Spazio libero insufficiente per completare l'operazione.",
   "downloadFailed": "Download non riuscito. Controlla la connessione e riprova.",
   "downloadCancelled": "Download annullato.",
-  "metadataIncompleteNotice": "Le informazioni di catalogo per questo elemento sono incomplete, quindi non può ancora essere installato.",
+  "metadataIncompleteNotice": "Di questo libro ci mancano ancora alcune informazioni, quindi non può andare sulla penna. La penna non ha alcun problema.",
   "targetChangedSinceBackup": "Questo file è cambiato sulla penna poco prima della rimozione — non è stato eliminato nulla. Riprova.",
   "stalePlan": "La penna è cambiata — riprova.",
   "backupFailed": "Impossibile eseguire il backup del file esistente, quindi non è stato modificato nulla.",
-  "unknownContentNotice": "Questo file non è riconosciuto come contenuto BOOK del catalogo e non può essere modificato qui.",
+  "unknownContentNotice": "Questo libro non viene da PonyABC, quindi l'app non lo tocca.",
   "genericError": "Si è verificato un errore.",
   "cancel": "Annulla",
-  "confirmRemoveTitle": "Rimuovere dalla penna?",
-  "confirmRemoveHint": "Prima viene salvato un backup su questo computer.",
-  "confirmRemoveAction": "Rimuovi",
   "confirmAddTitle": "Alcuni elementi selezionati differiscono da quelli sulla penna",
   "addConflictsHint": "Questi esistono già sulla penna con contenuto diverso. Scegli se sostituire ciascuno (viene prima eseguito un backup) o lasciarlo invariato.",
   "replaceOption": "Sostituisci",
@@ -54,9 +52,9 @@
     "verifiedCurrent": "Ultima verifica: corrisponde alla versione ufficiale",
     "verifiedDiffers": "Ultima verifica: differisce dalla versione ufficiale",
     "sizeDiffers": "La dimensione differisce dalla versione ufficiale",
-    "matchedHashUnknown": "Impossibile verificare rispetto al catalogo",
-    "awaitingCatalog": "In attesa di corrispondenza col catalogo",
-    "unknown": "Sconosciuto",
+    "matchedHashUnknown": "Sulla penna — nessun codice di controllo ufficiale da confrontare",
+    "awaitingCatalog": "Sulla penna — catalogo non ancora caricato",
+    "unknown": "Contenuto non ufficiale",
     "notOnPen": "Non sulla penna",
     "onPenPresent": "Sulla penna — non ancora verificato",
     "onPenCurrent": "Sulla penna — verificato, corrisponde",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Verificato",
     "verifiedDiffers": "Differisce",
     "sizeDiffers": "Dimensione diversa",
-    "matchedHashUnknown": "Sulla penna",
-    "awaitingCatalog": "In attesa…",
-    "unknown": "Sconosciuto",
+    "matchedHashUnknown": "Senza codice di controllo",
+    "awaitingCatalog": "Nessun catalogo",
+    "unknown": "Fuori catalogo",
     "notOnPen": "Non sulla penna",
     "onPenPresent": "Sulla penna",
     "onPenVerifying": "Verifica…",
@@ -85,15 +83,181 @@
     "ambiguous": "Ambiguo"
   },
   "action": {
-    "add": "Aggiungi alla penna",
-    "remove": "Rimuovi dalla penna",
-    "reinstall": "Riscarica",
+    "add": "Aggiungi i selezionati alla penna",
+    "reinstall": "Scarica una copia nuova e mettila sulla penna",
     "cancelDownload": "Annulla",
-    "verifySelected": "Verifica il contenuto selezionato",
     "cancelVerify": "Annulla verifica",
     "verifyThis": "Verifica questo file",
     "downloadSelected": "Scarica selezionati nell'App",
     "downloadAll": "Scarica tutto nell'App",
-    "cancelDownloadBatch": "Annulla download"
+    "cancelDownloadBatch": "Annulla download",
+    "addOne": "Aggiungi",
+    "updateOne": "Aggiorna",
+    "reinstallNote": "Il libro viene scaricato di nuovo e copiato sulla penna, che poi va riavviata.",
+    "reinstallWorking": "Sto scaricando una copia nuova…",
+    "reinstallDone": "Fatto. Quel libro è di nuovo sulla penna.",
+    "verifyWorking": "Sto controllando questo file…",
+    "verifyDone": "Fatto. Quel file è stato controllato."
+  },
+  "statusHelp": {
+    "present": "Il nome corrisponde a un libro ufficiale, ma l'App non ha letto il file per controllarne il contenuto. L'aggiornamento non legge mai i file: è quindi lo stato normale finché non si sceglie Verifica questo file.",
+    "verifying": "L'App sta leggendo questo file e lo confronta con la versione ufficiale.",
+    "verifiedCurrent": "Hai verificato questo file e il contenuto corrispondeva esattamente alla versione ufficiale. Mostrato solo finché quella verifica resta valida per questa penna e questo file.",
+    "verifiedDiffers": "Hai verificato questo file e il contenuto non corrispondeva alla versione ufficiale: potrebbe essere un'edizione precedente o una copia danneggiata. Aggiungilo di nuovo dall'elenco ufficiale per sostituirlo.",
+    "sizeDiffers": "La dimensione del file è già diversa da quella della versione ufficiale, quindi il contenuto non può corrispondere. Non è servito leggere il file per saperlo.",
+    "matchedHashUnknown": "Il nome corrisponde a un libro ufficiale, ma il catalogo non pubblica un codice di controllo: non c’è nulla con cui confrontarlo.",
+    "awaitingCatalog": "Non è ancora stato caricato alcun catalogo, quindi questo file non è stato confrontato con nulla. Collegati a internet e aggiorna.",
+    "unknown": "Questo file non è nel catalogo ufficiale. L'App non lo tocca e non può rimuoverlo né sostituirlo.",
+    "notOnPen": "Questo libro non è sulla penna collegata.",
+    "onPenPresent": "Sulla penna c’è un file con il nome di questo libro, ma il suo contenuto non è stato controllato.",
+    "onPenVerifying": "L'App sta leggendo il file sulla penna e lo confronta con la versione ufficiale.",
+    "onPenCurrent": "Il file sulla penna è stato verificato e corrisponde esattamente a questa versione ufficiale.",
+    "onPenDiffers": "Il file sulla penna è stato verificato e non corrisponde a questa versione ufficiale. Aggiungilo alla penna per sostituirlo: il file esistente viene prima salvato in backup.",
+    "onPenSizeDiffers": "Il file sulla penna ha una dimensione diversa da questa versione ufficiale, quindi non può avere lo stesso contenuto.",
+    "metadataIncomplete": "Alla voce di catalogo manca il nome del file o il codice di controllo che l'App richiede, quindi questo libro non può ancora essere installato. La penna non ha alcun problema.",
+    "ambiguous": "Due o più voci di catalogo rivendicano lo stesso nome di file, quindi l'App non può capire quale sia quella giusta. Mostrata solo a titolo informativo finché non viene corretta sul server."
+  },
+  "cacheHelp": {
+    "cached": "Una copia controllata è salvata su questo computer, quindi aggiungerla alla penna non richiede alcun download.",
+    "notDownloaded": "Non ancora salvato su questo computer. Viene scaricato quando lo aggiungi alla penna.",
+    "downloading": "In download su questo computer."
+  },
+  "legend": {
+    "title": "Che cosa significano queste parole?",
+    "intro": "Per ogni libro è indicato se è sulla penna. Apri i dettagli avanzati per la versione tecnica.",
+    "penHeading": "Contenuto sulla penna",
+    "catalogHeading": "Contenuto ufficiale",
+    "cacheHeading": "Copie su questo computer"
+  },
+  "simple": {
+    "onPen": "Sulla tua penna",
+    "updateAvailable": "Aggiornamento disponibile",
+    "notOnPen": "Non ancora sulla penna",
+    "downloading": "Download in corso…",
+    "checking": "Controllo in corso…",
+    "needsHelp": "Qualcosa non va: apri per assistenza"
+  },
+  "simpleHelp": {
+    "onPen": "Questo libro è sulla penna e pronto da usare.",
+    "updateAvailable": "Di questo libro esiste una versione più recente. «Sincronizza i libri» la sostituisce: la vecchia viene prima salvata.",
+    "notOnPen": "Questo libro non è ancora sulla penna. «Sincronizza i libri» lo mette.",
+    "downloading": "Il libro viene copiato su questo computer e poi sulla penna.",
+    "checking": "L'app sta controllando questo libro. Ci vuole solo un attimo.",
+    "needsHelp": "Questo richiede un controllo: l'elenco dei libri potrebbe essere incompleto. La penna non ha alcun problema. Apri i dettagli avanzati o contatta l'assistenza."
+  },
+  "advanced": {
+    "title": "Dettagli avanzati",
+    "hint": "Informazioni tecniche per l'assistenza. Non servono per usare la penna."
+  },
+  "catalogIntro": "Hai comprato un libro nuovo? Cercalo in questo elenco e scegli Aggiungi.",
+  "done": {
+    "restartTitle": "Fatto!",
+    "restartBody": "Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo mentre la penna prepara i libri."
+  },
+  "fix": {
+    "title": "L’elenco dei libri della penna ha bisogno di un momento",
+    "body": "Alcuni libri sono stati aggiunti o rimossi fuori da questa app, quindi la penna potrebbe riprodurre quello sbagliato. Sistemarlo richiede pochi secondi.",
+    "button": "Sistema l’elenco dei libri della penna",
+    "working": "Sistemazione in corso…",
+    "doneBody": "Fatto. Scollega la penna, poi spegnila e riaccendila. Il primo avvio può richiedere un po’ più di tempo.",
+    "failed": "Non è stato possibile completare l’operazione. Sulla penna non è cambiato nulla: ricollegala e riprova.",
+    "sidecarNotice": "Sulla penna ci sono anche file aggiuntivi creati da un Mac durante la copia. Sono innocui; puoi eliminarli dalla cartella se vuoi."
+  },
+  "verifyHint": "Apri un libro qui sotto per controllarlo, se l’assistenza te lo chiede.",
+  "booksManagedNotice": "Dei libri si occupa la libreria PonyABC: qui puoi aggiungerli e aggiornarli.",
+  "transfer": {
+    "estimateBefore": "Ci vorranno circa {{minutes}} minuti. Lascia la penna collegata.",
+    "estimateBeforeShort": "Ci vorrà un minuto o due. Lascia la penna collegata.",
+    "dontUnplug": "Non scollegare la penna",
+    "dontUnplugBody": "È in corso la scrittura sulla penna. Scollegarla adesso potrebbe lasciare un libro incompleto.",
+    "remaining": "Mancano circa {{minutes}} minuti",
+    "remainingShort": "Quasi finito",
+    "writing": "Copia di «{{name}}» sulla penna…"
+  },
+  "check": {
+    "button": "Cerca nuovi libri",
+    "checking": "Ricerca…",
+    "last": "Ultimo controllo: {{time}}",
+    "never": "Non ancora controllato",
+    "failed": "Non è stato possibile raggiungere la libreria PonyABC. Controlla la connessione a internet e riprova."
+  },
+  "yourBooks": {
+    "title": "I tuoi libri",
+    "intro": "I libri che sono adesso sulla penna.",
+    "empty": "Nessun libro sulla penna. Aggiungine qui sotto.",
+    "upToDate": "Aggiornato",
+    "updateAvailable": "Aggiornamento disponibile",
+    "checking": "Controllo…",
+    "updating": "Aggiornamento…",
+    "update": "Aggiorna"
+  },
+  "otherBooks": {
+    "title": "Altri libri (non di PonyABC)",
+    "body": "Vengono da altrove. Questa app non li tocca."
+  },
+  "newBooks": {
+    "title": "Libri nuovi",
+    "intro": "Libri che puoi aggiungere. Spunta quelli di cui hai le carte.",
+    "empty": "La penna ha già tutti i libri che offriamo.",
+    "badge": "NUOVO",
+    "badgeHint": "NUOVO vuol dire che questo libro è entrato nell’elenco dopo il tuo ultimo controllo."
+  },
+  "footer": {
+    "selected": "{{count}} libro/i selezionati, circa {{minutes}} minuti",
+    "selectedShort": "{{count}} libro/i selezionati, un minuto o due",
+    "none": "Spunta un libro qui sopra per aggiungerlo.",
+    "add": "Aggiungi alla penna"
+  },
+  "estimate": {
+    "minutes": "circa {{minutes}} min",
+    "short": "circa un minuto"
+  },
+  "penRequired": "Collega la penna per vedere e aggiungere i libri.",
+  "pen": {
+    "connected": "La penna è collegata",
+    "disconnected": "Collega la penna con il suo cavo USB"
+  },
+  "sync": {
+    "hasNone": "Sulla penna non ci sono ancora libri PonyABC.",
+    "upToDate": "Tutti i tuoi libri sono aggiornati.",
+    "button": "Sincronizza i libri",
+    "working": "Sincronizzazione…",
+    "needPen": "Collega la penna per sincronizzare.",
+    "stoppedNoSpace": "La penna si è riempita, quindi ci siamo fermati. I libri completati sono sulla penna.",
+    "has_one": "Sulla penna c’è {{count}} libro PonyABC.",
+    "has_other": "Sulla penna ci sono {{count}} libri PonyABC.",
+    "newBooks_one": "{{count}} libro nuovo",
+    "newBooks_other": "{{count}} libri nuovi",
+    "updates_one": "{{count}} aggiornamento",
+    "updates_other": "{{count}} aggiornamenti",
+    "availableBoth": "Ci sono {{news}} e {{updates}}.",
+    "availableAdds": "Ci sono {{news}}.",
+    "availableUpdates": "Ci sono {{updates}}.",
+    "time_one": "Circa {{count}} minuto.",
+    "time_other": "Circa {{count}} minuti.",
+    "timeShort": "Circa un minuto."
+  },
+  "space": {
+    "title": "La penna non ha spazio a sufficienza",
+    "body": "Mancano circa {{amount}}. Fai un backup delle registrazioni, elimina quelle che non ti servono più, poi sincronizza di nuovo.",
+    "goToRecordings": "Vai a Le mie registrazioni",
+    "unreadable": "Non è stato possibile controllare lo spazio libero della penna. Scollegala, ricollegala e riprova."
+  },
+  "list": {
+    "toggle": "Vedi l’elenco dei libri",
+    "onPen": "Sulla penna",
+    "willAdd": "Verranno aggiunti",
+    "willUpdate": "Verranno aggiornati",
+    "other": "Altri libri (non di PonyABC)",
+    "otherBody": "Vengono da altrove. Questa app non li modifica mai.",
+    "none": "Nessuno"
+  },
+  "size": {
+    "about": "circa {{size}}"
+  },
+  "remove": {
+    "title_one": "Un libro verrà tolto dalla penna",
+    "title_other": "{{count}} libri verranno tolti dalla penna",
+    "body": "Questi libri non fanno più parte della biblioteca PonyABC. Toglierli libera circa {{size}} sulla penna. Tutto il resto resta com’è."
   }
 }

@@ -1,6 +1,6 @@
 {
   "title": "韌體",
-  "macRequiresWindows": "韌體升級需要喺 Windows 上使用 PonyABC Desktop App。呢個功能喺 Mac 上未能使用。",
+  "macRequiresWindows": "韌體更新需要在 Windows 上使用 PonyABC Desktop App，此功能在 Mac 上無法使用。",
   "back": "返回",
   "steps": {
     "prepare": "準備",
@@ -10,25 +10,16 @@
     "result": "結果"
   },
   "prepare": {
-    "title": "準備你的點讀筆",
-    "checklistUsb": "用 USB 線將 P5 點讀筆接到這部電腦。",
-    "checklistPower": "整個升級過程請保持點讀筆連接及有電——不要拔除。",
-    "checklistNoOtherOps": "請確認沒有其他檔案操作（BOOK、DIY 或另一個升級）正在進行。",
-    "penDetected": "已偵測到點讀筆。",
-    "penRequired": "請先連接點讀筆才能繼續。",
+    "title": "準備你的點讀錄音筆",
+    "checklistUsb": "用 USB 線將 P5 點讀錄音筆接到這部電腦。",
+    "checklistPower": "整個升級過程請保持點讀錄音筆連接及有電——不要拔除。",
+    "checklistNoOtherOps": "請先關閉其他正在使用點讀錄音筆的程式。",
+    "penDetected": "已偵測到點讀錄音筆。",
+    "penRequired": "請先連接點讀錄音筆才能繼續。",
     "nextButton": "下一步"
   },
   "package": {
     "title": "韌體套件",
-    "devModeNotice": "僅供測試／支援使用：請自行選擇已解壓的供應商套件資料夾。大部分使用者應使用上方的官方下載功能。",
-    "selectButton": "測試／支援：自行選擇本機資料夾",
-    "advanced": {
-      "title": "進階／支援",
-      "readButton": "顯示",
-      "collapseButton": "隱藏"
-    },
-    "selectedPath": "已選擇：{{path}}",
-    "looksValid": "此資料夾具備已確認升級路徑所需的檔案。",
     "invalid": "此資料夾缺少升級所需的檔案，將不會執行任何操作。",
     "nextButton": "下一步",
     "official": {
@@ -41,12 +32,12 @@
       "version": "官方版本：{{version}}",
       "packageLabel": "套件：{{label}}（{{date}}）",
       "onPenVersionUnknown": "目前筆內版本：尚未能讀取",
-      "onPenVersionHint": "本應用程式目前無法讀取點讀筆上既有的韌體版本——現時沒有可靠的方法查詢。",
-      "hardwareRevNotice": "此韌體適用硬件版本 {{hardwareRev}}；目前未能自動識別所連接點讀筆的硬件版本。",
-      "hardwareConfirmLegend": "請確認所連接點讀筆的硬件版本：",
-      "hardwareConfirmYes": "已確認——我的點讀筆是硬件版本 {{hardwareRev}}",
+      "onPenVersionHint": "本程式無法得知點讀錄音筆上現時的版本。",
+      "hardwareRevNotice": "此韌體適用硬件版本 {{hardwareRev}}；目前未能自動識別所連接點讀錄音筆的硬件版本。",
+      "hardwareConfirmLegend": "請確認所連接點讀錄音筆的硬件版本：",
+      "hardwareConfirmYes": "已確認——我的點讀錄音筆是硬件版本 {{hardwareRev}}",
       "hardwareConfirmNotSure": "不確定",
-      "hardwareConfirmRequired": "請先在上方確認硬件版本才可繼續。如不確定，請不要繼續——請檢查點讀筆或聯絡支援。",
+      "hardwareConfirmRequired": "請先在上方確認硬件版本才可繼續。如不確定，請不要繼續——請檢查點讀錄音筆或聯絡支援。",
       "downloadButton": "下載官方更新",
       "cancelButton": "取消下載",
       "reinstallButton": "進階：重新安裝此版本",
@@ -72,23 +63,27 @@
     "title": "升級中",
     "phasePreparing": "正在準備升級…",
     "phaseAwaitingAuth": "等待 Windows 授權，或正在啟動中…",
-    "phaseToolRunning": "正在更新點讀筆，請保持 USB 連接。",
+    "phaseToolRunning": "正在更新點讀錄音筆，請保持 USB 連接。",
     "phaseFinishing": "正在確認結果…",
-    "noCancelNotice": "升級開始後無法強行取消。",
+    "noCancelNotice": "更新開始後無法中途停止，請耐心等候，一般只需幾分鐘。",
     "noOutputYet": "暫時未有輸出。"
   },
   "result": {
     "title": "結果",
-    "successMessage": "韌體升級已完成。請重新啟動點讀筆並試播。",
-    "processFinishedMessage": "韌體升級流程已結束。請重新啟動點讀筆並試播。",
-    "failedTitle": "升級未能啟動或未能完成。",
-    "unclearTitle": "無法確認結果。",
-    "unclearBodyUnconfirmed": "無法確認升級工具是否已經真正執行完畢。為安全起見，在此問題解決之前，將不允許進行新的韌體升級或 BOOK/DIY 寫入點讀筆。請在你自行確認（例如透過 Windows 工作管理員，或直接檢查點讀筆本身）該程序已經停止後，才完全關閉並重新開啟本應用程式。",
+    "successMessage": "你的點讀錄音筆已更新完成。請將筆關掉再開啟，然後試播一本書。",
+    "processFinishedMessage": "更新已完成。請將點讀錄音筆關掉再開啟，然後試播一本書。",
+    "failedTitle": "更新未能完成",
+    "unclearTitle": "未能確認更新是否完成",
+    "unclearBodyUnconfirmed": "為保障你的點讀錄音筆，本程式暫時不會對它作任何改動。請完全關閉 PonyABC，重新開啟，然後再執行一次更新。",
     "finishButton": "完成",
     "returnHomeButton": "返回主頁",
     "acknowledgeButtonUnconfirmed": "我明白——我會重新啟動應用程式",
-    "restartNoticeAcknowledged": "已記錄。在你完全關閉並重新開啟本應用程式之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
-    "startOverButton": "重新開始"
+    "restartNoticeAcknowledged": "請完全關閉 PonyABC 並重新開啟，然後才用本程式操作點讀錄音筆。",
+    "startOverButton": "重新開始",
+    "preflightFailedTitle": "更新未能開始",
+    "preflightFailedBody": "你的點讀錄音筆沒有被改動。請檢查是否仍然連接電腦，然後再試一次。",
+    "failedBody": "你的點讀錄音筆沒有被改動。請檢查是否仍然連接電腦，然後再試一次。",
+    "retryAfterUnclearBody": "未能確認更新是否完成。請再執行一次更新，重複執行是安全的。"
   },
   "technicalDetails": {
     "title": "技術詳情",
@@ -96,12 +91,19 @@
     "collapseButton": "隱藏"
   },
   "recovery": {
-    "title": "先前的升級尚未確認結束",
-    "stillRunningBody": "先前工作階段的韌體升級，看起來仍在本應用程式之外執行中。重新啟動本應用程式並不代表它已經停止。新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定，本應用程式亦不會嘗試自行終止該程序。",
-    "unknownBody": "本應用程式無法判斷先前工作階段的韌體升級是否已經結束。在此確認之前，新的韌體升級與 BOOK/DIY 寫入點讀筆將維持鎖定。",
+    "title": "先前的更新可能仍在進行",
+    "stillRunningBody": "較早前開始的更新仍在這部電腦上執行。請等它完成，或重新啟動電腦，然後才用本程式操作點讀錄音筆。",
+    "unknownBody": "未能確認較早前的更新是否已完成。為保障你的點讀錄音筆，在情況未明朗前，本程式不會對它作任何改動。",
     "checking": "檢查中…",
     "checkAgainButton": "重新檢查",
     "startedAt": "升級嘗試開始時間：{{time}}",
     "lastChecked": "上次檢查時間：{{time}}"
+  },
+  "onPen": {
+    "title": "點讀錄音筆上的版本",
+    "cannotRead": "您的點讀錄音筆不會回報自己的固件版本，因此本應用程式無法顯示。",
+    "lastInstalled": "本應用程式上次安裝的版本是 {{version}}，時間為 {{when}}。",
+    "lastInstalledNone": "本應用程式尚未為任何點讀錄音筆安裝過固件版本。",
+    "notTheSame": "這是本應用程式做過的事，不是從您手上的點讀錄音筆讀出來的。若該點讀錄音筆曾在其他電腦上更新，或在您拿到之前已更新，它執行的版本本應用程式從未見過。"
   }
 }

@@ -5,7 +5,7 @@
   "lastUpdated": "Dernière mise à jour : {{time}}",
   "devFixtureBanner": "Données de catalogue de développement — pas réelles",
   "newBadge": "NOUVEAU",
-  "newBadgeLegend": "NOUVEAU signifie que cet élément a été ajouté ou mis à jour sur le serveur au cours des 14 derniers jours.",
+  "newBadgeLegend": "NOUVEAU signifie que ce livre a été ajouté à la liste depuis votre dernière vérification.",
   "connection": {
     "label": "Catalogue BOOK",
     "checking": "Vérification…",
@@ -16,7 +16,8 @@
     "usingOfflineCache": "Utilisation du dernier catalogue enregistré (mis à jour {{time}})",
     "neverLoaded": "Aucun catalogue n'a encore été chargé avec succès"
   },
-  "ambiguousNotice": "{{count}} élément(s) du catalogue partagent un nom de fichier avec un autre élément — affichés à titre indicatif jusqu'à résolution côté serveur.",
+  "ambiguousNotice_one": "Un livre n'apparaît pas dans cette liste pour le moment, car on ne sait pas de quel livre il s'agit. Tout le reste fonctionne normalement et rien n'a changé sur le stylo.",
+  "ambiguousNotice_other": "{{count}} livres n'apparaissent pas dans cette liste pour le moment, car on ne sait pas de quels livres il s'agit. Tout le reste fonctionne normalement et rien n'a changé sur le stylo.",
   "penRequiredForWrite": "Connectez un stylo pour voir et gérer son contenu BOOK.",
   "selectAll": "Tout sélectionner",
   "selectedCount": "{{count}} sélectionné(s)",
@@ -24,16 +25,13 @@
   "insufficientSpace": "Espace libre insuffisant pour terminer.",
   "downloadFailed": "Échec du téléchargement. Vérifiez votre connexion et réessayez.",
   "downloadCancelled": "Téléchargement annulé.",
-  "metadataIncompleteNotice": "Les informations du catalogue pour cet élément sont incomplètes, il ne peut donc pas encore être installé.",
+  "metadataIncompleteNotice": "Il nous manque encore des éléments pour ce livre, il ne peut donc pas être mis sur le stylo. Votre stylo n'a aucun problème.",
   "targetChangedSinceBackup": "Ce fichier a changé sur le stylo juste avant de pouvoir être supprimé — rien n'a été supprimé. Veuillez réessayer.",
   "stalePlan": "Le stylo a changé — veuillez réessayer.",
   "backupFailed": "Impossible de sauvegarder le fichier existant, rien n'a donc été modifié.",
-  "unknownContentNotice": "Ce fichier n'est pas reconnu comme contenu BOOK du catalogue et ne peut pas être modifié ici.",
+  "unknownContentNotice": "Ce livre ne vient pas de PonyABC ; l'application n'y touche pas.",
   "genericError": "Une erreur s'est produite.",
   "cancel": "Annuler",
-  "confirmRemoveTitle": "Supprimer du stylo ?",
-  "confirmRemoveHint": "Une sauvegarde est d'abord conservée sur cet ordinateur.",
-  "confirmRemoveAction": "Supprimer",
   "confirmAddTitle": "Certains éléments sélectionnés diffèrent de ceux du stylo",
   "addConflictsHint": "Ceux-ci existent déjà sur le stylo avec un contenu différent. Choisissez de remplacer chacun (une sauvegarde est conservée avant) ou de le laisser tel quel.",
   "replaceOption": "Remplacer",
@@ -54,9 +52,9 @@
     "verifiedCurrent": "Dernière vérification : correspond à la version officielle",
     "verifiedDiffers": "Dernière vérification : diffère de la version officielle",
     "sizeDiffers": "La taille diffère de la version officielle",
-    "matchedHashUnknown": "Impossible de vérifier par rapport au catalogue",
-    "awaitingCatalog": "En attente de correspondance avec le catalogue",
-    "unknown": "Inconnu",
+    "matchedHashUnknown": "Sur le stylo — aucune somme de contrôle officielle à comparer",
+    "awaitingCatalog": "Sur le stylo — catalogue pas encore chargé",
+    "unknown": "Contenu non officiel",
     "notOnPen": "Pas sur le stylo",
     "onPenPresent": "Sur le stylo — non vérifié",
     "onPenCurrent": "Sur le stylo — vérifié, correspond",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Vérifié",
     "verifiedDiffers": "Diffère",
     "sizeDiffers": "Taille différente",
-    "matchedHashUnknown": "Sur le stylo",
-    "awaitingCatalog": "En attente…",
-    "unknown": "Inconnu",
+    "matchedHashUnknown": "Sans somme de contrôle",
+    "awaitingCatalog": "Sans catalogue",
+    "unknown": "Hors catalogue",
     "notOnPen": "Pas sur le stylo",
     "onPenPresent": "Sur le stylo",
     "onPenVerifying": "Vérification…",
@@ -85,15 +83,181 @@
     "ambiguous": "Ambigu"
   },
   "action": {
-    "add": "Ajouter au stylo",
-    "remove": "Supprimer du stylo",
-    "reinstall": "Retélécharger",
+    "add": "Ajouter la sélection à votre stylo",
+    "reinstall": "Récupérer une copie neuve et la mettre sur le stylo",
     "cancelDownload": "Annuler",
-    "verifySelected": "Vérifier le contenu sélectionné",
     "cancelVerify": "Annuler la vérification",
     "verifyThis": "Vérifier ce fichier",
     "downloadSelected": "Télécharger la sélection vers l'App",
     "downloadAll": "Tout télécharger vers l'App",
-    "cancelDownloadBatch": "Annuler le téléchargement"
+    "cancelDownloadBatch": "Annuler le téléchargement",
+    "addOne": "Ajouter",
+    "updateOne": "Mettre à jour",
+    "reinstallNote": "Le livre est téléchargé à nouveau puis copié sur votre stylo, qui devra ensuite être redémarré.",
+    "reinstallWorking": "Récupération en cours…",
+    "reinstallDone": "Terminé. Ce livre est de nouveau sur votre stylo.",
+    "verifyWorking": "Vérification de ce fichier…",
+    "verifyDone": "Terminé. Ce fichier a été vérifié."
+  },
+  "statusHelp": {
+    "present": "Le nom correspond à un livre officiel, mais l'App n'a pas lu le fichier pour en vérifier le contenu. Une actualisation ne lit jamais les fichiers : c'est donc l'état normal tant que vous n'avez pas choisi Vérifier ce fichier.",
+    "verifying": "L'App lit ce fichier et le compare à la version officielle.",
+    "verifiedCurrent": "Vous avez vérifié ce fichier et son contenu correspondait exactement à la version officielle. Affiché tant que cette vérification reste valable pour ce stylo et ce fichier.",
+    "verifiedDiffers": "Vous avez vérifié ce fichier et son contenu ne correspondait pas à la version officielle — il peut s'agir d'une édition plus ancienne ou d'une copie endommagée. Ajoutez-le de nouveau depuis la liste officielle pour le remplacer.",
+    "sizeDiffers": "La taille du fichier diffère déjà de la version officielle : le contenu ne peut donc pas correspondre. Aucune lecture du fichier n'a été nécessaire.",
+    "matchedHashUnknown": "Le nom correspond à un livre officiel, mais le catalogue ne publie aucune somme de contrôle : il n'y a rien à comparer.",
+    "awaitingCatalog": "Aucun catalogue n'a encore été chargé, ce fichier n'a donc été comparé à rien. Connectez-vous à Internet puis actualisez.",
+    "unknown": "Ce fichier ne figure pas au catalogue officiel. L'App n'y touche pas et ne peut ni le supprimer ni le remplacer.",
+    "notOnPen": "Ce livre n'est pas sur le stylo connecté.",
+    "onPenPresent": "Un fichier portant le nom de ce livre est sur le stylo, mais son contenu n'a pas été vérifié.",
+    "onPenVerifying": "L'App lit le fichier présent sur le stylo et le compare à la version officielle.",
+    "onPenCurrent": "Le fichier sur le stylo a été vérifié et correspond exactement à cette version officielle.",
+    "onPenDiffers": "Le fichier sur le stylo a été vérifié et ne correspond pas à cette version officielle. Ajoutez-le au stylo pour le remplacer — le fichier existant est d'abord sauvegardé.",
+    "onPenSizeDiffers": "Le fichier sur le stylo n'a pas la même taille que cette version officielle : le contenu ne peut pas être identique.",
+    "metadataIncomplete": "Il manque à la fiche du catalogue le nom de fichier ou la somme de contrôle dont l'App a besoin ; ce livre ne peut pas encore être installé. Votre stylo n'a aucun problème.",
+    "ambiguous": "Au moins deux fiches du catalogue revendiquent le même nom de fichier : l'App ne peut pas déterminer laquelle est visée. Affiché à titre indicatif jusqu'à correction sur le serveur."
+  },
+  "cacheHelp": {
+    "cached": "Une copie vérifiée est enregistrée sur cet ordinateur : l'ajouter au stylo ne nécessite aucun téléchargement.",
+    "notDownloaded": "Pas encore enregistré sur cet ordinateur. Le téléchargement a lieu lorsque vous l'ajoutez au stylo.",
+    "downloading": "Téléchargement en cours sur cet ordinateur."
+  },
+  "legend": {
+    "title": "Que veulent dire ces mots ?",
+    "intro": "Chaque livre indique s'il est sur votre stylo. Ouvrez les détails avancés pour la version technique.",
+    "penHeading": "Contenu sur le stylo",
+    "catalogHeading": "Contenu officiel",
+    "cacheHeading": "Copies sur cet ordinateur"
+  },
+  "simple": {
+    "onPen": "Sur votre stylo",
+    "updateAvailable": "Mise à jour disponible",
+    "notOnPen": "Pas encore sur votre stylo",
+    "downloading": "Téléchargement…",
+    "checking": "Vérification…",
+    "needsHelp": "Un souci — ouvrez pour de l'aide"
+  },
+  "simpleHelp": {
+    "onPen": "Ce livre est sur votre stylo et prêt à être utilisé.",
+    "updateAvailable": "Une version plus récente de ce livre est disponible. « Synchroniser les livres » la remplace — l'ancienne est d'abord sauvegardée.",
+    "notOnPen": "Ce livre n'est pas encore sur votre stylo. « Synchroniser les livres » l'y met.",
+    "downloading": "Le livre est copié sur cet ordinateur, puis sur votre stylo.",
+    "checking": "L'application vérifie ce livre. Cela ne prend qu'un instant.",
+    "needsHelp": "Celui-ci demande un coup d'œil — la liste des livres est peut-être incomplète. Votre stylo n'a aucun problème. Ouvrez les détails avancés ou contactez le support."
+  },
+  "advanced": {
+    "title": "Détails avancés",
+    "hint": "Informations techniques pour le support. Vous n'en avez pas besoin pour utiliser votre stylo."
+  },
+  "catalogIntro": "Vous avez acheté un nouveau livre ? Trouvez-le dans cette liste et choisissez Ajouter.",
+  "done": {
+    "restartTitle": "Terminé !",
+    "restartBody": "Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long, le temps que le stylo prépare ses livres."
+  },
+  "fix": {
+    "title": "La liste des livres de votre stylo a besoin d’un instant",
+    "body": "Des livres ont été ajoutés ou retirés en dehors de cette application ; votre stylo risque de lire le mauvais. La remise en ordre prend quelques secondes.",
+    "button": "Remettre la liste des livres en ordre",
+    "working": "En cours…",
+    "doneBody": "C'est fait. Débranchez votre stylo, puis éteignez-le et rallumez-le. Le premier démarrage peut être un peu plus long.",
+    "failed": "Cela n'a pas pu être terminé. Rien n'a été modifié sur votre stylo — rebranchez-le et réessayez.",
+    "sidecarNotice": "Des fichiers supplémentaires copiés par un Mac se trouvent aussi sur votre stylo. Ils sont inoffensifs ; vous pouvez les supprimer du dossier si vous le souhaitez."
+  },
+  "verifyHint": "Ouvrez un livre ci-dessous pour le vérifier, si le support vous le demande.",
+  "booksManagedNotice": "Les livres sont gérés par la bibliothèque PonyABC — vous pouvez les ajouter et les mettre à jour ici.",
+  "transfer": {
+    "estimateBefore": "Cela prendra environ {{minutes}} minutes. Laissez votre stylo branché.",
+    "estimateBeforeShort": "Cela prendra une minute ou deux. Laissez votre stylo branché.",
+    "dontUnplug": "Ne débranchez pas votre stylo",
+    "dontUnplugBody": "Une écriture est en cours sur votre stylo. Le débrancher maintenant laisserait un livre incomplet.",
+    "remaining": "Environ {{minutes}} minutes restantes",
+    "remainingShort": "Presque terminé",
+    "writing": "Copie de « {{name}} » sur votre stylo…"
+  },
+  "check": {
+    "button": "Chercher de nouveaux livres",
+    "checking": "Recherche…",
+    "last": "Dernière vérification : {{time}}",
+    "never": "Pas encore vérifié",
+    "failed": "Impossible de joindre la bibliothèque PonyABC. Vérifiez votre connexion internet et réessayez."
+  },
+  "yourBooks": {
+    "title": "Vos livres",
+    "intro": "Les livres actuellement sur votre stylo.",
+    "empty": "Aucun livre sur votre stylo. Ajoutez-en ci-dessous.",
+    "upToDate": "À jour",
+    "updateAvailable": "Mise à jour disponible",
+    "checking": "Vérification…",
+    "updating": "Mise à jour…",
+    "update": "Mettre à jour"
+  },
+  "otherBooks": {
+    "title": "Autres livres (pas de PonyABC)",
+    "body": "Ils viennent d'ailleurs. Cette application n'y touche pas."
+  },
+  "newBooks": {
+    "title": "Nouveaux livres",
+    "intro": "Livres que vous pouvez ajouter. Cochez ceux dont vous avez les cartes.",
+    "empty": "Votre stylo a déjà tous les livres que nous proposons.",
+    "badge": "NOUVEAU",
+    "badgeHint": "NOUVEAU signifie que ce livre a été ajouté à la liste depuis votre dernière vérification."
+  },
+  "footer": {
+    "selected": "{{count}} livre(s) sélectionné(s), environ {{minutes}} minutes",
+    "selectedShort": "{{count}} livre(s) sélectionné(s), une minute ou deux",
+    "none": "Cochez un livre ci-dessus pour l’ajouter.",
+    "add": "Ajouter à votre stylo"
+  },
+  "estimate": {
+    "minutes": "environ {{minutes}} min",
+    "short": "environ une minute"
+  },
+  "penRequired": "Branchez votre stylo pour voir et ajouter des livres.",
+  "pen": {
+    "connected": "Votre stylo est connecté",
+    "disconnected": "Branchez votre stylo avec son câble USB"
+  },
+  "sync": {
+    "hasNone": "Il n'y a pas encore de livre PonyABC sur votre stylo.",
+    "upToDate": "Tous vos livres sont à jour.",
+    "button": "Synchroniser les livres",
+    "working": "Synchronisation…",
+    "needPen": "Branchez votre stylo pour synchroniser.",
+    "stoppedNoSpace": "Votre stylo est plein, nous avons arrêté. Les livres terminés sont bien dessus.",
+    "has_one": "Votre stylo a {{count}} livre PonyABC.",
+    "has_other": "Votre stylo a {{count}} livres PonyABC.",
+    "newBooks_one": "{{count}} nouveau livre",
+    "newBooks_other": "{{count}} nouveaux livres",
+    "updates_one": "{{count}} mise à jour",
+    "updates_other": "{{count}} mises à jour",
+    "availableBoth": "{{news}} et {{updates}} sont disponibles.",
+    "availableAdds": "{{news}} disponible(s).",
+    "availableUpdates": "{{updates}} disponible(s).",
+    "time_one": "Environ {{count}} minute.",
+    "time_other": "Environ {{count}} minutes.",
+    "timeShort": "Environ une minute."
+  },
+  "space": {
+    "title": "Votre stylo n'a pas assez de place",
+    "body": "Il manque environ {{amount}}. Sauvegardez vos enregistrements, supprimez ceux dont vous n’avez plus besoin, puis synchronisez à nouveau.",
+    "goToRecordings": "Aller à Mes enregistrements",
+    "unreadable": "Nous n'avons pas pu vérifier l'espace libre de votre stylo. Débranchez-le, rebranchez-le et réessayez."
+  },
+  "list": {
+    "toggle": "Voir la liste des livres",
+    "onPen": "Sur votre stylo",
+    "willAdd": "Seront ajoutés",
+    "willUpdate": "Seront mis à jour",
+    "other": "Autres livres (pas de PonyABC)",
+    "otherBody": "Ils viennent d'ailleurs. Cette application n'y touche jamais.",
+    "none": "Aucun"
+  },
+  "size": {
+    "about": "environ {{size}}"
+  },
+  "remove": {
+    "title_one": "Un livre va être retiré de votre stylo",
+    "title_other": "{{count}} livres vont être retirés de votre stylo",
+    "body": "Ces livres ne font plus partie de la bibliothèque PonyABC. Les retirer libère environ {{size}} sur votre stylo. Tout le reste est conservé tel quel."
   }
 }

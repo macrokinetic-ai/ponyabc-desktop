@@ -1,22 +1,23 @@
 {
   "title": "BOOK",
-  "refresh": "Refresh catalog",
+  "refresh": "Refresh catalogue",
   "refreshing": "Refreshing…",
   "lastUpdated": "Last updated: {{time}}",
-  "devFixtureBanner": "Development catalog data — not live",
+  "devFixtureBanner": "Development catalogue data — not live",
   "newBadge": "NEW",
-  "newBadgeLegend": "NEW indicates this item was added or updated on the server within the last 14 days.",
+  "newBadgeLegend": "NEW means this book was added to the list since you last checked.",
   "connection": {
-    "label": "BOOK catalog",
+    "label": "BOOK catalogue",
     "checking": "Checking…",
     "ok": "Connected · {{count}} book(s)",
-    "okEmpty": "Connected · the catalog is currently empty",
+    "okEmpty": "Connected · the catalogue is currently empty",
     "errorServer": "Server error (HTTP {{status}})",
     "errorNetwork": "Couldn't reach the server — check your connection",
-    "usingOfflineCache": "Using the last saved catalog (updated {{time}})",
-    "neverLoaded": "No catalog has been successfully loaded yet"
+    "usingOfflineCache": "Using the last saved catalogue (updated {{time}})",
+    "neverLoaded": "No catalogue has been successfully loaded yet"
   },
-  "ambiguousNotice": "{{count}} catalog item(s) share a filename with another item — shown for reference only until this is resolved on the server.",
+  "ambiguousNotice_one": "We've left one book out of this list for now, because it isn't clear which one it is. Everything else works as usual, and nothing on your pen has changed.",
+  "ambiguousNotice_other": "We've left {{count}} books out of this list for now, because it isn't clear which ones they are. Everything else works as usual, and nothing on your pen has changed.",
   "penRequiredForWrite": "Connect a pen to see and manage its BOOK content.",
   "selectAll": "Select all",
   "selectedCount": "{{count}} selected",
@@ -24,16 +25,13 @@
   "insufficientSpace": "Not enough free space to complete this.",
   "downloadFailed": "Download failed. Check your connection and try again.",
   "downloadCancelled": "Download cancelled.",
-  "metadataIncompleteNotice": "This item's catalog information is incomplete, so it can't be installed yet.",
+  "metadataIncompleteNotice": "We don't have everything we need for this book yet, so it can't go on your pen. Nothing is wrong with your pen.",
   "targetChangedSinceBackup": "This file changed on the pen right before it could be removed — nothing was deleted. Please try again.",
   "stalePlan": "The pen changed — please try again.",
   "backupFailed": "Could not back up the existing file, so nothing was changed.",
-  "unknownContentNotice": "This file isn't recognized as catalog BOOK content and can't be changed here.",
+  "unknownContentNotice": "This book didn't come from PonyABC, so this app leaves it alone.",
   "genericError": "Something went wrong.",
   "cancel": "Cancel",
-  "confirmRemoveTitle": "Remove from pen?",
-  "confirmRemoveHint": "A backup is kept on this computer first.",
-  "confirmRemoveAction": "Remove",
   "confirmAddTitle": "Some selected items differ from the pen",
   "addConflictsHint": "These already exist on the pen with different content. Choose whether to replace each one (a backup is kept first) or leave it as is.",
   "replaceOption": "Replace",
@@ -54,17 +52,17 @@
     "verifiedCurrent": "Last verified: matches official version",
     "verifiedDiffers": "Last verified: differs from official version",
     "sizeDiffers": "Size differs from official version",
-    "matchedHashUnknown": "Cannot verify against the catalog",
-    "awaitingCatalog": "Waiting for catalog match",
-    "unknown": "Unknown",
+    "matchedHashUnknown": "On pen — no official checksum to check against",
+    "awaitingCatalog": "On pen — catalogue not loaded yet",
+    "unknown": "Not official content",
     "notOnPen": "Not on pen",
     "onPenPresent": "On pen — not yet verified",
     "onPenCurrent": "On pen — verified, matches",
     "onPenDiffers": "On pen — verified, differs",
     "onPenSizeDiffers": "On pen — size differs from official",
     "onPenVerifying": "Verifying pen content…",
-    "metadataIncomplete": "Catalog information incomplete",
-    "ambiguous": "Ambiguous catalog entry"
+    "metadataIncomplete": "Catalogue information incomplete",
+    "ambiguous": "Ambiguous catalogue entry"
   },
   "statusShort": {
     "present": "On pen",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Verified",
     "verifiedDiffers": "Differs",
     "sizeDiffers": "Size differs",
-    "matchedHashUnknown": "On pen",
-    "awaitingCatalog": "Waiting…",
-    "unknown": "Unknown",
+    "matchedHashUnknown": "No checksum",
+    "awaitingCatalog": "No catalogue",
+    "unknown": "Not in catalogue",
     "notOnPen": "Not on pen",
     "onPenPresent": "On pen",
     "onPenVerifying": "Verifying…",
@@ -85,15 +83,181 @@
     "ambiguous": "Ambiguous"
   },
   "action": {
-    "add": "Add to pen",
-    "remove": "Remove from pen",
-    "reinstall": "Re-download",
+    "add": "Add selected to your pen",
+    "reinstall": "Get a fresh copy and put it on my pen",
     "cancelDownload": "Cancel",
-    "verifySelected": "Verify selected content",
     "cancelVerify": "Cancel verification",
     "verifyThis": "Verify this file",
     "downloadSelected": "Download selected to App",
     "downloadAll": "Download all to App",
-    "cancelDownloadBatch": "Cancel download"
+    "cancelDownloadBatch": "Cancel download",
+    "addOne": "Add",
+    "updateOne": "Update",
+    "reinstallNote": "This downloads the book again and copies it onto your pen, so your pen will need restarting afterwards.",
+    "reinstallWorking": "Getting a fresh copy…",
+    "reinstallDone": "Done. That book is on your pen again.",
+    "verifyWorking": "Checking this file…",
+    "verifyDone": "Done. That file has been checked."
+  },
+  "statusHelp": {
+    "present": "The name matches an official book, but the App has not read the file to check its contents. Refreshing never reads files, so this is the normal state until you choose Verify this file.",
+    "verifying": "The App is reading this file now and comparing it with the official version.",
+    "verifiedCurrent": "You verified this file and its contents matched the official version exactly. Shown only while that check still applies to this pen and this file.",
+    "verifiedDiffers": "You verified this file and its contents did not match the official version — it may be an older edition or a damaged copy. Add it again from the official list to replace it.",
+    "sizeDiffers": "The file size already differs from the official version, so the contents cannot match. Knowing this needed no reading of the file.",
+    "matchedHashUnknown": "The name matches an official book, but the catalogue publishes no checksum for it, so there is nothing to compare against.",
+    "awaitingCatalog": "No catalogue has been loaded yet, so this file has not been compared with anything. Connect to the internet and refresh.",
+    "unknown": "This file is not in the official catalogue. The App leaves it alone and will not remove or replace it.",
+    "notOnPen": "This book is not on the connected pen.",
+    "onPenPresent": "A file with this book's name is on the pen, but its contents have not been checked.",
+    "onPenVerifying": "The App is reading the file on the pen now and comparing it with the official version.",
+    "onPenCurrent": "The file on the pen was verified and matches this official version exactly.",
+    "onPenDiffers": "The file on the pen was verified and does not match this official version. Add it to the pen to replace it — the existing file is backed up first.",
+    "onPenSizeDiffers": "The file on the pen is a different size from this official version, so it cannot be the same content.",
+    "metadataIncomplete": "The catalogue entry is missing the file name or checksum the App needs, so this book cannot be installed yet. Nothing is wrong with your pen.",
+    "ambiguous": "Two or more catalogue entries claim the same file name, so the App cannot tell which one is meant. Shown for reference only until it is corrected on the server."
+  },
+  "cacheHelp": {
+    "cached": "A checked copy is stored on this computer, so adding it to the pen needs no download.",
+    "notDownloaded": "Not stored on this computer yet. It is downloaded when you add it to the pen.",
+    "downloading": "Being downloaded to this computer now."
+  },
+  "legend": {
+    "title": "What do these words mean?",
+    "intro": "Each book shows whether it is on your pen. Open Advanced details if you need the technical version.",
+    "penHeading": "Content on the pen",
+    "catalogHeading": "Official content",
+    "cacheHeading": "Copies on this computer"
+  },
+  "simple": {
+    "onPen": "On your pen",
+    "updateAvailable": "Update available",
+    "notOnPen": "Not on your pen yet",
+    "downloading": "Downloading…",
+    "checking": "Checking…",
+    "needsHelp": "Something's not right — open for help"
+  },
+  "simpleHelp": {
+    "onPen": "This book is on your pen and ready to use.",
+    "updateAvailable": "A newer version of this book is available. Sync books replaces it — the old one is kept as a backup first.",
+    "notOnPen": "This book is not on your pen yet. Sync books puts it on.",
+    "downloading": "The book is being copied to this computer, and then to your pen.",
+    "checking": "The app is checking this book. It only takes a moment.",
+    "needsHelp": "This one needs a closer look — the book list may be incomplete. Nothing is wrong with your pen. Open Advanced details, or contact support."
+  },
+  "advanced": {
+    "title": "Advanced details",
+    "hint": "Technical information for support. You do not need this to use your pen."
+  },
+  "catalogIntro": "Bought a new book? Find it in this list and select Add.",
+  "done": {
+    "restartTitle": "All done!",
+    "restartBody": "Please unplug your pen, then switch it off and on again. The first start may take a little longer while your pen gets its books ready."
+  },
+  "fix": {
+    "title": "Your pen's book list needs a moment",
+    "body": "Some books were added or removed outside this app, so your pen may play the wrong one. This takes a few seconds to put right.",
+    "button": "Fix my pen's book list",
+    "working": "Fixing…",
+    "doneBody": "All set. Please unplug your pen, then switch it off and on again. The first start may take a little longer.",
+    "failed": "That could not be finished just now. Nothing on your pen was changed — please reconnect it and try again.",
+    "sidecarNotice": "Some extra files copied by a Mac are also on your pen. They are harmless, but you can delete them from the pen folder if you like."
+  },
+  "verifyHint": "Open a book below to check it, if support asks you to.",
+  "booksManagedNotice": "Books are looked after by the PonyABC library — you can add and update them here.",
+  "transfer": {
+    "estimateBefore": "This will take about {{minutes}} minutes. Please leave your pen plugged in.",
+    "estimateBeforeShort": "This will take a minute or two. Please leave your pen plugged in.",
+    "dontUnplug": "Please don’t unplug your pen",
+    "dontUnplugBody": "Your pen is being written to. Unplugging now could leave a book unfinished.",
+    "remaining": "About {{minutes}} minutes left",
+    "remainingShort": "Nearly done",
+    "writing": "Copying “{{name}}” to your pen…"
+  },
+  "check": {
+    "button": "Check for new books",
+    "checking": "Checking…",
+    "last": "Last checked: {{time}}",
+    "never": "Not checked yet",
+    "failed": "We couldn't reach the PonyABC library. Check your internet connection and try again."
+  },
+  "yourBooks": {
+    "title": "Your books",
+    "intro": "The books on your pen right now.",
+    "empty": "No books on your pen yet. Add some below.",
+    "upToDate": "Up to date",
+    "updateAvailable": "Update available",
+    "checking": "Checking…",
+    "updating": "Updating…",
+    "update": "Update"
+  },
+  "otherBooks": {
+    "title": "Other books (not from PonyABC)",
+    "body": "These came from somewhere else. This app leaves them exactly as they are."
+  },
+  "newBooks": {
+    "title": "New books",
+    "intro": "Books you can add. Tick the ones whose cards you have.",
+    "empty": "Your pen already has every book we offer.",
+    "badge": "NEW",
+    "badgeHint": "NEW means this book was added to the list since you last checked."
+  },
+  "footer": {
+    "selected": "{{count}} book(s) selected, about {{minutes}} minutes",
+    "selectedShort": "{{count}} book(s) selected, a minute or two",
+    "none": "Tick a book above to add it.",
+    "add": "Add to your pen"
+  },
+  "estimate": {
+    "minutes": "about {{minutes}} min",
+    "short": "about a minute"
+  },
+  "penRequired": "Connect your pen to see and add books.",
+  "pen": {
+    "connected": "Your pen is connected",
+    "disconnected": "Please connect your pen with its USB cable"
+  },
+  "sync": {
+    "hasNone": "There are no PonyABC books on your pen yet.",
+    "upToDate": "All your books are up to date.",
+    "button": "Sync books",
+    "working": "Syncing…",
+    "needPen": "Connect your pen to sync.",
+    "stoppedNoSpace": "Your pen filled up, so we stopped. The books that finished are on your pen.",
+    "has_one": "Your pen has {{count}} PonyABC book.",
+    "has_other": "Your pen has {{count}} PonyABC books.",
+    "newBooks_one": "{{count}} new book",
+    "newBooks_other": "{{count}} new books",
+    "updates_one": "{{count}} update",
+    "updates_other": "{{count}} updates",
+    "availableBoth": "{{news}} and {{updates}} are available.",
+    "availableAdds": "{{news}} are available.",
+    "availableUpdates": "{{updates}} are available.",
+    "time_one": "About {{count}} minute.",
+    "time_other": "About {{count}} minutes.",
+    "timeShort": "About a minute."
+  },
+  "space": {
+    "title": "Your pen doesn't have enough space",
+    "body": "You need about {{amount}} more. Please back up your recordings and delete some you no longer need, then sync again.",
+    "goToRecordings": "Go to My Recordings",
+    "unreadable": "We couldn't check your pen's free space. Please unplug your pen, plug it in again and try again."
+  },
+  "list": {
+    "toggle": "See book list",
+    "onPen": "On your pen",
+    "willAdd": "Will be added",
+    "willUpdate": "Will be updated",
+    "other": "Other books (not from PonyABC)",
+    "otherBody": "These came from somewhere else. This app never changes them.",
+    "none": "None"
+  },
+  "size": {
+    "about": "about {{size}}"
+  },
+  "remove": {
+    "title_one": "One book will be taken off your pen",
+    "title_other": "{{count}} books will be taken off your pen",
+    "body": "These are no longer part of the PonyABC library. Removing them frees about {{size}} on your pen. Everything else stays exactly as it is."
   }
 }

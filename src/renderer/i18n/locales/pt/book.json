@@ -5,7 +5,7 @@
   "lastUpdated": "Última atualização: {{time}}",
   "devFixtureBanner": "Dados de catálogo de desenvolvimento — não reais",
   "newBadge": "NOVO",
-  "newBadgeLegend": "NOVO indica que este item foi adicionado ou atualizado no servidor nos últimos 14 dias.",
+  "newBadgeLegend": "NOVO quer dizer que este livro entrou na lista desde a sua última verificação.",
   "connection": {
     "label": "Catálogo BOOK",
     "checking": "A verificar…",
@@ -16,7 +16,8 @@
     "usingOfflineCache": "A usar o último catálogo guardado (atualizado {{time}})",
     "neverLoaded": "Ainda não foi carregado nenhum catálogo com sucesso"
   },
-  "ambiguousNotice": "{{count}} item(ns) do catálogo partilham o mesmo nome de ficheiro com outro item — mostrados apenas como referência até ser resolvido no servidor.",
+  "ambiguousNotice_one": "Por agora deixámos um livro fora desta lista, porque não é claro qual é. Tudo o resto funciona como sempre e nada mudou na caneta.",
+  "ambiguousNotice_other": "Por agora deixámos {{count}} livros fora desta lista, porque não é claro quais são. Tudo o resto funciona como sempre e nada mudou na caneta.",
   "penRequiredForWrite": "Ligue uma caneta para ver e gerir o seu conteúdo BOOK.",
   "selectAll": "Selecionar tudo",
   "selectedCount": "{{count}} selecionado(s)",
@@ -24,16 +25,13 @@
   "insufficientSpace": "Espaço livre insuficiente para concluir.",
   "downloadFailed": "Falha no download. Verifique a ligação e tente novamente.",
   "downloadCancelled": "Download cancelado.",
-  "metadataIncompleteNotice": "As informações de catálogo deste item estão incompletas, por isso ainda não pode ser instalado.",
+  "metadataIncompleteNotice": "Ainda nos faltam dados deste livro, por isso não pode ir para a caneta. A sua caneta não tem qualquer problema.",
   "targetChangedSinceBackup": "Este ficheiro mudou na caneta mesmo antes de poder ser removido — nada foi apagado. Tente novamente.",
   "stalePlan": "A caneta mudou — tente novamente.",
   "backupFailed": "Não foi possível fazer cópia de segurança do ficheiro existente, por isso nada foi alterado.",
-  "unknownContentNotice": "Este ficheiro não é reconhecido como conteúdo BOOK do catálogo e não pode ser alterado aqui.",
+  "unknownContentNotice": "Este livro não veio da PonyABC, por isso a aplicação não lhe mexe.",
   "genericError": "Algo correu mal.",
   "cancel": "Cancelar",
-  "confirmRemoveTitle": "Remover da caneta?",
-  "confirmRemoveHint": "É guardada primeiro uma cópia de segurança neste computador.",
-  "confirmRemoveAction": "Remover",
   "confirmAddTitle": "Alguns itens selecionados diferem dos da caneta",
   "addConflictsHint": "Estes já existem na caneta com conteúdo diferente. Escolha se substitui cada um (é feita cópia de segurança antes) ou o mantém como está.",
   "replaceOption": "Substituir",
@@ -54,9 +52,9 @@
     "verifiedCurrent": "Última verificação: corresponde à versão oficial",
     "verifiedDiffers": "Última verificação: difere da versão oficial",
     "sizeDiffers": "O tamanho difere da versão oficial",
-    "matchedHashUnknown": "Não é possível verificar com o catálogo",
-    "awaitingCatalog": "A aguardar correspondência com o catálogo",
-    "unknown": "Desconhecido",
+    "matchedHashUnknown": "Na caneta — sem soma de verificação oficial para comparar",
+    "awaitingCatalog": "Na caneta — catálogo ainda não carregado",
+    "unknown": "Conteúdo não oficial",
     "notOnPen": "Não está na caneta",
     "onPenPresent": "Na caneta — ainda não verificado",
     "onPenCurrent": "Na caneta — verificado, corresponde",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Verificado",
     "verifiedDiffers": "Difere",
     "sizeDiffers": "Tamanho diferente",
-    "matchedHashUnknown": "Na caneta",
-    "awaitingCatalog": "A aguardar…",
-    "unknown": "Desconhecido",
+    "matchedHashUnknown": "Sem soma de verificação",
+    "awaitingCatalog": "Sem catálogo",
+    "unknown": "Fora do catálogo",
     "notOnPen": "Não está na caneta",
     "onPenPresent": "Na caneta",
     "onPenVerifying": "A verificar…",
@@ -85,15 +83,181 @@
     "ambiguous": "Ambíguo"
   },
   "action": {
-    "add": "Adicionar à caneta",
-    "remove": "Remover da caneta",
-    "reinstall": "Descarregar novamente",
+    "add": "Adicionar os selecionados à caneta",
+    "reinstall": "Obter uma cópia nova e colocá-la na caneta",
     "cancelDownload": "Cancelar",
-    "verifySelected": "Verificar conteúdo selecionado",
     "cancelVerify": "Cancelar verificação",
     "verifyThis": "Verificar este ficheiro",
     "downloadSelected": "Transferir selecionados para a App",
     "downloadAll": "Transferir tudo para a App",
-    "cancelDownloadBatch": "Cancelar transferência"
+    "cancelDownloadBatch": "Cancelar transferência",
+    "addOne": "Adicionar",
+    "updateOne": "Atualizar",
+    "reinstallNote": "O livro é descarregado novamente e copiado para a sua caneta, que depois terá de ser reiniciada.",
+    "reinstallWorking": "A obter uma cópia nova…",
+    "reinstallDone": "Concluído. Esse livro está novamente na sua caneta.",
+    "verifyWorking": "A verificar este ficheiro…",
+    "verifyDone": "Concluído. Esse ficheiro foi verificado."
+  },
+  "statusHelp": {
+    "present": "O nome corresponde a um livro oficial, mas a App não leu o ficheiro para verificar o conteúdo. Atualizar nunca lê os ficheiros, por isso este é o estado normal até escolher Verificar este ficheiro.",
+    "verifying": "A App está a ler este ficheiro e a compará-lo com a versão oficial.",
+    "verifiedCurrent": "Verificou este ficheiro e o conteúdo correspondia exatamente à versão oficial. Só é mostrado enquanto essa verificação continuar válida para esta caneta e este ficheiro.",
+    "verifiedDiffers": "Verificou este ficheiro e o conteúdo não correspondia à versão oficial — pode ser uma edição mais antiga ou uma cópia danificada. Adicione-o novamente a partir da lista oficial para o substituir.",
+    "sizeDiffers": "O tamanho do ficheiro já difere da versão oficial, por isso o conteúdo não pode corresponder. Não foi preciso ler o ficheiro para o saber.",
+    "matchedHashUnknown": "O nome corresponde a um livro oficial, mas o catálogo não publica uma soma de verificação, por isso não há nada com que comparar.",
+    "awaitingCatalog": "Ainda não foi carregado nenhum catálogo, por isso este ficheiro não foi comparado com nada. Ligue-se à internet e atualize.",
+    "unknown": "Este ficheiro não está no catálogo oficial. A App não lhe toca e não o pode remover nem substituir.",
+    "notOnPen": "Este livro não está na caneta ligada.",
+    "onPenPresent": "Está na caneta um ficheiro com o nome deste livro, mas o seu conteúdo não foi verificado.",
+    "onPenVerifying": "A App está a ler o ficheiro na caneta e a compará-lo com a versão oficial.",
+    "onPenCurrent": "O ficheiro na caneta foi verificado e corresponde exatamente a esta versão oficial.",
+    "onPenDiffers": "O ficheiro na caneta foi verificado e não corresponde a esta versão oficial. Adicione-o à caneta para o substituir — é feita primeiro uma cópia de segurança do ficheiro existente.",
+    "onPenSizeDiffers": "O ficheiro na caneta tem um tamanho diferente desta versão oficial, por isso não pode ter o mesmo conteúdo.",
+    "metadataIncomplete": "Falta à entrada do catálogo o nome do ficheiro ou a soma de verificação de que a App precisa, por isso este livro ainda não pode ser instalado. A sua caneta não tem qualquer problema.",
+    "ambiguous": "Duas ou mais entradas do catálogo reclamam o mesmo nome de ficheiro, por isso a App não consegue saber qual é a pretendida. Mostrado apenas a título informativo até ser corrigido no servidor."
+  },
+  "cacheHelp": {
+    "cached": "Está guardada neste computador uma cópia verificada, por isso adicioná-la à caneta não exige transferência.",
+    "notDownloaded": "Ainda não está guardado neste computador. É transferido quando o adicionar à caneta.",
+    "downloading": "A ser transferido para este computador."
+  },
+  "legend": {
+    "title": "O que querem dizer estas palavras?",
+    "intro": "Cada livro indica se está na sua caneta. Abra os detalhes avançados para a versão técnica.",
+    "penHeading": "Conteúdo na caneta",
+    "catalogHeading": "Conteúdo oficial",
+    "cacheHeading": "Cópias neste computador"
+  },
+  "simple": {
+    "onPen": "Na sua caneta",
+    "updateAvailable": "Atualização disponível",
+    "notOnPen": "Ainda não está na sua caneta",
+    "downloading": "A transferir…",
+    "checking": "A verificar…",
+    "needsHelp": "Algo não está bem — abra para ajuda"
+  },
+  "simpleHelp": {
+    "onPen": "Este livro está na sua caneta e pronto a usar.",
+    "updateAvailable": "Existe uma versão mais recente deste livro. «Sincronizar livros» substitui-a — a anterior é guardada primeiro.",
+    "notOnPen": "Este livro ainda não está na sua caneta. «Sincronizar livros» coloca-o.",
+    "downloading": "O livro está a ser copiado para este computador e depois para a caneta.",
+    "checking": "A aplicação está a verificar este livro. Demora só um instante.",
+    "needsHelp": "Este precisa de uma vista de olhos — a lista de livros pode estar incompleta. A sua caneta não tem qualquer problema. Abra os detalhes avançados ou contacte o apoio."
+  },
+  "advanced": {
+    "title": "Detalhes avançados",
+    "hint": "Informação técnica para o apoio. Não precisa dela para usar a caneta."
+  },
+  "catalogIntro": "Comprou um livro novo? Encontre-o nesta lista e escolha Adicionar.",
+  "done": {
+    "restartTitle": "Tudo pronto!",
+    "restartBody": "Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais enquanto a caneta prepara os livros."
+  },
+  "fix": {
+    "title": "A lista de livros da sua caneta precisa de um momento",
+    "body": "Foram adicionados ou removidos livros fora desta aplicação, por isso a caneta pode reproduzir o livro errado. Corrigir demora alguns segundos.",
+    "button": "Corrigir a lista de livros da caneta",
+    "working": "A corrigir…",
+    "doneBody": "Pronto. Desligue a caneta do computador e depois desligue-a e volte a ligá-la. O primeiro arranque pode demorar um pouco mais.",
+    "failed": "Não foi possível concluir agora. Nada foi alterado na sua caneta — volte a ligá-la e tente novamente.",
+    "sidecarNotice": "Na sua caneta há também ficheiros extra copiados por um Mac. São inofensivos; pode apagá-los da pasta se quiser."
+  },
+  "verifyHint": "Abra um livro abaixo para o verificar, se o apoio lhe pedir.",
+  "booksManagedNotice": "Os livros são geridos pela biblioteca PonyABC — aqui pode adicioná-los e atualizá-los.",
+  "transfer": {
+    "estimateBefore": "Isto vai demorar cerca de {{minutes}} minutos. Deixe a caneta ligada.",
+    "estimateBeforeShort": "Isto vai demorar um minuto ou dois. Deixe a caneta ligada.",
+    "dontUnplug": "Não desligue a caneta",
+    "dontUnplugBody": "Está a ser escrito na sua caneta. Desligá-la agora pode deixar um livro incompleto.",
+    "remaining": "Faltam cerca de {{minutes}} minutos",
+    "remainingShort": "Quase pronto",
+    "writing": "A copiar «{{name}}» para a sua caneta…"
+  },
+  "check": {
+    "button": "Procurar livros novos",
+    "checking": "A procurar…",
+    "last": "Última verificação: {{time}}",
+    "never": "Ainda não verificado",
+    "failed": "Não foi possível contactar a biblioteca PonyABC. Verifique a ligação à internet e tente novamente."
+  },
+  "yourBooks": {
+    "title": "Os seus livros",
+    "intro": "Os livros que estão agora na sua caneta.",
+    "empty": "Ainda não há livros na caneta. Adicione alguns abaixo.",
+    "upToDate": "Atualizado",
+    "updateAvailable": "Atualização disponível",
+    "checking": "A verificar…",
+    "updating": "A atualizar…",
+    "update": "Atualizar"
+  },
+  "otherBooks": {
+    "title": "Outros livros (não são da PonyABC)",
+    "body": "Vieram de outro lado. Esta aplicação deixa-os tal como estão."
+  },
+  "newBooks": {
+    "title": "Livros novos",
+    "intro": "Livros que pode adicionar. Assinale aqueles de que tem os cartões.",
+    "empty": "A sua caneta já tem todos os livros que oferecemos.",
+    "badge": "NOVO",
+    "badgeHint": "NOVO quer dizer que este livro entrou na lista desde a sua última verificação."
+  },
+  "footer": {
+    "selected": "{{count}} livro(s) selecionado(s), cerca de {{minutes}} minutos",
+    "selectedShort": "{{count}} livro(s) selecionado(s), um minuto ou dois",
+    "none": "Assinale um livro acima para o adicionar.",
+    "add": "Adicionar à sua caneta"
+  },
+  "estimate": {
+    "minutes": "cerca de {{minutes}} min",
+    "short": "cerca de um minuto"
+  },
+  "penRequired": "Ligue a caneta para ver e adicionar livros.",
+  "pen": {
+    "connected": "A sua caneta está ligada",
+    "disconnected": "Ligue a caneta com o cabo USB"
+  },
+  "sync": {
+    "hasNone": "Ainda não há livros PonyABC na sua caneta.",
+    "upToDate": "Todos os seus livros estão atualizados.",
+    "button": "Sincronizar livros",
+    "working": "A sincronizar…",
+    "needPen": "Ligue a caneta para sincronizar.",
+    "stoppedNoSpace": "A caneta encheu, por isso parámos. Os livros concluídos estão na caneta.",
+    "has_one": "A sua caneta tem {{count}} livro PonyABC.",
+    "has_other": "A sua caneta tem {{count}} livros PonyABC.",
+    "newBooks_one": "{{count}} livro novo",
+    "newBooks_other": "{{count}} livros novos",
+    "updates_one": "{{count}} atualização",
+    "updates_other": "{{count}} atualizações",
+    "availableBoth": "Há {{news}} e {{updates}}.",
+    "availableAdds": "Há {{news}}.",
+    "availableUpdates": "Há {{updates}}.",
+    "time_one": "Cerca de {{count}} minuto.",
+    "time_other": "Cerca de {{count}} minutos.",
+    "timeShort": "Cerca de um minuto."
+  },
+  "space": {
+    "title": "A sua caneta não tem espaço suficiente",
+    "body": "Faltam cerca de {{amount}}. Faça uma cópia das gravações, apague as que já não precisa e sincronize outra vez.",
+    "goToRecordings": "Ir para As minhas gravações",
+    "unreadable": "Não foi possível verificar o espaço livre da sua caneta. Desligue-a, volte a ligá-la e tente novamente."
+  },
+  "list": {
+    "toggle": "Ver a lista de livros",
+    "onPen": "Na sua caneta",
+    "willAdd": "Vão ser adicionados",
+    "willUpdate": "Vão ser atualizados",
+    "other": "Outros livros (não são da PonyABC)",
+    "otherBody": "Vieram de outro lado. Esta aplicação nunca os altera.",
+    "none": "Nenhum"
+  },
+  "size": {
+    "about": "cerca de {{size}}"
+  },
+  "remove": {
+    "title_one": "Um livro vai ser retirado da sua caneta",
+    "title_other": "{{count}} livros vão ser retirados da sua caneta",
+    "body": "Estes livros já não fazem parte da biblioteca PonyABC. Retirá-los liberta cerca de {{size}} na caneta. Tudo o resto fica como está."
   }
 }

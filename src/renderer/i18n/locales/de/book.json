@@ -5,7 +5,7 @@
   "lastUpdated": "Zuletzt aktualisiert: {{time}}",
   "devFixtureBanner": "Entwickler-Testdaten — keine echten Inhalte",
   "newBadge": "NEU",
-  "newBadgeLegend": "NEU bedeutet, dass dieses Element in den letzten 14 Tagen auf dem Server hinzugefügt oder aktualisiert wurde.",
+  "newBadgeLegend": "NEU heißt, dieses Buch kam seit Ihrer letzten Prüfung in die Liste.",
   "connection": {
     "label": "BOOK-Katalog",
     "checking": "Wird geprüft…",
@@ -16,7 +16,8 @@
     "usingOfflineCache": "Zuletzt gespeicherter Katalog wird verwendet (aktualisiert {{time}})",
     "neverLoaded": "Es wurde noch nie erfolgreich ein Katalog geladen"
   },
-  "ambiguousNotice": "{{count}} Katalogeintrag/-einträge teilen sich einen Dateinamen mit einem anderen Eintrag — werden nur zur Information angezeigt, bis dies serverseitig gelöst ist.",
+  "ambiguousNotice_one": "Ein Buch fehlt vorerst in dieser Liste, weil nicht eindeutig ist, welches es ist. Alles andere funktioniert wie gewohnt, und auf dem Stift hat sich nichts geändert.",
+  "ambiguousNotice_other": "{{count}} Bücher fehlen vorerst in dieser Liste, weil nicht eindeutig ist, welche es sind. Alles andere funktioniert wie gewohnt, und auf dem Stift hat sich nichts geändert.",
   "penRequiredForWrite": "Verbinde einen Stift, um dessen BOOK-Inhalte zu sehen und zu verwalten.",
   "selectAll": "Alle auswählen",
   "selectedCount": "{{count}} ausgewählt",
@@ -24,16 +25,13 @@
   "insufficientSpace": "Nicht genug freier Speicherplatz, um dies abzuschließen.",
   "downloadFailed": "Download fehlgeschlagen. Verbindung prüfen und erneut versuchen.",
   "downloadCancelled": "Download abgebrochen.",
-  "metadataIncompleteNotice": "Die Katalogdaten für dieses Element sind unvollständig, daher kann es noch nicht installiert werden.",
+  "metadataIncompleteNotice": "Zu diesem Buch fehlen uns noch Angaben, deshalb kann es noch nicht auf den Stift. Mit Ihrem Stift ist alles in Ordnung.",
   "targetChangedSinceBackup": "Diese Datei hat sich auf dem Stift kurz vor dem Entfernen geändert — es wurde nichts gelöscht. Bitte erneut versuchen.",
   "stalePlan": "Der Stift hat sich geändert — bitte erneut versuchen.",
   "backupFailed": "Die vorhandene Datei konnte nicht gesichert werden, daher wurde nichts geändert.",
-  "unknownContentNotice": "Diese Datei wird nicht als Katalog-BOOK-Inhalt erkannt und kann hier nicht geändert werden.",
+  "unknownContentNotice": "Dieses Buch stammt nicht von PonyABC; die App lässt es unverändert.",
   "genericError": "Etwas ist schiefgelaufen.",
   "cancel": "Abbrechen",
-  "confirmRemoveTitle": "Vom Stift entfernen?",
-  "confirmRemoveHint": "Zuvor wird eine Sicherung auf diesem Computer angelegt.",
-  "confirmRemoveAction": "Entfernen",
   "confirmAddTitle": "Einige ausgewählte Elemente weichen vom Stift ab",
   "addConflictsHint": "Diese existieren bereits auf dem Stift mit anderem Inhalt. Wähle für jedes, ob es ersetzt werden soll (zuvor wird gesichert) oder unverändert bleiben soll.",
   "replaceOption": "Ersetzen",
@@ -54,9 +52,9 @@
     "verifiedCurrent": "Letzte Prüfung: entspricht der offiziellen Version",
     "verifiedDiffers": "Letzte Prüfung: weicht von der offiziellen Version ab",
     "sizeDiffers": "Größe weicht von der offiziellen Version ab",
-    "matchedHashUnknown": "Kann nicht mit dem Katalog abgeglichen werden",
-    "awaitingCatalog": "Wartet auf Katalogabgleich",
-    "unknown": "Unbekannt",
+    "matchedHashUnknown": "Auf dem Stift — keine offizielle Prüfsumme zum Abgleich",
+    "awaitingCatalog": "Auf dem Stift — Katalog noch nicht geladen",
+    "unknown": "Kein offizieller Inhalt",
     "notOnPen": "Nicht auf dem Stift",
     "onPenPresent": "Auf dem Stift — noch nicht überprüft",
     "onPenCurrent": "Auf dem Stift — geprüft, stimmt überein",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Geprüft",
     "verifiedDiffers": "Abweichend",
     "sizeDiffers": "Größe abweichend",
-    "matchedHashUnknown": "Auf dem Stift",
-    "awaitingCatalog": "Wartet…",
-    "unknown": "Unbekannt",
+    "matchedHashUnknown": "Ohne Prüfsumme",
+    "awaitingCatalog": "Kein Katalog",
+    "unknown": "Nicht im Katalog",
     "notOnPen": "Nicht auf dem Stift",
     "onPenPresent": "Auf dem Stift",
     "onPenVerifying": "Wird geprüft…",
@@ -85,15 +83,181 @@
     "ambiguous": "Mehrdeutig"
   },
   "action": {
-    "add": "Zum Stift hinzufügen",
-    "remove": "Vom Stift entfernen",
-    "reinstall": "Erneut herunterladen",
+    "add": "Auswahl zum Stift hinzufügen",
+    "reinstall": "Neue Kopie holen und auf den Stift übertragen",
     "cancelDownload": "Abbrechen",
-    "verifySelected": "Ausgewählte Inhalte überprüfen",
     "cancelVerify": "Überprüfung abbrechen",
     "verifyThis": "Diese Datei prüfen",
     "downloadSelected": "Auswahl in die App laden",
     "downloadAll": "Alles in die App laden",
-    "cancelDownloadBatch": "Download abbrechen"
+    "cancelDownloadBatch": "Download abbrechen",
+    "addOne": "Hinzufügen",
+    "updateOne": "Aktualisieren",
+    "reinstallNote": "Das Buch wird erneut heruntergeladen und auf Ihren Stift kopiert. Danach muss der Stift neu gestartet werden.",
+    "reinstallWorking": "Neue Kopie wird geholt…",
+    "reinstallDone": "Fertig. Das Buch ist wieder auf Ihrem Stift.",
+    "verifyWorking": "Diese Datei wird geprüft…",
+    "verifyDone": "Fertig. Diese Datei wurde geprüft."
+  },
+  "statusHelp": {
+    "present": "Der Name entspricht einem offiziellen Buch, die App hat die Datei aber nicht gelesen, um den Inhalt zu prüfen. Beim Aktualisieren werden nie Dateien gelesen — das ist also der normale Zustand, bis Sie „Diese Datei überprüfen“ wählen.",
+    "verifying": "Die App liest diese Datei gerade und vergleicht sie mit der offiziellen Version.",
+    "verifiedCurrent": "Sie haben diese Datei überprüft und ihr Inhalt stimmte exakt mit der offiziellen Version überein. Wird nur angezeigt, solange diese Prüfung für diesen Stift und diese Datei noch gilt.",
+    "verifiedDiffers": "Sie haben diese Datei überprüft und ihr Inhalt stimmte nicht mit der offiziellen Version überein — möglicherweise eine ältere Ausgabe oder eine beschädigte Kopie. Fügen Sie sie aus der offiziellen Liste erneut hinzu, um sie zu ersetzen.",
+    "sizeDiffers": "Die Dateigröße weicht bereits von der offiziellen Version ab, der Inhalt kann also nicht übereinstimmen. Dafür musste die Datei nicht gelesen werden.",
+    "matchedHashUnknown": "Der Name entspricht einem offiziellen Buch, der Katalog veröffentlicht dafür aber keine Prüfsumme — es gibt also nichts zum Vergleichen.",
+    "awaitingCatalog": "Es wurde noch kein Katalog geladen, diese Datei wurde daher mit nichts verglichen. Stellen Sie eine Internetverbindung her und aktualisieren Sie.",
+    "unknown": "Diese Datei steht nicht im offiziellen Katalog. Die App rührt sie nicht an und kann sie weder entfernen noch ersetzen.",
+    "notOnPen": "Dieses Buch ist nicht auf dem verbundenen Stift.",
+    "onPenPresent": "Eine Datei mit dem Namen dieses Buches ist auf dem Stift, ihr Inhalt wurde aber nicht geprüft.",
+    "onPenVerifying": "Die App liest gerade die Datei auf dem Stift und vergleicht sie mit der offiziellen Version.",
+    "onPenCurrent": "Die Datei auf dem Stift wurde überprüft und stimmt exakt mit dieser offiziellen Version überein.",
+    "onPenDiffers": "Die Datei auf dem Stift wurde überprüft und stimmt nicht mit dieser offiziellen Version überein. Fügen Sie sie dem Stift hinzu, um sie zu ersetzen — die vorhandene Datei wird zuvor gesichert.",
+    "onPenSizeDiffers": "Die Datei auf dem Stift hat eine andere Größe als diese offizielle Version, kann also nicht denselben Inhalt haben.",
+    "metadataIncomplete": "Dem Katalogeintrag fehlt der Dateiname oder die Prüfsumme, die die App benötigt; dieses Buch kann daher noch nicht installiert werden. Mit Ihrem Stift ist alles in Ordnung.",
+    "ambiguous": "Zwei oder mehr Katalogeinträge beanspruchen denselben Dateinamen, die App kann also nicht erkennen, welcher gemeint ist. Wird nur zur Information angezeigt, bis es auf dem Server korrigiert ist."
+  },
+  "cacheHelp": {
+    "cached": "Eine geprüfte Kopie liegt auf diesem Computer; das Hinzufügen zum Stift erfordert keinen Download.",
+    "notDownloaded": "Noch nicht auf diesem Computer gespeichert. Der Download erfolgt, wenn Sie das Buch dem Stift hinzufügen.",
+    "downloading": "Wird gerade auf diesen Computer heruntergeladen."
+  },
+  "legend": {
+    "title": "Was bedeuten diese Wörter?",
+    "intro": "Bei jedem Buch steht, ob es auf Ihrem Stift ist. Die technische Fassung finden Sie unter den erweiterten Details.",
+    "penHeading": "Inhalt auf dem Stift",
+    "catalogHeading": "Offizieller Inhalt",
+    "cacheHeading": "Kopien auf diesem Computer"
+  },
+  "simple": {
+    "onPen": "Auf Ihrem Stift",
+    "updateAvailable": "Aktualisierung verfügbar",
+    "notOnPen": "Noch nicht auf Ihrem Stift",
+    "downloading": "Wird heruntergeladen…",
+    "checking": "Wird geprüft…",
+    "needsHelp": "Etwas stimmt nicht — für Hilfe öffnen"
+  },
+  "simpleHelp": {
+    "onPen": "Dieses Buch ist auf Ihrem Stift und einsatzbereit.",
+    "updateAvailable": "Von diesem Buch gibt es eine neuere Fassung. „Bücher abgleichen“ ersetzt sie — die alte wird vorher gesichert.",
+    "notOnPen": "Dieses Buch ist noch nicht auf Ihrem Stift. „Bücher abgleichen“ bringt es darauf.",
+    "downloading": "Das Buch wird auf diesen Computer und dann auf Ihren Stift kopiert.",
+    "checking": "Die App prüft dieses Buch. Das dauert nur einen Moment.",
+    "needsHelp": "Hier lohnt ein genauerer Blick — die Bücherliste ist möglicherweise unvollständig. Mit Ihrem Stift ist alles in Ordnung. Öffnen Sie die erweiterten Details oder wenden Sie sich an den Support."
+  },
+  "advanced": {
+    "title": "Erweiterte Details",
+    "hint": "Technische Angaben für den Support. Zum Benutzen Ihres Stifts brauchen Sie sie nicht."
+  },
+  "catalogIntro": "Ein neues Buch gekauft? Suchen Sie es in dieser Liste und wählen Sie Hinzufügen.",
+  "done": {
+    "restartTitle": "Fertig!",
+    "restartBody": "Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern, während der Stift seine Bücher vorbereitet."
+  },
+  "fix": {
+    "title": "Die Bücherliste Ihres Stifts braucht einen Moment",
+    "body": "Bücher wurden außerhalb dieser App hinzugefügt oder entfernt, daher spielt Ihr Stift möglicherweise das falsche ab. Das Richten dauert ein paar Sekunden.",
+    "button": "Bücherliste des Stifts richten",
+    "working": "Wird gerichtet…",
+    "doneBody": "Erledigt. Ziehen Sie den Stift ab und schalten Sie ihn aus und wieder ein. Der erste Start kann etwas länger dauern.",
+    "failed": "Das ließ sich gerade nicht abschließen. An Ihrem Stift wurde nichts geändert — bitte neu verbinden und erneut versuchen.",
+    "sidecarNotice": "Auf Ihrem Stift liegen zusätzliche Dateien, die ein Mac beim Kopieren angelegt hat. Sie sind harmlos; Sie können sie bei Bedarf im Ordner löschen."
+  },
+  "verifyHint": "Öffnen Sie unten ein Buch, um es zu prüfen, wenn der Support Sie darum bittet.",
+  "booksManagedNotice": "Die Bücher verwaltet die PonyABC-Bibliothek — hier können Sie sie hinzufügen und aktualisieren.",
+  "transfer": {
+    "estimateBefore": "Das dauert etwa {{minutes}} Minuten. Bitte lassen Sie den Stift angeschlossen.",
+    "estimateBeforeShort": "Das dauert ein bis zwei Minuten. Bitte lassen Sie den Stift angeschlossen.",
+    "dontUnplug": "Bitte den Stift nicht abziehen",
+    "dontUnplugBody": "Auf Ihren Stift wird gerade geschrieben. Jetzt abzuziehen könnte ein Buch unvollständig lassen.",
+    "remaining": "Noch etwa {{minutes}} Minuten",
+    "remainingShort": "Fast fertig",
+    "writing": "„{{name}}“ wird auf Ihren Stift kopiert…"
+  },
+  "check": {
+    "button": "Nach neuen Büchern suchen",
+    "checking": "Wird gesucht…",
+    "last": "Zuletzt geprüft: {{time}}",
+    "never": "Noch nicht geprüft",
+    "failed": "Die PonyABC-Bibliothek war nicht erreichbar. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+  },
+  "yourBooks": {
+    "title": "Ihre Bücher",
+    "intro": "Die Bücher, die gerade auf Ihrem Stift sind.",
+    "empty": "Noch keine Bücher auf dem Stift. Fügen Sie unten welche hinzu.",
+    "upToDate": "Aktuell",
+    "updateAvailable": "Aktualisierung verfügbar",
+    "checking": "Wird geprüft…",
+    "updating": "Wird aktualisiert…",
+    "update": "Aktualisieren"
+  },
+  "otherBooks": {
+    "title": "Andere Bücher (nicht von PonyABC)",
+    "body": "Diese stammen von woanders. Diese App lässt sie unverändert."
+  },
+  "newBooks": {
+    "title": "Neue Bücher",
+    "intro": "Bücher, die Sie hinzufügen können. Haken Sie die an, deren Karten Sie haben.",
+    "empty": "Ihr Stift hat bereits alle Bücher, die wir anbieten.",
+    "badge": "NEU",
+    "badgeHint": "NEU heißt, dieses Buch kam seit Ihrer letzten Prüfung in die Liste."
+  },
+  "footer": {
+    "selected": "{{count}} Buch/Bücher ausgewählt, etwa {{minutes}} Minuten",
+    "selectedShort": "{{count}} Buch/Bücher ausgewählt, ein bis zwei Minuten",
+    "none": "Haken Sie oben ein Buch an, um es hinzuzufügen.",
+    "add": "Zum Stift hinzufügen"
+  },
+  "estimate": {
+    "minutes": "etwa {{minutes}} Min.",
+    "short": "etwa eine Minute"
+  },
+  "penRequired": "Schließen Sie Ihren Stift an, um Bücher zu sehen und hinzuzufügen.",
+  "pen": {
+    "connected": "Ihr Stift ist angeschlossen",
+    "disconnected": "Bitte schließen Sie Ihren Stift mit dem USB-Kabel an"
+  },
+  "sync": {
+    "hasNone": "Auf Ihrem Stift sind noch keine PonyABC-Bücher.",
+    "upToDate": "Alle Ihre Bücher sind aktuell.",
+    "button": "Bücher abgleichen",
+    "working": "Wird abgeglichen…",
+    "needPen": "Schließen Sie Ihren Stift an, um abzugleichen.",
+    "stoppedNoSpace": "Ihr Stift ist voll, daher haben wir aufgehört. Die fertigen Bücher sind darauf.",
+    "has_one": "Auf Ihrem Stift ist {{count}} PonyABC-Buch.",
+    "has_other": "Auf Ihrem Stift sind {{count}} PonyABC-Bücher.",
+    "newBooks_one": "{{count}} neues Buch",
+    "newBooks_other": "{{count}} neue Bücher",
+    "updates_one": "{{count}} Aktualisierung",
+    "updates_other": "{{count}} Aktualisierungen",
+    "availableBoth": "{{news}} und {{updates}} verfügbar.",
+    "availableAdds": "{{news}} verfügbar.",
+    "availableUpdates": "{{updates}} verfügbar.",
+    "time_one": "Etwa {{count}} Minute.",
+    "time_other": "Etwa {{count}} Minuten.",
+    "timeShort": "Etwa eine Minute."
+  },
+  "space": {
+    "title": "Ihr Stift hat nicht genug Platz",
+    "body": "Es fehlen etwa {{amount}}. Sichern Sie Ihre Aufnahmen, löschen Sie nicht mehr benötigte, und gleichen Sie dann erneut ab.",
+    "goToRecordings": "Zu Meine Aufnahmen",
+    "unreadable": "Der freie Speicher auf Ihrem Stift konnte nicht geprüft werden. Ziehen Sie ihn ab, schließen Sie ihn wieder an und versuchen Sie es erneut."
+  },
+  "list": {
+    "toggle": "Bücherliste ansehen",
+    "onPen": "Auf Ihrem Stift",
+    "willAdd": "Wird hinzugefügt",
+    "willUpdate": "Wird aktualisiert",
+    "other": "Andere Bücher (nicht von PonyABC)",
+    "otherBody": "Diese stammen von woanders. Diese App ändert sie nie.",
+    "none": "Keine"
+  },
+  "size": {
+    "about": "etwa {{size}}"
+  },
+  "remove": {
+    "title_one": "Ein Buch wird vom Stift entfernt",
+    "title_other": "{{count}} Bücher werden vom Stift entfernt",
+    "body": "Diese Bücher gehören nicht mehr zur PonyABC-Bibliothek. Das Entfernen schafft etwa {{size}} Platz auf dem Stift. Alles andere bleibt unverändert."
   }
 }

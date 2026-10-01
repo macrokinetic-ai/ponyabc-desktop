@@ -443,7 +443,20 @@ body {
   gap: 8px;
   justify-content: center;
   flex-shrink: 0;
-  width: 160px;
+  /* Was a flat 160px, which forced "Replace this sticker using selected audio…" onto three lines
+     in English and broke 傳送至點讀錄音筆 in two. The column now takes the width its longest label
+     needs, within bounds, so labels stay whole and the panes either side give up the room. */
+  width: max-content;
+  min-width: 160px;
+  max-width: 260px;
+}
+
+/* These labels are whole sentences, so they may wrap — but only between words, never mid-word,
+   which is what made the Chinese ones break badly. */
+.dual-pane__actions > .button {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 .plan-panel {
@@ -521,6 +534,11 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* The name is what gives way when a row is tight — never the buttons. */
+.recordings-list__label {
+  flex: 1 1 8rem;
+}
+
 .recordings-list__size {
   color: var(--fg-muted);
   font-size: 12px;
@@ -581,8 +599,35 @@ body {
 
 .recordings-list__detail-actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 4px;
+}
+
+/* Whole buttons move to the next line; none is compressed to make room. This is the load-bearing
+   fix: a button that cannot be squeezed narrower than its label cannot wrap in the first place. */
+.recordings-list__detail-actions > .button,
+.recordings-list__row > .button {
+  flex: 0 0 auto;
+}
+
+/* And a belt to that brace. Chinese has no spaces between words, so a pill that does get squeezed
+   breaks to one character per line and renders as a circle — what the owner saw on My Recordings
+   in 繁體中文. Scoped to rows and toolbars on purpose: a sentence-like label elsewhere, such as
+   "Replace this sticker's audio…", must still be allowed to wrap rather than be clipped. */
+.recordings-list .button,
+.recordings-list__detail-actions > .button,
+.pane__toolbar .button,
+.book-toolbar .button {
+  white-space: nowrap;
+}
+
+/* Compact pills inside a list row. The full-size button is right for a page's main action and too
+   heavy repeated four times against every recording. */
+.recordings-list .button {
+  padding: 5px 12px;
+  font-size: 13px;
+  border-width: 1px;
 }
 
 .pane__footer {
@@ -1150,4 +1195,181 @@ body {
 
 .collapsible__content p {
   margin: 0.25rem 0 0.75rem;
+}
+
+/* Update Book Content — label legend. Collapsed by default so it never competes with the two
+ * panes, but always present: the statuses it explains are the screen's main source of
+ * confusion ("on pen" vs "verified", "cached" vs "on pen"). */
+.status-legend {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.status-legend > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-legend__heading {
+  font-size: 13px;
+  margin: 12px 0 4px;
+}
+
+.status-legend__list {
+  margin: 0;
+}
+
+.status-legend__item {
+  display: grid;
+  grid-template-columns: minmax(120px, 22%) 1fr;
+  gap: 4px 12px;
+  padding: 3px 0;
+}
+
+.status-legend__item dt {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.status-legend__item dd {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+/* Narrow windows: the two-column term/definition grid stops being readable well before the
+ * app's minimum width, so stack it. */
+@media (max-width: 720px) {
+  .status-legend__item {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The same explanation as the chip's tooltip, shown inline in an expanded row so it is
+ * reachable by keyboard and on a touch screen. */
+.status-help {
+  font-style: italic;
+}
+
+/* Advanced details — the technical status, filename and checksum wording. Closed by default and
+ * visually quieter than the row above it: a parent adding a book should never need to open it,
+ * and support should always be able to. */
+.advanced-details {
+  margin-top: 6px;
+}
+
+.advanced-details > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+
+.advanced-details > * {
+  margin-top: 4px;
+}
+
+/* Update Book Content — the single-column parent layout: check for new books, your books,
+ * new books, then one footer that says how long and does it. */
+.book-section {
+  margin-top: 16px;
+}
+
+.book-section > h2 {
+  font-size: 18px;
+  margin: 0 0 2px;
+}
+
+.book-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* "Check for new books" — the first thing on the BOOK screen, and the only place the
+ * catalogue is mentioned to a parent at all. */
+.book-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* One-button sync: the whole BOOK screen is a sentence, a button, and a list you can open. */
+.book-summary {
+  margin-top: 8px;
+}
+
+.book-summary__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.book-list {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.book-list > summary,
+.book-list details > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* The pen's books are shown, not disclosed — a teacher checking a row of pens should not have to
+   open anything to see what is on the one in their hand. */
+.book-list--open > details {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* How much room is left, on both the Books and My Recordings screens. */
+.pen-storage {
+  margin-top: 12px;
+}
+
+.pen-storage > p {
+  margin: 0 0 4px;
+}
+
+.pen-storage__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.pen-storage__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 200ms ease;
+}
+
+.pen-storage > .hint {
+  margin-top: 4px;
+}
+
+.book-name-list {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--fg-muted);
 }

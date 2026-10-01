@@ -29,6 +29,9 @@ function entry(overrides: Partial<BookCatalogEntry> = {}): BookCatalogEntry {
     contentLanguages: [],
     sortOrder: 0,
     updatedAtMs: null,
+    updateRequiresIndexReset: false,
+    state: 'active',
+    minAppVersion: null,
     downloadUrl: 'https://x.test/download?id=b1',
     ...overrides,
   };

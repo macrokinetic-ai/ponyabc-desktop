@@ -5,7 +5,7 @@
   "lastUpdated": "最後更新：{{time}}",
   "devFixtureBanner": "開發測試目錄資料——非正式內容",
   "newBadge": "NEW",
-  "newBadgeLegend": "NEW 表示此項目在最近 14 日內於伺服器新增或更新過。",
+  "newBadgeLegend": "「新」表示這本書是你上次檢查之後才加入清單的。",
   "connection": {
     "label": "BOOK 目錄",
     "checking": "檢查中…",
@@ -16,26 +16,23 @@
     "usingOfflineCache": "使用上次儲存的目錄（更新於 {{time}}）",
     "neverLoaded": "尚未成功載入過目錄"
   },
-  "ambiguousNotice": "有 {{count}} 個目錄項目與其他項目使用相同檔名——僅供參考顯示，直至伺服器端解決。",
-  "penRequiredForWrite": "請連接點讀筆以查看及管理其 BOOK 內容。",
+  "ambiguousNotice_other": "暫時有 {{count}} 本書未列於此，因為無法確定是哪一本。其餘一切如常，點讀錄音筆內的內容亦沒有改動。",
+  "penRequiredForWrite": "請連接點讀錄音筆以查看及管理其 BOOK 內容。",
   "selectAll": "全選",
   "selectedCount": "已選 {{count}} 項",
   "emptyState": "暫時未有項目。",
   "insufficientSpace": "空間不足，無法完成。",
   "downloadFailed": "下載失敗，請檢查網絡後再試。",
   "downloadCancelled": "下載已取消。",
-  "metadataIncompleteNotice": "此項目的目錄資料不完整，暫時未能安裝。",
+  "metadataIncompleteNotice": "這本書的資料尚未齊全，暫時未能放進點讀錄音筆。你的點讀錄音筆沒有任何問題。",
   "targetChangedSinceBackup": "備份完成後，筆內檔案在移除前有變動，已取消刪除，內容未受影響，請重試。",
-  "stalePlan": "點讀筆已變更，請重試。",
+  "stalePlan": "點讀錄音筆已變更，請重試。",
   "backupFailed": "未能備份原有檔案，故未有任何改動。",
-  "unknownContentNotice": "此檔案未能識別為目錄內的 BOOK 內容，不能在此更改。",
+  "unknownContentNotice": "這本書並非來自 PonyABC，本程式不會作任何改動。",
   "genericError": "發生錯誤。",
   "cancel": "取消",
-  "confirmRemoveTitle": "從點讀筆移除？",
-  "confirmRemoveHint": "系統會先在此電腦備份原檔。",
-  "confirmRemoveAction": "移除",
   "confirmAddTitle": "部分已選項目與筆內內容不同",
-  "addConflictsHint": "這些項目已存在於點讀筆，但內容不同。請為每項選擇取代（會先備份）或保留原狀。",
+  "addConflictsHint": "這些項目已存在於點讀錄音筆，但內容不同。請為每項選擇取代（會先備份）或保留原狀。",
   "replaceOption": "取代",
   "skipOption": "略過",
   "confirmAddAction": "確認",
@@ -54,10 +51,10 @@
     "verifiedCurrent": "上次校驗：與官方版本相符",
     "verifiedDiffers": "上次校驗：與官方版本不同",
     "sizeDiffers": "大小與官方版本不同",
-    "matchedHashUnknown": "無法與目錄核對",
-    "awaitingCatalog": "等待目錄配對",
-    "unknown": "未知內容",
-    "notOnPen": "未在點讀筆",
+    "matchedHashUnknown": "筆內已有——沒有官方校驗碼可核對",
+    "awaitingCatalog": "筆內已有——尚未載入目錄",
+    "unknown": "非官方內容",
+    "notOnPen": "未在點讀錄音筆",
     "onPenPresent": "筆內已有——未校驗",
     "onPenCurrent": "筆內已有——已校驗，相符",
     "onPenDiffers": "筆內已有——已校驗，不同",
@@ -72,9 +69,9 @@
     "verifiedCurrent": "已校驗",
     "verifiedDiffers": "不同",
     "sizeDiffers": "大小不同",
-    "matchedHashUnknown": "筆內已有",
-    "awaitingCatalog": "等待配對",
-    "unknown": "未知",
+    "matchedHashUnknown": "無校驗碼",
+    "awaitingCatalog": "未有目錄",
+    "unknown": "不在目錄內",
     "notOnPen": "未在筆",
     "onPenPresent": "筆內已有",
     "onPenVerifying": "校驗中…",
@@ -85,15 +82,176 @@
     "ambiguous": "有歧義"
   },
   "action": {
-    "add": "加入點讀筆",
-    "remove": "從點讀筆移除",
-    "reinstall": "重新下載",
+    "add": "將已選書本加入點讀錄音筆",
+    "reinstall": "重新取得檔案並放到點讀錄音筆",
     "cancelDownload": "取消",
-    "verifySelected": "驗證所選內容",
     "cancelVerify": "取消驗證",
     "verifyThis": "校驗此檔案",
     "downloadSelected": "下載所選到 App",
     "downloadAll": "下載全部到 App",
-    "cancelDownloadBatch": "取消下載"
+    "cancelDownloadBatch": "取消下載",
+    "addOne": "加入",
+    "updateOne": "更新",
+    "reinstallNote": "這會重新下載這本書並複製到您的點讀錄音筆，完成後需要重新啟動點讀錄音筆。",
+    "reinstallWorking": "正在重新取得…",
+    "reinstallDone": "完成。這本書已重新放到您的點讀錄音筆。",
+    "verifyWorking": "正在檢查這個檔案…",
+    "verifyDone": "完成。這個檔案已檢查。"
+  },
+  "statusHelp": {
+    "present": "檔名與官方書本相符，但 App 未讀取檔案內容作核對。重新整理不會讀取檔案內容，所以在你選擇「校驗此檔案」之前，這都是正常狀態。",
+    "verifying": "App 正在讀取此檔案，並與官方版本比對。",
+    "verifiedCurrent": "你曾校驗此檔案，內容與官方版本完全相符。只在該次校驗對這支筆和這個檔案仍然有效時顯示。",
+    "verifiedDiffers": "你曾校驗此檔案，內容與官方版本不符，可能是舊版或已損壞的副本。可從官方內容清單重新加入以取代它。",
+    "sizeDiffers": "檔案大小已與官方版本不同，內容不可能相同。毋須讀取檔案內容即可得知。",
+    "matchedHashUnknown": "檔名與官方書本相符，但目錄未提供校驗碼，因此沒有可比對的依據。",
+    "awaitingCatalog": "尚未載入目錄，因此此檔案未與任何資料比對過。請連接互聯網後重新整理。",
+    "unknown": "此檔案不在官方目錄內。App 不會改動它，也不能移除或取代它。",
+    "notOnPen": "此書本不在已連接的點讀錄音筆內。",
+    "onPenPresent": "點讀錄音筆內有同名檔案，但未核對過內容。",
+    "onPenVerifying": "App 正在讀取筆內的檔案，並與官方版本比對。",
+    "onPenCurrent": "筆內檔案經校驗，與此官方版本完全相符。",
+    "onPenDiffers": "筆內檔案經校驗，與此官方版本不符。可加入點讀錄音筆以取代，原有檔案會先備份。",
+    "onPenSizeDiffers": "筆內檔案大小與此官方版本不同，內容不可能相同。",
+    "metadataIncomplete": "目錄項目缺少 App 所需的檔名或校驗碼，因此此書本暫時無法安裝。你的點讀錄音筆並沒有問題。",
+    "ambiguous": "有兩個或以上的目錄項目使用相同檔名，App 無法判斷是指哪一個。在伺服器修正之前只作參考顯示。"
+  },
+  "cacheHelp": {
+    "cached": "此電腦已儲存一份已核對的副本，加入點讀錄音筆時毋須下載。",
+    "notDownloaded": "此電腦尚未儲存副本。加入點讀錄音筆時會自動下載。",
+    "downloading": "正在下載到此電腦。"
+  },
+  "legend": {
+    "title": "這些字是甚麼意思？",
+    "intro": "每本書都會顯示是否已在點讀錄音筆內。需要技術資料可展開「進階資料」。",
+    "penHeading": "點讀錄音筆內的內容",
+    "catalogHeading": "官方內容",
+    "cacheHeading": "此電腦的副本"
+  },
+  "simple": {
+    "onPen": "已在點讀錄音筆",
+    "updateAvailable": "有更新版本",
+    "notOnPen": "尚未加入點讀錄音筆",
+    "downloading": "下載中…",
+    "checking": "檢查中…",
+    "needsHelp": "有點問題——按此查看說明"
+  },
+  "simpleHelp": {
+    "onPen": "這本書已在點讀錄音筆內，可以使用。",
+    "updateAvailable": "這本書有較新版本。按「同步書本」即會更換，原有檔案會先備份。",
+    "notOnPen": "這本書尚未放進點讀錄音筆。按「同步書本」即會放進去。",
+    "downloading": "正在複製到這部電腦，然後再放入點讀錄音筆。",
+    "checking": "正在檢查這本書，很快就好。",
+    "needsHelp": "這一項需要再看看——書籍清單可能不完整。你的點讀錄音筆沒有問題。可展開「進階資料」或聯絡客服。"
+  },
+  "advanced": {
+    "title": "進階資料",
+    "hint": "供客服參考的技術資料，日常使用不需要理會。"
+  },
+  "catalogIntro": "買了新書？在下面清單找到它，然後按「加入」。",
+  "done": {
+    "restartTitle": "完成！",
+    "restartBody": "請拔出點讀錄音筆，然後關機再開啟。第一次開機可能需要較長時間準備書本。"
+  },
+  "fix": {
+    "title": "點讀錄音筆的書本清單需要整理",
+    "body": "有書本是在本程式以外新增或刪除的，點讀錄音筆可能會播放錯誤的書本。整理只需數秒。",
+    "button": "整理點讀錄音筆的書本清單",
+    "working": "整理中…",
+    "doneBody": "已整理好。請拔出點讀錄音筆，然後關機再開啟。第一次開機可能需要較長時間。",
+    "failed": "暫時未能完成，點讀錄音筆沒有任何改動。請重新連接後再試一次。",
+    "sidecarNotice": "點讀錄音筆上還有一些由 Mac 複製時產生的額外檔案。它們無害，如有需要可自行在資料夾中刪除。"
+  },
+  "verifyHint": "如客服要求，可展開下面的書本進行檢查。",
+  "booksManagedNotice": "書本由 PonyABC 書庫管理，你可以在此新增和更新。",
+  "transfer": {
+    "estimateBefore": "大約需要 {{minutes}} 分鐘，請保持點讀錄音筆連接電腦。",
+    "estimateBeforeShort": "大約需要一兩分鐘，請保持點讀錄音筆連接電腦。",
+    "dontUnplug": "請勿拔出點讀錄音筆",
+    "dontUnplugBody": "正在寫入點讀錄音筆。此時拔出可能令書本未能完整複製。",
+    "remaining": "尚餘大約 {{minutes}} 分鐘",
+    "remainingShort": "即將完成",
+    "writing": "正在將《{{name}}》複製到點讀錄音筆…"
+  },
+  "check": {
+    "button": "檢查有沒有新書",
+    "checking": "檢查中…",
+    "last": "上次檢查：{{time}}",
+    "never": "尚未檢查",
+    "failed": "未能連接 PonyABC 書庫。請檢查網絡連線後再試一次。"
+  },
+  "yourBooks": {
+    "title": "你的書本",
+    "intro": "目前在點讀錄音筆內的書本。",
+    "empty": "點讀錄音筆內尚未有書本，可從下面加入。",
+    "upToDate": "已是最新",
+    "updateAvailable": "有更新版本",
+    "checking": "檢查中…",
+    "updating": "更新中…",
+    "update": "更新"
+  },
+  "otherBooks": {
+    "title": "其他書本（並非來自 PonyABC）",
+    "body": "這些書本來自其他來源，本程式不會作任何改動。"
+  },
+  "newBooks": {
+    "title": "新書",
+    "intro": "可以加入的書本。請勾選你已擁有卡片的書本。",
+    "empty": "我們提供的書本，點讀錄音筆內已全部齊備。",
+    "badge": "新",
+    "badgeHint": "「新」表示這本書是你上次檢查之後才加入清單的。"
+  },
+  "footer": {
+    "selected": "已選 {{count}} 本，約需 {{minutes}} 分鐘",
+    "selectedShort": "已選 {{count}} 本，約需一兩分鐘",
+    "none": "請在上面勾選想加入的書本。",
+    "add": "加入點讀錄音筆"
+  },
+  "estimate": {
+    "minutes": "約 {{minutes}} 分鐘",
+    "short": "約一分鐘"
+  },
+  "penRequired": "請連接點讀錄音筆，以檢視和加入書本。",
+  "pen": {
+    "connected": "點讀錄音筆已連接",
+    "disconnected": "請用 USB 線連接點讀錄音筆"
+  },
+  "sync": {
+    "hasNone": "點讀錄音筆內尚未有 PonyABC 書本。",
+    "upToDate": "所有書本已是最新。",
+    "button": "同步書本",
+    "working": "同步中…",
+    "needPen": "請先連接點讀錄音筆才能同步。",
+    "stoppedNoSpace": "點讀錄音筆已滿，因此已停止。已完成的書本仍在筆內。",
+    "has_other": "點讀錄音筆內有 {{count}} 本 PonyABC 書本。",
+    "newBooks_other": "{{count}} 本新書",
+    "updates_other": "{{count}} 項更新",
+    "availableBoth": "可加入{{news}}，另有{{updates}}。",
+    "availableAdds": "可加入{{news}}。",
+    "availableUpdates": "有{{updates}}。",
+    "time_other": "約需 {{count}} 分鐘。",
+    "timeShort": "約需一分鐘。"
+  },
+  "space": {
+    "title": "點讀錄音筆空間不足",
+    "body": "尚欠約 {{amount}}。請先備份錄音，刪除不再需要的部分，然後再同步。",
+    "goToRecordings": "前往「我的錄音」",
+    "unreadable": "無法檢查點讀錄音筆的剩餘空間。請拔出點讀錄音筆，重新插入後再試。"
+  },
+  "list": {
+    "toggle": "查看書本清單",
+    "onPen": "已在點讀錄音筆",
+    "willAdd": "將會加入",
+    "willUpdate": "將會更新",
+    "other": "其他書本（並非來自 PonyABC）",
+    "otherBody": "這些書本來自其他來源，本程式不會作任何改動。",
+    "none": "沒有"
+  },
+  "size": {
+    "about": "約 {{size}}"
+  },
+  "remove": {
+    "title_other": "將有 {{count}} 本書從點讀錄音筆移除",
+    "body": "這些書本已不再屬於 PonyABC 書庫。移除後可在點讀錄音筆騰出約 {{size}} 空間，其餘內容一律維持不變。"
   }
 }

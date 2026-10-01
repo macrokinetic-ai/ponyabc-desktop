@@ -1,5 +1,5 @@
 {
-  "kicker": "Lápiz lector PonyABC P5",
+  "kicker": "PonyABC P5 Lápiz Lector y Grabador Inteligente",
   "title": "Bienvenido a PonyABC Desktop",
   "intro": "Registre su lápiz para la garantía, o administre su contenido desde las secciones de la izquierda.",
   "connection": {
@@ -8,9 +8,9 @@
     "disconnectedTitle": "Lápiz P5 no conectado"
   },
   "entries": {
-    "recordingsBody": "Copie grabaciones DIY en MP3 entre el lápiz y una carpeta de este ordenador, y reemplace el audio de las pegatinas.",
-    "bookBody": "Añada contenido oficial de BOOK al lápiz, o descárguelo primero a este ordenador.",
-    "firmwareBody": "Solo Windows. Asistente paso a paso para actualizar el firmware del lápiz."
+    "recordingsBody": "Guarde una copia de las grabaciones de su hijo en este ordenador, póngales nombre y devuélvalas al lápiz cuando quiera.",
+    "bookBody": "Ponga libros PonyABC en el lápiz y manténgalos al día.",
+    "firmwareBody": "Solo Windows. Actualice el software del propio lápiz cuando haya una versión nueva."
   },
   "warrantyTitle": "Registre su garantía",
   "registerButton": "Registrar su lápiz",

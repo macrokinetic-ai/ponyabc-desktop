@@ -20,7 +20,9 @@
     "updateAvailable": "È disponibile una nuova versione: {{version}}",
     "downloadUpdateButton": "Vai alla pagina di download",
     "checkFailed": "Impossibile controllare gli aggiornamenti (sei online?).",
-    "storeManagedUpdates": "Installata da Microsoft Store: gli aggiornamenti sono gestiti automaticamente."
+    "storeManagedUpdates": "Installata da Microsoft Store: gli aggiornamenti sono gestiti automaticamente.",
+    "productLabel": "Prodotto",
+    "productName": "PonyABC P5 Penna Intelligente Lettore-Registratore"
   },
   "diagnostics": {
     "title": "Diagnostica",

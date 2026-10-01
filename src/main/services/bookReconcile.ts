@@ -134,6 +134,8 @@ export function buildBookLibrary(params: {
       friendlyNameI18n: entry.friendlyNameI18n,
       sizeBytes: entry.sizeBytes,
       status,
+      state: entry.state,
+      minAppVersion: entry.minAppVersion,
       cached: cached !== null,
       actionable:
         eligible &&

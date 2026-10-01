@@ -1,6 +1,6 @@
 {
   "title": "My Recordings",
-  "emptyState": "No DIY recordings found on the pen.",
+  "emptyState": "There are no recordings on your pen yet.",
   "computerEmptyState": "No .mp3 files in this folder.",
   "selectAll": "Select all",
   "selectedCount": "{{count}} selected",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Save to computer →",
     "sendToPen": "← Send to pen",
-    "replaceSticker": "Replace this sticker using selected audio…"
+    "replaceSticker": "Replace this sticker's audio…",
+    "play": "Play",
+    "deleteFromPen": "Delete from pen"
   },
   "transferPlan": {
     "title": "Send to pen — review before sending",
@@ -84,5 +86,106 @@
     "errorTooLarge": "This file is too large to preview.",
     "errorGeneric": "Couldn't play this file (unsupported or unreadable).",
     "penEncodingHint": "Playing fine here doesn't guarantee the pen can play the same file once sent."
+  },
+  "onPen": {
+    "title": "On your pen",
+    "intro": "The recordings your pen is holding right now."
+  },
+  "backup": {
+    "title": "Backups on this computer",
+    "intro": "A backup keeps a copy of every recording, so you can put them back later.",
+    "button": "Back up my recordings",
+    "none": "No backups yet. Select Back up my recordings to make one.",
+    "choose": "Backup to use:",
+    "missing": "That backup could not be found.",
+    "done_one": "Backed up {{count}} recording.",
+    "done_other": "Backed up {{count}} recordings.",
+    "countLabel_one": "{{count}} recording",
+    "countLabel_other": "{{count}} recordings",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Automatic backup before replacing {{name}}",
+    "labelBeforeReplaceMany": "Automatic backup before replacing recordings",
+    "labelBeforeDelete": "Automatic backup before deleting {{name}}",
+    "labelBeforeDeleteMany": "Automatic backup before deleting recordings",
+    "labelBeforeRestore": "Automatic backup before putting recordings back",
+    "labelBeforeReassign": "Automatic backup before moving {{name}} to another number",
+    "labelMigration": "Backup brought in from an older version",
+    "keptSeparately": "Each backup is a separate copy of your recordings as they were at that moment. Older backups are kept — making a new one never replaces them.",
+    "contentsTitle": "In this backup",
+    "contentsEmpty": "This backup holds no recordings.",
+    "contentsLoading": "Looking inside this backup…",
+    "working": "Backing up your recordings…",
+    "selectAll": "Select all",
+    "selectedCount_one": "{{count}} chosen",
+    "selectedCount_other": "{{count}} chosen",
+    "progress": "{{done}} of {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Put selected recordings back on my pen",
+    "reviewTitle": "Before we put these back",
+    "clashIntro": "Some of these numbers already have a recording on your pen. Listen to both and choose which one to keep.",
+    "fromBackup": "From the backup:",
+    "onPen": "On your pen now:",
+    "replace": "Use the one from the backup",
+    "keepPen": "Keep the one on my pen",
+    "decideAll": "Please choose for each one above.",
+    "confirm": "Put them back",
+    "nothingToDo": "Everything in that backup is already on your pen.",
+    "noClashes_one": "{{count}} recording will be added to your pen. Nothing already on it will change.",
+    "noClashes_other": "{{count}} recordings will be added to your pen. Nothing already on it will change.",
+    "done_one": "Put {{count}} recording back on your pen.",
+    "done_other": "Put {{count}} recordings back on your pen.",
+    "buttonNote": "Only the recordings you have ticked above are copied back. Anything else on your pen is left alone.",
+    "working": "Putting your recordings back…"
+  },
+  "label": {
+    "button": "Rename",
+    "prompt": "What would you like to call this?",
+    "hint": "This name is only on this computer. Your pen always uses the sticker number."
+  },
+  "reassign": {
+    "button": "Change sticker number",
+    "prompt": "New sticker number",
+    "hint": "Type the number printed on the sticker, exactly as it appears.",
+    "confirm": "Move it",
+    "done": "Moved to the new sticker.",
+    "failed": "That could not be done. Please try again.",
+    "rejected": {
+      "notDigits": "Please type only the numbers on the sticker.",
+      "length": "Please type the number exactly as printed on the sticker, including any zeros at the start.",
+      "occupied": "There is already a recording on that sticker.",
+      "unchanged": "That is the sticker it is already on."
+    }
+  },
+  "deletePen": {
+    "confirm": "Delete “{{name}}” from your pen?",
+    "backupNotice": "A copy is saved to this computer first, so you can put it back later.",
+    "done": "Deleted. A copy is in your backups.",
+    "failed": "That could not be deleted. Nothing was changed."
+  },
+  "advancedTools": {
+    "title": "Advanced tools"
+  },
+  "addFromComputer": {
+    "title": "Add recordings from this computer",
+    "intro": "Put your own recordings onto the pen. Name each file with the sticker number it belongs to — four digits, like 0451, or five.",
+    "choose": "Choose recordings…",
+    "chosenFrom": "From {{folder}}",
+    "mixedFolders": "Please choose recordings from one folder at a time.",
+    "noneChosen": "No recordings chosen yet.",
+    "rejected": "These were not recordings we can use and have been left out: {{names}}",
+    "badName": "Not a sticker number — rename it to four digits, like 0451",
+    "willAdd": "New",
+    "willReplace": "WILL REPLACE the recording on your pen",
+    "previewChosen": "Play the one on this computer",
+    "previewPen": "Play the one on the pen",
+    "copyButton": "Copy to my pen",
+    "copying": "Copying to your pen…",
+    "backupFirst": "The pen’s own copies are backed up first, automatically. You will find them under Backups on this computer.",
+    "done_one": "Copied {{count}} recording to your pen.",
+    "done_other": "Copied {{count}} recordings to your pen.",
+    "backupFailed": "Your pen’s own recordings could not be backed up, so nothing was changed. Please try again.",
+    "manyPens": "Sending the same set to several pens one after another is coming in a later version. For now, choose the recordings again for each pen.",
+    "noSpace": "There is not enough room on your pen for all of these. Please delete some recordings you no longer need, then choose them again."
   }
 }

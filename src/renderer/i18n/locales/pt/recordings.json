@@ -1,6 +1,6 @@
 {
   "title": "Minhas gravações",
-  "emptyState": "Nenhuma gravação DIY encontrada na caneta.",
+  "emptyState": "Ainda não há gravações na sua caneta.",
   "computerEmptyState": "Não há ficheiros .mp3 nesta pasta.",
   "selectAll": "Selecionar tudo",
   "selectedCount": "{{count}} selecionado(s)",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Guardar no computador →",
     "sendToPen": "← Enviar para a caneta",
-    "replaceSticker": "Substituir este autocolante com o áudio selecionado…"
+    "replaceSticker": "Substituir o áudio deste autocolante…",
+    "play": "Ouvir",
+    "deleteFromPen": "Apagar da caneta"
   },
   "transferPlan": {
     "title": "Enviar para a caneta — reveja antes de enviar",
@@ -84,5 +86,106 @@
     "errorTooLarge": "Este ficheiro é demasiado grande para pré-ouvir.",
     "errorGeneric": "Não foi possível reproduzir este ficheiro (não suportado ou ilegível).",
     "penEncodingHint": "Tocar bem aqui não garante que a caneta consiga reproduzir o mesmo ficheiro depois de enviado."
+  },
+  "onPen": {
+    "title": "Na sua caneta",
+    "intro": "As gravações que a caneta tem neste momento."
+  },
+  "backup": {
+    "title": "Cópias neste computador",
+    "intro": "Uma cópia guarda cada gravação, para as poder repor mais tarde.",
+    "button": "Guardar cópia das gravações",
+    "none": "Ainda não há cópias. Escolha Guardar cópia das gravações.",
+    "choose": "Cópia a usar:",
+    "missing": "Essa cópia não foi encontrada.",
+    "done_one": "{{count}} gravação guardada.",
+    "done_other": "{{count}} gravações guardadas.",
+    "countLabel_one": "{{count}} gravação",
+    "countLabel_other": "{{count}} gravações",
+    "labelManual": "Cópia de segurança",
+    "labelBeforeReplace": "Cópia automática antes de substituir {{name}}",
+    "labelBeforeReplaceMany": "Cópia automática antes de substituir gravações",
+    "labelBeforeDelete": "Cópia automática antes de eliminar {{name}}",
+    "labelBeforeDeleteMany": "Cópia automática antes de eliminar gravações",
+    "labelBeforeRestore": "Cópia automática antes de repor gravações na caneta",
+    "labelBeforeReassign": "Cópia automática antes de passar {{name}} para outro número",
+    "labelMigration": "Cópia trazida de uma versão anterior",
+    "keptSeparately": "Cada cópia de segurança é uma cópia separada das suas gravações tal como estavam nesse momento. As anteriores são mantidas — criar uma nova nunca as substitui.",
+    "contentsTitle": "Nesta cópia",
+    "contentsEmpty": "Esta cópia não contém gravações.",
+    "contentsLoading": "A ver o conteúdo desta cópia…",
+    "working": "A guardar as suas gravações…",
+    "selectAll": "Selecionar tudo",
+    "selectedCount_one": "{{count}} selecionada",
+    "selectedCount_other": "{{count}} selecionadas",
+    "progress": "{{done}} de {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Repor na caneta as gravações selecionadas",
+    "reviewTitle": "Antes de repor",
+    "clashIntro": "Alguns destes números já têm uma gravação na caneta. Ouça as duas e escolha qual fica.",
+    "fromBackup": "Da cópia:",
+    "onPen": "Agora na caneta:",
+    "replace": "Usar a da cópia",
+    "keepPen": "Manter a da caneta",
+    "decideAll": "Escolha para cada uma acima.",
+    "confirm": "Repor",
+    "nothingToDo": "Tudo o que está nessa cópia já está na sua caneta.",
+    "noClashes_one": "Vai ser adicionada {{count}} gravação. Nada do que já está na caneta muda.",
+    "noClashes_other": "Vão ser adicionadas {{count}} gravações. Nada do que já está na caneta muda.",
+    "done_one": "{{count}} gravação reposta na caneta.",
+    "done_other": "{{count}} gravações repostas na caneta.",
+    "buttonNote": "Só as gravações assinaladas acima são copiadas de volta. O resto da caneta fica intacto.",
+    "working": "A repor as gravações…"
+  },
+  "label": {
+    "button": "Mudar o nome",
+    "prompt": "Como lhe quer chamar?",
+    "hint": "Este nome fica só neste computador. A caneta usa sempre o número do autocolante."
+  },
+  "reassign": {
+    "button": "Mudar o número do autocolante",
+    "prompt": "Novo número do autocolante",
+    "hint": "Escreva o número impresso no autocolante, tal e qual.",
+    "confirm": "Mover",
+    "done": "Movida para o novo autocolante.",
+    "failed": "Não foi possível. Tente novamente.",
+    "rejected": {
+      "notDigits": "Escreva apenas os números do autocolante.",
+      "length": "Escreva o número tal como está impresso, incluindo os zeros iniciais.",
+      "occupied": "Esse autocolante já tem uma gravação.",
+      "unchanged": "Já está nesse autocolante."
+    }
+  },
+  "deletePen": {
+    "confirm": "Apagar «{{name}}» da sua caneta?",
+    "backupNotice": "É guardada primeiro uma cópia neste computador, para a poder repor.",
+    "done": "Apagada. Há uma cópia nas suas cópias de segurança.",
+    "failed": "Não foi possível apagar. Nada foi alterado."
+  },
+  "advancedTools": {
+    "title": "Ferramentas avançadas"
+  },
+  "addFromComputer": {
+    "title": "Adicionar gravações deste computador",
+    "intro": "Coloque as suas próprias gravações na caneta. Dê a cada ficheiro o número do autocolante a que pertence — quatro dígitos, como 0451, ou cinco.",
+    "choose": "Escolher gravações…",
+    "chosenFrom": "De {{folder}}",
+    "mixedFolders": "Escolha gravações de uma pasta de cada vez.",
+    "noneChosen": "Ainda não escolheu gravações.",
+    "rejected": "Estes não são gravações que possamos usar e ficaram de fora: {{names}}",
+    "badName": "Não é um número de autocolante — mude o nome para quatro dígitos, como 0451",
+    "willAdd": "Nova",
+    "willReplace": "VAI SUBSTITUIR a gravação na sua caneta",
+    "previewChosen": "Ouvir a deste computador",
+    "previewPen": "Ouvir a da caneta",
+    "copyButton": "Copiar para a minha caneta",
+    "copying": "A copiar para a sua caneta…",
+    "backupFirst": "As gravações da caneta são guardadas primeiro, automaticamente. Encontra-as em Cópias de segurança neste computador.",
+    "done_one": "{{count}} gravação copiada para a sua caneta.",
+    "done_other": "{{count}} gravações copiadas para a sua caneta.",
+    "backupFailed": "Não foi possível guardar as gravações da sua caneta, por isso nada foi alterado. Tente novamente.",
+    "manyPens": "Enviar o mesmo conjunto para várias canetas uma após outra chegará numa versão posterior. Por agora, escolha as gravações outra vez para cada caneta.",
+    "noSpace": "Não há espaço suficiente na sua caneta para todas. Elimine gravações de que já não precisa e volte a escolhê-las."
   }
 }

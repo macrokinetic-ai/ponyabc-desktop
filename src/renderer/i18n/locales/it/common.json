@@ -13,7 +13,8 @@
     "cancel": "Annulla",
     "retry": "Riprova",
     "close": "Chiudi",
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "save": "Salva"
   },
   "penRoot": {
     "label": "Archiviazione della penna",
@@ -45,5 +46,10 @@
   },
   "errors": {
     "generic": "Si è verificato un errore: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} di {{total}} usati sulla penna",
+    "breakdown": "Libri {{books}} · Registrazioni {{recordings}} · Libero {{free}}",
+    "unreadable": "Non siamo riusciti a controllare quanto spazio resta sulla penna. Scollegala, ricollegala e guarda di nuovo questa schermata."
   }
 }

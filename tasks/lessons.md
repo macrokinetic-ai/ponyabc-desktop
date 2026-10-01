@@ -36,10 +36,11 @@ interop bug rather than a logic bug in the download code itself.
 
 While replacing the streaming approach above, two more bugs surfaced only
 via real failing tests (not reasoning about the code):
+
 1. **`reader.cancel()` resolves a pending `read()` as `{done: true}`** (a
    normal-completion signal per the streams spec), not a rejection. A
    cancel-on-abort listener that calls `reader.cancel()` can therefore win a
-   `Promise.race()` against an abort-rejection listener with the *wrong*
+   `Promise.race()` against an abort-rejection listener with the _wrong_
    outcome — a cancelled download was silently treated as "finished
    successfully" with a truncated read, producing a false `hash-mismatch`
    instead of `cancelled`. Fix: race explicitly against the abort signal
@@ -60,7 +61,7 @@ cancellation path, don't assume a "cancel" or "destroy" call synchronously
 undoes everything it started — check what event actually signals true
 completion (a rejection vs. a normal resolution; a `'close'` event vs. the
 method call itself) and gate cleanup on that, not on the call that merely
-*requests* it. A real failing test (not code review) is what caught both of
+_requests_ it. A real failing test (not code review) is what caught both of
 these.
 
 ## A ".mp3" file extension doesn't mean the data is MPEG Layer III — check with real hardware output, not just synthetic test files
@@ -76,14 +77,14 @@ permissive) played the same file fine — which is why "it plays on my Mac" and 
 unsupported" were both true at once, not a contradiction.
 
 **How to apply:** a synthetic test fixture I generate myself (`lame`, `afconvert`, etc.)
-proves the *code path* works, not that it's compatible with what real hardware actually
+proves the _code path_ works, not that it's compatible with what real hardware actually
 produces — for any feature reading device-generated files whose format is asserted only by
 convention/extension, get an actual sample from the real device before considering it verified.
 When a user reports "doesn't work" after I tested it myself, ask for the actual file (or a
 `file`/hexdump of it) rather than re-testing with my own fixture again — that's what actually
 diagnosed this in under two tool calls once the file was in hand.
 
-## React 18 StrictMode double-invokes the *function* form of a state setter — never put a side effect inside `setState(prev => ...)`
+## React 18 StrictMode double-invokes the _function_ form of a state setter — never put a side effect inside `setState(prev => ...)`
 
 Confirmed by CDP: a `togglePlayPause` written as `setState(prev => { stopNode(); startNode();
 return {...prev, playing: !prev.playing} })` visibly flip-flopped back to the wrong icon on
@@ -183,7 +184,7 @@ must run regardless of whether real signing happened.
 
 ## Verify security/forensic claims by reproducing the actual failure locally, not by inspecting one layer
 
-`codesign -dv` only prints signing *information* — it does not validate signature
+`codesign -dv` only prints signing _information_ — it does not validate signature
 integrity (that's `codesign --verify --deep --strict`), and a clean local launch proves
 nothing about Gatekeeper's verdict on a real downloaded (quarantined) copy. The real
 technique: copy the built .app, manually set `com.apple.quarantine` to the same value a
@@ -213,7 +214,7 @@ namespace is already `'book'`, every one of those should have been `t('refresh')
 rendering raw i18n keys (`book.refresh`) as the displayed text instead of falling back to
 English or throwing. Only caught because a renderer test asserted on real rendered text
 (`screen.findByText('Book One')`, `/Last updated:/`) rather than only checking for the
-presence of *some* string — an assertion pattern like `expect(container).toBeTruthy()`
+presence of _some_ string — an assertion pattern like `expect(container).toBeTruthy()`
 would never have caught this.
 
 **How to apply:** when writing `t()` calls in a component scoped via
@@ -233,7 +234,7 @@ unhandled rejection rather than a clean `backup-failed` status. Found while writ
 that deliberately pre-occupied the target directory path with a plain file.
 
 **How to apply:** when a function's contract is "never throws, always returns a typed
-result," audit *every* synchronous fs call in it (not just the ones that felt risky while
+result," audit _every_ synchronous fs call in it (not just the ones that felt risky while
 writing it) — a bare `mkdirSync`/`writeFileSync`/`statSync` mid-function is exactly the kind
 of thing that looks safe until a test (or a real EACCES/ENOTDIR) proves otherwise.
 
@@ -256,7 +257,7 @@ on `'close'` (Windows safety) — two different concerns, two different events, 
 them into one.
 
 **How to apply:** any Node code that reads a file via a stream and then deletes/renames/
-moves that *same path* immediately afterward needs to wait for the stream's `'close'`, not
+moves that _same path_ immediately afterward needs to wait for the stream's `'close'`, not
 just `'end'`/`'finish'`, before doing so — and this class of bug is only ever caught by a
 real Windows CI run, never by local macOS testing or by reasoning about it. Push early and
 let `build-windows.yml` run rather than assuming a Mac-clean test suite generalizes.
@@ -264,14 +265,14 @@ let `build-windows.yml` run rather than assuming a Mac-clean test suite generali
 ## A single boolean "offline" flag conflated two very different situations — "never succeeded" and "just failed, but old data still exists" — and hid the real reason from the user
 
 `BookLibraryMeta.offline` was `snapshot === null`, i.e. true only when NO catalog fetch had
-*ever* succeeded. A *later* refresh failure, with an older successful snapshot still on disk,
+_ever_ succeeded. A _later_ refresh failure, with an older successful snapshot still on disk,
 left `offline` false and showed nothing — the user's real screenshot showed the app displaying
 "could not be reached / showing what was last saved" simultaneously with "Catalog not yet
 loaded" and every pen file as "Unknown," which looked like a stuck/contradictory state but was
 actually this exact gap: a genuine first-run catalog-fetch failure with no real bug underneath
-it, just no visibility into *why*.
+it, just no visibility into _why_.
 
-**Fix:** added `BookLibraryMeta.lastCheck` — the outcome of the *most recent* fetch attempt
+**Fix:** added `BookLibraryMeta.lastCheck` — the outcome of the _most recent_ fetch attempt
 (state/httpStatus/itemCount/message/durationMs), tracked independently of whether an older
 snapshot still exists. A `BookCatalogBar` component (mirroring `PenRootBar`/`ComputerFolderBar`
 for left/right layout parity) renders a dot + text from this: checking / connected-with-count /
@@ -282,7 +283,7 @@ attempt's URL/status/duration/outcome, gated behind a hidden (not real access co
 in Settings, exportable via a native save dialog — so a real-world "why didn't it connect"
 question is answerable from the log, not just re-guessed.
 
-**How to apply:** when a status flag can be set once and never revisited, ask whether a *later*
+**How to apply:** when a status flag can be set once and never revisited, ask whether a _later_
 failure needs its own visibility — collapsing "never happened" and "happened before, failing
 now" into one boolean silently hides the more common, more actionable case. Any user-facing
 connectivity/sync status needs a distinct "last attempt" outcome, not just a "do we have
@@ -291,7 +292,7 @@ anything at all" flag.
 ## Don't hash a file's content just to list it — filename-matching and content-verification are different costs, and the first must never wait on the second
 
 The original `buildBookLibrary()` computed a SHA-256 of every matched pen file (to decide
-current-vs-differs) *before* returning either pane's list. Real catalog books range up to
+current-vs-differs) _before_ returning either pane's list. Real catalog books range up to
 ~1GB; hashing one inline meant the whole BOOK screen could sit blank while a single large file
 was read start-to-finish, and it's a real user complaint waiting to happen even though every
 existing test used small fixture files that hashed instantly.
@@ -313,10 +314,10 @@ never fails a test.
 ## "Never block the list on hashing" isn't enough by itself — a deferred-but-still-automatic verification, re-triggered on every list call, silently turns into repeated full re-reads
 
 The previous fix (above) made `buildBookLibrary` hash-free and pushed verification into a
-"pending" list the *caller* resolved right after. That caller (`bookList`/`bookCatalogRefresh`)
-re-triggered that pending-verification pass on *every single call* — mount, manual refresh,
+"pending" list the _caller_ resolved right after. That caller (`bookList`/`bookCatalogRefresh`)
+re-triggered that pending-verification pass on _every single call_ — mount, manual refresh,
 and after every add/remove (each of which re-lists). `verifyInFlight` only deduped two
-*literally concurrent* requests for the same file; it never remembered an already-completed
+_literally concurrent_ requests for the same file; it never remembered an already-completed
 result, so a user who refreshed a few times, or added/removed one book, quietly re-hashed every
 other large matched AXB on the pen each time — "the busy spinner clears fast" hid that a
 detached background read was still churning through hundreds of MB repeatedly. A real
@@ -333,13 +334,13 @@ label/path looking the same.
 different guarantees — fixing the first (deferring heavy work out of the hot path) doesn't
 fix the second (that deferred work silently re-running every time the hot path is hit again).
 When deferring expensive work out of a frequently-called function, ask separately: how often
-does the *caller* of that function actually run, and does deferred work get memoized/persisted,
+does the _caller_ of that function actually run, and does deferred work get memoized/persisted,
 or just moved one frame later and repeated just as often as before?
 
 ## Destroying a Node stream before its `'error'` listener is attached throws an uncaught exception — attach every listener first, branch on already-aborted state after
 
 `sha256FileWithProgress`'s already-aborted-signal path called `stream.destroy()` then
-`reject(...)` and `return`ed — *before* the function reached its `stream.on('error', fail)`
+`reject(...)` and `return`ed — _before_ the function reached its `stream.on('error', fail)`
 line further down. `EventEmitter` throws synchronously (an uncaught exception, not just an
 unhandled rejection) when an `'error'` event fires with zero listeners attached, and
 `destroy()`ing a stream that hasn't finished opening does exactly that. Every test passed in
@@ -354,7 +355,7 @@ always has a live `'error'` listener to land on) instead of a separate ad hoc de
 **How to apply:** whenever a code path can call `.destroy()` (or otherwise force an `'error'`
 emission) on a Node stream/EventEmitter, verify by inspection that an `'error'` listener is
 already attached at that exact point in execution — not just "attached somewhere in the
-function" — and write the test for the *already in the terminal state before you start*
+function" — and write the test for the _already in the terminal state before you start_
 case specifically (not just "abort while in progress"), since that's the one most likely to
 race ahead of setup code.
 
@@ -487,12 +488,13 @@ exit code 0, no error text. So claim (1) was false as a mechanism. Separately,
 hashing (SHA-256, not `ls -la` size) directly from the pristine `.zip` via
 `unzip -p file | shasum -a 256` — never from possibly-already-touched extracted
 copies — proved claim (2)'s files WERE actually byte-identical, and additionally
-proved the *real* reason the net effect is still a no-op: concatenating the 13
+proved the _real_ reason the net effect is still a no-op: concatenating the 13
 present source files (bank.bin correctly omitted) reproduces the destination's
 exact hash. The right conclusion turned out to be reachable, but only by verifying
 the actual mechanism, not by the two shortcuts originally taken.
 
 **How to apply, generally:**
+
 - Never conclude "a command can't do X" from "one of its inputs is missing"
   without checking that platform/tool's actual documented or tested behavior on a
   missing input — many copy/build/link tools skip-and-continue rather than abort,
@@ -516,7 +518,7 @@ the actual mechanism, not by the two shortcuts originally taken.
 
 ## "The user clicking acknowledge" is not evidence of anything about the real world — encode what IS evidence as a typed fact, not as a status label
 
-**What happened (2026-09-15, v0.3.7).** The previous round fixed the *documentation*
+**What happened (2026-09-15, v0.3.7).** The previous round fixed the _documentation_
 around the firmware wizard's lock safety but left the actual code unchanged: on
 an `'unclear'` outcome, `acknowledgeFirmwareOutcome()` unconditionally released
 both the pen lock and the firmware in-progress guard the moment the user clicked
@@ -644,3 +646,170 @@ vs. multi-source `copy` behave differently on a missing input). When tempted
 to extend a hard-won verified conclusion to a new but similar-looking
 question, that temptation is itself the signal to run one more narrowly-
 targeted test rather than reach for the existing evidence file.
+
+## Firmware / vendor behaviour
+
+- **A firmware upgrade silently does nothing unless `1.BIN` and `BOOKFILE.BIN` are
+  deleted from the pen's `BOOK` directory first.** Vendor-confirmed and verified on a
+  real pen (recorded 2026-09-30). **The vendor's documentation does not mention it** —
+  not in the toolkit README, not in `download.bat`. We only found it because upgrades
+  appeared to succeed and then had not taken effect.
+
+  The trap is that the vendor tool _reports success_ either way. So "the tool said it
+  worked" is not evidence the firmware changed, and never was. Any future "upgrade
+  didn't take" report should be checked against the `preflight` stage in the firmware
+  session log before anything else.
+
+  → Applies to **every** firmware release, not just V1.26 — it is a property of the pen.
+  → Does **NOT** apply to `.axb` book updates, and must never be added to that path:
+  deleting the content index during a book update would be destructive for no reason.
+  → Implemented as a preflight that runs **before** anything is launched, so a failure
+  aborts with the pen untouched rather than flashing over a stale index.
+
+- **Don't hardcode the vendor package's top-level folder name.** V1.18 was `tools/`;
+  V1.26 is `pen-AC6966-V1.26-…/`. The payload is otherwise identical — same 464
+  filenames, 19 files differing in content, all Windows tooling unchanged. The extractor
+  already auto-detects the single top-level directory, which is why the rename cost
+  nothing.
+
+- **Reading the code predicted a bug that testing disproved.** V1.26 is zipped on a Mac,
+  so it carries a second top-level entry, `__MACOSX/`. The root auto-detection accepts
+  exactly one top-level directory, so by inspection V1.26 should have failed as
+  `invalid-package-layout`. It does not, because `extract-zip` silently skips `__MACOSX`
+  entries and never creates that directory.
+
+  Two lessons, and the second is the useful one: **run the real input through the real
+  function before reporting a bug** — I nearly reported a blocking defect that did not
+  exist. And **when correct behaviour depends on a library's incidental filtering rather
+  than on our own code, pin it with a test**, or a dependency bump breaks it silently on
+  a customer's pen instead of in CI.
+
+- **Vendor tool output is GBK/CP936.** Decode the full accumulated buffer, never
+  incremental chunks — a multi-byte character split across two reads is corrupted, and
+  the success signal is then missed.
+
+## "tsc passed" is not a gate result — run `npm run typecheck`
+
+I reported the firmware preflight wiring as typechecking clean. It did not. I had run a bare
+`npx tsc --noEmit`, which resolves the root `tsconfig.json`; the real gate is
+`tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json`, and it found three
+genuine errors in that code — a helper called with the wrong arity, three invented field names
+on a shared type, and an undeclared union member.
+
+**How to apply:** run the script from `package.json`, never a hand-rolled approximation of it.
+The scripts exist because the project has two TypeScript projects, and a command that only
+covers one of them fails silently by succeeding. The same goes for `npm test` over a single
+`vitest run <file>` — a change that passes its own new test can still break an existing one,
+which is exactly what the status-label rewording did to five screen tests.
+
+## A shipped string that nothing renders is not shipped
+
+Locale keys for the manual-upgrade warning and the preflight failure message existed in all
+eight locales, and I wrote in the vendor notes that the warning was "documented in the in-app
+FAQ". Nothing rendered either one. There is no FAQ screen; `grep -rn "faq" src` returned only
+the JSON files.
+
+**How to apply:** after adding an i18n key, grep the source for the key's usage, not for the
+key's existence. And when writing a doc sentence that claims the app tells the user something,
+that claim is a testable assertion — either point at the component that renders it or don't
+write the sentence.
+
+## The same stream-handle lesson applies to the FAILURE path, not just the success one
+
+`sha256FileWithProgress` waited for `'close'` before resolving — the fix written up above — but
+its `fail()` path called `stream.destroy()` and rejected on the next line. On macOS that always
+looked fine. On Windows CI it surfaced as `EPERM` when the test deleted the file immediately
+after cancelling, because `destroy()` only _requests_ teardown and the fd was still open.
+
+**How to apply:** when a lesson is about a resource being released asynchronously, check every
+exit from that code, not the one that prompted the lesson. A success path and an error path
+release the same handle and need the same wait. And when a test only ever runs on the developer's
+OS, the guarantee it claims is only tested on that OS — this one had been green on macOS for
+weeks while the production race existed for every Windows customer who cancelled a verification
+and then removed the book.
+
+## Verification you can afford is worth more than verification you can't
+
+`safeWriteFile` verified a write by hashing the staged file back off the pen. On a normal disk
+that is free. On this pen — USB 1.x, 978 kB/s measured — it read 1.1 GB back at the same speed it
+had just written it, so **every book transfer took twice as long as it needed to**, and nobody
+had noticed because every test fixture is a few kilobytes.
+
+The fix was not to drop verification but to right-size it: size (free, from a `stat`) plus the
+first and last 8 MB read back, ~16 seconds instead of ~19 minutes, with the full source hash
+computed during the write at no cost.
+
+**How to apply:** when a safety check runs against a device rather than local disk, cost it at the
+device's speed before deciding it is cheap. And when a check turns out to be expensive, look for
+the version that keeps most of the guarantee for a fraction of the cost — the honest trade is
+usually available, and it beats both "keep paying" and "drop the check". Say plainly what the
+cheaper check no longer catches; here, a fault that corrupts the middle of a file while leaving
+both ends and the length intact.
+
+## Wait for the state the assertion needs, not for the component to exist
+
+Changing the BOOK screen's layout, I moved a test helper's wait from a book name to the primary
+button. The button renders immediately with empty data, so every assertion after it could run
+before the IPC data arrived. On this Mac the data always won; Windows CI, slower, failed on a
+screen that had rendered but held nothing.
+
+**How to apply:** a `findBy` that is satisfied by the empty first render is not a wait. Pick
+something that can only appear once the data the test is about has loaded — here "Last checked",
+which needs a fetched catalogue. And when a screen is restructured, re-examine the waits as
+carefully as the assertions: they are the part that silently stops doing its job.
+
+## "The click worked" is not "the app moved"
+
+The screenshot runner clicked its way through the firmware wizard and reported all nineteen
+screens captured. Three of them were the same screen photographed three times: the stand-in
+package folder was missing files the real validator requires, so **Next** was disabled, and
+`element.click()` on a disabled button does nothing while still returning true.
+
+**How to apply:** when a script drives a UI, a step's success is the state that follows it, not
+the element it found. Assert something only the next state can show — a heading, a step marker,
+a control that only exists there — before the screenshot. And when a fixture stands in for real
+data, build it from the same list the code checks against, or do not put it through that check
+at all; a hand-copied subset of a requirement list is a fixture that lies.
+
+## Photograph the screens you think are finished
+
+Capturing every parent-facing screen for the manual, in two languages, found six wording faults
+that months of reading the code had not: a Chinese summary that said "update one update", "(s)"
+plurals on the recordings screen after the BOOK screen had been fixed, a legend telling parents
+to "Select Add" a week after the Add button was replaced by one-button sync, "catalog item(s)"
+and "DIY MP3" on screens a nursery parent meets first.
+
+**How to apply:** rendering a screen as an image is a different review from reading its source.
+Do it before calling a customer-facing change done — the screenshot shows what the customer
+gets, including every string the change left behind.
+
+## An artifact's shape is part of what you are shipping
+
+Adding a plain-English README to the Windows installer artifact, I listed it in
+`upload-artifact`'s paths from where it lives in the repo — next to `release/*.exe`.
+`upload-artifact` roots the zip at the **least common ancestor** of the paths it is given, so
+that would have shipped a tester a zip containing two nested folders to dig through, in a change
+whose entire purpose was to save them from digging. Copying the file into `release/` first keeps
+the zip flat.
+
+**How to apply:** when a build produces something a person will open, picture the thing they
+actually receive — the extracted folder, not the file list in the workflow. For
+`upload-artifact` specifically, every path in one artifact should share the directory you want
+to be the root.
+
+## Check the file you are about to hand over, not the one you built
+
+CI stamped the release candidate into the installer, checked the stamp, and passed. Two steps
+later the Store-package command rebuilt the installer from an unstamped bundle on top of it and
+refreshed its checksum to match, and rc4 went out with a Settings screen reading a plain
+`0.3.17` — indistinguishable from the Microsoft Store version, in a build whose whole purpose
+was to be distinguishable. Every step was green. The check had been true when it ran.
+
+**Why:** `release/` is scratch space that later steps keep writing to, and
+`electron-builder --win --config <appx>.yml` builds the config's target *plus* the default NSIS
+one. A check against an intermediate proves the intermediate, and says nothing about what the
+Release ends up serving.
+
+**How to apply:** verify the artefact that is actually published, as late as possible and by
+opening it — unpack the finished installer and read the value back out. Downloading the
+published asset and inspecting it is the only check that cannot be invalidated by a later step.

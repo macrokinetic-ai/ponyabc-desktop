@@ -20,7 +20,9 @@
     "updateAvailable": "Há uma nova versão disponível: {{version}}",
     "downloadUpdateButton": "Ir para a página de transferência",
     "checkFailed": "Não foi possível procurar atualizações (está ligado à internet?).",
-    "storeManagedUpdates": "Instalada a partir da Microsoft Store — as atualizações são geridas automaticamente."
+    "storeManagedUpdates": "Instalada a partir da Microsoft Store — as atualizações são geridas automaticamente.",
+    "productLabel": "Produto",
+    "productName": "PonyABC P5 Caneta Leitora e Gravadora Inteligente"
   },
   "diagnostics": {
     "title": "Diagnóstico",

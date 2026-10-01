@@ -137,7 +137,7 @@ export function useAudioPreview() {
   );
 
   const play = useCallback(
-    async (source: AudioSource, fileName: string) => {
+    async (source: AudioSource, fileName: string, snapshotId?: string) => {
       requestIdRef.current += 1;
       const myRequestId = requestIdRef.current;
       stopTicking();
@@ -145,7 +145,7 @@ export function useAudioPreview() {
       bufferRef.current = null;
       setStateAndRef({ source, fileName, status: 'loading', playing: false, duration: 0, currentTime: 0 });
 
-      const result = await window.ponyabc.readAudioPreview({ source, fileName });
+      const result = await window.ponyabc.readAudioPreview({ source, fileName, snapshotId });
       if (requestIdRef.current !== myRequestId) return; // superseded by a newer play()/stop()
 
       if (result.status !== 'ok') {

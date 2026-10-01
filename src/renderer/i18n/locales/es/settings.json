@@ -20,7 +20,9 @@
     "updateAvailable": "Hay una nueva versión disponible: {{version}}",
     "downloadUpdateButton": "Ir a la página de descarga",
     "checkFailed": "No se pudieron buscar actualizaciones (¿está conectado a internet?).",
-    "storeManagedUpdates": "Instalada desde Microsoft Store: las actualizaciones se gestionan automáticamente."
+    "storeManagedUpdates": "Instalada desde Microsoft Store: las actualizaciones se gestionan automáticamente.",
+    "productLabel": "Producto",
+    "productName": "PonyABC P5 Lápiz Lector y Grabador Inteligente"
   },
   "diagnostics": {
     "title": "Diagnóstico",

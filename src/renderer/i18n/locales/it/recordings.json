@@ -1,6 +1,6 @@
 {
   "title": "Le mie registrazioni",
-  "emptyState": "Nessuna registrazione DIY trovata sulla penna.",
+  "emptyState": "Sulla penna non ci sono ancora registrazioni.",
   "computerEmptyState": "Nessun file .mp3 in questa cartella.",
   "selectAll": "Seleziona tutto",
   "selectedCount": "{{count}} selezionato/i",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Salva sul computer →",
     "sendToPen": "← Invia alla penna",
-    "replaceSticker": "Sostituisci questo adesivo con l'audio selezionato…"
+    "replaceSticker": "Sostituisci l’audio di questo adesivo…",
+    "play": "Ascolta",
+    "deleteFromPen": "Elimina dalla penna"
   },
   "transferPlan": {
     "title": "Invia alla penna — verifica prima di inviare",
@@ -84,5 +86,106 @@
     "errorTooLarge": "Questo file è troppo grande per l'ascolto.",
     "errorGeneric": "Impossibile riprodurre questo file (non supportato o illeggibile).",
     "penEncodingHint": "Una riproduzione corretta qui non garantisce che la penna possa riprodurre lo stesso file una volta inviato."
+  },
+  "onPen": {
+    "title": "Sulla tua penna",
+    "intro": "Le registrazioni che la penna contiene adesso."
+  },
+  "backup": {
+    "title": "Backup su questo computer",
+    "intro": "Un backup conserva una copia di ogni registrazione, così puoi rimetterle più avanti.",
+    "button": "Fai il backup delle registrazioni",
+    "none": "Ancora nessun backup. Scegli Fai il backup delle registrazioni.",
+    "choose": "Backup da usare:",
+    "missing": "Backup non trovato.",
+    "done_one": "{{count}} registrazione salvata.",
+    "done_other": "{{count}} registrazioni salvate.",
+    "countLabel_one": "{{count}} registrazione",
+    "countLabel_other": "{{count}} registrazioni",
+    "labelManual": "Backup",
+    "labelBeforeReplace": "Backup automatico prima di sostituire {{name}}",
+    "labelBeforeReplaceMany": "Backup automatico prima di sostituire delle registrazioni",
+    "labelBeforeDelete": "Backup automatico prima di eliminare {{name}}",
+    "labelBeforeDeleteMany": "Backup automatico prima di eliminare delle registrazioni",
+    "labelBeforeRestore": "Backup automatico prima di rimettere delle registrazioni sulla penna",
+    "labelBeforeReassign": "Backup automatico prima di spostare {{name}} su un altro numero",
+    "labelMigration": "Backup importato da una versione precedente",
+    "keptSeparately": "Ogni backup è una copia a sé delle tue registrazioni come erano in quel momento. I backup più vecchi restano: crearne uno nuovo non li sostituisce mai.",
+    "contentsTitle": "In questo backup",
+    "contentsEmpty": "Questo backup non contiene registrazioni.",
+    "contentsLoading": "Sto guardando dentro questo backup…",
+    "working": "Sto salvando le tue registrazioni…",
+    "selectAll": "Seleziona tutto",
+    "selectedCount_one": "{{count}} selezionata",
+    "selectedCount_other": "{{count}} selezionate",
+    "progress": "{{done}} di {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Rimetti sulla penna le registrazioni selezionate",
+    "reviewTitle": "Prima di rimetterle",
+    "clashIntro": "Alcuni di questi numeri hanno già una registrazione sulla penna. Ascoltale entrambe e scegli quale tenere.",
+    "fromBackup": "Dal backup:",
+    "onPen": "Ora sulla penna:",
+    "replace": "Usa quella del backup",
+    "keepPen": "Tieni quella della penna",
+    "decideAll": "Scegli per ognuna qui sopra.",
+    "confirm": "Rimettile",
+    "nothingToDo": "Tutto quel backup è già sulla penna.",
+    "noClashes_one": "Verrà aggiunta {{count}} registrazione. Quello che è già sulla penna non cambia.",
+    "noClashes_other": "Verranno aggiunte {{count}} registrazioni. Quello che è già sulla penna non cambia.",
+    "done_one": "{{count}} registrazione rimessa sulla penna.",
+    "done_other": "{{count}} registrazioni rimesse sulla penna.",
+    "buttonNote": "Vengono ricopiate solo le registrazioni spuntate sopra. Tutto il resto sulla penna resta com’è.",
+    "working": "Sto rimettendo le registrazioni…"
+  },
+  "label": {
+    "button": "Rinomina",
+    "prompt": "Come vuoi chiamarla?",
+    "hint": "Questo nome resta su questo computer. La penna usa sempre il numero dell’adesivo."
+  },
+  "reassign": {
+    "button": "Cambia numero adesivo",
+    "prompt": "Nuovo numero adesivo",
+    "hint": "Scrivi il numero stampato sull’adesivo, esattamente così.",
+    "confirm": "Spostala",
+    "done": "Spostata sul nuovo adesivo.",
+    "failed": "Non è riuscito. Riprova.",
+    "rejected": {
+      "notDigits": "Scrivi solo i numeri dell’adesivo.",
+      "length": "Scrivi il numero come è stampato, compresi gli zeri iniziali.",
+      "occupied": "Quell’adesivo ha già una registrazione.",
+      "unchanged": "È già su quell’adesivo."
+    }
+  },
+  "deletePen": {
+    "confirm": "Eliminare «{{name}}» dalla penna?",
+    "backupNotice": "Prima viene salvata una copia su questo computer, così puoi rimetterla.",
+    "done": "Eliminata. Una copia è nei tuoi backup.",
+    "failed": "Non è stato possibile eliminarla. Nulla è cambiato."
+  },
+  "advancedTools": {
+    "title": "Strumenti avanzati"
+  },
+  "addFromComputer": {
+    "title": "Aggiungi registrazioni da questo computer",
+    "intro": "Metti le tue registrazioni sulla penna. Dai a ogni file il numero dell’adesivo a cui appartiene — quattro cifre, come 0451, oppure cinque.",
+    "choose": "Scegli le registrazioni…",
+    "chosenFrom": "Da {{folder}}",
+    "mixedFolders": "Scegli registrazioni da una cartella alla volta.",
+    "noneChosen": "Nessuna registrazione scelta per ora.",
+    "rejected": "Questi non sono registrazioni utilizzabili e sono stati esclusi: {{names}}",
+    "badName": "Non è un numero di adesivo — rinominalo con quattro cifre, come 0451",
+    "willAdd": "Nuova",
+    "willReplace": "SOSTITUIRÀ la registrazione sulla penna",
+    "previewChosen": "Ascolta quella di questo computer",
+    "previewPen": "Ascolta quella della penna",
+    "copyButton": "Copia sulla mia penna",
+    "copying": "Sto copiando sulla penna…",
+    "backupFirst": "Le registrazioni della penna vengono salvate prima, automaticamente. Le trovi in Backup su questo computer.",
+    "done_one": "{{count}} registrazione copiata sulla penna.",
+    "done_other": "{{count}} registrazioni copiate sulla penna.",
+    "backupFailed": "Non è stato possibile salvare le registrazioni della penna, quindi non è stato cambiato nulla. Riprova.",
+    "manyPens": "Mandare lo stesso gruppo a più penne una dopo l’altra arriverà in una versione successiva. Per ora scegli di nuovo le registrazioni per ogni penna.",
+    "noSpace": "Non c’è spazio sufficiente sulla penna per tutte. Elimina qualche registrazione che non ti serve più e poi scegline di nuovo."
   }
 }

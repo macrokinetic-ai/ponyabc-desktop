@@ -161,6 +161,36 @@ describe('extractFirmwarePackage', () => {
     expect(inspectFirmwarePackage(outcome.packageDir).looksValid).toBe(true);
   });
 
+  it('extracts a macOS-zipped package that also contains __MACOSX/ (the V1.26 shape)', async () => {
+    // V1.26 was zipped on a Mac, so the archive carries a second top-level entry:
+    // __MACOSX/ full of ._resource-fork files. The root auto-detection only accepts a
+    // SINGLE top-level directory, so reading the code suggests this should fail — it does
+    // not, because extract-zip skips __MACOSX entries and never creates that directory.
+    // That makes the behaviour depend on a library detail rather than on our own code, so
+    // pin it: if extract-zip ever stops filtering, this fails here instead of on a
+    // customer's pen. The real V1.26 zip was verified to extract correctly before this was
+    // written; this is the CI-safe reproduction, since source/ is gitignored.
+    const workDir = mkTempDir();
+    const zipPath = path.join(workDir, 'package.zip');
+    const root = 'pen-AC6966-V1.26-20260924-vddio-3400-Rectail-500-pause-bnf-ble-SD';
+    const entries: Record<string, string> = {};
+    for (const rel of REQUIRED_FILES) {
+      const posix = path.join(root, rel).split(path.sep).join('/');
+      entries[posix] = `fixture:${rel}`;
+      entries[`__MACOSX/${path.dirname(posix)}/._${path.basename(posix)}`] = 'resource-fork-junk';
+    }
+    await buildZip(zipPath, entries);
+
+    const destDir = path.join(workDir, 'extracted');
+    const outcome = await extractFirmwarePackage(zipPath, destDir);
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.packageDir).toBe(path.join(destDir, root));
+    expect(inspectFirmwarePackage(outcome.packageDir).looksValid).toBe(true);
+    // The junk directory must not be created, or the single-subdir detection breaks.
+    expect(fs.existsSync(path.join(destDir, '__MACOSX'))).toBe(false);
+  });
+
   it('extracts a package with the required files directly at the archive root (no nesting)', async () => {
     const workDir = mkTempDir();
     const zipPath = path.join(workDir, 'package.zip');

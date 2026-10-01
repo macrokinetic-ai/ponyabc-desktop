@@ -1,24 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   BookActionResult,
-  BookCatalogItem,
-  BookPenItem,
   BookPenMatchStatus,
   BookRemoveResult,
   BookVerifyContentResult,
+  PenIndexOutcome,
 } from '@shared/types';
 import { resolveBookDisplayName } from '@shared/bookDisplay';
-import { isRecentlyUpdated } from '@shared/bookNewBadge';
 import { isSupportedLocale, DEFAULT_LOCALE } from '@shared/locales';
 import { PenRootBar } from '../components/PenRootBar';
-import { BookCatalogBar } from '../components/BookCatalogBar';
+import type { Section } from '../components/NavSidebar';
 import { usePenRoot } from '../state/PenRootContext';
+import {
+  CACHE_STATUS_LABELS,
+  CACHE_STATUS_LEGEND_ORDER,
+  CATALOG_STATUS_LABELS,
+  CATALOG_STATUS_LEGEND_ORDER,
+  PEN_STATUS_LABELS,
+  PEN_STATUS_LEGEND_ORDER,
+  SIMPLE_STATE_LABELS,
+  SIMPLE_STATE_LEGEND_ORDER,
+  simpleStateForPen,
+} from './bookStatusLabels';
+import { estimateMinutes, remainingMinutes, transferBytesFor } from './penTransferEstimate';
+import { buildSyncPlan, checkSpace, otherBooksOnPen, ourBooksOnPen } from '@shared/bookSyncPlan';
+import { formatDateTime } from '@shared/dateFormat';
+import { TechnicalLogPanel } from '@internal-ui';
+import { PenStorageBar } from '../components/PenStorageBar';
 import { useBookLibrary } from '../state/BookLibraryContext';
 
-function formatBytes(n: number): string {
-  if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-  return `${Math.round(n / 1024)} KB`;
+/**
+ * A size for a parent: always rounded **up**, and to a round number.
+ *
+ * Two reasons, both about not making someone do arithmetic. "797.3 MB" is a measurement, not an
+ * amount anyone acts on. And rounding DOWN would send a parent to free exactly the figure we
+ * printed and be refused a second time — up is the only direction that leaves them better off
+ * than the number suggested.
+ */
+function formatFriendlySize(bytes: number): string {
+  const MB = 1024 * 1024;
+  if (bytes >= 1024 * MB) return `${(Math.ceil((bytes / (1024 * MB)) * 10) / 10).toFixed(1)} GB`;
+  return `${Math.ceil(bytes / MB / 100) * 100} MB`;
 }
 
 function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n: Record<string, string> | null; filename: string }, locale: string): string {
@@ -26,12 +49,89 @@ function displayNameFor(source: { friendlyName: string | null; friendlyNameI18n:
   return resolveBookDisplayName({ friendlyName: source.friendlyName ?? '', friendlyNameI18n: source.friendlyNameI18n, filename: source.filename }, resolvedLocale);
 }
 
-/** Recomputed against the real current clock on every render (never the local download/cache
- *  time) — this is what makes the badge disappear on its own once 14 real days pass, even
- *  entirely from an offline-cached server timestamp. */
-function NewBadge({ updatedAtMs, label }: { updatedAtMs: number | null; label: string }) {
-  if (!isRecentlyUpdated(updatedAtMs, Date.now())) return null;
-  return <span className="new-badge">{label}</span>;
+/**
+ * Everything a parent does not need. Closed by default, and closed again on every render of a
+ * newly-expanded row — the technical status, the filename, the checksum wording and the verify
+ * action all live in here so the row above can answer one question: is this book on my pen.
+ */
+function AdvancedDetails({ t, children }: { t: (key: string) => string; children: ReactNode }) {
+  return (
+    <details className="advanced-details">
+      <summary>{t('advanced.title')}</summary>
+      <p className="hint">{t('advanced.hint')}</p>
+      {children}
+    </details>
+  );
+}
+
+/**
+ * Explains every label the screen can show, in one collapsed block that is always available —
+ * not only when something unusual happens. It is driven by the same key tables as the rows, so
+ * a status can never exist without an entry here.
+ *
+ * `<details>` rather than hover-only help: the chips carry `title` tooltips too, but a tooltip
+ * is unreachable by keyboard and on a touch screen, and this screen's labels are exactly the
+ * ones a confused user needs to read slowly.
+ */
+function StatusLegend({
+  t,
+  showNewBadgeNote,
+}: {
+  t: (key: string, opts?: Record<string, unknown>) => string;
+  showNewBadgeNote: boolean;
+}) {
+  const rows = (entries: readonly { short: string; help: string }[]) => (
+    <dl className="status-legend__list">
+      {entries.map((e) => (
+        <div key={e.short} className="status-legend__item">
+          <dt>{t(e.short)}</dt>
+          <dd>{t(e.help)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+
+  // Rendered only while open: the legend repeats every label verbatim, and leaving that in the
+  // DOM permanently would duplicate each status for find-in-page and for the accessibility tree.
+  const [open, setOpen] = useState(false);
+
+  return (
+    <details className="status-legend" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{t('legend.title')}</summary>
+      {open && (
+        <>
+          <p className="hint">{t('legend.intro')}</p>
+
+          {rows(SIMPLE_STATE_LEGEND_ORDER.map((s) => SIMPLE_STATE_LABELS[s]))}
+
+          {showNewBadgeNote && <p className="hint">{t('newBadgeLegend')}</p>}
+
+          <AdvancedDetails t={t}>
+            <h3 className="status-legend__heading">{t('legend.penHeading')}</h3>
+            {rows(PEN_STATUS_LEGEND_ORDER.map((s) => PEN_STATUS_LABELS[s]))}
+
+            <h3 className="status-legend__heading">{t('legend.catalogHeading')}</h3>
+            {rows(CATALOG_STATUS_LEGEND_ORDER.map((s) => CATALOG_STATUS_LABELS[s]))}
+
+            <h3 className="status-legend__heading">{t('legend.cacheHeading')}</h3>
+            {rows(CACHE_STATUS_LEGEND_ORDER.map((k) => CACHE_STATUS_LABELS[k]))}
+          </AdvancedDetails>
+        </>
+      )}
+    </details>
+  );
+}
+
+/** Names only. Nothing in the book list is ever actionable — it is there to be read. */
+function BookNameList({ items, emptyLabel }: { items: readonly string[]; emptyLabel: string }) {
+  if (items.length === 0) return <p className="hint">{emptyLabel}</p>;
+  return (
+    <ul className="book-name-list">
+      {items.map((name) => (
+        <li key={name}>{name}</li>
+      ))}
+    </ul>
+  );
 }
 
 function resultMessage(t: (key: string, opts?: Record<string, unknown>) => string, result: BookActionResult | BookRemoveResult): string | null {
@@ -74,162 +174,209 @@ function verifyResultMessage(t: (key: string) => string, result: BookVerifyConte
   }
 }
 
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString();
-}
-
 /** True for every "something is already on the pen under this filename" state — the confirm+
  *  backup flow applies the same way whether or not it's been explicitly verified to differ,
  *  since an unverified match is never assumed safe to silently overwrite. */
-function isOnPen(status: BookCatalogItem['status']): boolean {
-  return (
-    status === 'on-pen-present' ||
-    status === 'on-pen-verifying' ||
-    status === 'on-pen-current' ||
-    status === 'on-pen-differs' ||
-    status === 'on-pen-size-differs'
-  );
-}
-
-export function BookLibraryScreen() {
+export function BookLibraryScreen({ onNavigate }: { onNavigate?: (section: Section) => void } = {}) {
   const { t, i18n } = useTranslation('book');
-  const { t: tCommon } = useTranslation('common');
   const penRoot = usePenRoot();
   const lib = useBookLibrary();
 
-  const [penSelected, setPenSelected] = useState<Set<string>>(new Set());
-  const [catalogSelected, setCatalogSelected] = useState<Set<string>>(new Set());
-  const [pendingRemove, setPendingRemove] = useState<BookPenItem[] | null>(null);
-  const [addConflicts, setAddConflicts] = useState<BookCatalogItem[] | null>(null);
-  const [addDecisions, setAddDecisions] = useState<Record<string, 'replace' | 'skip'>>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // Default rows are collapsed to checkbox + name + NEW + a short status — clicking the name
   // expands filename/size/official-update-date/full status/per-item actions below it.
-  const [expandedPen, setExpandedPen] = useState<Set<string>>(new Set());
-  const [expandedCatalog, setExpandedCatalog] = useState<Set<string>>(new Set());
-  const [downloadSummaryText, setDownloadSummaryText] = useState<string | null>(null);
 
-  const penConnected = penRoot.result.status === 'ok';
+  // One source of truth: if we have the pen's book list, the pen is connected. Reading a
+  // separate pen-root status let the screen say "please connect your pen" directly above
+  // "your pen has 2 books", which is the kind of contradiction a parent stops trusting.
+  const penConnected = lib.penItems !== null;
   const penItems = lib.penItems ?? [];
-  const removablePenItems = penItems.filter((i) => i.removable);
-  const actionableCatalogItems = lib.catalogItems.filter((i) => i.actionable);
-  // "Download all to App" targets everything that could ever be cache-downloaded — broader
-  // than actionableCatalogItems (which excludes on-pen-current/verifying, since there's
-  // nothing to INSTALL for those, but they may still be worth having in the local cache).
-  const downloadableCatalogItems = lib.catalogItems.filter((i) => i.status !== 'metadata-incomplete' && i.status !== 'ambiguous');
 
-  function togglePen(fileName: string) {
-    setPenSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(fileName)) next.delete(fileName);
-      else next.add(fileName);
-      return next;
-    });
-  }
-  function toggleCatalog(contentId: string) {
-    setCatalogSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(contentId)) next.delete(contentId);
-      else next.add(contentId);
-      return next;
-    });
-  }
-  function togglePenExpand(fileName: string) {
-    setExpandedPen((prev) => {
-      const next = new Set(prev);
-      if (next.has(fileName)) next.delete(fileName);
-      else next.add(fileName);
-      return next;
-    });
-  }
-  function toggleCatalogExpand(contentId: string) {
-    setExpandedCatalog((prev) => {
-      const next = new Set(prev);
-      if (next.has(contentId)) next.delete(contentId);
-      else next.add(contentId);
-      return next;
-    });
-  }
-
-  function startRemove() {
-    const targets = penItems.filter((i) => penSelected.has(i.fileName));
-    if (targets.length === 0) return;
-    setPendingRemove(targets);
-  }
-
-  async function confirmRemove() {
-    if (!pendingRemove) return;
-    const targets = pendingRemove;
-    setPendingRemove(null);
-    setBusy(true);
-    setMessage(null);
+  /**
+   * Ends a sync that wrote something. The pen's book list is rebuilt whatever was written — a
+   * new book or a replacement of one already there — so there is one ending for a parent to
+   * learn: unplug it and switch it off and on again.
+   */
+  async function finishBookBatch(writtenFileNames: string[]) {
     try {
-      const resolved = new Set<string>();
-      let lastMessage: string | null = null;
-      for (const item of targets) {
-        const result = await lib.remove(item.fileName);
-        if (result.status === 'completed') resolved.add(item.fileName);
-        else lastMessage = resultMessage(t, result);
-      }
-      setPenSelected((prev) => new Set([...prev].filter((n) => !resolved.has(n))));
-      if (lastMessage) setMessage(lastMessage);
-    } finally {
-      setBusy(false);
+      // Closes the batch opened at the start of the sync. The main process decides whether
+      // anything is owed; this screen only has to know whether to ask for the restart.
+      const result = await window.ponyabc.bookBatchEnd({ writtenFileNames });
+      await refreshIndexStatus();
+      // 'still-pending' shows the same notice on purpose: the reset is owed and happens on the
+      // next connection, and restarting the pen is the right thing to do either way. The two
+      // remaining statuses mean the pen is no longer there, and the screen says so by itself.
+      if (result.status === 'reset' || result.status === 'still-pending') setRestartNotice(true);
+    } catch {
+      setRestartNotice(true);
     }
   }
 
-  function startAdd() {
-    const targets = lib.catalogItems.filter((i) => catalogSelected.has(i.contentId));
-    if (targets.length === 0) return;
-    const conflicts = targets.filter((i) => isOnPen(i.status));
-    if (conflicts.length > 0) {
-      setAddConflicts(conflicts);
-      setAddDecisions({});
+  /**
+   * One button, so the decision is ours. `buildSyncPlan` is where it lives, and it is
+   * deliberately outside this file: what a sync does is a rule about the product, not a detail
+   * of a screen.
+   */
+  // Our own version, so a book that asks for a newer app is skipped here too — the server
+  // filters by what we send, and this is the guard for when it does not.
+  const [appVersion, setAppVersion] = useState('0.0.0');
+  useEffect(() => {
+    void window.ponyabc.getAppInfo().then((info) => setAppVersion(info.version));
+  }, []);
+
+  const plan = buildSyncPlan({ catalogItems: lib.catalogItems, penItems: lib.penItems, appVersion });
+  const ourBooks = ourBooksOnPen(penItems);
+  const otherBooks = otherBooksOnPen(penItems);
+  // A pen that only needs books taken off still has work to do: without this it would say
+  // "all up to date" and offer a disabled button while still holding 2 GB it should not.
+  const hasWork = plan.toAdd.length > 0 || plan.toUpdate.length > 0 || plan.toRemove.length > 0;
+  const syncMinutes = estimateMinutes(transferBytesFor([...plan.toAdd, ...plan.toUpdate].map((i) => i.sizeBytes)));
+
+  // Assembled from plural-aware parts rather than one string with two counts in it: i18next can
+  // pluralise on one number, and "1 new book and 2 updates" needs two.
+  const news = t('sync.newBooks', { count: plan.toAdd.length });
+  const updates = t('sync.updates', { count: plan.toUpdate.length });
+  const availableSentence =
+    plan.toAdd.length > 0 && plan.toUpdate.length > 0
+      ? t('sync.availableBoth', { news, updates })
+      : plan.toAdd.length > 0
+        ? t('sync.availableAdds', { news })
+        : t('sync.availableUpdates', { updates });
+  const timeSentence = syncMinutes > 0 ? t('sync.time', { count: syncMinutes }) : t('sync.timeShort');
+
+  /** Bytes short when the card is too small, or 'unreadable' when we could not check at all. */
+  const [spaceProblem, setSpaceProblem] = useState<number | 'unreadable' | null>(null);
+
+  /**
+   * Adds everything missing and updates everything changed, one book at a time, smallest first.
+   * Stops cleanly the moment the pen runs out of room: the staged file is already cleaned up by
+   * the writer, what finished stays, and the index is reset only if something was actually
+   * added.
+   */
+  async function runSync() {
+    // Peak, not net: an update holds the new copy and the old one at the same time, so a sync
+    // whose totals fit can still run the card out half-way through.
+    const space = checkSpace({
+      plan,
+      penItems: lib.penItems,
+      freeBytes: lib.meta.penFreeBytes,
+      penTotalBytes: lib.meta.penTotalBytes,
+      clusterBytes: lib.meta.penClusterBytes,
+    });
+    if (!space.ok) {
+      // Either way nothing is written. A parent must know before the first byte whether it
+      // fits — and "we could not check" is something they can act on; finding out half-way
+      // through a twenty-minute copy is not.
+      setSpaceProblem(space.reason === 'unreadable' ? 'unreadable' : space.shortfallBytes);
       return;
     }
-    void executeAdd(targets, {});
-  }
 
-  async function confirmAdd() {
-    if (!addConflicts) return;
-    const targets = lib.catalogItems.filter((i) => catalogSelected.has(i.contentId));
-    const decisions = addDecisions;
-    setAddConflicts(null);
-    setAddDecisions({});
-    await executeAdd(targets, decisions);
-  }
-
-  async function executeAdd(targets: BookCatalogItem[], decisions: Record<string, 'replace' | 'skip'>) {
+    setSpaceProblem(null);
     setBusy(true);
     setMessage(null);
+    setRestartNotice(false);
+
+    // One batch for the whole sync, so twelve books cost the pen one index reset rather than
+    // twelve. Every write inside it defers to this batch; the `finally` below always closes it.
+    await window.ponyabc.bookBatchBegin();
+    let batchClosed = false;
+
     try {
-      const resolved = new Set<string>();
+      const written: string[] = [];
+      let removed = 0;
+      let ranOutOfSpace = false;
       let lastMessage: string | null = null;
-      for (const item of targets) {
-        if (isOnPen(item.status) && decisions[item.contentId] === 'skip') {
-          resolved.add(item.contentId);
+
+      // Removals first: they free the room the adds may need, and the space check counted them
+      // that way. Each one is a catalogue book the server flagged, matched on the pen by
+      // filename AND size — buildSyncPlan will not put anything else in this list.
+      for (const removal of plan.toRemove) {
+        const result = await lib.remove(removal.fileName);
+        if (result.status === 'completed') {
+          removed += 1;
           continue;
         }
-        const result = isOnPen(item.status) ? await lib.replaceWithOfficial(item.contentId) : await lib.add(item.contentId);
-        if (result.status === 'completed') resolved.add(item.contentId);
-        else lastMessage = resultMessage(t, result);
+        lastMessage = resultMessage(t, result);
+        break;
       }
-      setCatalogSelected((prev) => new Set([...prev].filter((id) => !resolved.has(id))));
-      if (lastMessage) setMessage(lastMessage);
+
+      for (const item of [...plan.toAdd, ...plan.toUpdate]) {
+        const isAdd = plan.toAdd.includes(item);
+        const result = isAdd ? await lib.add(item.contentId) : await lib.replaceWithOfficial(item.contentId);
+
+        if (result.status === 'completed') {
+          written.push(item.filename);
+          continue;
+        }
+        if (result.status === 'no-space') {
+          ranOutOfSpace = true;
+          break;
+        }
+        lastMessage = resultMessage(t, result);
+        break;
+      }
+
+      // What was actually written, not what the plan hoped to write: a sync that filled the card
+      // half-way through still wrote books, and still owes the pen a rebuilt list. A sync that
+      // wrote nothing — nothing to do, or the first book failed — leaves the pen alone.
+      // A removal shifts every later book's position in the pen's list, exactly as an addition
+      // does, so it owes the same rebuild. One reset, at the end, for the whole batch.
+      await finishBookBatch(written);
+      batchClosed = true;
+      if (ranOutOfSpace) setMessage(t('sync.stoppedNoSpace'));
+      else if (lastMessage) setMessage(lastMessage);
     } finally {
+      // A throw anywhere above must not leave the batch open: the next single action would then
+      // write and reset nothing, which is the bug this replaced.
+      if (!batchClosed) {
+        try {
+          await window.ponyabc.bookBatchEnd({});
+        } catch {
+          // The pen is gone; the owed reset is on disk and the next connection finishes it.
+        }
+      }
       setBusy(false);
+      setWriting(null);
+      await lib.refreshPen();
     }
   }
+
+  /**
+   * Any single action that can write to the pen ends the same way a sync does. The main process
+   * has already deleted the pen's book list by the time this runs — `penIndex` says whether it
+   * did — so all this decides is whether the parent is asked to restart the pen.
+   */
+  async function noteRestartIfNeeded(result: { penIndex?: PenIndexOutcome }) {
+    if (result.penIndex === 'reset' || result.penIndex === 'still-pending') {
+      setRestartNotice(true);
+      await refreshIndexStatus();
+    }
+  }
+
+  const [reinstalling, setReinstalling] = useState<string | null>(null);
+
+  // The pen's recordings, for the storage breakdown only — this screen never lists them.
+  const [recordingSizes, setRecordingSizes] = useState<number[]>([]);
+  useEffect(() => {
+    void window.ponyabc
+      .listDiyRecordings()
+      .then((res) => setRecordingSizes(res.status === 'ok' ? res.files.map((f) => f.sizeBytes) : []))
+      .catch(() => setRecordingSizes([]));
+  }, [lib.penItems]);
 
   async function handleReinstall(contentId: string) {
     setBusy(true);
+    setReinstalling(contentId);
     setMessage(null);
+    setRestartNotice(false);
     try {
       const result = await lib.reinstall(contentId);
       const msg = resultMessage(t, result);
-      if (msg) setMessage(msg);
+      setMessage(msg ?? t('action.reinstallDone'));
+      await noteRestartIfNeeded(result);
     } finally {
+      setReinstalling(null);
       setBusy(false);
     }
   }
@@ -241,79 +388,88 @@ export function BookLibraryScreen() {
     try {
       const result = await lib.verifyContent(fileNames);
       const msg = verifyResultMessage(t, result);
-      if (msg) setMessage(msg);
+      // Always an ending, never silence: a check that found nothing to say still finished, and a
+      // button that goes quiet reads as a button that did nothing.
+      setMessage(msg ?? t('action.verifyDone'));
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleDownloadBatch(contentIds: string[]) {
-    if (contentIds.length === 0) return;
-    setMessage(null);
-    setDownloadSummaryText(null);
-    await lib.downloadBatch(contentIds);
-  }
+
+  /**
+   * The pen's book list against what is actually on the pen. A mismatch means books were added
+   * or removed outside this app — a parent dragging files in Explorer or Finder — and the
+   * consequence is that the pen reads the WRONG book aloud, with nothing visibly broken.
+   *
+   * It is never fixed silently: we did not cause it, and the fix ends with "unplug and restart
+   * your pen", which is not something to do to someone without asking.
+   */
+  const [indexStatus, setIndexStatus] = useState<Awaited<ReturnType<typeof window.ponyabc.bookIndexStatus>> | null>(null);
+  const [fixingIndex, setFixingIndex] = useState(false);
+  /** Shown after a batch that added or removed a book — the one thing the parent must act on. */
+  const [restartNotice, setRestartNotice] = useState(false);
+
+  /**
+   * Writing to the pen, at the pen's own speed.
+   *
+   * The USB is 1.x — 978 kB/s measured — so a single book is minutes, not seconds. Without an
+   * estimate up front and a visible count-down, a working copy is indistinguishable from a hang,
+   * and a parent who unplugs mid-write leaves a half-written book on a FAT volume.
+   */
+  const [writing, setWriting] = useState<{ name: string; bytesWritten: number; totalBytes: number; startedAtMs: number } | null>(null);
 
   useEffect(() => {
-    if (!lib.batchDownloadSummary) return;
-    const s = lib.batchDownloadSummary;
-    const base = t('downloadBatchSummary', { downloaded: s.downloadedCount, skipped: s.skippedCount, failed: s.failedCount });
-    setDownloadSummaryText(s.cancelled ? `${base} ${t('downloadBatchCancelledSuffix')}` : base);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lib.batchDownloadSummary]);
+    return window.ponyabc.onBookWriteProgress((event) => {
+      setWriting((prev) => ({
+        name: event.filename,
+        bytesWritten: event.bytesWritten,
+        totalBytes: event.totalBytes,
+        // Only restart the clock when a different book starts, or every update would reset the
+        // elapsed time and the estimate would never settle.
+        startedAtMs: prev && prev.name === event.filename ? prev.startedAtMs : Date.now(),
+      }));
+    });
+  }, []);
+  const [fixMessage, setFixMessage] = useState<string | null>(null);
 
-  const verifyingNow = Object.keys(lib.verifyProgress).length > 0;
+  const refreshIndexStatus = useCallback(async () => {
+    try {
+      setIndexStatus(await window.ponyabc.bookIndexStatus());
+    } catch {
+      setIndexStatus(null); // never let a failed check break the screen
+    }
+  }, []);
 
-  const penStatusKey: Record<BookPenMatchStatus, string> = {
-    present: 'status.present',
-    verifying: 'status.verifying',
-    'verified-current': 'status.verifiedCurrent',
-    'verified-differs': 'status.verifiedDiffers',
-    'size-differs': 'status.sizeDiffers',
-    'matched-hash-unknown': 'status.matchedHashUnknown',
-    'awaiting-catalog': 'status.awaitingCatalog',
-    unknown: 'status.unknown',
-  };
-  const catalogStatusKey: Record<BookCatalogItem['status'], string> = {
-    'not-on-pen': 'status.notOnPen',
-    'on-pen-present': 'status.onPenPresent',
-    'on-pen-current': 'status.onPenCurrent',
-    'on-pen-differs': 'status.onPenDiffers',
-    'on-pen-size-differs': 'status.onPenSizeDiffers',
-    'on-pen-verifying': 'status.onPenVerifying',
-    'metadata-incomplete': 'status.metadataIncomplete',
-    ambiguous: 'status.ambiguous',
-  };
-  // Short forms for the default (collapsed) row — the full/detailed wording (e.g. "not yet
-  // verified") only ever appears in the expanded detail block below, never in the general list.
-  const penStatusShortKey: Record<BookPenMatchStatus, string> = {
-    present: 'statusShort.present',
-    verifying: 'statusShort.verifying',
-    'verified-current': 'statusShort.verifiedCurrent',
-    'verified-differs': 'statusShort.verifiedDiffers',
-    'size-differs': 'statusShort.sizeDiffers',
-    'matched-hash-unknown': 'statusShort.matchedHashUnknown',
-    'awaiting-catalog': 'statusShort.awaitingCatalog',
-    unknown: 'statusShort.unknown',
-  };
-  const catalogStatusShortKey: Record<BookCatalogItem['status'], string> = {
-    'not-on-pen': 'statusShort.notOnPen',
-    'on-pen-present': 'statusShort.onPenPresent',
-    'on-pen-current': 'statusShort.onPenCurrent',
-    'on-pen-differs': 'statusShort.onPenDiffers',
-    'on-pen-size-differs': 'statusShort.onPenSizeDiffers',
-    'on-pen-verifying': 'statusShort.onPenVerifying',
-    'metadata-incomplete': 'statusShort.metadataIncomplete',
-    ambiguous: 'statusShort.ambiguous',
-  };
-  const cacheStatusText = (item: BookCatalogItem, hasProgress: boolean): string => {
-    if (hasProgress) return t('cacheStatus.downloading');
-    return item.cached ? t('cacheStatus.cached') : t('cacheStatus.notDownloaded');
-  };
+  useEffect(() => {
+    void refreshIndexStatus();
+  }, [refreshIndexStatus, penRoot.result]);
 
-  const now = Date.now();
-  const anyNew =
-    penItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now)) || lib.catalogItems.some((i) => isRecentlyUpdated(i.updatedAtMs, now));
+  async function handleFixIndex() {
+    setFixingIndex(true);
+    setFixMessage(null);
+    try {
+      const result = await window.ponyabc.bookIndexFix();
+      setFixMessage(result.status === 'reset' ? t('fix.doneBody') : t('fix.failed'));
+    } catch {
+      setFixMessage(t('fix.failed'));
+    } finally {
+      setFixingIndex(false);
+      await refreshIndexStatus();
+    }
+  }
+
+  const showFixPrompt = indexStatus !== null && 'status' in indexStatus && indexStatus.status === 'mismatch';
+  const showSidecarNotice =
+    indexStatus !== null && 'appleDoubleFiles' in indexStatus && indexStatus.appleDoubleFiles.length > 0;
+
+  // Short forms (`.short`) are the chip on the collapsed row; the full wording (e.g. "not yet
+  // verified") appears only in the expanded detail, and `.help` — the condition that produced
+  // the status — appears in the detail, as the chip's tooltip, and in the legend. All three
+  // come from bookStatusLabels.ts so the legend can never fall behind the rows.
+  const penStatusKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].full;
+  const penStatusHelpKey = (s: BookPenMatchStatus) => PEN_STATUS_LABELS[s].help;
+
 
   return (
     <div className="screen">
@@ -323,306 +479,204 @@ export function BookLibraryScreen() {
       {lib.meta.conflicts.length > 0 && <div className="note-box">{t('ambiguousNotice', { count: lib.meta.conflicts.length })}</div>}
       {message && <p className="error-text">{message}</p>}
 
-      <div className="dual-pane">
-        <section className="pane">
-          <div className="pane__header">
-            <PenRootBar />
-            {penConnected && (
-              <div className="pane__toolbar">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={removablePenItems.length > 0 && penSelected.size === removablePenItems.length}
-                    onChange={() =>
-                      setPenSelected(penSelected.size === removablePenItems.length ? new Set() : new Set(removablePenItems.map((i) => i.fileName)))
-                    }
-                  />
-                  {t('selectAll')}
-                </label>
-                <span>{t('selectedCount', { count: penSelected.size })}</span>
-                <button type="button" className="button" onClick={() => void lib.refreshPen()}>
-                  {tCommon('buttons.refresh')}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="pane__list">
-            {!penConnected && <p className="hint">{t('penRequiredForWrite')}</p>}
-            {penConnected && penItems.length === 0 && <p className="hint">{t('emptyState')}</p>}
-            {penConnected && penItems.length > 0 && (
-              <ul className="recordings-list">
-                {penItems.map((item) => {
-                  const progress = item.contentId ? lib.verifyProgress[item.contentId] : undefined;
-                  const displayStatus: BookPenMatchStatus = progress ? 'verifying' : item.status;
-                  const expanded = expandedPen.has(item.fileName);
-                  return (
-                    <li key={item.fileName} className="recordings-list__row">
-                      {!item.removable ? (
-                        <span className="recordings-list__label">
-                          <span className="recordings-list__name">
-                            {item.fileName} — {t(penStatusKey[item.status])}
-                          </span>
-                        </span>
-                      ) : (
-                        <label className="recordings-list__label">
-                          <input type="checkbox" checked={penSelected.has(item.fileName)} onChange={() => togglePen(item.fileName)} />
-                          <button type="button" className="recordings-list__name-toggle" onClick={() => togglePenExpand(item.fileName)}>
-                            {displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}
-                          </button>
-                          <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                        </label>
-                      )}
-                      {item.removable && (
-                        <span className="hint">
-                          {t(penStatusShortKey[displayStatus])}
-                          {progress && ` (${Math.round((progress.bytesRead / Math.max(progress.totalBytes, 1)) * 100)}%)`}
-                        </span>
-                      )}
-                      {progress && <progress className="book-progress" value={progress.bytesRead} max={Math.max(progress.totalBytes, 1)} />}
-                      {item.removable && expanded && (
-                        <div className="recordings-list__detail">
-                          <span className="hint">{item.fileName}</span>
-                          <span className="hint">{formatBytes(item.sizeBytes)}</span>
-                          {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                          <span className="hint">{t(penStatusKey[displayStatus])}</span>
-                          <div className="recordings-list__detail-actions">
-                            <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
-                              {t('action.verifyThis')}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </section>
+      {/* ------------------------------------------------------------- PEN, IN WORDS --- */}
+      <p>{penConnected ? t('pen.connected') : t('pen.disconnected')}</p>
 
-        <div className="dual-pane__actions">
-          <button type="button" className="button button--primary" disabled={!penConnected || penSelected.size === 0 || busy} onClick={startRemove}>
-            {t('action.remove')}
+      {/* ---------------------------------------------------------------- THE SUMMARY --- */}
+      <div className="book-summary">
+        <p>
+          {ourBooks.length > 0 ? t('sync.has', { count: ourBooks.length }) : t('sync.hasNone')}{' '}
+          {hasWork ? `${availableSentence} ${timeSentence}` : t('sync.upToDate')}
+        </p>
+
+        <div className="book-summary__actions">
+          <button type="button" className="button button--primary" disabled={!penConnected || !hasWork || busy} onClick={() => void runSync()}>
+            {busy ? t('sync.working') : t('sync.button')}
           </button>
-          {verifyingNow ? (
-            <button type="button" className="button" onClick={() => void lib.cancelVerify()}>
-              {t('action.cancelVerify')}
-            </button>
-          ) : (
-            <button type="button" className="button" disabled={!penConnected || penSelected.size === 0 || busy} onClick={() => void runVerify([...penSelected])}>
-              {t('action.verifySelected')}
-            </button>
-          )}
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={!penConnected || catalogSelected.size === 0 || busy}
-            onClick={startAdd}
-          >
-            {t('action.add')}
+          <span className="hint">
+            {lib.meta.fetchedAtMs !== null ? t('check.last', { time: formatDateTime(i18n.language, lib.meta.fetchedAtMs) }) : t('check.never')}
+          </span>
+          <button type="button" className="button" disabled={lib.refreshing || busy} onClick={() => void lib.refreshCatalog()}>
+            {lib.refreshing ? t('check.checking') : t('check.button')}
           </button>
         </div>
-
-        <section className="pane">
-          <div className="pane__header">
-            <BookCatalogBar />
-            {actionableCatalogItems.length > 0 && (
-              <div className="pane__toolbar">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={catalogSelected.size === actionableCatalogItems.length}
-                    onChange={() =>
-                      setCatalogSelected(
-                        catalogSelected.size === actionableCatalogItems.length ? new Set() : new Set(actionableCatalogItems.map((i) => i.contentId)),
-                      )
-                    }
-                  />
-                  {t('selectAll')}
-                </label>
-                <span>{t('selectedCount', { count: catalogSelected.size })}</span>
-              </div>
-            )}
-          </div>
-          <div className="pane__list">
-            {lib.catalogItems.length === 0 && <p className="hint">{t('emptyState')}</p>}
-            {lib.catalogItems.length > 0 && (
-              <ul className="recordings-list">
-                {lib.catalogItems.map((item) => {
-                  const progress = lib.downloadProgress[item.contentId];
-                  const isBatchProgress = progress?.completedCount !== undefined;
-                  const verifyProg = lib.verifyProgress[item.contentId];
-                  const catalogDisplayStatus: BookCatalogItem['status'] = verifyProg ? 'on-pen-verifying' : item.status;
-                  const expanded = expandedCatalog.has(item.contentId);
-                  return (
-                    <li key={item.contentId} className="recordings-list__row">
-                      <div>
-                        {item.actionable ? (
-                          <label className="recordings-list__label">
-                            <input type="checkbox" checked={catalogSelected.has(item.contentId)} onChange={() => toggleCatalog(item.contentId)} />
-                            <button type="button" className="recordings-list__name-toggle" onClick={() => toggleCatalogExpand(item.contentId)}>
-                              {displayNameFor(item, i18n.language)}
-                            </button>
-                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                          </label>
-                        ) : (
-                          <span className="recordings-list__label">
-                            <button type="button" className="recordings-list__name-toggle" onClick={() => toggleCatalogExpand(item.contentId)}>
-                              {displayNameFor(item, i18n.language)}
-                            </button>
-                            <NewBadge updatedAtMs={item.updatedAtMs} label={t('newBadge')} />
-                          </span>
-                        )}
-                        <div className="hint">
-                          {t(catalogStatusShortKey[catalogDisplayStatus])}
-                          {verifyProg && ` (${Math.round((verifyProg.bytesRead / Math.max(verifyProg.totalBytes, 1)) * 100)}%)`}
-                          {progress && ` (${Math.round((progress.bytesReceived / Math.max(progress.totalBytes, 1)) * 100)}%)`}
-                        </div>
-                        {progress && <progress className="book-progress" value={progress.bytesReceived} max={Math.max(progress.totalBytes, 1)} />}
-                        {verifyProg && <progress className="book-progress" value={verifyProg.bytesRead} max={Math.max(verifyProg.totalBytes, 1)} />}
-                        {expanded && (
-                          <div className="recordings-list__detail">
-                            <span className="hint">{item.filename}</span>
-                            <span className="hint">{formatBytes(item.sizeBytes)}</span>
-                            <span className="hint">{cacheStatusText(item, !!progress)}</span>
-                            <span className="hint">{t(catalogStatusKey[catalogDisplayStatus])}</span>
-                            {item.updatedAtMs !== null && <span className="hint">{t('officialUpdated', { date: formatDate(item.updatedAtMs) })}</span>}
-                            {(item.cached || isOnPen(item.status)) && item.status !== 'ambiguous' && item.status !== 'metadata-incomplete' && (
-                              <div className="recordings-list__detail-actions">
-                                <button type="button" className="button" disabled={busy || !penConnected || !!verifyProg} onClick={() => void handleReinstall(item.contentId)}>
-                                  {t('action.reinstall')}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="recordings-list__preview">
-                        {progress && !isBatchProgress && (
-                          <button type="button" className="button" onClick={() => void lib.cancelDownload(item.contentId)}>
-                            {t('action.cancelDownload')}
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-          <div className="pane__footer">
-            {lib.batchDownloadActive ? (
-              <>
-                <span className="hint">
-                  {t('downloadBatchProgress', {
-                    completed: lib.batchDownloadCounter?.completedCount ?? 0,
-                    total: lib.batchDownloadCounter?.totalCount ?? 0,
-                  })}
-                </span>
-                <button type="button" className="button" onClick={() => void lib.cancelDownloadBatch()}>
-                  {t('action.cancelDownloadBatch')}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="button"
-                  disabled={busy || catalogSelected.size === 0}
-                  onClick={() => void handleDownloadBatch([...catalogSelected])}
-                >
-                  {t('action.downloadSelected')}
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  disabled={busy || downloadableCatalogItems.length === 0}
-                  onClick={() => void handleDownloadBatch(downloadableCatalogItems.map((i) => i.contentId))}
-                >
-                  {t('action.downloadAll')}
-                </button>
-              </>
-            )}
-          </div>
-          {downloadSummaryText && <p className="hint">{downloadSummaryText}</p>}
-        </section>
+        {!penConnected && <p className="hint">{t('sync.needPen')}</p>}
+        {lib.meta.lastCheck?.state === 'error' && <p className="hint">{t('check.failed')}</p>}
       </div>
-      {anyNew && <p className="hint">{t('newBadgeLegend')}</p>}
 
-      {pendingRemove && (
-        <div className="plan-panel">
-          <h2>{t('confirmRemoveTitle')}</h2>
-          <ul className="recordings-list">
-            {pendingRemove.map((item) => (
-              <li key={item.fileName}>
-                {displayNameFor({ friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName }, i18n.language)}{' '}
-                <span className="hint">({item.fileName})</span> <span className="recordings-list__size">{formatBytes(item.sizeBytes)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="hint">{t('confirmRemoveHint')}</p>
-          <div className="plan-panel__actions">
-            <button type="button" className="button" onClick={() => setPendingRemove(null)}>
-              {t('cancel')}
-            </button>
-            <button type="button" className="button button--primary" onClick={() => void confirmRemove()}>
-              {t('confirmRemoveAction')}
-            </button>
-          </div>
+      {/* What a sync would take OFF the pen, said before it is pressed rather than after. A
+          parent who presses Sync books must already know the answer to "will this delete
+          anything of mine?" — and the answer names the books. */}
+      {plan.toRemove.length > 0 && (
+        <div className="note-box">
+          <p>{t('remove.title', { count: plan.toRemove.length })}</p>
+          <p className="hint">{t('remove.body', { size: formatFriendlySize(plan.freedBytes) })}</p>
+          <BookNameList
+            items={plan.toRemove.map((r) =>
+              displayNameFor({ friendlyName: r.friendlyName, friendlyNameI18n: r.friendlyNameI18n, filename: r.fileName }, i18n.language),
+            )}
+            emptyLabel={t('list.none')}
+          />
         </div>
       )}
 
-      {addConflicts && (
-        <div className="plan-panel">
-          <h2>{t('confirmAddTitle')}</h2>
-          <p className="hint">{t('addConflictsHint')}</p>
+      {/* Not enough room. Said before anything starts, with the number and what to do about
+          it — a parent who is told only "not enough space" has no way to act. */}
+      {spaceProblem !== null && (
+        <div className="note-box">
+          {spaceProblem === 'unreadable' ? (
+            <p className="error-text">{t('space.unreadable')}</p>
+          ) : (
+            <>
+              <p className="error-text">{t('space.title')}</p>
+              <p className="hint">{t('space.body', { amount: formatFriendlySize(spaceProblem) })}</p>
+              <button type="button" className="button" onClick={() => onNavigate?.('recordings')}>
+                {t('space.goToRecordings')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------- WHAT IS ON THE PEN, AND ITS ROOM ---
+          Shown, not hidden behind "See book list". A teacher checking twelve pens in a row wants
+          to see what is on the one in their hand without opening anything (owner, testing rc5). */}
+      <section className="book-list book-list--open">
+        <h3 className="status-legend__heading">{t('list.onPen')}</h3>
+        {ourBooks.length === 0 ? (
+          <p className="hint">{t('list.none')}</p>
+        ) : (
           <ul className="recordings-list">
-            {addConflicts.map((item) => (
-              <li key={item.contentId}>
-                <div>{displayNameFor(item, i18n.language)}</div>
-                <label>
-                  <input
-                    type="radio"
-                    name={`add-decision-${item.contentId}`}
-                    checked={addDecisions[item.contentId] === 'replace'}
-                    onChange={() => setAddDecisions((prev) => ({ ...prev, [item.contentId]: 'replace' }))}
-                  />
-                  {t('replaceOption')}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`add-decision-${item.contentId}`}
-                    checked={addDecisions[item.contentId] === 'skip'}
-                    onChange={() => setAddDecisions((prev) => ({ ...prev, [item.contentId]: 'skip' }))}
-                  />
-                  {t('skipOption')}
-                </label>
+            {ourBooks.map((item) => (
+              <li key={item.fileName} className="recordings-list__row">
+                <span className="recordings-list__label">
+                  <span className="recordings-list__name">
+                    {displayNameFor(
+                      { friendlyName: item.friendlyName, friendlyNameI18n: item.friendlyNameI18n, filename: item.fileName },
+                      i18n.language,
+                    )}
+                  </span>
+                </span>
+                <span className="recordings-list__size">{t('size.about', { size: formatFriendlySize(item.sizeBytes) })}</span>
+                {/* The parent's wording, not the technical one. `matched-hash-unknown` reads
+                    "On pen — no official checksum to check against" under Advanced details, which
+                    is right there and wrong here. */}
+                <span className="hint">{t(SIMPLE_STATE_LABELS[simpleStateForPen(item.status)].short)}</span>
               </li>
             ))}
           </ul>
-          <div className="plan-panel__actions">
-            <button
-              type="button"
-              className="button"
-              onClick={() => {
-                setAddConflicts(null);
-                setAddDecisions({});
-              }}
-            >
-              {t('cancel')}
-            </button>
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={addConflicts.some((c) => !addDecisions[c.contentId])}
-              onClick={() => void confirmAdd()}
-            >
-              {t('confirmAddAction')}
-            </button>
-          </div>
+        )}
+
+        <PenStorageBar
+          totalBytes={lib.meta.penTotalBytes}
+          freeBytes={lib.meta.penFreeBytes}
+          bookSizes={penItems.map((i) => i.sizeBytes)}
+          recordingSizes={recordingSizes}
+        />
+
+        {/* What the sync is about to do, and the books that are not ours, stay one disclosure
+            away: they are answers to "why", and the list above is the answer to "what". */}
+        <details>
+          <summary>{t('list.toggle')}</summary>
+
+          <h3 className="status-legend__heading">{t('list.willAdd')}</h3>
+          <BookNameList items={plan.toAdd.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
+
+          <h3 className="status-legend__heading">{t('list.willUpdate')}</h3>
+          <BookNameList items={plan.toUpdate.map((i) => `${displayNameFor(i, i18n.language)} · ${t('size.about', { size: formatFriendlySize(i.sizeBytes) })}`)} emptyLabel={t('list.none')} />
+
+          {otherBooks.length > 0 && (
+            <>
+              <h3 className="status-legend__heading">{t('list.other')}</h3>
+              <p className="hint">{t('list.otherBody')}</p>
+              <BookNameList items={otherBooks.map((p) => p.fileName)} emptyLabel={t('list.none')} />
+            </>
+          )}
+        </details>
+      </section>
+
+      {writing && (
+        <div className="note-box">
+          <p>{t('transfer.dontUnplug')}</p>
+          <p className="hint">{t('transfer.dontUnplugBody')}</p>
+          <p className="hint">{t('transfer.writing', { name: writing.name })}</p>
+          <progress className="book-progress" value={writing.bytesWritten} max={Math.max(writing.totalBytes, 1)} />
+          <p className="hint">
+            {(() => {
+              const left = remainingMinutes(writing.bytesWritten, writing.totalBytes, Date.now() - writing.startedAtMs);
+              return left > 0 ? t('transfer.remaining', { minutes: left }) : t('transfer.remainingShort');
+            })()}
+          </p>
         </div>
       )}
+
+      {restartNotice && (
+        <div className="note-box">
+          <p>{t('done.restartTitle')}</p>
+          <p className="hint">{t('done.restartBody')}</p>
+        </div>
+      )}
+
+      {showFixPrompt && (
+        <div className="note-box">
+          <p>{t('fix.title')}</p>
+          <p className="hint">{t('fix.body')}</p>
+          {showSidecarNotice && <p className="hint">{t('fix.sidecarNotice')}</p>}
+          <button type="button" className="button button--primary" disabled={fixingIndex || busy} onClick={() => void handleFixIndex()}>
+            {fixingIndex ? t('fix.working') : t('fix.button')}
+          </button>
+        </div>
+      )}
+      {fixMessage && <p className="hint">{fixMessage}</p>}
+
+      <StatusLegend t={t} showNewBadgeNote={false} />
+
+      {/* The technical half: pen diagnostics and per-book verification. A parent never needs it;
+          support always does, and it is one disclosure away rather than gone. */}
+      <AdvancedDetails t={t}>
+        <PenRootBar />
+        {ourBooks.length > 0 && (
+          <ul className="recordings-list">
+            {ourBooks.map((item) => {
+              const progress = item.contentId ? lib.verifyProgress[item.contentId] : undefined;
+              const status = progress ? 'verifying' : item.status;
+              return (
+                <li key={item.fileName} className="recordings-list__row">
+                  <span className="recordings-list__label">
+                    <span className="recordings-list__name">{item.fileName}</span>
+                  </span>
+                  <span className="hint">{t(penStatusKey(status))}</span>
+                  <span className="hint status-help">{t(penStatusHelpKey(status))}</span>
+                  <div className="recordings-list__detail-actions">
+                    <button type="button" className="button" disabled={busy || !!progress} onClick={() => void runVerify([item.fileName])}>
+                      {progress ? t('action.verifyWorking') : t('action.verifyThis')}
+                    </button>
+                    {item.contentId && (
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={busy || !!progress}
+                        onClick={() => void handleReinstall(item.contentId as string)}
+                      >
+                        {reinstalling === item.contentId ? t('action.reinstallWorking') : t('action.reinstall')}
+                      </button>
+                    )}
+                  </div>
+                  {/* It writes to the pen. The old label ("Re-download") read as though it only
+                      touched the copy on this computer, and the owner reasonably expected the
+                      pen to be left alone. */}
+                  {item.contentId && <p className="hint">{t('action.reinstallNote')}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </AdvancedDetails>
+
+      {/* Internal build only — `@internal-ui` is the empty stub in a Store build, so this
+          renders nothing and none of its wording is in the bundle. */}
+      <TechnicalLogPanel />
+
     </div>
   );
 }

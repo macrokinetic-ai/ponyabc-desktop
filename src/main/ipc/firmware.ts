@@ -20,13 +20,24 @@ import * as session from '../services/session';
 import { acquirePenLock } from '../services/penOperationLock';
 import { runElevated, type RunElevatedResult } from '../services/elevatedRun';
 import { determineOutcome, inspectFirmwarePackage } from '../services/firmwareUpgrade';
+import type { PreflightDeletion } from '../services/firmwarePreflight';
+import { noteFirmwareClearedBookIndex } from './bookIndex';
+import {
+  DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS,
+  restorePreflightBackups,
+  runFirmwarePreflight,
+  summarizePreflight,
+  summarizeRestore,
+} from '../services/firmwarePreflight';
 import { decodeLogBytes } from '../services/logEncoding';
+
 import { endFirmwareUpgrade, isFirmwareUpgradeInProgress, tryBeginFirmwareUpgrade } from '../services/firmwareLock';
 import { checkStillRunning, clearPendingRun, readPendingRun, writePendingRun } from '../services/firmwareRecovery';
 import { appendDiagnostic, redactText } from '../services/diagnostics';
 import { diagnosticsStore } from './book';
 import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
 import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
+import * as internal from '@internal';
 import {
   listFirmwareSessions,
   readFullFirmwareSession,
@@ -34,15 +45,17 @@ import {
   redactSessionRecordForExport,
   startFirmwareSession,
   type FirmwareSessionHandle,
+  lastInstalledFirmware,
 } from '../services/firmwareSessionLog';
 
 export async function selectFirmwarePackage(window: BrowserWindow): Promise<FirmwareSelectPackageResult> {
-  const result = await dialog.showOpenDialog(window, {
-    properties: ['openDirectory'],
-    title: 'Select the extracted firmware package folder (the one containing download.bat)',
-  });
-  if (result.canceled || result.filePaths.length === 0) return { status: 'cancelled' };
-  return { status: 'selected', info: inspectFirmwarePackage(result.filePaths[0]) };
+  // Screenshots only, and only in the Internal build — see src/main/internal/.
+  const demoPackage = internal.demoFirmwarePackage();
+  if (demoPackage) return { status: 'selected', info: demoPackage };
+
+  const folder = await internal.pickFirmwareFolder(window);
+  if (!folder) return { status: 'cancelled' };
+  return { status: 'selected', info: inspectFirmwarePackage(folder) };
 }
 
 export async function isFirmwareInProgress(): Promise<boolean> {
@@ -149,7 +162,35 @@ export async function recheckFirmwareRecovery(): Promise<FirmwareRecoveryStatus>
  * regenerates or re-derives firmware bytes: the package folder is used read-only, exactly as
  * extracted.
  */
-export async function startFirmwareUpgrade(window: BrowserWindow, params: { packageDir: string }): Promise<FirmwareStartResult> {
+export async function startFirmwareUpgrade(
+  window: BrowserWindow,
+  params: {
+    packageDir: string;
+    /**
+     * Files to delete from the pen's BOOK directory before flashing. Omitted means
+     * DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS. Threaded through as a parameter so a release
+     * can carry its own list from the catalogue later without an app release — see
+     * docs/design/firmware-preflight-metadata.md.
+     */
+    preflightDeletions?: readonly string[];
+  },
+): Promise<FirmwareStartResult> {
+  // Screenshots only, and never in a packaged build — see demoFirmware.ts. Deliberately the
+  // first thing here: no lock is taken, no session log is written, no preflight deletion runs
+  // and nothing is launched. The wizard simply receives the outcome it would have received.
+  const demoOutcome = internal.demoFirmwareOutcome();
+  if (demoOutcome) {
+    const outcome = demoOutcome;
+    setTimeout(() => {
+      try {
+        window.webContents.send(IPC.firmwareOutcome, outcome);
+      } catch {
+        // window already gone
+      }
+    }, 600);
+    return { status: 'started' };
+  }
+
   if (process.platform !== 'win32') return { status: 'unsupported-platform' };
   if (!session.getPenRoot()) return { status: 'no-pen-selected' };
 
@@ -211,6 +252,37 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     let calledRunElevated = false;
     let elevationResult: RunElevatedResult | null = null;
 
+    // Pre-flash cleanup state, needed by the restore decision far below.
+    let preflightBackupDir: string | null = null;
+    let preflightBookDir: string | null = null;
+    let preflightDeletions: readonly PreflightDeletion[] = [];
+    /** Set the moment the vendor tool produces its first byte of output — positive evidence it
+     *  began running, and therefore that the pen must NOT have its old index restored. */
+    let sawToolOutput = false;
+
+    /**
+     * Restores the pen's old index, but only when we have positive evidence the vendor tool
+     * never wrote anything: it was never launched (UAC declined, launch error, unsupported
+     * platform), or it produced no output at all AND is confirmed to have stopped.
+     *
+     * The asymmetry is deliberate. Restoring when the flash never started returns the pen
+     * exactly to where it was. Restoring after a flash may have begun would put a stale index
+     * back under new firmware — the precise failure the preflight exists to prevent — so every
+     * uncertain case does nothing and tells the user to run the upgrade again instead.
+     */
+    const restorePreflightIfUnwritten = (why: string): boolean => {
+      if (!preflightBookDir || preflightDeletions.length === 0) return false;
+      const result = restorePreflightBackups(preflightBookDir, preflightDeletions);
+      const summary = summarizeRestore(result);
+      sessionLog.recordStage('preflight-restore', { why, summary, restored: result.restored.length });
+      appendDiagnostic(diagnosticsStore(), 'firmware-preflight', {
+        result: 'restored',
+        why,
+        summary,
+      });
+      return result.restored.length > 0;
+    };
+
     const decodeAccumulatedLog = () => decodeLogBytes(Buffer.concat(rawLogChunks), detectedCodepage);
 
     const sendProgress = (phase: FirmwareUpgradePhase) => {
@@ -223,10 +295,77 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
     };
 
     try {
+      // --- PRE-FLASH CLEANUP ---------------------------------------------------------
+      // Runs BEFORE the work directory is created, before the recovery marker is written and
+      // before anything is launched, so an abort here leaves the pen and the machine exactly
+      // as they were. The rule (vendor-confirmed, verified on a real pen 2026-09-30): a
+      // firmware upgrade silently does not take effect unless 1.BIN and BOOKFILE.BIN are
+      // removed from the pen's BOOK directory first. See firmwarePreflight.ts.
+      sendProgress('preparing-launcher');
+      const penForPreflight = session.getPenRoot();
+      if (!penForPreflight) throw new Error('pen selection lost before preflight');
+      const preflightFiles = params.preflightDeletions ?? DEFAULT_FIRMWARE_PREFLIGHT_DELETIONS;
+      // Cleared per run, kept afterwards: a copy of the pen's old index is tiny, and having last
+      // run's on disk is what makes a post-mortem possible when someone reports a bad upgrade.
+      preflightBackupDir = path.join(app.getPath('userData'), 'firmwarePreflightBackup');
+      fs.rmSync(preflightBackupDir, { recursive: true, force: true });
+      const preflight = runFirmwarePreflight(penForPreflight.realPath, preflightFiles, { backupDir: preflightBackupDir });
+      preflightDeletions = preflight.deletions;
+      preflightBookDir = preflight.bookDir;
+      const preflightSummary = summarizePreflight(preflight.deletions);
+      sessionLog.recordStage('preflight', {
+        requested: preflightFiles.join(','),
+        result: preflight.ok ? 'ok' : preflight.reason,
+        summary: preflightSummary,
+        bookDir: preflight.bookDir,
+      });
+      appendDiagnostic(diagnosticsStore(), 'firmware-preflight', {
+        result: preflight.ok ? 'ok' : preflight.reason,
+        requested: preflightFiles.join(','),
+        summary: preflightSummary,
+      });
+
+      if (!preflight.ok) {
+        // Fatal, and deliberately NOT 'unclear': nothing was launched, so the pen is untouched
+        // and the user can safely retry. Flashing over a stale index is the exact failure this
+        // check exists to prevent, so continuing anyway would defeat the point.
+        //
+        // The preflight stops at its first failure, so one file may already be gone. Put it
+        // back — a pen left with half an index is worse off than before it was plugged in.
+        restorePreflightIfUnwritten('preflight-failed');
+        sessionLog.finish({
+          processTerminationConfirmed: true,
+          outcomeStatus: 'failed',
+          outcomeReason: `preflight-${preflight.reason}`,
+          userMessageKey: 'result.preflightFailedTitle',
+          toolProcessConfirmedFinished: true,
+          successSignalDetected: false,
+        });
+        release();
+        endFirmwareUpgrade();
+        try {
+          window.webContents.send(IPC.firmwareOutcome, {
+            status: 'failed',
+            reason: `preflight-${preflight.reason}`,
+            exitCode: null,
+            logExcerpt: redactText(`${preflight.detail}\n${preflightSummary}`),
+            processTerminationConfirmed: true,
+            // Nothing was ever decoded from the vendor tool here — the abort happens before it
+            // is launched — so `logExcerpt` is our own plain text and is safe to display.
+            encodingKnown: true,
+            otaTableHadFailures: false,
+            sawUfwGenerated: false,
+            sawNoLicenseWarning: false,
+          } satisfies FirmwareUpgradeOutcome);
+        } catch {
+          // window already gone
+        }
+        return;
+      }
+
       const workDir = path.join(app.getPath('userData'), 'firmwareRun');
       fs.rmSync(workDir, { recursive: true, force: true }); // never reuse a stale prior run's .bat/.ps1/.log
       sessionLog.update({ workDir });
-      sendProgress('preparing-launcher');
       sessionLog.recordStage('launch', { workDir, entryBatPath: info.entryBatPath });
       sendProgress('awaiting-authorization-or-starting');
 
@@ -246,6 +385,7 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
           sessionLog.appendRawLogBytes(delta);
           if (!sawFirstLog) {
             sawFirstLog = true; // first real evidence the tool actually started
+            sawToolOutput = true; // ...and therefore that the old index must NOT be restored
             sessionLog.recordStage('flashing-output', { firstBytesAtMs: Date.now() });
           }
           sendProgress('tool-running');
@@ -278,6 +418,29 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
         processTerminationConfirmed: outcome.processTerminationConfirmed,
       });
       sessionLog.recordStage('result-classification', { status: outcome.status, reason: outcome.reason });
+
+      // Did the vendor tool ever write? Three states, and only the first restores:
+      //   never started  — declined / launch-error / unsupported-platform, or zero output from a
+      //                    process confirmed to have stopped  -> restore, pen is as it was
+      //   started        — any output at all                  -> never restore
+      //   unknown        — termination not confirmed (timeout) -> never restore; it may still be
+      //                    mid-write, and racing it would be the worst possible moment to write
+      //                    a stale index back onto the pen
+      const flashDefinitelyNeverStarted =
+        !sawToolOutput &&
+        outcome.status !== 'success' &&
+        (elevation.status === 'declined' ||
+          elevation.status === 'launch-error' ||
+          elevation.status === 'unsupported-platform' ||
+          outcome.processTerminationConfirmed);
+      if (flashDefinitelyNeverStarted) restorePreflightIfUnwritten(`not-started-${elevation.status}`);
+      else {
+        // The flash went ahead, so the index files stay deleted and the pen rebuilds them on its
+        // next power-on — which is exactly what an owed book-index reset was waiting for. Book
+        // writes cannot interleave with this: both paths hold the pen lock, and the firmware
+        // preflight runs after it is acquired, so books are always finished first.
+        noteFirmwareClearedBookIndex();
+      }
       // These three are deliberately kept distinct — see the doc on FirmwareSessionRecord's
       // toolProcessConfirmedFinished/successSignalDetected/penFirmwareVersionVerified fields.
       // "The tool's process stopped" is exactly outcome.processTerminationConfirmed;
@@ -344,6 +507,9 @@ export async function startFirmwareUpgrade(window: BrowserWindow, params: { pack
       // on ANY caught error, which would have wrongly unlocked even if the error happened after
       // an elevated process may already have been spawned.
       const terminationConfirmed = !calledRunElevated || elevationResult?.status === 'completed';
+      // Nothing was ever launched, so the pen is still on its old firmware and its old index is
+      // still the right one. Anything after a launch attempt is left alone.
+      if (!calledRunElevated) restorePreflightIfUnwritten('internal-error-before-launch');
       sessionLog.recordStage('exception', {
         message: err instanceof Error ? err.message : String(err),
         terminationConfirmed,
@@ -494,4 +660,15 @@ export async function exportFirmwareDiagnostics(window: BrowserWindow): Promise<
   } catch (err) {
     return { status: 'error', message: err instanceof Error ? err.message : String(err) };
   }
+}
+
+/**
+ * The newest firmware version this app finished installing, and when.
+ *
+ * Not "the pen's version": nothing reads a pen. The screen says which of the two it is showing,
+ * because the difference matters — a pen that was flashed on another computer, or by the shop,
+ * has a version this app has never heard of.
+ */
+export function firmwareLastInstalled(): { version: string; atMs: number } | null {
+  return lastInstalledFirmware(app.getPath('userData'));
 }

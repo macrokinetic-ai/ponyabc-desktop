@@ -419,14 +419,17 @@ describe('planReplaceSticker / executeReplaceSticker', () => {
     expect(plan.status).toBe('ok');
     if (plan.status !== 'ok') return;
 
-    const realCopyFile = fs.promises.copyFile.bind(fs.promises);
-    vi.spyOn(fs.promises, 'copyFile').mockImplementation(async (src, dest, ...rest) => {
-      if (String(src).includes('take.mp3') && String(dest).includes('.ponyabc-tmp-')) {
-        throw Object.assign(new Error('simulated staging failure'), { code: 'EIO' });
+    // Staging is a streamed copy (so a twenty-minute write can report progress), so the fault
+    // is injected there rather than into fs.copyFile: the destination stream fails part-way,
+    // which is what a pen going wrong mid-write actually looks like.
+    const realCreateWriteStream = fs.createWriteStream.bind(fs);
+    vi.spyOn(fs, 'createWriteStream').mockImplementation(((target: Parameters<typeof fs.createWriteStream>[0], options?: unknown) => {
+      const stream = realCreateWriteStream(target, options as never);
+      if (String(target).includes('.ponyabc-tmp-')) {
+        process.nextTick(() => stream.destroy(Object.assign(new Error('simulated staging failure'), { code: 'EIO' })));
       }
-      // @ts-expect-error - forwarding the flags arg through to the real implementation
-      return realCopyFile(src, dest, ...rest);
-    });
+      return stream;
+    }) as typeof fs.createWriteStream);
 
     const summary = await executeReplaceSticker({
       penFileName: plan.penFileName,

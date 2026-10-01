@@ -5,7 +5,7 @@
   "lastUpdated": "Última actualización: {{time}}",
   "devFixtureBanner": "Datos de catálogo de desarrollo — no reales",
   "newBadge": "NUEVO",
-  "newBadgeLegend": "NUEVO indica que este elemento se añadió o actualizó en el servidor en los últimos 14 días.",
+  "newBadgeLegend": "NUEVO significa que este libro se añadió a la lista desde su última comprobación.",
   "connection": {
     "label": "Catálogo BOOK",
     "checking": "Comprobando…",
@@ -16,7 +16,8 @@
     "usingOfflineCache": "Usando el último catálogo guardado (actualizado {{time}})",
     "neverLoaded": "Todavía no se ha cargado ningún catálogo correctamente"
   },
-  "ambiguousNotice": "{{count}} elemento(s) del catálogo comparten nombre de archivo con otro elemento — se muestran solo como referencia hasta resolverlo en el servidor.",
+  "ambiguousNotice_one": "De momento hemos dejado un libro fuera de esta lista, porque no está claro cuál es. Todo lo demás funciona con normalidad y nada ha cambiado en el lápiz.",
+  "ambiguousNotice_other": "De momento hemos dejado {{count}} libros fuera de esta lista, porque no está claro cuáles son. Todo lo demás funciona con normalidad y nada ha cambiado en el lápiz.",
   "penRequiredForWrite": "Conecta un lápiz para ver y gestionar su contenido BOOK.",
   "selectAll": "Seleccionar todo",
   "selectedCount": "{{count}} seleccionados",
@@ -24,16 +25,13 @@
   "insufficientSpace": "No hay suficiente espacio libre para completar esto.",
   "downloadFailed": "La descarga falló. Comprueba tu conexión e inténtalo de nuevo.",
   "downloadCancelled": "Descarga cancelada.",
-  "metadataIncompleteNotice": "La información del catálogo de este elemento está incompleta, así que aún no se puede instalar.",
+  "metadataIncompleteNotice": "Aún nos faltan datos de este libro, así que no puede ponerse en el lápiz. Su lápiz no tiene ningún problema.",
   "targetChangedSinceBackup": "Este archivo cambió en el lápiz justo antes de poder eliminarse — no se eliminó nada. Inténtalo de nuevo.",
   "stalePlan": "El lápiz cambió — inténtalo de nuevo.",
   "backupFailed": "No se pudo hacer copia de seguridad del archivo existente, así que no se cambió nada.",
-  "unknownContentNotice": "Este archivo no se reconoce como contenido BOOK del catálogo y no se puede modificar aquí.",
+  "unknownContentNotice": "Este libro no viene de PonyABC, así que la aplicación no lo toca.",
   "genericError": "Algo salió mal.",
   "cancel": "Cancelar",
-  "confirmRemoveTitle": "¿Eliminar del lápiz?",
-  "confirmRemoveHint": "Antes se guarda una copia de seguridad en este ordenador.",
-  "confirmRemoveAction": "Eliminar",
   "confirmAddTitle": "Algunos elementos seleccionados difieren de lo que hay en el lápiz",
   "addConflictsHint": "Estos ya existen en el lápiz con contenido diferente. Elige si reemplazar cada uno (se hace copia de seguridad antes) o dejarlo como está.",
   "replaceOption": "Reemplazar",
@@ -54,9 +52,9 @@
     "verifiedCurrent": "Última verificación: coincide con la versión oficial",
     "verifiedDiffers": "Última verificación: difiere de la versión oficial",
     "sizeDiffers": "El tamaño difiere de la versión oficial",
-    "matchedHashUnknown": "No se puede verificar contra el catálogo",
-    "awaitingCatalog": "Esperando coincidencia con el catálogo",
-    "unknown": "Desconocido",
+    "matchedHashUnknown": "En el lápiz — sin suma de comprobación oficial con la que contrastar",
+    "awaitingCatalog": "En el lápiz — catálogo aún no cargado",
+    "unknown": "Contenido no oficial",
     "notOnPen": "No está en el lápiz",
     "onPenPresent": "En el lápiz — sin verificar",
     "onPenCurrent": "En el lápiz — verificado, coincide",
@@ -72,9 +70,9 @@
     "verifiedCurrent": "Verificado",
     "verifiedDiffers": "Difiere",
     "sizeDiffers": "Tamaño distinto",
-    "matchedHashUnknown": "En el lápiz",
-    "awaitingCatalog": "Esperando…",
-    "unknown": "Desconocido",
+    "matchedHashUnknown": "Sin suma de comprobación",
+    "awaitingCatalog": "Sin catálogo",
+    "unknown": "Fuera del catálogo",
     "notOnPen": "No está en el lápiz",
     "onPenPresent": "En el lápiz",
     "onPenVerifying": "Verificando…",
@@ -85,15 +83,181 @@
     "ambiguous": "Ambiguo"
   },
   "action": {
-    "add": "Añadir al lápiz",
-    "remove": "Eliminar del lápiz",
-    "reinstall": "Volver a descargar",
+    "add": "Añadir lo seleccionado a su lápiz",
+    "reinstall": "Obtener una copia nueva y ponerla en el lápiz",
     "cancelDownload": "Cancelar",
-    "verifySelected": "Verificar contenido seleccionado",
     "cancelVerify": "Cancelar verificación",
     "verifyThis": "Verificar este archivo",
     "downloadSelected": "Descargar seleccionados a la App",
     "downloadAll": "Descargar todo a la App",
-    "cancelDownloadBatch": "Cancelar descarga"
+    "cancelDownloadBatch": "Cancelar descarga",
+    "addOne": "Añadir",
+    "updateOne": "Actualizar",
+    "reinstallNote": "El libro se descarga de nuevo y se copia en el lápiz, que después habrá que reiniciar.",
+    "reinstallWorking": "Obteniendo una copia nueva…",
+    "reinstallDone": "Listo. Ese libro está de nuevo en su lápiz.",
+    "verifyWorking": "Comprobando este archivo…",
+    "verifyDone": "Listo. Se ha comprobado ese archivo."
+  },
+  "statusHelp": {
+    "present": "El nombre coincide con un libro oficial, pero la App no ha leído el archivo para comprobar su contenido. Actualizar nunca lee los archivos, así que este es el estado normal hasta que elija Verificar este archivo.",
+    "verifying": "La App está leyendo este archivo y comparándolo con la versión oficial.",
+    "verifiedCurrent": "Verificó este archivo y su contenido coincidía exactamente con la versión oficial. Solo se muestra mientras esa comprobación siga siendo válida para este lápiz y este archivo.",
+    "verifiedDiffers": "Verificó este archivo y su contenido no coincidía con la versión oficial: puede ser una edición anterior o una copia dañada. Vuelva a añadirlo desde la lista oficial para sustituirlo.",
+    "sizeDiffers": "El tamaño del archivo ya difiere de la versión oficial, así que el contenido no puede coincidir. No hizo falta leer el archivo para saberlo.",
+    "matchedHashUnknown": "El nombre coincide con un libro oficial, pero el catálogo no publica una suma de comprobación, así que no hay nada con lo que contrastar.",
+    "awaitingCatalog": "Todavía no se ha cargado ningún catálogo, así que este archivo no se ha comparado con nada. Conéctese a internet y actualice.",
+    "unknown": "Este archivo no está en el catálogo oficial. La App no lo toca y no puede eliminarlo ni sustituirlo.",
+    "notOnPen": "Este libro no está en el lápiz conectado.",
+    "onPenPresent": "En el lápiz hay un archivo con el nombre de este libro, pero su contenido no se ha comprobado.",
+    "onPenVerifying": "La App está leyendo el archivo del lápiz y comparándolo con la versión oficial.",
+    "onPenCurrent": "El archivo del lápiz se verificó y coincide exactamente con esta versión oficial.",
+    "onPenDiffers": "El archivo del lápiz se verificó y no coincide con esta versión oficial. Añádalo al lápiz para sustituirlo: primero se hace una copia de seguridad del archivo existente.",
+    "onPenSizeDiffers": "El archivo del lápiz tiene un tamaño distinto al de esta versión oficial, así que no puede ser el mismo contenido.",
+    "metadataIncomplete": "A la ficha del catálogo le falta el nombre de archivo o la suma de comprobación que la App necesita, así que este libro aún no se puede instalar. Su lápiz no tiene ningún problema.",
+    "ambiguous": "Dos o más fichas del catálogo reclaman el mismo nombre de archivo, así que la App no puede saber a cuál se refiere. Se muestra solo como referencia hasta que se corrija en el servidor."
+  },
+  "cacheHelp": {
+    "cached": "Hay una copia comprobada guardada en este ordenador, así que añadirlo al lápiz no requiere descarga.",
+    "notDownloaded": "Todavía no está guardado en este ordenador. Se descarga cuando lo añade al lápiz.",
+    "downloading": "Descargándose ahora en este ordenador."
+  },
+  "legend": {
+    "title": "¿Qué significan estas palabras?",
+    "intro": "Cada libro indica si está en su lápiz. Abra los detalles avanzados si necesita la versión técnica.",
+    "penHeading": "Contenido en el lápiz",
+    "catalogHeading": "Contenido oficial",
+    "cacheHeading": "Copias en este ordenador"
+  },
+  "simple": {
+    "onPen": "En su lápiz",
+    "updateAvailable": "Actualización disponible",
+    "notOnPen": "Aún no está en su lápiz",
+    "downloading": "Descargando…",
+    "checking": "Comprobando…",
+    "needsHelp": "Algo no va bien: abra para ver ayuda"
+  },
+  "simpleHelp": {
+    "onPen": "Este libro está en su lápiz y listo para usar.",
+    "updateAvailable": "Hay una versión más reciente de este libro. «Sincronizar libros» la sustituye; antes se guarda una copia de la anterior.",
+    "notOnPen": "Este libro aún no está en su lápiz. «Sincronizar libros» lo pone.",
+    "downloading": "El libro se está copiando a este ordenador y luego al lápiz.",
+    "checking": "La aplicación está comprobando este libro. Solo tarda un momento.",
+    "needsHelp": "Este necesita una revisión: la lista de libros puede estar incompleta. Su lápiz no tiene ningún problema. Abra los detalles avanzados o contacte con soporte."
+  },
+  "advanced": {
+    "title": "Detalles avanzados",
+    "hint": "Información técnica para soporte. No la necesita para usar su lápiz."
+  },
+  "catalogIntro": "¿Ha comprado un libro nuevo? Búsquelo en esta lista y elija Añadir.",
+  "done": {
+    "restartTitle": "¡Listo!",
+    "restartBody": "Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más mientras el lápiz prepara sus libros."
+  },
+  "fix": {
+    "title": "La lista de libros de su lápiz necesita un momento",
+    "body": "Se añadieron o quitaron libros fuera de esta aplicación, así que su lápiz podría reproducir el que no es. Arreglarlo tarda unos segundos.",
+    "button": "Arreglar la lista de libros del lápiz",
+    "working": "Arreglando…",
+    "doneBody": "Hecho. Desconecte el lápiz y apáguelo y vuelva a encenderlo. El primer arranque puede tardar un poco más.",
+    "failed": "No se pudo terminar ahora. No se cambió nada en su lápiz: vuelva a conectarlo e inténtelo de nuevo.",
+    "sidecarNotice": "En su lápiz hay también archivos adicionales copiados por un Mac. Son inofensivos; puede borrarlos de la carpeta si lo desea."
+  },
+  "verifyHint": "Abra un libro abajo para comprobarlo, si el servicio de soporte se lo pide.",
+  "booksManagedNotice": "De los libros se encarga la biblioteca PonyABC: aquí puede añadirlos y actualizarlos.",
+  "transfer": {
+    "estimateBefore": "Esto tardará unos {{minutes}} minutos. Deje el lápiz conectado.",
+    "estimateBeforeShort": "Esto tardará un minuto o dos. Deje el lápiz conectado.",
+    "dontUnplug": "No desconecte el lápiz",
+    "dontUnplugBody": "Se está escribiendo en su lápiz. Desconectarlo ahora podría dejar un libro a medias.",
+    "remaining": "Quedan unos {{minutes}} minutos",
+    "remainingShort": "Casi listo",
+    "writing": "Copiando «{{name}}» en su lápiz…"
+  },
+  "check": {
+    "button": "Buscar libros nuevos",
+    "checking": "Buscando…",
+    "last": "Última comprobación: {{time}}",
+    "never": "Aún sin comprobar",
+    "failed": "No se pudo conectar con la biblioteca PonyABC. Compruebe su conexión a internet e inténtelo de nuevo."
+  },
+  "yourBooks": {
+    "title": "Sus libros",
+    "intro": "Los libros que hay ahora en su lápiz.",
+    "empty": "Aún no hay libros en su lápiz. Añada alguno abajo.",
+    "upToDate": "Al día",
+    "updateAvailable": "Actualización disponible",
+    "checking": "Comprobando…",
+    "updating": "Actualizando…",
+    "update": "Actualizar"
+  },
+  "otherBooks": {
+    "title": "Otros libros (no de PonyABC)",
+    "body": "Vienen de otro sitio. Esta aplicación los deja tal cual."
+  },
+  "newBooks": {
+    "title": "Libros nuevos",
+    "intro": "Libros que puede añadir. Marque aquellos cuyas tarjetas tenga.",
+    "empty": "Su lápiz ya tiene todos los libros que ofrecemos.",
+    "badge": "NUEVO",
+    "badgeHint": "NUEVO significa que este libro se añadió a la lista desde su última comprobación."
+  },
+  "footer": {
+    "selected": "{{count}} libro(s) seleccionado(s), unos {{minutes}} minutos",
+    "selectedShort": "{{count}} libro(s) seleccionado(s), un minuto o dos",
+    "none": "Marque un libro arriba para añadirlo.",
+    "add": "Añadir a su lápiz"
+  },
+  "estimate": {
+    "minutes": "unos {{minutes}} min",
+    "short": "alrededor de un minuto"
+  },
+  "penRequired": "Conecte su lápiz para ver y añadir libros.",
+  "pen": {
+    "connected": "Su lápiz está conectado",
+    "disconnected": "Conecte su lápiz con su cable USB"
+  },
+  "sync": {
+    "hasNone": "Aún no hay libros de PonyABC en su lápiz.",
+    "upToDate": "Todos sus libros están al día.",
+    "button": "Sincronizar libros",
+    "working": "Sincronizando…",
+    "needPen": "Conecte su lápiz para sincronizar.",
+    "stoppedNoSpace": "Su lápiz se llenó, así que paramos. Los libros terminados están en el lápiz.",
+    "has_one": "Su lápiz tiene {{count}} libro de PonyABC.",
+    "has_other": "Su lápiz tiene {{count}} libros de PonyABC.",
+    "newBooks_one": "{{count}} libro nuevo",
+    "newBooks_other": "{{count}} libros nuevos",
+    "updates_one": "{{count}} actualización",
+    "updates_other": "{{count}} actualizaciones",
+    "availableBoth": "Hay {{news}} y {{updates}}.",
+    "availableAdds": "Hay {{news}}.",
+    "availableUpdates": "Hay {{updates}}.",
+    "time_one": "Un minuto aproximadamente.",
+    "time_other": "Unos {{count}} minutos.",
+    "timeShort": "Alrededor de un minuto."
+  },
+  "space": {
+    "title": "Su lápiz no tiene suficiente espacio",
+    "body": "Faltan unos {{amount}}. Guarde una copia de sus grabaciones, borre las que ya no necesite y sincronice de nuevo.",
+    "goToRecordings": "Ir a Mis grabaciones",
+    "unreadable": "No pudimos comprobar el espacio libre de su lápiz. Desconéctelo, vuelva a conectarlo e inténtelo de nuevo."
+  },
+  "list": {
+    "toggle": "Ver la lista de libros",
+    "onPen": "En su lápiz",
+    "willAdd": "Se añadirán",
+    "willUpdate": "Se actualizarán",
+    "other": "Otros libros (no de PonyABC)",
+    "otherBody": "Vienen de otro sitio. Esta aplicación nunca los cambia.",
+    "none": "Ninguno"
+  },
+  "size": {
+    "about": "unos {{size}}"
+  },
+  "remove": {
+    "title_one": "Se quitará un libro de su lápiz",
+    "title_other": "Se quitarán {{count}} libros de su lápiz",
+    "body": "Estos libros ya no forman parte de la biblioteca PonyABC. Quitarlos libera unos {{size}} en el lápiz. Todo lo demás se mantiene igual."
   }
 }

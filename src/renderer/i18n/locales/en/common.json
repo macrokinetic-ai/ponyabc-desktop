@@ -13,7 +13,8 @@
     "cancel": "Cancel",
     "retry": "Retry",
     "close": "Close",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "save": "Save"
   },
   "penRoot": {
     "label": "Pen storage",
@@ -27,7 +28,7 @@
     "disconnected": "The pen appears to be disconnected.",
     "scanning": "Scanning for your pen…",
     "accessible": "The pen's SD card is accessible.",
-    "connectionHint": "Connect your P5 pen to this computer with a USB cable that supports data transfer — these file features can't be used over Bluetooth alone.",
+    "connectionHint": "Connect your pen to this computer with a USB cable that supports data transfer — these file features can't be used over Bluetooth alone.",
     "multipleFound": "Several possible pen drives were found — choose one:",
     "noneFound": "No pen detected.",
     "rescanButton": "Rescan",
@@ -45,5 +46,10 @@
   },
   "errors": {
     "generic": "Something went wrong: {{message}}"
+  },
+  "penStorage": {
+    "summary": "{{used}} of {{total}} used on your pen",
+    "breakdown": "Books {{books}} · Recordings {{recordings}} · Free {{free}}",
+    "unreadable": "We could not check how much room is left on your pen. Please unplug it, plug it in again and look at this screen once more."
   }
 }

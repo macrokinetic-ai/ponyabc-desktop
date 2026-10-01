@@ -174,6 +174,9 @@ export interface TransferToPenSummary {
     | 'no-computer-folder-selected'
     | 'device-disconnected'
     | 'no-space'
+    /** The pen's own copies could not be kept, so nothing was overwritten. Replacing a recording
+     *  without a backup can destroy the only copy of a child's voice. */
+    | 'backup-failed'
     | 'error';
   added: string[];
   replaced: Array<{ fileName: string; backupPath: string }>;
@@ -218,7 +221,9 @@ export interface ReplaceStickerSummary {
 // the renderer turns that into a Blob/object URL for a native <audio> element. Nothing is
 // streamed to or from a network location, and no path the renderer supplies is ever used
 // directly — only a name looked up inside an already-authorized directory.
-export type AudioSource = 'pen' | 'computer';
+/** Where a preview reads from. 'backup' is a snapshot folder, which is what makes "listen to
+ *  both before you choose" possible during a restore clash. */
+export type AudioSource = 'pen' | 'computer' | 'backup';
 
 export type AudioPreviewResult =
   | { status: 'ok'; base64: string; mimeType: string; sizeBytes: number }
@@ -262,8 +267,45 @@ export interface BookCatalogEntry {
    *  guessed). Used only to compute the 14-day "NEW" badge; never implies new AXB bytes,
    *  and is never the local download/cache time. */
   updatedAtMs: number | null;
+  /**
+   * Set by the catalog when a same-name update to this book ALSO needs the pen's book index
+   * thrown away — because this edition changed its OID range or its record type, so the index
+   * built from the previous edition no longer describes it.
+   *
+   * Default **false**: an ordinary same-name replacement keeps the book's position and the
+   * index stays correct, which is the case Benny verified on a real pen. The server does not
+   * send this field yet (see docs/design/book-index-reset-catalog.md); the app reads it now so
+   * that publishing it later needs no new app release.
+   */
+  updateRequiresIndexReset: boolean;
+  /**
+   * What the library says about this book's life, for the states `ponyabc-web` is adding.
+   *
+   * `active` — offered and kept up to date. **The default for anything the server does not
+   * say**, so today's catalogue behaves exactly as it always has.
+   * `retired` — no longer sold, so never added to a pen that lacks it; but a customer owns the
+   * physical cards, so a pen that already has it keeps it AND keeps getting updates.
+   * `remove_from_pens` — reserved. 0.3.17 deliberately ignores it: nothing in this version
+   * deletes a book, and shipping a half-understood deletion is worse than shipping none.
+   */
+  state: ContentState;
+  /** Lowest app version the server says may be told about this item, or null. */
+  minAppVersion: string | null;
   downloadUrl: string;
 }
+
+/**
+ * The four content states, named exactly as `ponyabc-web` names them in
+ * `src/lib/content/visibility.ts` and sends them in `/api/public/books`. Both sides use one
+ * vocabulary so a change on either is visible as a change on the other, rather than as a
+ * silent mismatch between "lifecycleState" here and "state" there.
+ *
+ *   active            on sale; every app sees it
+ *   retired           no longer sold; never added to a pen, still updated on one that has it
+ *   remove_from_pens  should come off the pens at the next sync
+ *   hidden            visible only to an internal build carrying the tester key
+ */
+export type ContentState = 'active' | 'retired' | 'remove_from_pens' | 'hidden';
 
 export interface BookCatalogConflict {
   filenameLower: string;
@@ -379,6 +421,10 @@ export interface BookCatalogItem {
   /** Whether a verified-good copy sits in the App's own local download cache — entirely about
    *  the LOCAL CACHE, never about what's on the pen. Independent of `status`. */
   cached: boolean;
+  /** Mirrors the catalogue entry's state so the screen can group books without re-reading it. */
+  state: ContentState;
+  /** Lowest app version the server says may be told about this item, or null. */
+  minAppVersion: string | null;
   /** true for 'not-on-pen', 'on-pen-present', 'on-pen-differs', and 'on-pen-size-differs' —
    *  declared filename + trustworthy hash, not ambiguous, and not already confirmed current.
    *  Gates "Add"/"Replace" in the UI; bookInstall.ts enforces the same eligibility rule
@@ -417,6 +463,15 @@ export interface BookLibraryMeta {
   conflicts: BookCatalogConflict[];
   /** null only before the very first attempt this run (e.g. this exact call is that attempt). */
   lastCheck: BookCatalogCheck | null;
+  /** Free space on the pen, in bytes, or null when no pen is connected or it could not be
+   *  read. The sync refuses to start if what it would write does not fit — running out of room
+   *  part-way through a twenty-minute copy is a poor way to find out. */
+  penFreeBytes: number | null;
+  /** The pen's total size, for the safety margin. null when unknown. */
+  penTotalBytes: number | null;
+  /** The card's allocation unit, so file sizes can be rounded the way FAT actually stores them.
+   *  null when unknown, in which case no rounding is applied. */
+  penClusterBytes: number | null;
 }
 
 export interface BookListResult {
@@ -548,11 +603,58 @@ export type BookActionStatus =
   | 'restore-not-allowed'
   | 'error';
 
+export interface BookWriteProgressEvent {
+  contentId: string;
+  filename: string;
+  bytesWritten: number;
+  totalBytes: number;
+}
+
+/**
+ * What happened to the pen's book index when an action that writes to the pen finished.
+ *
+ * Every single action carries this, because every single action is its own complete batch: it
+ * writes, the index is reset, and the pen has to be restarted. `'not-needed'` means the action
+ * ran inside a batch that will settle it, or that nothing on the pen changed.
+ */
+/**
+ * One step, as it happened, for the Internal build's technical log.
+ *
+ * Structured rather than a sentence on purpose: the wording lives in the Internal renderer, so
+ * the Store build carries neither the panel nor a single line of its phrasing. `detail` is a
+ * path or a version — never anything a customer would have to read.
+ */
+export interface TechnicalLogEntry {
+  atMs: number;
+  kind:
+    | 'file-deleted'
+    | 'file-written'
+    | 'index-reset-requested'
+    | 'index-reset-done'
+    | 'index-reset-failed'
+    | 'firmware-preflight'
+    | 'firmware-step'
+    | 'recording-restored'
+    | 'recording-backed-up';
+  detail: string;
+  /** Bytes, where the step moved some. */
+  sizeBytes?: number;
+}
+
+export type PenIndexOutcome = 'reset' | 'still-pending' | 'not-needed' | 'no-pen-selected';
+
 export interface BookActionResult {
   status: BookActionStatus;
   message?: string;
   backupPath?: string;
   missing?: Array<'BOOK' | 'DIY'>;
+  /** True when this write ADDED a book rather than replacing one of the same name. The pen's
+   *  book index is positional, so an addition makes it stale and a same-name replacement does
+   *  not — see src/main/services/bookIndexReset.ts. */
+  createdNewFile?: boolean;
+  /** Set on every action that can write to the pen. `'reset'` or `'still-pending'` both mean the
+   *  screen must ask for the pen to be restarted. See PenIndexOutcome. */
+  penIndex?: PenIndexOutcome;
 }
 
 export type BookRemoveStatus =
@@ -571,6 +673,9 @@ export type BookRemoveStatus =
 export interface BookRemoveResult {
   status: BookRemoveStatus;
   freedBytes?: number;
+  /** As BookActionResult.penIndex — a removal shifts every later book's position, so it owes the
+   *  pen the same rebuilt list an addition does. */
+  penIndex?: PenIndexOutcome;
   /** The backup id this removal's backup was recorded under, so the UI can offer "restore"
    *  for it directly. */
   backupPath?: string;
@@ -604,6 +709,12 @@ export type DiagnosticEntryKind =
   | 'pen-verify'
   | 'pen-verify-batch'
   | 'firmware-upgrade'
+  /** Pre-flash cleanup — which files the upgrade removed from the pen's BOOK directory, or why
+   *  it aborted. Kept as its own kind so a later "the upgrade didn't take" report can be
+   *  answered from diagnostics alone. */
+  | 'firmware-preflight'
+  /** The pen's book index being invalidated or rebuilt after books were added or removed. */
+  | 'book-index-reset'
   | 'firmware-recovery';
 
 export interface DiagnosticEntry {
@@ -842,7 +953,34 @@ export interface PonyAbcApi {
   onTransferProgress: (listener: (event: CopyProgressEvent) => void) => () => void;
 
   // Local-only preview playback — never modifies anything, never leaves the machine.
-  readAudioPreview: (params: { source: AudioSource; fileName: string }) => Promise<AudioPreviewResult>;
+  readAudioPreview: (params: { source: AudioSource; fileName: string; snapshotId?: string }) => Promise<AudioPreviewResult>;
+
+  // Recordings v2 — snapshot backups, restore, per-side delete, sticker reassign, labels.
+  // Types come from the main-process services so there is one definition, not a copy that
+  // drifts: a recording's filename IS its sticker number, and that fact has to stay exact.
+  recordingBackupCreate: () => Promise<import('../main/ipc/recordingBackup').BackupCreateResult>;
+  recordingBackupList: () => Promise<import('../main/ipc/recordingBackup').SnapshotSummary[]>;
+  /** Every recording inside one backup, so the screen can list what it is offering to put back. */
+  recordingBackupContents: (params: { snapshotId: string }) => Promise<import('../main/ipc/recordingBackup').SnapshotContents>;
+  /** Pick the .mp3 files to put on the pen. Their folder becomes the app's computer folder. */
+  chooseRecordingFiles: () => Promise<import('../main/ipc/computerFolder').ChooseRecordingFilesResult>;
+  recordingRestorePlan: (params: { snapshotId: string; fileNames?: string[] }) => Promise<import('../main/ipc/recordingBackup').RestorePlanResult>;
+  recordingRestoreExecute: (params: {
+    snapshotId: string;
+    plan: import('../main/services/recordingRestore').RestorePlan;
+    decisions: Record<string, import('../main/services/recordingRestore').RestoreDecision>;
+  }) => Promise<import('../main/ipc/recordingBackup').RestoreExecuteResult>;
+  recordingDeleteFromPen: (params: { fileNames: string[] }) => Promise<import('../main/ipc/recordingBackup').PenDeleteResult>;
+  recordingDeleteFromBackup: (params: { snapshotId: string; fileNames: string[] }) => Promise<import('../main/ipc/recordingBackup').BackupDeleteResult>;
+  recordingReassign: (params: { fileName: string; input: string }) => Promise<import('../main/ipc/recordingBackup').ReassignIpcResult>;
+  recordingLabelsGet: () => Promise<Record<string, string>>;
+  recordingLabelSet: (params: { fileName: string; label: string }) => Promise<Record<string, string>>;
+  recordingLegacyScan: (params: { folder: string }) => Promise<import('../main/services/recordingMigration').LegacyScan>;
+  recordingLegacyMigrate: (params: {
+    scan: import('../main/services/recordingMigration').LegacyScan;
+    choices: Record<string, string>;
+  }) => Promise<import('../main/services/recordingMigration').MigrationResult>;
+  onRecordingBackupProgress: (listener: (event: { fileIndex: number; fileCount: number; fileName: string }) => void) => () => void;
 
   // BOOK library — catalog browsing, local cache, and safe pen install/remove/restore.
   bookList: () => Promise<BookListResult>;
@@ -857,6 +995,29 @@ export interface PonyAbcApi {
   onBookDownloadProgress: (listener: (event: BookDownloadProgressEvent) => void) => () => void;
 
   // Batch "download to App" — cache-only, one file at a time, never writes to the pen.
+  /** Bytes written to the pen during an add or update. The pen's USB is 1.x (~1 MB/s), so this
+   *  is what turns a twenty-minute copy from an apparent hang into visible progress. */
+  onBookWriteProgress: (listener: (event: BookWriteProgressEvent) => void) => () => void;
+
+  /** The pen's book index: whether it still matches what is on the pen, finishing a batch, and
+   *  the explicit "Fix my pen's book list" action. */
+  /** Testing mode — the Internal build only. In a Store build these resolve to the "off"
+   *  answer, because the main process's own handlers come from the stub. */
+  testingModeGet: () => Promise<{ enabled: boolean; testCatalogueFolder: string | null; testerKey: string | null }>;
+  testingModeSet: (patch: Record<string, unknown>) => Promise<{ enabled: boolean; testCatalogueFolder: string | null; testerKey: string | null }>;
+  testingModeChooseFolder: () => Promise<string | null>;
+
+  bookIndexStatus: () => Promise<import('../main/ipc/bookIndex').BookIndexStatus | { status: 'no-pen-selected' }>;
+  bookIndexCommit: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
+  /** Opens a batch: the writes inside it cost the pen ONE index reset, settled by bookBatchEnd.
+   *  A write outside a batch settles itself in the main process. */
+  bookBatchBegin: () => Promise<{ ok: boolean }>;
+  bookBatchEnd: (params?: { writtenFileNames?: string[] }) => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
+  /** Internal build only. In the Store build these resolve to nothing and no panel calls them. */
+  technicalLogGet: () => Promise<TechnicalLogEntry[]>;
+  technicalLogClear: () => Promise<{ ok: boolean }>;
+  onTechnicalLogEntry: (listener: (entry: TechnicalLogEntry) => void) => () => void;
+  bookIndexFix: () => Promise<import('../main/ipc/bookIndex').BookIndexCommitResult>;
   bookDownloadBatch: (params: { contentIds: string[] }) => Promise<BookDownloadBatchStartResult>;
   bookDownloadBatchCancel: () => Promise<{ ok: boolean }>;
   onBookDownloadBatchSummary: (listener: (event: BookDownloadBatchSummaryEvent) => void) => () => void;
@@ -901,6 +1062,8 @@ export interface PonyAbcApi {
   prepareOfficialFirmwarePackage: (release: FirmwareReleaseInfo) => Promise<FirmwarePrepareResult>;
   onFirmwareDownloadProgress: (listener: (event: FirmwareDownloadProgressEvent) => void) => () => void;
   cancelFirmwareDownload: () => Promise<{ ok: boolean }>;
+  /** What this app last installed — never a claim about what a pen is running now. */
+  firmwareLastInstalled: () => Promise<{ version: string; atMs: number } | null>;
   /** Settings → Support → "Export firmware diagnostic logs". Exports the recent structured
    *  per-attempt session logs (see src/main/services/firmwareSessionLog.ts) — separate from
    *  exportDiagnostics() above, which exports the general, capped app-wide diagnostics log.

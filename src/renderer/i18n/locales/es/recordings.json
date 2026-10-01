@@ -1,6 +1,6 @@
 {
   "title": "Mis grabaciones",
-  "emptyState": "No se encontraron grabaciones DIY en el lápiz.",
+  "emptyState": "Todavía no hay grabaciones en su lápiz.",
   "computerEmptyState": "No hay archivos .mp3 en esta carpeta.",
   "selectAll": "Seleccionar todo",
   "selectedCount": "{{count}} seleccionado(s)",
@@ -35,7 +35,9 @@
   "actions": {
     "saveToComputer": "Guardar en el equipo →",
     "sendToPen": "← Enviar al lápiz",
-    "replaceSticker": "Reemplazar este adhesivo con el audio seleccionado…"
+    "replaceSticker": "Reemplazar el audio de esta pegatina…",
+    "play": "Escuchar",
+    "deleteFromPen": "Borrar del lápiz"
   },
   "transferPlan": {
     "title": "Enviar al lápiz — revise antes de enviar",
@@ -84,5 +86,106 @@
     "errorTooLarge": "Este archivo es demasiado grande para escuchar.",
     "errorGeneric": "No se pudo reproducir este archivo (no compatible o ilegible).",
     "penEncodingHint": "Que suene bien aquí no garantiza que el lápiz pueda reproducir el mismo archivo una vez enviado."
+  },
+  "onPen": {
+    "title": "En su lápiz",
+    "intro": "Las grabaciones que tiene ahora su lápiz."
+  },
+  "backup": {
+    "title": "Copias en este ordenador",
+    "intro": "Una copia guarda cada grabación para que pueda volver a ponerlas más adelante.",
+    "button": "Guardar copia de mis grabaciones",
+    "none": "Aún no hay copias. Elija Guardar copia de mis grabaciones.",
+    "choose": "Copia que se usará:",
+    "missing": "No se encontró esa copia.",
+    "done_one": "{{count}} grabación guardada.",
+    "done_other": "{{count}} grabaciones guardadas.",
+    "countLabel_one": "{{count}} grabación",
+    "countLabel_other": "{{count}} grabaciones",
+    "labelManual": "Copia de seguridad",
+    "labelBeforeReplace": "Copia automática antes de sustituir {{name}}",
+    "labelBeforeReplaceMany": "Copia automática antes de sustituir grabaciones",
+    "labelBeforeDelete": "Copia automática antes de borrar {{name}}",
+    "labelBeforeDeleteMany": "Copia automática antes de borrar grabaciones",
+    "labelBeforeRestore": "Copia automática antes de devolver grabaciones al lápiz",
+    "labelBeforeReassign": "Copia automática antes de pasar {{name}} a otro número",
+    "labelMigration": "Copia traída de una versión anterior",
+    "keptSeparately": "Cada copia de seguridad es una copia aparte de sus grabaciones tal y como estaban en ese momento. Las anteriores se conservan: crear una nueva nunca las sustituye.",
+    "contentsTitle": "En esta copia",
+    "contentsEmpty": "Esta copia no contiene grabaciones.",
+    "contentsLoading": "Revisando esta copia…",
+    "working": "Guardando una copia de sus grabaciones…",
+    "selectAll": "Seleccionar todo",
+    "selectedCount_one": "{{count}} seleccionada",
+    "selectedCount_other": "{{count}} seleccionadas",
+    "progress": "{{done}} de {{total}} — {{name}}"
+  },
+  "restore": {
+    "button": "Devolver al lápiz las grabaciones seleccionadas",
+    "reviewTitle": "Antes de volver a ponerlas",
+    "clashIntro": "Algunos de estos números ya tienen una grabación en el lápiz. Escuche las dos y elija cuál conservar.",
+    "fromBackup": "De la copia:",
+    "onPen": "Ahora en el lápiz:",
+    "replace": "Usar la de la copia",
+    "keepPen": "Conservar la del lápiz",
+    "decideAll": "Elija para cada una de arriba.",
+    "confirm": "Volver a ponerlas",
+    "nothingToDo": "Todo lo de esa copia ya está en su lápiz.",
+    "noClashes_one": "Se añadirá {{count}} grabación. Nada de lo que ya está en el lápiz cambiará.",
+    "noClashes_other": "Se añadirán {{count}} grabaciones. Nada de lo que ya está en el lápiz cambiará.",
+    "done_one": "{{count}} grabación devuelta a su lápiz.",
+    "done_other": "{{count}} grabaciones devueltas a su lápiz.",
+    "buttonNote": "Solo se copian las grabaciones marcadas arriba. Lo demás que haya en el lápiz no se toca.",
+    "working": "Devolviendo las grabaciones…"
+  },
+  "label": {
+    "button": "Cambiar el nombre",
+    "prompt": "¿Cómo quiere llamarla?",
+    "hint": "Este nombre solo está en este ordenador. Su lápiz siempre usa el número de la pegatina."
+  },
+  "reassign": {
+    "button": "Cambiar el número de pegatina",
+    "prompt": "Nuevo número de pegatina",
+    "hint": "Escriba el número impreso en la pegatina, exactamente igual.",
+    "confirm": "Moverla",
+    "done": "Movida a la nueva pegatina.",
+    "failed": "No se pudo hacer. Inténtelo de nuevo.",
+    "rejected": {
+      "notDigits": "Escriba solo los números de la pegatina.",
+      "length": "Escriba el número tal como está impreso, incluidos los ceros del principio.",
+      "occupied": "Esa pegatina ya tiene una grabación.",
+      "unchanged": "Ya está en esa pegatina."
+    }
+  },
+  "deletePen": {
+    "confirm": "¿Borrar «{{name}}» de su lápiz?",
+    "backupNotice": "Antes se guarda una copia en este ordenador, para que pueda recuperarla.",
+    "done": "Borrada. Hay una copia en sus copias de seguridad.",
+    "failed": "No se pudo borrar. No se cambió nada."
+  },
+  "advancedTools": {
+    "title": "Herramientas avanzadas"
+  },
+  "addFromComputer": {
+    "title": "Añadir grabaciones desde este ordenador",
+    "intro": "Ponga sus propias grabaciones en el lápiz. Nombre cada archivo con el número de la pegatina a la que pertenece: cuatro dígitos, como 0451, o cinco.",
+    "choose": "Elegir grabaciones…",
+    "chosenFrom": "Desde {{folder}}",
+    "mixedFolders": "Elija grabaciones de una sola carpeta cada vez.",
+    "noneChosen": "Aún no ha elegido ninguna grabación.",
+    "rejected": "Estas no son grabaciones que podamos usar y se han dejado fuera: {{names}}",
+    "badName": "No es un número de pegatina: renómbrelo a cuatro dígitos, como 0451",
+    "willAdd": "Nueva",
+    "willReplace": "SUSTITUIRÁ la grabación de su lápiz",
+    "previewChosen": "Escuchar la de este ordenador",
+    "previewPen": "Escuchar la del lápiz",
+    "copyButton": "Copiar a mi lápiz",
+    "copying": "Copiando a su lápiz…",
+    "backupFirst": "Primero se guarda automáticamente una copia de las grabaciones del lápiz. Las encontrará en Copias de seguridad en este ordenador.",
+    "done_one": "{{count}} grabación copiada a su lápiz.",
+    "done_other": "{{count}} grabaciones copiadas a su lápiz.",
+    "backupFailed": "No se han podido guardar las grabaciones de su lápiz, así que no se ha cambiado nada. Inténtelo de nuevo.",
+    "manyPens": "Enviar el mismo conjunto a varios lápices uno tras otro llegará en una versión posterior. Por ahora, elija las grabaciones de nuevo para cada lápiz.",
+    "noSpace": "No hay espacio suficiente en su lápiz para todas. Borre algunas grabaciones que ya no necesite y vuelva a elegirlas."
   }
 }
