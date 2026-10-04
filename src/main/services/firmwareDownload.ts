@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { FirmwareDownloadProgressEvent, FirmwareReleaseInfo } from '@shared/types';
 import { downloadFile } from './transferService';
 import { FIRMWARE_API_BASE_URL } from './firmwareCatalog/httpClient';
+import type { CatalogueIdentity } from './catalogueRequest';
 
 export type FirmwareDownloadOutcome =
   | { status: 'ok'; zipPath: string }
@@ -21,10 +22,11 @@ export async function downloadFirmwarePackage(params: {
   release: FirmwareReleaseInfo;
   destDir: string;
   signal: AbortSignal;
+  identity: CatalogueIdentity;
   onProgress?: (e: FirmwareDownloadProgressEvent) => void;
   fetchFn?: typeof fetch;
 }): Promise<FirmwareDownloadOutcome> {
-  const { release, destDir, signal, onProgress, fetchFn } = params;
+  const { release, destDir, signal, identity, onProgress, fetchFn } = params;
 
   fs.mkdirSync(destDir, { recursive: true });
   const tmpPath = path.join(destDir, 'package.zip.part');
@@ -39,6 +41,7 @@ export async function downloadFirmwarePackage(params: {
     // only, same as the BOOK download path's handling of an entry with a null sha256.
     expectedSha256: release.sha256,
     signal,
+    identity,
     fetchFn,
     onProgress: (e) => onProgress?.({ phase: e.phase === 'cancelled' ? 'failed' : e.phase, bytesReceived: e.bytesReceived, totalBytes: e.totalBytes }),
   });

@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ userDataDir: '' }));
 vi.mock('electron', () => ({
-  app: { getPath: (name: string) => (name === 'userData' ? h.userDataDir : '') },
+  // getVersion is needed because every catalogue request — including the download — now carries
+  // this build's version. Without it `installDeps` throws and the batch simply never reports.
+  app: {
+    getPath: (name: string) => (name === 'userData' ? h.userDataDir : ''),
+    getVersion: () => '0.3.18',
+  },
 }));
 
 import { resolvePenRoot } from '../../src/main/services/pathSecurity';

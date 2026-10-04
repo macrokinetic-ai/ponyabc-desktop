@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { pipeline } from 'node:stream/promises';
 import fs from 'node:fs';
 import path from 'node:path';
+import { catalogueHeaders, type CatalogueIdentity } from './catalogueRequest';
 
 export type WriteFailureReason =
   | 'not-found'
@@ -250,10 +251,17 @@ export async function downloadFile(params: {
   expectedSize: number;
   expectedSha256: string | null;
   signal: AbortSignal;
+  /**
+   * Required. Both downloads fetch from the catalogue, and 0.3.17 sent no version header on
+   * either — so the server could not tell who was asking for the bytes it had just described.
+   * `catalogueHeaders` drops them for any URL that is not ours, which matters here more than
+   * anywhere: this URL comes out of the server's own response, so it is data, not a constant.
+   */
+  identity: CatalogueIdentity;
   onProgress?: (e: DownloadFileProgressEvent) => void;
   fetchFn?: typeof fetch;
 }): Promise<DownloadFileOutcome> {
-  const { url, destTmpPath, expectedSize, expectedSha256, signal, onProgress } = params;
+  const { url, destTmpPath, expectedSize, expectedSha256, signal, identity, onProgress } = params;
   const fetchFn = params.fetchFn ?? fetch;
 
   fs.mkdirSync(path.dirname(destTmpPath), { recursive: true });
@@ -261,7 +269,7 @@ export async function downloadFile(params: {
 
   let response: Response;
   try {
-    response = await fetchFn(url, { signal });
+    response = await fetchFn(url, { signal, headers: catalogueHeaders({ url, identity }) });
   } catch (err) {
     if (signal.aborted) return { status: 'cancelled' };
     return { status: 'network-error', message: err instanceof Error ? err.message : String(err) };

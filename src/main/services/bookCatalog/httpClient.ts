@@ -1,6 +1,5 @@
 import type { BookCatalogEntry, ContentState } from '@shared/types';
-import { APP_VERSION_HEADER } from '@shared/contentContract';
-import { TESTER_KEY_HEADER } from '@internal';
+import { catalogueHeaders } from '../catalogueRequest';
 import type { BookCatalogClient, BookCatalogFetchOutcome } from './client';
 
 interface RawPublicBook {
@@ -78,12 +77,14 @@ export function createHttpBookCatalogClient(opts: {
     kind: 'live',
     async fetchCatalog(): Promise<BookCatalogFetchOutcome> {
       try {
-        const response = await fetchFn(`${opts.baseUrl}/api/public/books`, {
+        const url = `${opts.baseUrl}/api/public/books`;
+        const response = await fetchFn(url, {
           signal: AbortSignal.timeout(10000),
-          headers: {
-            [APP_VERSION_HEADER]: opts.appVersion,
-            ...(opts.testerKey ? { [TESTER_KEY_HEADER]: opts.testerKey } : {}),
-          },
+          headers: catalogueHeaders({
+            url,
+            identity: { appVersion: opts.appVersion, testerKey: opts.testerKey ?? null },
+            origin: opts.baseUrl,
+          }),
         });
         if (!response.ok) {
           return { status: 'error', message: `Server returned ${response.status}.`, httpStatus: response.status };

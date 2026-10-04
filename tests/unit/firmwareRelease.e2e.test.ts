@@ -127,6 +127,7 @@ describe('prepareOfficialFirmwarePackage — end-to-end simulation, never touche
       release,
       downloadsRootDir,
       signal: new AbortController().signal,
+      identity: { appVersion: '0.3.18', testerKey: null },
       onProgress: (e) => progressPhases.push(e.phase),
       fetchFn: fetchFnForFile(zipPath),
     });
@@ -166,6 +167,7 @@ describe('prepareOfficialFirmwarePackage — end-to-end simulation, never touche
         release,
         downloadsRootDir,
         signal: new AbortController().signal,
+      identity: { appVersion: '0.3.18', testerKey: null },
         onProgress: (e) => progressPhases.push(e.phase),
         fetchFn: fetchFnForFile(REAL_ZIP_PATH),
       });

@@ -38,6 +38,7 @@ import { diagnosticsStore } from './book';
 import { getOfficialFirmwareRelease as fetchOfficialFirmwareRelease, HARDWARE_REV_CONST } from '../services/firmwareCatalog/httpClient';
 import { prepareOfficialFirmwarePackage as runPrepareOfficialFirmwarePackage } from '../services/firmwareRelease';
 import * as internal from '@internal';
+import type { CatalogueIdentity } from '../services/catalogueRequest';
 import {
   listFirmwareSessions,
   readFullFirmwareSession,
@@ -565,9 +566,22 @@ function firmwareDownloadsRootDir(): string {
   return path.join(app.getPath('userData'), 'firmwareDownloads');
 }
 
+/**
+ * This build's identity, as every catalogue request must now carry it.
+ *
+ * `testerKeyForRequests()` is null in a Store build by construction (src/main/internal/stub.ts),
+ * and null in an Internal build unless testing mode is on AND a key has been entered. So the
+ * firmware request now carries the tester key on exactly the same terms the BOOK request always
+ * did — which it never did before, and which is why an internal tester could see a hidden book
+ * but never the hidden firmware beside it.
+ */
+function catalogueIdentity(): CatalogueIdentity {
+  return { appVersion: app.getVersion(), testerKey: internal.testerKeyForRequests() };
+}
+
 export async function getOfficialFirmwareRelease(): Promise<FirmwareReleaseFetchResult> {
   if (process.platform !== 'win32') return { status: 'unsupported-platform' };
-  return fetchOfficialFirmwareRelease(HARDWARE_REV_CONST);
+  return fetchOfficialFirmwareRelease(HARDWARE_REV_CONST, catalogueIdentity());
 }
 
 /** The in-flight official download's abort controller, if any — cancelFirmwareDownload() is the
@@ -588,6 +602,7 @@ export async function prepareOfficialFirmwarePackage(
       release: params.release,
       downloadsRootDir: firmwareDownloadsRootDir(),
       signal: controller.signal,
+      identity: catalogueIdentity(),
       onProgress: (event) => {
         try {
           window.webContents.send(IPC.firmwareDownloadProgress, event satisfies FirmwareDownloadProgressEvent);

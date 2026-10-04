@@ -2,6 +2,7 @@ import path from 'node:path';
 import type { FirmwareDownloadProgressEvent, FirmwarePrepareResult, FirmwareReleaseInfo } from '@shared/types';
 import { downloadFirmwarePackage } from './firmwareDownload';
 import { extractFirmwarePackage } from './firmwareExtract';
+import type { CatalogueIdentity } from './catalogueRequest';
 
 /**
  * Orchestrates the official firmware download flow end to end: download → verify (done inside
@@ -14,15 +15,16 @@ export async function prepareOfficialFirmwarePackage(params: {
   release: FirmwareReleaseInfo;
   downloadsRootDir: string;
   signal: AbortSignal;
+  identity: CatalogueIdentity;
   onProgress?: (e: FirmwareDownloadProgressEvent) => void;
   fetchFn?: typeof fetch;
 }): Promise<FirmwarePrepareResult> {
-  const { release, downloadsRootDir, signal, onProgress, fetchFn } = params;
+  const { release, downloadsRootDir, signal, identity, onProgress, fetchFn } = params;
   const destDir = path.join(downloadsRootDir, release.hardwareRev, release.version);
 
   let downloadOutcome;
   try {
-    downloadOutcome = await downloadFirmwarePackage({ release, destDir, signal, onProgress, fetchFn });
+    downloadOutcome = await downloadFirmwarePackage({ release, destDir, signal, identity, onProgress, fetchFn });
   } catch (err) {
     // An unexpected local I/O error (mkdir/rename/etc.) during the download step — distinct
     // from a clean network-level outcome, which downloadFile() itself already reports.

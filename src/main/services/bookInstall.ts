@@ -7,9 +7,14 @@ import { acquirePenLock } from './penOperationLock';
 import { getFreeBytes } from './transferPlanner';
 import * as session from './session';
 import * as internal from '@internal';
+import type { CatalogueIdentity } from './catalogueRequest';
 
 export interface BookInstallDeps {
   cacheDir: string;
+  /** This build's version and, in an Internal build with testing mode on, the tester key.
+   *  Carried on the download request so the server sees the same caller that asked for the
+   *  catalogue — 0.3.17 downloaded anonymously. */
+  identity: CatalogueIdentity;
   /** A fresh, non-conflicting scratch dir for safeWriteFile's own crash-safety backup of
    *  whatever it overwrites — not the durable un-catalogued-content backup (bookBackup.ts). */
   backupDir: string;
@@ -39,6 +44,7 @@ async function resolveCacheFile(
   const outcome = await downloadToCache({
     entry,
     cacheDir: deps.cacheDir,
+    identity: deps.identity,
     forceFresh,
     fetchFn: deps.fetchFn,
     onProgress: deps.onProgress,

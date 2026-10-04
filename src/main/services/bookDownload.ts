@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { BookCacheEntry, BookCatalogEntry, BookDownloadProgressEvent } from '@shared/types';
 import { isInstallEligible } from './bookStatus';
 import { downloadFile } from './transferService';
+import type { CatalogueIdentity } from './catalogueRequest';
 
 export type DownloadOutcome =
   | { status: 'ok'; cacheEntry: BookCacheEntry }
@@ -41,10 +42,11 @@ async function runDownload(params: {
   cacheDir: string;
   fetchFn: typeof fetch;
   signal: AbortSignal;
+  identity: CatalogueIdentity;
   onProgress?: (e: BookDownloadProgressEvent) => void;
   getFreeBytesFn: (p: string) => Promise<number>;
 }): Promise<DownloadOutcome> {
-  const { entry, cacheDir, fetchFn, signal, onProgress, getFreeBytesFn } = params;
+  const { entry, cacheDir, fetchFn, signal, identity, onProgress, getFreeBytesFn } = params;
 
   fs.mkdirSync(cacheDir, { recursive: true });
   let freeBytes = 0;
@@ -66,6 +68,7 @@ async function runDownload(params: {
     expectedSize: entry.sizeBytes,
     expectedSha256: entry.sha256,
     signal,
+    identity,
     fetchFn,
     onProgress: (e) => onProgress?.({ contentId: entry.contentId, ...e }),
   });
@@ -98,12 +101,15 @@ async function runDownload(params: {
 export function downloadToCache(params: {
   entry: BookCatalogEntry;
   cacheDir: string;
+  /** Required: the bytes come from the catalogue, so the request identifies itself the same way
+   *  the catalogue request does. */
+  identity: CatalogueIdentity;
   forceFresh?: boolean;
   fetchFn?: typeof fetch;
   onProgress?: (e: BookDownloadProgressEvent) => void;
   getFreeBytesFn?: (p: string) => Promise<number>;
 }): Promise<DownloadOutcome> {
-  const { entry, cacheDir, forceFresh, onProgress } = params;
+  const { entry, cacheDir, identity, forceFresh, onProgress } = params;
   const fetchFn = params.fetchFn ?? fetch;
   const getFreeBytesFn = params.getFreeBytesFn ?? defaultGetFreeBytes;
 
@@ -114,7 +120,7 @@ export function downloadToCache(params: {
   if (existing && forceFresh) existing.controller.abort();
 
   const controller = new AbortController();
-  const promise = runDownload({ entry, cacheDir, fetchFn, signal: controller.signal, onProgress, getFreeBytesFn }).finally(() => {
+  const promise = runDownload({ entry, cacheDir, fetchFn, signal: controller.signal, identity, onProgress, getFreeBytesFn }).finally(() => {
     const cur = inFlight.get(entry.contentId);
     if (cur && cur.controller === controller) inFlight.delete(entry.contentId);
   });

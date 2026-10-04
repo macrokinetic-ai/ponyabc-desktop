@@ -39,6 +39,7 @@ import { upsertVerifyRecord } from '../services/bookVerificationIndex';
 import { makeBackupDir } from '../services/transferPlanner';
 import { appendDiagnostic } from '../services/diagnostics';
 import * as internal from '@internal';
+import type { CatalogueIdentity } from '../services/catalogueRequest';
 
 // Hardcoded — the renderer has no way to influence which host this reads from. Secret-free
 // public endpoint (Option A): no Authorization header, nothing embedded to protect.
@@ -168,8 +169,8 @@ export function bookList(): Promise<BookListResult> {
 export async function bookCatalogRefresh(): Promise<BookListResult> {
   const client = createHttpBookCatalogClient({
     baseUrl: BOOK_API_BASE_URL,
-    appVersion: app.getVersion(),
-    testerKey: internal.testerKeyForRequests(),
+    appVersion: catalogueIdentity().appVersion,
+    testerKey: catalogueIdentity().testerKey,
   });
   const requestUrl = `${BOOK_API_BASE_URL}/api/public/books`;
   const startedAtMs = Date.now();
@@ -223,10 +224,21 @@ function findEntry(contentId: string): BookCatalogEntry | null {
   return catalogStore().get()?.entries.find((e) => e.contentId === contentId) ?? null;
 }
 
+/**
+ * Who this build says it is, on every request to the catalogue.
+ *
+ * One definition for the catalogue fetch AND the download, because 0.3.17 had them disagree:
+ * the catalogue request said "I am 0.3.17" and the download that followed said nothing at all.
+ */
+function catalogueIdentity(): CatalogueIdentity {
+  return { appVersion: app.getVersion(), testerKey: internal.testerKeyForRequests() };
+}
+
 function installDeps(window: BrowserWindow) {
   const { cacheDir, scratchBackupRootDir } = dirs();
   return {
     cacheDir,
+    identity: catalogueIdentity(),
     backupDir: makeBackupDir(scratchBackupRootDir),
     getCacheEntries: () => cacheManifestStore().get(),
     saveCacheEntry: (e: BookCacheEntry) =>

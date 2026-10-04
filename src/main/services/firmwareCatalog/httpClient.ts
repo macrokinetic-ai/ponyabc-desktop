@@ -1,4 +1,5 @@
 import type { FirmwareReleaseFetchResult, FirmwareReleaseInfo } from '@shared/types';
+import { catalogueHeaders, type CatalogueIdentity } from '../catalogueRequest';
 
 // Hardcoded — the renderer has no way to influence which host this reads from. Secret-free
 // public endpoint, same as BOOK_API_BASE_URL in main/ipc/book.ts: no Authorization header,
@@ -61,11 +62,22 @@ function toRelease(r: RawFirmwareRelease): FirmwareReleaseInfo {
  * split) since there is exactly one operation here and no fixture/live distinction to abstract
  * over yet.
  */
-export async function getOfficialFirmwareRelease(hardwareRev: string, fetchFn: typeof fetch = fetch): Promise<FirmwareReleaseFetchResult> {
+export async function getOfficialFirmwareRelease(
+  hardwareRev: string,
+  /**
+   * Required, not optional with a default. 0.3.17 sent nothing here, so the server never offered
+   * it firmware — and nothing failed, which is exactly why it went unnoticed. A required
+   * parameter makes the compiler ask the question at every call site.
+   */
+  identity: CatalogueIdentity,
+  fetchFn: typeof fetch = fetch,
+): Promise<FirmwareReleaseFetchResult> {
   let response: Response;
+  const url = `${FIRMWARE_API_BASE_URL}/api/public/firmware?hardware_rev=${encodeURIComponent(hardwareRev)}`;
   try {
-    response = await fetchFn(`${FIRMWARE_API_BASE_URL}/api/public/firmware?hardware_rev=${encodeURIComponent(hardwareRev)}`, {
+    response = await fetchFn(url, {
       signal: AbortSignal.timeout(10000),
+      headers: catalogueHeaders({ url, identity }),
     });
   } catch (err) {
     return { status: 'no-network', message: err instanceof Error ? err.message : String(err) };
