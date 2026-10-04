@@ -842,3 +842,31 @@ read it. Before trusting a guard that passes, make it fail on purpose on somethi
 bad. For text lifted out of a rendered artefact — PDF, screenshot OCR, a DOM dump — strip
 whitespace before matching, because the renderer chooses the line breaks and will put one wherever
 it likes, including through the middle of the word you are looking for.
+
+## A request that says nothing still gets an answer
+
+0.3.17 sent its version header on the BOOK catalogue request and on none of the other three —
+the firmware request and both downloads went out anonymous. The server, correctly, never offers
+firmware to a caller that has not said it is new enough, so 0.3.17 could never receive a firmware
+update however the catalogue was configured.
+
+It shipped, and nobody noticed for a release, because **nothing failed**. The app asked, the
+server replied "nothing for you", and the app correctly displayed no update available. Every
+layer did exactly what it was built to do. The only symptom was an update that never arrived,
+which looks identical to there being no update.
+
+The same half-measure hid a second fault: an internal tester could see the hidden *books*,
+because that one request carried their key, but never the hidden *firmware* beside them. The
+tester channel was half-open and looked whole.
+
+**Why:** adding a header at the one call site that needed it is the smallest change that makes
+the feature work, and the other call sites give no feedback at all. A missing credential produces
+an error; a missing *identity* produces a perfectly valid, quieter answer.
+
+**How to apply:** when a server starts varying its answer by who is asking, enumerate every
+request to that server and make them all say it — not the one you are working on. Put the headers
+in one builder rather than at each call site, and make the identity a **required** parameter
+rather than an optional one with a default: the compiler then asks the question at every call
+site, which is how all five of these were found. Guard where the headers may be sent, too — a
+download URL comes out of the server's own response, so it is data, and attaching an internal
+credential to whatever host it names hands that credential to anyone who can influence it.
