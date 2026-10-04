@@ -202,3 +202,28 @@ describe('the downloads identify this build too', () => {
     }
   });
 });
+
+/**
+ * The origin is written down in three places: the guard's own constant, the firmware client's
+ * base URL, and the BOOK client's. They must stay the same string.
+ *
+ * If one ever drifted, the guard would decide that request was not ours and silently drop the
+ * headers — the exact failure this whole change exists to remove, reintroduced by a typo and
+ * with no error anywhere.
+ */
+describe('the origin is written once, in effect', () => {
+  it('matches the firmware client and the BOOK client', async () => {
+    const { FIRMWARE_API_BASE_URL } = await import('../../src/main/services/firmwareCatalog/httpClient');
+    const bookIpcSource = await import('node:fs').then((fs) =>
+      fs.readFileSync('src/main/ipc/book.ts', 'utf8'),
+    );
+    expect(FIRMWARE_API_BASE_URL).toBe(CATALOGUE_ORIGIN);
+    expect(bookIpcSource).toContain(`const BOOK_API_BASE_URL = '${CATALOGUE_ORIGIN}'`);
+  });
+
+  it('and a URL built from each is recognised as ours', async () => {
+    const { FIRMWARE_API_BASE_URL } = await import('../../src/main/services/firmwareCatalog/httpClient');
+    expect(isCatalogueUrl(`${FIRMWARE_API_BASE_URL}/api/public/firmware?hardware_rev=v1`)).toBe(true);
+    expect(isCatalogueUrl(`${CATALOGUE_ORIGIN}/api/public/books`)).toBe(true);
+  });
+});
